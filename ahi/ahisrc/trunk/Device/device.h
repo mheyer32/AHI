@@ -198,4 +198,7 @@ void
 FreeHardware ( struct AHIDevUnit *iounit,
                struct AHIBase *AHIBase );
 
+void
+DevProc( void );
+
 #endif /* ahi_device_h */

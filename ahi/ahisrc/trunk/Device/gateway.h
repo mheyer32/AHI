@@ -57,6 +57,7 @@ void gw_RemoveAudioMode( void );
 void gw_LoadModeFile( void );
 
 void m68k_IndexToFrequency( void );
+void m68k_DevProc( void );
 
 /* Hook entry points */
 
