@@ -20,6 +20,7 @@
 
 #include <config.h>
 
+#include <exec/execbase.h>
 #include <exec/memory.h>
 #include <proto/exec.h>
 
@@ -201,12 +202,6 @@ DriverInit( struct DriverBase* ahisubbase )
 
   if( EMU10kxBase->cards_found == 0 )
   {
-//    Req( "No SoundBlaster Live! or Audigy card present.\n" );
-#ifdef __AMIGAOS4__
-    KPrintF( ":No SoundBlaster Live! or Audigy card present.\n" );
-#else
-    KPrintF( DRIVER ":No SoundBlaster Live! or Audigy card present.\n" );
-#endif
     return FALSE;
   }
 
