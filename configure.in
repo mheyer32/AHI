@@ -31,10 +31,10 @@ case $host in
  ;;
 esac
 
-abs_srcdir=$(cd ${srcdir} && pwd)
+top_builddir=$(pwd)
 
 : ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${optflags}"}
-: ${CPPFLAGS="-I. -I${abs_srcdir} -I${abs_srcdir}/Include/gcc -I${os_includedir}"}
+: ${CPPFLAGS="-I. -I${top_builddir} -I${top_builddir}/Include/gcc -I${os_includedir}"}
 : ${LDFLAGS="${linkerflags}"}
 : ${ARFLAGS="-ru"}
 

@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.12  2000/06/05 20:28:36  lcs
+ * Fixed configure problems with separate build directories.
+ *
  * Revision 4.11  1999/08/29 23:43:48  lcs
  * Added support for ahigp_AntiClickTime.
  *
@@ -87,7 +90,11 @@ char            **Modes      = NULL;
 char            **Inputs     = NULL;
 char            **Outputs    = NULL;
 
-struct state state = { 0 };
+struct state state = { 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                       0, 0, 0, 0, 0, 0, 0,
+                       FALSE, FALSE, FALSE, FALSE,
+                       0.0, 0.0, 0.0 };
+
 struct args  args =  {NULL, FALSE, FALSE, FALSE, NULL };
 
 BOOL SaveIcons;
