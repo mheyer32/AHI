@@ -132,7 +132,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	}
 	else {
 	  SetSuperAttrs(class, object,
-			AHIA_Error, AHIE_GainProcessor_InvalidSampleType,
+			AHIA_Error, AHIE_Processor_InvalidSampleType,
 			TAG_DONE);
 	}
 
