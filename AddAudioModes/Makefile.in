@@ -13,8 +13,7 @@
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 prefix		= @prefix@
-exec_prefix	= @exec_prefix@
-bindir		= @bindir@
+bindir		= ${prefix}/User/C
 
 build_os	= @build_os@
 
