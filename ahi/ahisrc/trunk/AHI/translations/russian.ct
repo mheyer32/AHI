@@ -8,7 +8,7 @@
 ; $Id$
 ;
 ;    AHI - Hardware independent audio subsystem
-;    Copyright (C) 1996-2001 Martin Blom <martin@blom.org>
+;    Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
 ;     
 ;    This library is free software; you can redistribute it and/or
 ;    modify it under the terms of the GNU Library General Public
@@ -29,282 +29,281 @@
 ;
 msgMenuProject
 \0Проект
-;\000Project
+; \000Project
 ;
 msgItemOpen
 O\0Открыть...
-;O\000Open...
+; O\000Open...
 ;
 msgItemSaveAs
 A\0Сохранить как...
-;A\000Save As...
+; A\000Save As...
 ;
 msgItemAbout
 ?\0О программе...
-;?\000About...
+; ?\000About...
 ;
 msgItemQuit
 Q\0Выход
-;Q\000Quit
+; Q\000Quit
 ;
 msgMenuEdit
 \0Редактор
-;\000Edit
+; \000Edit
 ;
 msgItemDefaults
 D\0По умолчанию
-;D\000Reset To Defaults
+; D\000Reset To Defaults
 ;
 msgItemLastSaved
 L\0Последняя запись
-;L\000Last Saved
+; L\000Last Saved
 ;
 msgItemRestore
 R\0Восстановить
-;R\000Restore
+; R\000Restore
 ;
 msgMenuSettings
 \0Настройки
-;\000Settings
+; \000Settings
 ;
 msgItemCreateIcons
 I\0Создавать иконки?
-;I\000Create Icons?
+; I\000Create Icons?
 ;
 msgMenuHelp
 \0Помощь
-;\000Help
+; \000Help
 ;
 msgItemHelp
 Help\0Помощь...
-;Help\000Help...
+; Help\000Help...
 ;
 msgItemUsersGuide
 H\0Справка по AHI...
-;H\000AHI User's guide...
+; H\000AHI User's guide...
 ;
 msgItemConceptIndex
 \0Индекс...
-;\000Concept Index...
+; \000Concept Index...
 ;
 ; *** The pages ***
 ;
 msgPageMode
 Настройки режима
-;Mode settings
+; Mode settings
 ;
 msgPageAdvanced
 Расширенныe настройки
-;Advanced settings
+; Advanced settings
 ;
 ; *** The units ***
 ;
 msgUnitDevice
 Устройство %ld
-;Unit %ld
+; Unit %ld
 ;
 msgUnitMusic
 Музыкальное устройство
-;Music unit
+; Music unit
 ;
 ; *** Properties box ***
 ;
 msgProperties
 Режим ID\nЗапись\nАвтор\nАвторство\nДрайвер\nВерсия
-;Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion
+; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion
 ;
 msgPropRecordFull
 Полный дуплекс
-;Full duplex
+; Full duplex
 ;
 msgPropRecordHalf
 Полудуплекс
-;Half duplex
+; Half duplex
 ;
 msgPropRecordNone
 Нет
-;Nope
+; Nope
 ;
 ; *** Options ***
 ;
 msgOptions
 Настройки
-;Options
+; Options
 ;
 msgOptFrequency
 _Частота
-;_Frequency
+; _Frequency
 ;
 msgOptChannels
 _Каналы
-;C_hannels
+; C_hannels
 ;
 msgOptNoChannels
 
-;
+; 
 ;
 msgOptVolume
 _Громкость
-;_Volume
+; _Volume
 ;
 msgOptMonitor
 _Монитор
-;_Monitor
+; _Monitor
 ;
 msgOptGain
 _Усиление
-;_Gain
+; _Gain
 ;
 msgOptMuted
 Немой
-;Muted
+; Muted
 ;
 msgOptInput
 _Ввод
-;_Input
+; _Input
 ;
 msgOptNoInputs
 Не вводить
-;No inputs
+; No inputs
 ;
 msgOptOutput
 В_ывод
-;_Output
+; _Output
 ;
 msgOptNoOutputs
 Не выводить
-;No outputs
+; No outputs
 ;
 ;
 ; *** Global Options ***
 ;
 msgGlobalOptions
 Основные установки
-;Global options
+; Global options
 ;
 msgGlobOptDebugLevel
 У_ровень отладки:
-;_Debug level
+; _Debug level
 ;
 msgGlobOptEcho
 _Эхо
-;_Echo
+; _Echo
 ;
 msgGlobOptSurround
 Э_ффект присутствия режимов \"Fast\":
-;Surround in "_Fast" modes
+; Surround in "_Fast" modes
 ;
 msgGlobOptCPULimit
 Ограничение _загрузки CPU:
-;CPU usage _limit
+; CPU usage _limit
 ;
 ; *** Debug levels ***
 ;
 msgDebugNone
 Нет
-;None
+; None
 ;
 msgDebugLow
 Низкий
-;Low
+; Low
 ;
 msgDebugHigh
 Высокий
-;High
+; High
 ;
 msgDebugFull
 Полный
-;Full
+; Full
 ;
 ; *** Echo ***
 ;
 msgEchoEnabled
 Включено
-;Enabled
+; Enabled
 ;
 msgEchoFast
 Быстрое
-;Fast
+; Fast
 ;
 msgEchoDisabled
 Выключено
-;Disabled
+; Disabled
 ;
 ; *** Surround ***
 ;
 msgSurroundEnabled
 Включено
-;Enabled
+; Enabled
 ;
 msgSurroundDisabled
 Выключено
-;Disabled
+; Disabled
 ;
 ; *** Buttons ***
 ;
 msgButtonSave
 _Сохранить
-;_Save
+; _Save
 ;
 msgButtonUse
 Пр_инять
-;_Use
+; _Use
 ;
 msgButtonCancel
 _Отмена
-;_Cancel
+; _Cancel
 ;
 msgButtonOK
 О'кей
-;OK
+; OK
 ;
 ; *** Texts ***
 ;
 msgTextProgramName
 Настройки AHI
-;AHI preferences
+; AHI preferences
 ;
 ;You can use something like "%s%s\nCopyright ©%s\nEnglish translation by Your Name" here...
 msgTextCopyright
 %s%s\nАвторство (c) %s\nРусский перевод: А. Плотников, О. Сергеев
-;%s%s\nCopyright ©%s
+; %s%s\nCopyright ©%s
 ;
 msgTextNoWindow
 Не открыть окно.
-;Unable to open window.
+; Unable to open window.
 ;
 msgTextNoFileRequester
 Недоступен запросник файлов.
-;Unable to allocate file requester.
+; Unable to allocate file requester.
 ;
 msgTextNoFind
 Не найти \"%s\"!
-;Unable to find `%s'!
+; Unable to find `%s'!
 ;
 msgTextNoOpen
 Не открыть \"%s\" версии %ld.
-;Unable to open `%sґ version %ld.
+; Unable to open `%sґ version %ld.
 ;
 ; *** Additions
 ;
 msgGlobOptMasterVol
 _Громкость
-;_Master volume
+; _Master volume
 ;
 msgMVNoClip
 Без среза
-;Without clipping
+; Without clipping
 ;
 msgMVClip
 Со срезом
-;With clipping
+; With clipping
 ;
 msgGlobOptACTime
 Защитное время блокировки щелчков
-;Default anti-click time
+; Default anti-click time
 ;
 msgButtonPlay
 
-;_Play a test sound
-; ***NEW***
+; _Play a test sound
 ;

@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -19,6 +19,10 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.1  2003/01/19 12:22:29  martin
+ * Another year, another copyright update.
+ *  ... which seems to have caused the translation files to change slightly.
+ *
  * Revision 5.0  2000/11/28 00:13:24  lcs
  * Bumped CVS revision to 5.0.
  *
@@ -1147,7 +1151,7 @@ void EventLoop(void) {
             Req( (char *) msgButtonOK,
                 (char *) msgTextCopyright,
                 ISEQ_C,  msgTextProgramName,
-                "1996-1999 Martin Blom" );
+                "1996-2003 Martin Blom" );
             break;
 
           case ACTID_SAVE:
