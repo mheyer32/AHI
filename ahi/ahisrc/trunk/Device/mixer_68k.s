@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.2  1997/01/04 20:19:56  lcs
+* Changed the AHI_DEBUG levels
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -915,11 +918,11 @@ _Mix:
 	bra	.nextchannel
 
 .exit
-	move.l	a1,a4
 
 *** AHIET_OUTPUTBUFFER
 	move.l	ahiac_EffOutputBufferStruct(a2),d0
 	beq	.noEffOutputBuffer
+	move.l	a1,a4
 	move.l	d0,a1
 	move.l	ahieob_Func(a1),a0
 	move.l	a4,ahieob_Buffer(a1)
@@ -928,6 +931,23 @@ _Mix:
 	move.l	h_Entry(a0),a3
 	jsr	(a3)
 .noEffOutputBuffer
+
+*** AHIET_CHANNELINFO
+	move.l	ahiac_EffChannelInfoStruct(a2),d0
+	beq	.noEffChannelInfo
+	move.l	d0,a1
+	move.l	ahieci_Func(a1),a0
+	move.w	ahieci_Channels(a1),d0
+	subq.w	#1,d0
+	lea	ahieci_Offset(a1),a3
+	move.l	ahiac_ChannelDatas(a2),a4
+.ci_loop
+	move.l	cd_OffsetI(a4),(a3)+
+	add.w	#AHIChannelData_SIZEOF,a4
+	dbf	d0,.ci_loop
+	move.l	h_Entry(a0),a3
+	jsr	(a3)
+.noEffChannelInfo
 
 
 	popm	d0-a6
