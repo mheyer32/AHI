@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.11  1997/07/15 02:40:40  lcs
+# Well, close. Fixed for the new fd2pragma version.
+#
 # Revision 4.10  1997/07/15 00:52:05  lcs
 # This is the second bugfix release of AHI 4.
 #
@@ -219,18 +222,18 @@ effectinit_protos.h: effectinit.c
 
 includes:
 	# Assembler library offsets
-	fd2pragma AHIINC:FD/ahi_lib.fd      9 TO AHIINC:Asm/lvo/ahi_lib.i
-	fd2pragma AHIINC:FD/ahi_sub_lib.fd  9 TO AHIINC:Asm/lvo/ahi_sub_lib.i
+	fd2pragma AHIINC:FD/ahi_lib.fd     22 TO AHIINC:Asm/lvo/ahi_lib.i
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd 22 TO AHIINC:Asm/lvo/ahi_sub_lib.i
 	# Storm pragma & proto
 	fd2pragma AHIINC:FD/ahi_lib.fd      5 TO AHIINC:Storm/pragma/ahi_lib.h COMMENT
 	fd2pragma AHIINC:FD/ahi_sub_lib.fd  5 TO AHIINC:Storm/pragma/ahi_sub_lib.h COMMENT
-	fd2pragma AHIINC:FD/ahi_lib.fd     15 TO AHIINC:Storm/proto/ahi.h
-	fd2pragma AHIINC:FD/ahi_sub_lib.fd 15 TO AHIINC:Storm/proto/ahi_sub.h
+	fd2pragma AHIINC:FD/ahi_lib.fd     24 TO AHIINC:Storm/proto/ahi.h
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd 24 TO AHIINC:Storm/proto/ahi_sub.h
 	# SAS/C pragmas & proto
 	fd2pragma AHIINC:FD/ahi_lib.fd      3 TO AHIINC:SAS/pragmas/ahi_pragmas.h COMMENT
 	fd2pragma AHIINC:FD/ahi_sub_lib.fd  3 TO AHIINC:SAS/pragmas/ahi_sub_pragmas.h COMMENT
-	fd2pragma AHIINC:FD/ahi_lib.fd     18 TO AHIINC:SAS/proto/ahi.h
-	fd2pragma AHIINC:FD/ahi_sub_lib.fd 18 TO AHIINC:SAS/proto/ahi_sub.h
+	fd2pragma AHIINC:FD/ahi_lib.fd     27 TO AHIINC:SAS/proto/ahi.h
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd 27 TO AHIINC:SAS/proto/ahi_sub.h
 	# ADE gcc inlines
 	fd2inline AHIINC:FD/ahi_lib.fd\
 	          AHIINC:C/clib/ahi_protos.h\
