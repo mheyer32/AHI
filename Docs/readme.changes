@@ -1,8 +1,9 @@
 
      Changes since last release
      ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-     This version of AHI adds "anti-click" mixing routines and support
-     for the PowerPC microprocessor.
+     This version of AHI adds "anti-click" mixing routines, playback of
+     32 bit samples and and support for the PowerPC microprocessor
+     (currently MorphOS only).
 
      The 68000 processor is no longer supported; a 68020 or better is
      required.
