@@ -2,7 +2,7 @@
 #define CLIB_AHISUB_PROTOS_H
 
 /*
-**	$VER: ahi_sub_protos.h 4.1 (2.4.97)
+**	$VER: ahi_sub_protos.h 5.0 (13.7.2003)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	C prototypes. For use with 32 bit integers only.
@@ -22,6 +22,10 @@
 #include <libraries/ahi_sub.h>
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 ULONG AHIsub_AllocAudio( struct TagItem *, struct AHIAudioCtrlDrv * );
 void AHIsub_FreeAudio( struct AHIAudioCtrlDrv * );
 void AHIsub_Disable( struct AHIAudioCtrlDrv * );
@@ -37,4 +41,9 @@ ULONG AHIsub_LoadSound( UWORD, ULONG, APTR, struct AHIAudioCtrlDrv * );
 ULONG AHIsub_UnloadSound( UWORD, struct AHIAudioCtrlDrv * );
 LONG AHIsub_GetAttr( ULONG, LONG, LONG, struct TagItem *, struct AHIAudioCtrlDrv * );
 LONG AHIsub_HardwareControl( ULONG, LONG, struct AHIAudioCtrlDrv *);
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* CLIB_AHISUB_PROTOS_H */
