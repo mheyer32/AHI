@@ -71,6 +71,9 @@ distclean:	clean
 
 maintainer-clean: distclean
 
+install:	all
+	$(INSTALL_PROGRAM) AHI_MUI $(PREFIX)/Prefs/AHI
+
 bindist:	all
 	$(INSTALL) --directory $(PREFSDIR)
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFSDIR)/AHI

@@ -59,6 +59,9 @@ distclean:	clean
 
 maintainer-clean: distclean
 
+install:	all
+	$(INSTALL_DATA) ahiusr.guide $(PREFIX)/Help/ahi.guide
+
 bindist:	$(TARGETS)
 	$(INSTALL) --directory $(USRDOCDIR) $(DEVDOCDIR)
 	$(INSTALL_DATA) ahidev.readme $(DISTDIR)
