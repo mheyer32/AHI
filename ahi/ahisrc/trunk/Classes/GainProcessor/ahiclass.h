@@ -17,6 +17,8 @@ struct AHIClassData {
     float* gains;
     float* balance;
     float* data;
+    float* last_gains;
+    float* sweeps;
     ULONG  length;
 };
 
