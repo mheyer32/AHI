@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.8  2004/02/19 20:45:03  martin
+Added note about AddAudioModes and sound card/AC97 initializing.
+
 Revision 5.7  2003/07/20 17:04:14  martin
 Replaced Nicolas Sallin with Genesi and bbrv.
 
@@ -346,7 +349,7 @@ consider, right?
 @cindex System description
 
 @menu
-* AddAudioModes::               Database maintenance
+* AddAudioModes::               Database maintenance and more
 * AHI::                         Preferences program
 * AHI-Handler::                 DOS-device
 
@@ -385,6 +388,12 @@ C:ADDAUDIOMODES
 have to run this program, since @code{ahi.device} automatically reads all
 mode descriptors when it is used for the first time.  It can, however, be
 useful in installation scripts.
+
+In addition to rebuilding the audio mode database, it has the side
+effect that the audio drivers are loaded into memory. This causes the
+audio hardware to be initialized and, perhaps, AC97 mixers to be set
+up to the default, which is good if, for example, your CD is connected
+to your soundcard.
 
 The @samp{FILES} option specifies with descriptor(s) to be added to the
 current mode list.
