@@ -1,11 +1,11 @@
 * $Id$
 * $Log$
+* Revision 1.5  1997/02/02 18:15:04  lcs
+* Added protection against CPU overload
+*
 * Revision 1.4  1997/02/01 23:54:26  lcs
 * Rewrote the library open code in C and removed the library bases
 * from AHIBase
-*
-* Revision 1.3  1997/02/01 19:44:18  lcs
-* *** empty log message ***
 *
 * Revision 1.2  1997/01/04 20:19:56  lcs
 * ahiac_EffChannelInfoStruct added
@@ -18,6 +18,7 @@ DEBUG_DETAIL	SET	2
 
 	include	exec/devices.i
 	include	devices/ahi.i
+	include devices/timer.i
 	include	libraries/ahi_sub.i
 	include	macros.i
 
@@ -48,6 +49,7 @@ AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
 	Fixed	ahib_OutputVolume
 	ULONG	ahib_Input
 	ULONG	ahib_Output
+	Fixed	ahib_MaxCPU
 	LABEL	AHIBase_SIZEOF
 
 	BITDEF	AHIB,NOSURROUND,0
@@ -76,6 +78,11 @@ AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
 	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
 	BITDEF	AHIAC,POSTPROC,29		;private ahiac_Flags flag
 
+	STRUCTURE Timer,0
+	STRUCT	EntryTime,EV_SIZE
+	STRUCT	ExitTime,EV_SIZE
+	LABEL	Timer_SIZEOF
+
 * Private AudioCtrl structure
 	STRUCTURE AHIPrivAudioCtrl,AHIAudioCtrlDrv_SIZEOF
 	APTR	ahiac_SubLib
@@ -95,8 +102,9 @@ AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
 	APTR	ahiac_WetList
 	APTR	ahiac_DryList
 	UBYTE	ahiac_WetOrDry
-	UBYTE	ahiac_Pad1
+	UBYTE	ahiac_MaxCPU
 	UWORD	ahiac_Channels2
+	STRUCT	ahiac_Timer,Timer_SIZEOF
 	STRUCT	ahiac_DriverName,41+1		* sizeof("DEVS:ahi/                          .audio")
 	LABEL	AHIPrivAudioCtrl_SIZEOF
 

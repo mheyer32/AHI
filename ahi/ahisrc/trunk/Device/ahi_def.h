@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.7  1997/02/02 18:15:04  lcs
+* Added protection against CPU overload
+*
 * Revision 1.6  1997/02/01 23:54:26  lcs
 * Rewrote the library open code in C and removed the library bases
 * from AHIBase
@@ -23,6 +26,7 @@ extern void KPrintF(char *fmt,...);
 /*** AHI include files ***/
 
 #include <devices/ahi.h>
+#include <devices/timer.h>
 #include <libraries/ahi_sub.h>
 #include <utility/hooks.h>
 #include <pragmas/ahi_pragmas.h>
@@ -75,6 +79,7 @@ struct AHIBase
 	Fixed			 ahib_OutputVolume;
 	ULONG			 ahib_Input;
 	ULONG			 ahib_Output;
+	Fixed			 ahib_MaxCPU;
 };
 
 #define AHIBB_NOSURROUND	(0)
@@ -85,6 +90,12 @@ struct AHIBase
 #define AHIBF_FASTECHO		(1L<<2)
 
 #define DRIVERNAME_SIZEOF sizeof("DEVS:ahi/                          .audio")
+
+struct Timer
+{
+	struct EClockVal	 EntryTime;
+	struct EClockVal	 ExitTime;
+};
 
 /* Private AudioCtrl structure */
 struct AHIPrivAudioCtrl
@@ -107,8 +118,9 @@ struct AHIPrivAudioCtrl
 	APTR			 ahiac_WetList;
 	APTR			 ahiac_DryList;
 	UBYTE			 ahiac_WetOrDry;
-	UBYTE			 ahiac_Pad1;
+	UBYTE			 ahiac_MaxCPU;
 	UWORD			 ahiac_Channels2;	/* Max virtual channels/hw channel */
+	struct Timer		 ahiac_Timer;
 	char			 ahiac_DriverName[DRIVERNAME_SIZEOF];
 };
 

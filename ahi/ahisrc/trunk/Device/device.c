@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.10  1997/02/02 18:15:04  lcs
+* Added protection against CPU overload
+*
 * Revision 1.9  1997/02/01 23:54:26  lcs
 * Rewrote the library open code in C and removed the library bases
 * from AHIBase
@@ -46,6 +49,8 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/iffparse.h>
+
+#include <stddef.h>
 
 #ifndef  noprotos
 #ifndef _GENPROTO
@@ -503,7 +508,15 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
               if(globalprefs->ahigp_FastEcho)
                 AHIBase->ahib_Flags |= AHIBF_FASTECHO;
-
+                
+              if(ahig->sp_Size > offsetof(struct AHIGlobalPrefs, ahigp_MaxCPU))
+              {
+                AHIBase->ahib_MaxCPU = globalprefs->ahigp_MaxCPU;
+              }
+              else
+              {
+                AHIBase->ahib_MaxCPU = 0x10000 * 90 / 100;
+              }
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);
             while(ci)
