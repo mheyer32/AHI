@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.15  1997/11/23 13:03:06  lcs
+* Just debugging..
+*
 * Revision 4.14  1997/10/23 01:10:03  lcs
 * Better debug output.
 *
@@ -704,6 +707,11 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
       audioctrl->ahiac_Channels2=(audioctrl->ac.ahiac_Channels+1)/2;
     else
       audioctrl->ahiac_Channels2=audioctrl->ac.ahiac_Channels;
+/*
+    KPrintF("Mode: 0x%08lx, channels: %ld (%ld), flags: 0x%08lx\n",
+        audioctrl->ac.ahiac_BuffType, audioctrl->ac.ahiac_Channels,
+        audioctrl->ahiac_Channels2, audioctrl->ac.ahiac_Flags);
+*/
 
     if(!(InitMixroutine(audioctrl)))
       goto error;
