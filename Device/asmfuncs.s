@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 4.7  1997/07/27 01:38:17  lcs
+* AHI_SetEffect() would return 0 even if the driver overloaded
+* the function.
+*
 * Revision 4.6  1997/07/15 00:52:05  lcs
 * This is the second bugfix release of AHI 4.
 *
@@ -952,7 +956,6 @@ SetEffect_nodebug
 	cmp.l	#AHIS_UNKNOWN,d0
 	beq	.2
 .1
-	moveq	#0,d0
 	addq.l	#4,sp				;skip d0
 	popm	d1/a0-a1/a6
 	rts
