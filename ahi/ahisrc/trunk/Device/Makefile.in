@@ -187,7 +187,7 @@ elftest:		elftest.o elfloader.o asmfuncs.o
 SOURCES		= $(wildcard $(srcdir)/*.c)
 HEADERS		= $(wildcard $(srcdir)/*.h)
 
-#DEPENDENCIES	= $(SOURCES) $(HEADERS) localize.c localize.h version.h
+#DEPENDENCIES	= $(SOURCES) $(HEADERS)
 
 .PHONY:	depend
 
@@ -195,8 +195,7 @@ depend:
 	$(RM) Makefile.dep
 	$(MAKE) Makefile.dep
 
-Makefile.dep:	$(DEPENDENCIES)
-	@$(MAKE) localize.c localize.h version.h
+Makefile.dep:	$(DEPENDENCIES) localize.c localize.h version.h
 	@echo Making $@
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 
