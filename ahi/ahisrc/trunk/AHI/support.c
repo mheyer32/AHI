@@ -35,10 +35,10 @@
 #include <proto/utility.h>
 
 #include <math.h>
-#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
 
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
@@ -210,7 +210,7 @@ BOOL Initialize(void) {
 
     if( AHIio != NULL ) {
       AHIio->ahir_Version = 4;
-      AHIDevice = OpenDevice(AHINAME,AHI_NO_UNIT,(struct IORequest *)AHIio,NULL);
+      AHIDevice = OpenDevice(AHINAME,AHI_NO_UNIT,(struct IORequest *)AHIio,0);
       if(AHIDevice == 0) {
         AHIBase   = (struct Library *)AHIio->ahir_Std.io_Device;
         return TRUE;
