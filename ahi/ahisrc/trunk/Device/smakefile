@@ -1,7 +1,8 @@
 # $Id$
 # $Log$
-# Revision 4.2  1997/04/02 22:48:03  lcs
-# *** empty log message ***
+# Revision 4.3  1997/04/07 13:12:35  lcs
+# Better handling of catalog files now (no need to change the makefile
+# when new translations are added).
 #
 # Revision 4.1  1997/04/02 22:28:11  lcs
 # Bumped to version 4
@@ -170,7 +171,7 @@ dspinit_protos.h: dspinit.c
 ##
 ###############################################################################
 
-support: includes autodocs catalogs newcatalogs userdoc
+support: includes autodocs catalogs newcatalogs hyperdoc printeddoc
 
 ##
 ## Build include files
@@ -235,28 +236,49 @@ autodocs:
 ###############################################################################
 
 catalogs:
-	FlexCat ahi.cd Svenska.ct CATALOG AHI:User/Catalogs/Svenska/ahi.catalog
-	FlexCat ahi.cd Norsk.ct CATALOG AHI:User/Catalogs/Norsk/ahi.catalog
+	# Make sure the directories exists
+	echo > T:catscript "FailAt 11"
+	list \#?.ct >> T:catscript lformat "MakeDir AHI:User/Catalogs/%m"
+	--execute T:catscript
+	# Make catalogs
+	list \#?.ct > T:catscript lformat\
+		"FlexCat ahi.cd %n CATALOG AHI:User/Catalogs/%m/ahi.catalog"
+	execute T:catscript
+	delete T:catscript
 
 ##
-## Update catalog files
+## Update tranlation files
 ##
 ###############################################################################
 
 newcatalogs:
+	# Make NewCatalog.ct
 	--FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
-	--FlexCat ahi.cd Svenska.ct NEWCTFILE Svenska.ct
-	--FlexCat ahi.cd Norsk.ct NEWCTFILE Norsk.ct
+	# Update the translations
+	list \#?.ct > T:catscript lformat "FlexCat ahi.cd %n NEWCTFILE %n"
+	execute T:catscript
+	delete T:catscript
 
 ##
-## Build user documentation
+## Build hypertext documentation
 ##
 ###############################################################################
 
-userdoc:
+hyperdoc:
 	makeinfo --amiga-40 ahiusr.texinfo
 	rep ahi.guide Ahi AHI AHI:User/Help/ahi.guide
 	delete ahi.guide
+
+	makeinfo --amiga-40 ahidev.texinfo
+	rep devguide.guide Ahi AHI AHI:Developer/docs/devguide.guide
+	delete devguide.guide
+
+##
+## Build printed documentation
+##
+###############################################################################
+
+printeddoc:
 	execute MakeManual
 
 ##
