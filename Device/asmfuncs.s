@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.20  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.19  1997/03/22 18:58:07  lcs
 * --background-- updated + some work on dspecho
 *
@@ -59,8 +62,6 @@
 ; TODO:
 ; Konverteringsrutiner
 
-	incdir	include:
-
 	include devices/timer.i
 	include	exec/exec.i
 	include	dos/dos.i
@@ -74,6 +75,7 @@
 	include	lvo/ahi_lib.i
 
 	include	ahi_def.i
+	include dsp.i
 
 	XDEF	_DefPlayerHook
 	XDEF	_DefRecordHook
@@ -95,6 +97,8 @@
 	XDEF	_Fixed2Shift
 	XDEF	_UDivMod64
 
+	XDEF	_update_MasterVolume
+
 	XREF	_DriverVersion
 	XREF	_CreateAudioCtrl
 	XREF	_UpdateAudioCtrl
@@ -108,8 +112,8 @@
 	XREF	calcSignedTable
 	XREF	calcUnsignedTable
 	XREF	CalcSamples
-	XREF	update_DSPEcho
-	XREF	free_DSPEcho
+	XREF	_update_DSPEcho
+	XREF	_free_DSPEcho
 
 	XREF	_TimerBase
 	XREF	_UtilityBase
@@ -914,19 +918,19 @@ SetEffect_nodebug
 	cmp.l	#AHIET_MASTERVOLUME,ahie_Effect(a0)
 	bne	.no_mastervolume
 	move.l	ahiemv_Volume(a0),d0
-	cmp.l	ahiac_MasterVolume(a2),d0
+	cmp.l	ahiac_SetMasterVolume(a2),d0
 	beq	.exit				;same value as before!
-	move.l	ahiemv_Volume(a0),ahiac_MasterVolume(a2)
-	bsr	update_MasterVolume
+	move.l	ahiemv_Volume(a0),ahiac_SetMasterVolume(a2)
+	bsr	_update_MasterVolume
 	bra	.exit
 .no_mastervolume
 
 	cmp.l	#AHIET_CANCEL|AHIET_MASTERVOLUME,ahie_Effect(a0)
 	bne	.no_mastervolumeOFF
-	cmp.l	#$10000,ahiac_MasterVolume(a2)
+	cmp.l	#$10000,ahiac_SetMasterVolume(a2)
 	beq	.exit
-	move.l	#$10000,ahiac_MasterVolume(a2)
-	bsr	update_MasterVolume
+	move.l	#$10000,ahiac_SetMasterVolume(a2)
+	bsr	_update_MasterVolume
 	bra	.exit
 .no_mastervolumeOFF
 
@@ -969,13 +973,13 @@ SetEffect_nodebug
 	bne	.no_dspecho
 	btst.b	#AHIBB_NOECHO,ahib_Flags(a5)		; Disable echo?
 	bne	.no_dspecho
-	bsr	update_DSPEcho
+	bsr	_update_DSPEcho
 	bra	.exit
 .no_dspecho
 
 	cmp.l	#AHIET_CANCEL|AHIET_DSPECHO,ahie_Effect(a0)
 	bne	.no_dspechoOFF
-	bsr	free_DSPEcho
+	bsr	_free_DSPEcho
 	bra	.exit
 .no_dspechoOFF
 
@@ -1006,8 +1010,22 @@ SetEffect_nodebug
 ***
 *** MASTERVOLUME
 ***
+;in:
+* a2	audioctrl
 
-update_MasterVolume:
+_update_MasterVolume:
+	pushm	d0-a6
+	move.l	ahiac_SetMasterVolume(a2),d0
+ IFGE	__CPU-68020
+	move.l	ahiac_EchoMasterVolume(a2),d1
+	cmp.l	#$10000,d1
+	beq	.no_dspecho_hack
+	lsr.l	#8,d1
+	muls.l	d1,d0
+	lsr.l	#8,d0
+.no_dspecho_hack
+ ENDC
+	move.l	d0,ahiac_MasterVolume(a2)
 ; Update tables
 	bsr	calcUnsignedTable
 	bsr	calcSignedTable
@@ -1042,6 +1060,7 @@ update_MasterVolume:
 	dbf	d3,.loop
 .exit
 	call	AHIsub_Enable			;a2 ok
+	popm	d0-a6
 	rts
 
  IFGE	__CPU-68020
@@ -1272,6 +1291,14 @@ LoadSound_nodebug1
 	moveq	#AHIE_OK,d0
 	bra	.exit
 .nosample
+	cmp.l	#AHIST_INPUT,d1
+	bne	.noinput
+	move.l	#AHIST_S16S,sd_Type(a3,d0.l)
+;	move.l	ahisi_Address(a0),sd_Addr(a3,d0.l)
+;	move.l	ahisi_Length(a0),sd_Length(a3,d0.l)
+
+.noinput
+
 *** Unknown type
 	moveq	#AHIE_BADSOUNDTYPE,d0
 	bra	.exit

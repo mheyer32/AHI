@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.4  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.3  1997/02/02 22:35:50  lcs
 * Localized it
 *
@@ -10,8 +13,6 @@
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
-
-	incdir	include:
 
 	include	devices/timer.i
 	include	exec/exec.i

@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.18  1997/03/24 12:43:09  lcs
+# Echo rewritten
+#
 # Revision 1.17  1997/03/20 02:06:50  lcs
 # *** empty log message ***
 #
@@ -46,13 +49,14 @@ OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
 TARGET	= AHI:User/Devs/ahi.device
 
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
-device.c devsupp.a dspecho.a footer.a header.a requester.c\
-ahi.cd C_c_AHI.sd C_h_AHI.sd
+device.c devsupp.a dspecho.a dspinit.c footer.a header.a\
+requester.c ahi.cd C_c_AHI.sd C_h_AHI.sd
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h smakefile
 
 OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
-device.o devsupp.o dspecho.o footer.o localize.o requester.o header.o 
+device.o devsupp.o dspecho.o dspinit.o footer.o localize.o\
+requester.o header.o 
 
 CCOMP	= SC:c/sc
 CFLAGS	= DEBUG=FULL DATA=FARONLY PARAMETERS=REGISTERS NOSTACKCHECK UNSIGNEDCHARS\
@@ -60,7 +64,7 @@ COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS MEMORYSIZE=HUGE STRINGSECTION=CODE\
 GST=include:all.gst CPU=$(CPU) $(OPTIMIZE)
 
 ASM	= Programmering:PhxAss/Bin/PhxAss
-AFLAGS	= SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
+AFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
 
 LINKER	= SC:c/slink
 LFLAGS	= ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
@@ -69,7 +73,7 @@ DEBUG	= LIB:debug.lib LIB:amiga.lib
 
 ##
 ## Target
-##
+##	
 ###############################################################################
 
 $(TARGET): $(OBJECTS)
@@ -110,14 +114,15 @@ localize.c:	ahi.cd C_c_AHI.sd
 localize.h:	ahi.cd C_c_AHI.sd
 	FlexCat ahi.cd localize.h=C_h_AHI.sd
 
-addroutines.o:	addroutines.a ahi_def.i
+addroutines.o:	addroutines.a ahi_def.i dsp.i
 asmfuncs.o:	asmfuncs.a ahi_def.i
 cfuncs.o:	cfuncs.c localize.h ahi_def.h
 database.o:	database.c ahi_def.h
 devcommands.o:	devcommands.c ahi_def.h ahi_device.h
 device.o:	device.c ahi_def.h ahi_device.h
 devsupp.o:	devsupp.a
-dspecho.o:	dspecho.a ahi_def.i
+dspinit.o:	dspinit.c ahi_def.h dsp.h
+dspecho.o:	dspecho.a ahi_def.i dsp.i
 footer.o:	footer.a
 header.o:	header.a ahi_def.i ahi_rev.i
 localize.o:	localize.c
@@ -129,7 +134,7 @@ requester.o:	requester.c localize.h ahi_def.h
 ###############################################################################
 
 protos: device_protos.h cfuncs_protos.h database_protos.h requester_protos.h\
-	devcommands_protos.h devsupp_protos.h
+	devcommands_protos.h devsupp_protos.h dspinit_protos.h
 
 device_protos.h: device.c
 	$(CCOMP) GPROTO $(CFLAGS) device.c
@@ -149,6 +154,8 @@ database_protos.h: database.c
 requester_protos.h: requester.c
 	$(CCOMP) GPROTO $(CFLAGS) requester.c
 
+dspinit_protos.h: dspinit.c
+	$(CCOMP) GPROTO $(CFLAGS) dspinit.c
 
 ##
 ## Support files

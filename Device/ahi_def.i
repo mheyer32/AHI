@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.7  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.6  1997/03/13 00:19:43  lcs
 * Up to 4 device units are now available.
 *
@@ -17,8 +20,12 @@
 * Initial revision
 *
 
+	IFND    AHI_DEF_I
+AHI_DEF_I	SET	1
+
 DEBUG_DETAIL	SET	2
 
+	include exec/semaphores.i
 	include	exec/devices.i
 	include	devices/ahi.i
 	include devices/timer.i
@@ -34,6 +41,10 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	STRUCT	Msg,MN_SIZE
 	APTR	Unit
 	LABEL	StartupMessage_SIZEOF
+
+	BITDEF	AHIB,NOSURROUND,0
+	BITDEF	AHIB,NOECHO,1
+	BITDEF	AHIB,FASTECHO,2
 
 * AHIBase
 	STRUCTURE AHIBase,LIB_SIZE
@@ -54,28 +65,6 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	ULONG	ahib_Output
 	Fixed	ahib_MaxCPU
 	LABEL	AHIBase_SIZEOF
-
-	BITDEF	AHIB,NOSURROUND,0
-	BITDEF	AHIB,NOECHO,1
-	BITDEF	AHIB,FASTECHO,2
-
-	STRUCTURE AHIEcho,0
-	ULONG	ahiecho_Delay
-	FPTR	ahiecho_Code		;The echo routine
-	WORD	ahiecho_FeedbackDS	;Delayed signal to same channel
-	WORD	ahiecho_FeedbackDO	;Delayed signal to other channel
-	WORD	ahiecho_FeedbackNS	;Normal signal to same channel
-	WORD	ahiecho_FeedbackNO	;Normal signal to other channel
-	WORD	ahiecho_MixN		;Normal signal
-	WORD	ahiecho_MixD		;Delayed signal
-	UWORD	ahiecho_Pad
-	ULONG	ahiecho_Offset		;(&Buffer-&SrcPtr)/sizeof(ahiecho_Buffer[0])
-	APTR	ahiecho_SrcPtr		;Pointer to &Buffer
-	APTR	ahiecho_DstPtr		;Pointer to &(Buffer[Delay])
-	APTR	ahiecho_EndPtr		;Pointer to address after buffer
-	ULONG	ahiecho_BufferSize	;Delay buffer size in bytes
-	LABEL	ahiecho_Buffer		;Delay buffer
-	LABEL	AHIEcho_SIZEOF
 
 	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
 	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
@@ -98,9 +87,11 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	APTR	ahiac_MultTableU
 	APTR	ahiac_RecordFunc		* AHIA_RecordFunc
 	ULONG	ahiac_AudioID
-	Fixed	ahiac_MasterVolume;
+	Fixed	ahiac_MasterVolume;		* Real
+	Fixed	ahiac_SetMasterVolume;		* Set by user
+	Fixed	ahiac_EchoMasterVolume;		* Set by dspecho
 	APTR	ahiac_EffOutputBufferStruct	* struct AHIEffOutputBuffer *
-	APTR	ahiac_EffDSPEchoStruct		* struct AHIEcho *
+	APTR	ahiac_EffDSPEchoStruct		* struct Echo *
 	APTR	ahiac_EffChannelInfoStruct	* struct AHIChannelInfo *
 	APTR	ahiac_WetList
 	APTR	ahiac_DryList
@@ -191,3 +182,4 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	LABEL	AHISoundData_SIZEOF
 
 
+	ENDC
