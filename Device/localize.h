@@ -1,7 +1,7 @@
 /* $Id$
 * $Log$
-* Revision 5.3.2.1  2004/06/08 21:16:12  martin
-* Added 7.1 multichannel support.
+* Revision 5.3.2.2  2004/11/01 07:24:48  martin
+* Applied a couple of patches from Gunther Nikl.
 *
 * Revision 5.0  2000/11/28 00:15:18  lcs
 * Bumped CVS revision to 5.0.

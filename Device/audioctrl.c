@@ -119,7 +119,7 @@ DummyHook( void )
 }
 
 
-static struct Hook DefPlayerHook =
+static const struct Hook DefPlayerHook =
 {
   {0, 0},
   (HOOKFUNC) HookEntry,
@@ -128,7 +128,7 @@ static struct Hook DefPlayerHook =
 };
 
 
-static struct TagItem boolmap[] =
+static const struct TagItem boolmap[] =
 {
   { AHIDB_Volume,    AHIACF_VOL },
   { AHIDB_Panning,   AHIACF_PAN },
