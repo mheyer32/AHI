@@ -2,7 +2,7 @@
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename ahi.guide
-@settitle @sc{Ahi}{} User's Guide
+@settitle @sc{Ahi} User's Guide
 @setchapternewpage odd
 @iftex
 @afourpaper
@@ -17,10 +17,8 @@
 
 @c *** Variables ***
 
-@c @set ahiver 4.5
-
-@c Set ahiver to current release version
-@include version.texinfo
+@c Set ahiver and docver to current release version
+@include ahiusr.ver
 
 
 @c Part 2: Summary Description and Copyright
@@ -28,31 +26,36 @@
 
 @ifinfo
 This file documents AHI version @value{ahiver}, a hardware independent
-audio subsystem for Amiga.
+audio subsystem for Amiga. The version number of this document is
+@value{docver}.
 
-Copyright @copyright{} 1994-1998 Martin Blom. This publication may
-not be modified in any way, including translation, without prior consent,
-in writing, by the author.
+Copyright @copyright{} 1994-1998 Martin Blom. This publication may not
+be modified in any way, including translation, without prior consent, in
+writing, by the author.
 
-Permission is granted to make and distribute verbatim
-copies of this manual provided the copyright notice and
-this permission notice are preserved on all copies.
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
 
-@sc{This publication is provided by the author ``as is'' and any express or
-implied warranties, including, but not limited to, the implied warranties
-of merchantability and fitness for a particular purpose are disclaimed.  In
-no event shall the author be liable for any direct, indirect, incidental,
-special, exemplary, or consequential damages (including, but not limited
-to, procurement of substitute goods or services; loss of use, data, or
-profits; or business interruption) however caused and on any theory of
-liability, whether in contract, strict liability, or tort (including
-negligence or otherwise) arising in any way out of the use of this
-publication, even if advised of the possibility of such damage.}
+@sc{This publication is provided by the author ``as is'' and any express
+or implied warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular purpose are
+disclaimed.  In no event shall the author be liable for any direct,
+indirect, incidental, special, exemplary, or consequential damages
+(including, but not limited to, procurement of substitute goods or
+services; loss of use, data, or profits; or business interruption)
+however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in
+any way out of the use of this publication, even if advised of the
+possibility of such damage.}
 
 @example
 
 $Id$
 $Log$
+Revision 4.19  1999/01/10 16:07:58  lcs
+Moved to GNU make (still moving...)
+
 Revision 4.18  1998/12/06 11:51:25  lcs
 Removed the stuff about paula not being exactly like the filesave driver
 (it is, now).
@@ -115,31 +118,32 @@ Initial revision.
 @titlepage
 @title AHI
 @subtitle Hardware independent audio for Amiga
-@subtitle AHI User's Guide, version @value{ahiver}
+@subtitle AHI User's Guide v@value{docver}, for AHI version @value{ahiver}
 @author Martin 'Leviticus' Blom
 
 @page
 
 @vskip 0pt plus 1filll
 
-Copyright @copyright{} 1994-1998 Martin Blom. This publication may
-not be modified in any way, including translation, without prior consent,
-in writing, by the author.
+Copyright @copyright{} 1994-1998 Martin Blom. This publication may not
+be modified in any way, including translation, without prior consent, in
+writing, by the author.
 
-Permission is granted to make and distribute verbatim
-copies of this manual provided the copyright notice and
-this permission notice are preserved on all copies.
+Permission is granted to make and distribute verbatim copies of this
+manual provided the copyright notice and this permission notice are
+preserved on all copies.
 
-@sc{This publication is provided by the author ``as is'' and any express or
-implied warranties, including, but not limited to, the implied warranties
-of merchantability and fitness for a particular purpose are disclaimed.  In
-no event shall the author be liable for any direct, indirect, incidental,
-special, exemplary, or consequential damages (including, but not limited
-to, procurement of substitute goods or services; loss of use, data, or
-profits; or business interruption) however caused and on any theory of
-liability, whether in contract, strict liability, or tort (including
-negligence or otherwise) arising in any way out of the use of this
-publication, even if advised of the possibility of such damage.}
+@sc{This publication is provided by the author ``as is'' and any express
+or implied warranties, including, but not limited to, the implied
+warranties of merchantability and fitness for a particular purpose are
+disclaimed.  In no event shall the author be liable for any direct,
+indirect, incidental, special, exemplary, or consequential damages
+(including, but not limited to, procurement of substitute goods or
+services; loss of use, data, or profits; or business interruption)
+however caused and on any theory of liability, whether in contract,
+strict liability, or tort (including negligence or otherwise) arising in
+any way out of the use of this publication, even if advised of the
+possibility of such damage.}
 
 @end titlepage
 
@@ -151,7 +155,7 @@ publication, even if advised of the possibility of such damage.}
 
 @ifinfo
 
-@majorheading @sc{Ahi} User's Guide, version @value{ahiver}
+@majorheading @sc{Ahi} User's Guide v@value{docver}, for AHI version @value{ahiver}
 
 Copyright @copyright{} 1994-1998 Martin Blom
 
@@ -1105,16 +1109,16 @@ The author can be reached at the following addresses:
 @table @asis
 
 @item Electronic mail
-@email{lcs@@lysator.liu.se}
+@email{martin@@blom.org}
 
 @item Standard mail
   Martin Blom
 @*Alsättersgatan 15A:24
 @*SE-584 35 Linköping
-@*Sweden
+@*SWEDEN
 
 @item World-Wide Web
-@url{http://www.lysator.liu.se/~lcs}
+@url{http://martin.blom.org}
 
 @end table
 

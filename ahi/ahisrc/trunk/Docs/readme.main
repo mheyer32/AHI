@@ -1,4 +1,6 @@
 
+--------------------------------------------------------------------------------
+
 TITLE
 
      AHI Audio system
@@ -9,7 +11,7 @@ VERSION
 
 AUTHOR
 
-     Martin Blom <lcs@lysator.liu.se>
+     Martin Blom <martin@blom.org>
 
 DESCRIPTION
 
@@ -34,6 +36,11 @@ DESCRIPTION
      accelerator!  I cannot guarantee that I will continue to support this
      processor in the future.
 
+     AHI now supports the PowerPC processor. Thanks to the users who
+     donated money and Syscom & Mematex AB who sponsored the hardware,
+     I was finally able you buy a Cyberstorm PPC card. The current
+     version is of PowerUp only, but a WarpUp version will follow later.
+
      Quick overview
      ¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
@@ -55,7 +62,7 @@ DESCRIPTION
      · Maestro Pro
      · Melody Z2 and 1200
      · Paula (8/14/14c bit)
-     · Prelude
+     · Prelude and Prelude 1200
      · Toccata
      · Wavetools
      · 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
@@ -110,7 +117,6 @@ AVAILABILITY
      Aminet, for example:
      ftp://ftp.germany.aminet.org/pub/aminet/dev/misc/ahidev.lha
      ftp://ftp.germany.aminet.org/pub/aminet/mus/misc/ahiusr.lha
-     ftp://ftp.germany.aminet.org/pub/aminet/docs/misc/ahiman.lha
 
      WWW:
      http://www.lysator.liu.se/~lcs/ahi.html
@@ -122,8 +128,10 @@ PRICE
      authors (this is merely a wish, you don't have to do it if you don't
      think we deserve it). See the AHI User's Guide for more information.
 
+     Please note that the PowerPC-version is shareware.
+
 DISTRIBUTABILITY
 
-     Copyright ©1994-1998 Martin Blom.
+     Copyright ©1994-1999 Martin Blom.
      Freely distributable in unmodified form.
      See the AHI User's Guide for more information.

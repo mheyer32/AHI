@@ -1,0 +1,97 @@
+#  $Id$
+#
+#  Makefile.in for the user and developer documentation
+#
+
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+top_srcdir	= @top_srcdir@
+srcdir		= @srcdir@
+prefix		= @prefix@
+
+userdocdir	= ${prefix}/User/Docs
+userguidedir	= ${prefix}/User/Help
+devdocdir	= ${prefix}/Developer/Docs
+
+build_os	= @build_os@
+
+INSTALL		= @INSTALL@
+INSTALL_DATA	= @INSTALL_DATA@
+
+VPATH		= @srcdir@
+
+
+#
+# Files
+########################################
+
+TARGETS		= ahidev.readme ahiusr.readme \
+		  ahidev.dvi ahiusr.dvi \
+		  ahidev.ps ahiusr.ps
+
+
+#
+# Targets
+########################################
+
+.PHONY:		all clean distclean maintainer-clean install changes
+
+all:		$(TARGETS)
+
+clean:
+	$(RM) $(TARGETS) ahidev.ver ahiusr.ver \
+	      *.log *.bak *~ \#*\# core Makefile.dep
+
+distclean:	clean
+	$(RM) Makefile
+
+maintainer-clean: distclean
+
+install:	$(TARGETS)
+	$(INSTALL) --directory $(userdocdir) $(userguidedir) $(devdocdir)
+
+
+changes:
+	$(EDITOR) readme.changes
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in ../config.status
+	(cd .. && ./config.status)
+
+
+#
+# Rules
+########################################
+
+ahidev.readme:	readme.dev readme.changes readme.main \
+		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
+	ver="`cat $(top_srcdir)/version.rev`.`cat $(top_srcdir)/version.rev`" &&\
+	cat readme.dev readme.changes readme.main | sed -e "s/VERSION/$$ver/" > $@
+
+ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
+	ver="`cat $(top_srcdir)/version.rev`.`cat $(top_srcdir)/version.rev`" &&\
+	cat readme.usr readme.changes readme.main | sed -e "s/VERSION/$$ver/" > $@
+
+ahiusr-exp.texinfo ahiusr.guide: ahiusr.texinfo ahiusr.ver
+	makeinfo -E ahiusr-exp.texinfo --guide --output ahiusr.guide ahiusr.texinfo
+
+ahidev.ver:	ahidev.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
+	echo "@set ahiver `cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" > $@
+	grep '$$Id' ahidev.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\5.\4.\3)/' >> $@
+
+ahiusr.ver:	ahiusr.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
+	echo "@set ahiver `cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" > $@
+	grep '$$Id' ahiusr.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\5.\4.\3)/' >> $@
+
+
+
+
+
