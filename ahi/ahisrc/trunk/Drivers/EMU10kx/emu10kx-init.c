@@ -59,6 +59,8 @@ DriverInit( struct DriverBase* ahisubbase )
     return FALSE;
   }
 
+  InitSemaphore( &EMU10kxBase->semaphore );
+  
   // Fail if no hardware (prevents the audio modes form being added to
   // the database if the driver cannot be used).
 

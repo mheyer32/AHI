@@ -1,3 +1,8 @@
+2003-06-23  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Added protection against multiple calls to
+	AHIsub_AllocAudio().
+
 2003-06-22  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.3.
