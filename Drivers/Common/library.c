@@ -86,7 +86,7 @@ ULONG   __abox__=1;
 
 static const APTR FuncTable[] =
 {
-#if defined( __morphos__ ) || defined( __MORPHOS__ ) || defined( __amithlon__ )
+#if defined( __MORPHOS__ ) || defined( __amithlon__ )
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
 
@@ -119,7 +119,12 @@ static const APTR InitTable[4] =
   (APTR) DRIVERBASE_SIZEOF,
   (APTR) &FuncTable,
   NULL,
+#if defined( __MORPHOS__ ) || defined( __amithlon__ )
+  (APTR) _LibInit
+#else
   (APTR) gwLibInit
+#endif
+
 };
 
 
@@ -131,7 +136,11 @@ static const struct Resident RomTag =
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &_etext,
+#if defined( __MORPHOS__ ) || defined( __amithlon__ )
+  RTF_PPC | RTF_AUTOINIT,
+#else
   RTF_AUTOINIT,
+#endif
   VERSION,
   NT_LIBRARY,
   0,                      /* priority */
@@ -254,7 +263,7 @@ _LibInit( struct DriverBase* AHIsubBase,
     Alert( AN_Unknown|AG_OpenLib|AO_Intuition );
     goto error;
   }
-  
+
   if( UtilityBase == NULL )
   {
     Req( "Unable to open 'utility.library' version 37.\n" );
@@ -265,7 +274,6 @@ _LibInit( struct DriverBase* AHIsubBase,
   {
     goto error;
   }
-
 
   return AHIsubBase;
 
