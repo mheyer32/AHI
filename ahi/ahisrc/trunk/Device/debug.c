@@ -475,6 +475,22 @@ PrintTagList(struct TagItem *tags)
 ** Send debug to serial port **************************************************
 ******************************************************************************/
 
+#if defined( __AROS__ ) && !defined( __mc68000__ )
+
+#include <aros/asmcall.h>
+
+AROS_UFH2( void,
+	   rawputchar_m68k,
+	   AROS_UFHA( UBYTE,            c,       D0 ),
+	   AROS_UFHA( struct ExecBase*, SysBase, A3 ) )
+{
+  AROS_USERFUNC_INIT
+  RawPutChar( c );
+  AROS_USERFUNC_EXIT  
+}
+
+#else
+
 static UWORD rawputchar_m68k[] = 
 {
   0x2C4B,             // MOVEA.L A3,A6
@@ -482,6 +498,7 @@ static UWORD rawputchar_m68k[] =
   0x4E75              // RTS
 };
 
+#endif
 
 void
 KPrintFArgs( UBYTE* fmt, 
