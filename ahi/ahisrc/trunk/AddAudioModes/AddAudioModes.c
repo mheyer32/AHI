@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1998/03/11 12:31:57  lcs
+* Added hardware-banging code to force VGA mode.
+*
 * Revision 4.1  1997/04/02 22:44:22  lcs
 * Bumped to version 4
 *
@@ -14,6 +17,7 @@
 
 #include <devices/ahi.h>
 #include <graphics/modeid.h>
+#include <graphics/gfxbase.h>
 #include <intuition/screens.h>
 #include <proto/ahi.h>
 #include <proto/dos.h>
@@ -35,7 +39,7 @@ BYTE               AHIDevice = -1;
 
 LONG __OSlibversion=37;
 
-const static UBYTE version[]="$VER: AddAudioModes 4.1 "__AMIGADATE__"\n\r";
+const static UBYTE version[]="$VER: AddAudioModes 4.2 "__AMIGADATE__"\n\r";
 
 void OpenAHI(void) {
   if(AHIDevice) {
@@ -152,12 +156,38 @@ LONG main(void) {
         }
       }
 
-      if(bestid != INVALID_ID) {
+      if(bestid != INVALID_ID && minper < 100) {
         screen = OpenScreenTags(NULL,
             SA_DisplayID,  bestid,
             SA_Colors,    &colorspecs,
             TAG_DONE);
       }
+      else if(GfxBase->ChipRevBits0 & (GFXF_HR_DENISE | GFXF_AA_LISA)) {
+
+        // No suitable screen mode found, let's bang the hardware...
+        // Using code from Sebastiano Vigna <vigna@eolo.usr.dsi.unimi.it>.
+
+        extern struct Custom far custom;
+
+        custom.bplcon0  = 0x8211;
+        custom.ddfstrt  = 0x0018;
+        custom.ddfstop  = 0x0058;
+        custom.hbstrt   = 0x0009;
+        custom.hsstop   = 0x0017;
+        custom.hbstop   = 0x0021;
+        custom.htotal   = 0x0071;
+        custom.vbstrt   = 0x0000;
+        custom.vsstrt   = 0x0003;
+        custom.vsstop   = 0x0005;
+        custom.vbstop   = 0x001D;
+        custom.vtotal   = 0x020E;
+        custom.beamcon0 = 0x0B88;
+        custom.bplcon1  = 0x0000;
+        custom.bplcon2  = 0x027F;
+        custom.bplcon3  = 0x00A3;
+        custom.bplcon4  = 0x0011;
+      }
+
       if(screen) {
         CloseScreen(screen);
       }
