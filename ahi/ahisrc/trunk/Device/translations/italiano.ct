@@ -1,0 +1,137 @@
+## version $VER: ahi.catalog 4.2 (20.4.97)
+## language italiano
+## codeset 0
+;
+## chunk AUTH Translated by Bernardo Innocenti <bernie@shock.cosmos.it>
+;
+; $Id$
+; $Log$
+; Revision 1.1  1998/12/20 12:09:29  lcs
+; Initial revision
+;
+; Revision 4.2  1997/05/03 19:59:56  lcs
+; Set version to 4
+;
+; Revision 4.1  1997/04/02 22:29:53  lcs
+; Bumped to version 4
+;
+; Revision 1.4  1997/02/20 10:26:13  lcs
+; New Flexcat caused some problems
+;
+; Revision 1.3  1997/02/10 02:23:06  lcs
+; Infowindow in the requester added.
+;
+; Revision 1.2  1997/02/04 22:14:27  lcs
+; The users preffered audio mode can now be selected in the requester
+;
+; Revision 1.1  1997/02/02 22:37:47  lcs
+; Initial revision
+;
+;
+;
+; Input and Output connector name
+;
+msgDefault
+Predefinito
+;Default
+;
+; The requesters menu
+msgMenuControl
+\000\000Controllo
+;\000\000Control
+;
+msgMenuLastMode
+P\000Precedente
+;L\000Last Mode
+;
+msgMenuNextMode
+S\000Successivo
+;N\000Next Mode
+;
+msgMenuPropertyList
+?\000Lista Proprietà...
+;?\000Property List...
+;
+msgMenuRestore
+R\000Ripristina
+;R\000Restore
+;
+msgMenuOK
+O\000OK
+;O\000OK
+;
+msgMenuCancel
+A\000Annulla
+;C\000Cancel
+;
+; Mode name in requester whose driver cannot be opened
+;
+msgUnknown
+SCONOSCIUTO: ID Audio 0x%08lx
+;UNKNOWN:Audio ID 0x%08lx
+;
+; The requester gadgets
+;
+msgReqOK
+OK
+;OK
+;
+msgReqCancel
+Annulla
+;Cancel
+;
+msgReqFrequency
+Frequenza
+;Frequency
+;
+; Name of default mode in requester
+;
+msgDefaultMode
+Modo audio predefinito
+;Default audio mode
+;
+; The requester's info-winodow
+;
+msgReqInfoTitle
+Proprietà modo
+;Mode Properties
+;
+msgReqInfoAudioID
+ID modo audio: 0x%08lx
+;Audio mode ID: 0x%08lx
+;
+msgReqInfoResolution
+Risoluzione: %ld bit %s
+;Resolution: %ld bit %s
+;
+msgReqInfoMono
+mono
+;mono
+;
+msgReqInfoStereo
+stereo
+;stereo
+;
+msgReqInfoStereoPan
+stereo con bilanciamento
+;stereo with panning
+;
+msgReqInfoChannels
+Canali: %ld
+;Channels: %ld
+;
+msgReqInfoMixrate
+Frequenza di mix: %ld-%ld Hz
+;Mixing rates: %ld-%ld Hz
+;
+msgReqInfoHiFi
+Mix ad alta fedeltà
+;HiFi mixing
+;
+msgReqInfoRecordHalf
+Campionamento half duplex
+;Record in half duplex
+;
+msgReqInfoRecordFull
+Campionamento full duplex
+;Record in full duplex

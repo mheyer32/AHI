@@ -1,0 +1,11 @@
+Short:    Retargetable audio v4.REVISION, Doc. Archive
+Type:     docs/misc
+Author:   Martin Blom <lcs@lysator.liu.se>
+Uploader: Martin Blom <lcs@lysator.liu.se>
+
+     This archive contains the documentation for AHI (both
+     AHI Developer's Guide and AHI User's Guide) as DVI,
+     Postscript and HTML files.
+
+     AmigaGuide® versions are included in the AHI Developer's
+     archive and the AHI User's archive.
