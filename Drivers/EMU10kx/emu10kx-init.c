@@ -154,9 +154,12 @@ DriverCleanup( struct DriverBase* AHIsubBase )
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
   int i;
 
-  ObtainSemaphore( &EMU10kxBase->camd.Semaphore );
-  RemSemaphore( &EMU10kxBase->camd.Semaphore );
-  ReleaseSemaphore( &EMU10kxBase->camd.Semaphore );
+  if( EMU10kxBase->camd.Semaphore.ss_Link.ln_Name != NULL )
+  {
+    ObtainSemaphore( &EMU10kxBase->camd.Semaphore );
+    RemSemaphore( &EMU10kxBase->camd.Semaphore );
+    ReleaseSemaphore( &EMU10kxBase->camd.Semaphore );
+  }
 
   for( i = 0; i < EMU10kxBase->cards_found; ++i )
   {

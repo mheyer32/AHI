@@ -1,5 +1,8 @@
 2003-07-05  Martin Blom  <martin@blom.org>
 
+	* emu10kx.audio: The newly added CAMD init code would crash the
+	driver would not load.
+	
 	* Released ahi.device 5.40.
 
 	* ahi.device: Made a subtile change to the linear interpolation
