@@ -31,15 +31,34 @@ namespace AHI {
 
 /*****************************************************************************/
 
-/* No attributes */
+      enum {
+	
+	/* Private */
+	_AHIA(_P, Master,	(_AHIA_Dummy+96))	/* OM_NEW */
+
+      };
 
 /*****************************************************************************/
 
       enum {
 	
 	/* Create a "clone" of this object */
-	_AHIM(_P, CloneObject,	(_AHIM_Dummy+16))
+	_AHIM(_P, Clone,	(_AHIM_Dummy+16))
 
+      };
+
+/*****************************************************************************/
+
+      enum {
+
+	/* Raised in case one of the clones askes the splitter to
+	 * process a buffer with a timestamp in the past. */
+	_AHIE(_P, InvalidBufferTime,	(_AHIE_Dummy+15)),
+
+	/* Raised in case one of the clones askes the splitter to
+	 * process a buffer that does not match the original
+	 * buffer. */
+	_AHIE(_P, InvalidBuffer,	(_AHIE_Dummy+16))
       };
 
 /*****************************************************************************/
