@@ -44,6 +44,12 @@
 
 2002-01-03  Martin Blom  <martin@blom.org>
 
+	* toccata.library: Added LGPL license.
+	
+	* toccata.library: Applied the latest fixes I got from Teemu.
+	
+	* toccata.library: Imported the old emulation library to CVS.
+	
 	* toccata.audio: The PreTimer() and PostTimer() calls did not pass
 	the required argument.
 
