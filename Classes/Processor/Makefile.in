@@ -4,6 +4,8 @@ VPATH		= @srcdir@
 srcdir		= @srcdir@
 
 AHI_CLASS_NAME	= ahi-processor.class
+AHI_SUPER_NAME	= ahi.class
+AHI_SUPER_VERS	= _AHI_INCLUDE_VERSION
 
 OBJECTS		= main.o methods.o
 

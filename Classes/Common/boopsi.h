@@ -12,8 +12,9 @@ extern const UWORD ClassVersion;
 extern const UWORD ClassRevision;
 
 struct CommonBase {
-    struct ClassLibrary cl;
-    BPTR                seglist;
+    struct ClassLibrary  cl;
+    BPTR                 seglist;
+    struct ClassLibrary* super;
 };
 
 struct AHIClassBase;

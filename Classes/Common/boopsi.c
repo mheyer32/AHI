@@ -162,8 +162,13 @@ __asm(".globl HookEntry;HookEntry=_HookEntry");
 
 struct ClassLibrary*
 _ClassInit(struct ClassLibrary*  library,
-	    BPTR                  seglist,
-	    struct ExecBase*      sysbase) {
+	   BPTR                  seglist,
+	   struct ExecBase*      sysbase) {
+  static const char classname[] = _AHI_CLASS_NAME;
+  static const char supername[] = _AHI_SUPER_NAME;
+  static const char superlib[]  = "AHI/" _AHI_SUPER_NAME;
+  static const int  supervers   = _AHI_SUPER_VERS;
+  
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) library;
   SysBase = sysbase;
 
@@ -194,11 +199,33 @@ _ClassInit(struct ClassLibrary*  library,
     goto error;
   }
 
-  if (! AHIClassInit(AHIClassBase)) {
+  if (supername[0] != '\0') {
+    AHIClassBase->common.super = (struct ClassLibrary*)
+      OpenLibrary(superlib, supervers);
+
+    if (AHIClassBase->common.super == NULL) { 
+      Req("Unable to open super class library\n"
+	  "'%s' version %ld", (ULONG) superlib, supervers );
+      goto error;
+    }
+
+    AHIClassBase->common.cl.cl_Class =
+      MakeClass(classname, NULL, AHIClassBase->common.super->cl_Class,
+		sizeof (struct AHIClassData), 0);
+  }
+  else {
+    AHIClassBase->common.cl.cl_Class =
+      MakeClass(classname, ROOTCLASS, NULL,
+		sizeof (struct AHIClassData), 0);
+  }
+  
+  if (AHIClassBase->common.cl.cl_Class == NULL)
+  {
+    Req("Unable to create " _AHI_CLASS_NAME " Class.");
     goto error;
   }
-
-  if (AHIClassBase->common.cl.cl_Class == NULL) {
+  
+  if (! AHIClassInit(AHIClassBase)) {
     goto error;
   }
 
@@ -248,6 +275,9 @@ _ClassExpunge(struct AHIClassBase* AHIClassBase) {
     }
 
     AHIClassCleanup(AHIClassBase);
+
+    /* Close super class */
+    CloseLibrary((struct Library*) AHIClassBase->common.super);
     
     /* Close libraries */
     CloseLibrary((struct Library*) DOSBase);

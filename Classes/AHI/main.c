@@ -14,17 +14,6 @@
 
 BOOL
 AHIClassInit(struct AHIClassBase* AHIClassBase) {
-  AHIClassBase->common.cl.cl_Class =
-    MakeClass(AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Name,
-	      ROOTCLASS, NULL,
-	      sizeof (struct AHIClassData), 0);
-
-  if (AHIClassBase->common.cl.cl_Class == NULL)
-  {
-    Req("Unable to create " _AHI_CLASS_NAME " Class.");
-    return FALSE;
-  }
-
   return TRUE;
 }
 

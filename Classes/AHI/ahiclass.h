@@ -6,7 +6,7 @@
 #include "boopsi.h"
 
 struct AHIClassBase {
-    struct CommonBase    common;
+    struct CommonBase common;
 };
 
 struct AHIClassData {

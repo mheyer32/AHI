@@ -14,31 +14,12 @@
 
 BOOL
 AHIClassInit(struct AHIClassBase* AHIClassBase) {
-  AHIClassBase->super = (struct ClassLibrary*) OpenLibrary("AHI/" AHIC_Processor, 7);
-
-  if (AHIClassBase->super == NULL) { 
-    Req("Unable to open super class " AHIC_Processor);
-    return FALSE;
-  }
-  
-  AHIClassBase->common.cl.cl_Class =
-    MakeClass(AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Name,
-	      NULL, AHIClassBase->super->cl_Class,
-	      sizeof (struct AHIClassData), 0);
-
-  if (AHIClassBase->common.cl.cl_Class == NULL)
-  {
-    Req("Unable to create " _AHI_CLASS_NAME " Class.");
-    return FALSE;
-  }
-
   return TRUE;
 }
 
 
 VOID
 AHIClassCleanup(struct AHIClassBase* AHIClassBase) {
-  CloseLibrary((struct Library*) AHIClassBase->super);
 }
 
 

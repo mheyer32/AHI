@@ -56,7 +56,7 @@ static UWORD rawputchar_m68k[] = {
 void
 MyKPrintFArgs( const char*           fmt,
 	       APTR                  args ) {
-  RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
+  RawDoFmt( fmt, args, (void (*)(void)) rawputchar_m68k, SysBase );
 }
 
 /******************************************************************************
@@ -89,5 +89,5 @@ void
 MySPrintFArgs( char*       buffer,
 	       const char* fmt,
 	       APTR        args ) {
-  RawDoFmt( fmt, args, (void (*)()) copychar_m68k, &buffer );
+  RawDoFmt( fmt, args, (void (*) (void)) copychar_m68k, &buffer );
 }
