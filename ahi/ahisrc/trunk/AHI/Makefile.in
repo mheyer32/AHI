@@ -48,7 +48,7 @@ OBJECTS_BGUI	= gui_bgui.o
 OBJECTS_CA	= gui_ca.o
 OBJECTS_MUI	= gui_mui.o
 
-TARGETS		= AHI_MUI # AHI_BGUI AHI_CA
+EXECUTABLES	= AHI_MUI # AHI_BGUI AHI_CA
 
 LANGUAGES	= $(notdir $(basename $(wildcard ${srcdir}/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
@@ -60,10 +60,10 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
 .PHONY:		all clean distclean maintainer-clean bindist revup
 
-all:		$(TARGETS) ahiprefs.ct $(CATALOGS)
+all:		$(EXECUTABLES) ahiprefs.ct $(CATALOGS)
 
 clean:
-	$(RM) $(TARGETS) $(LANGTARGETS) version.h \
+	$(RM) $(EXECUTABLES) $(LANGTARGETS) version.h \
 	      *.catalog *.o *.bak *~ \#*\# core Makefile.dep
 
 distclean:	clean
@@ -78,7 +78,7 @@ bindist:	all
 	$(INSTALL) --directory $(PREFSDIR)
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFSDIR)/AHI
 	$(STRIP) $(PREFSDIR)/AHI
-#	for i in $(TARGETS); do \
+#	for i in $(EXECUTABLES); do \
 #	  $(INSTALL_PROGRAM) $$i $(PREFSDIR)/$$i; \
 #	  $(STRIP) $(PREFSDIR)/$$i; \
 #	done

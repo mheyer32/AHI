@@ -37,7 +37,7 @@ ARFLAGS         = @ARFLAGS@
 
 LIBS		= @LIBS@
 
-TARGET		= ahi.device
+EXECUTABLE	= ahi.device
 
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
@@ -90,10 +90,10 @@ GENERATED	= version.h \
 		install revup bindist bindist-install
 
 
-all:		$(TARGET) $(srcdir)/ahi.ct $(CATALOGS)
+all:		$(EXECUTABLE) $(srcdir)/ahi.ct $(CATALOGS)
 
 mostlyclean:
-	$(RM) $(TARGET) *.o *.a *.bak *~ \#*\# core Makefile.dep
+	$(RM) $(EXECUTABLE) *.o *.a *.bak *~ \#*\# core Makefile.dep
 
 clean:		mostlyclean
 	$(RM) $(CATALOGS) $(GENERATED)
@@ -104,7 +104,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
-	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(TARGET)
+	$(INSTALL_PROGRAM) $(EXECUTABLE) $(PREFIX)/Devs/$(EXECUTABLE)
 
 revup:
 	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
@@ -123,8 +123,8 @@ bindist:	all
 
 	$(INSTALL) --directory $(DEVSDIR)
 
-	$(INSTALL_PROGRAM) $(TARGET) $(DEVSDIR)/$(TARGET)
-	$(STRIP) $(DEVSDIR)/$(TARGET)
+	$(INSTALL_PROGRAM) $(EXECUTABLE) $(DEVSDIR)/$(EXECUTABLE)
+	$(STRIP) $(DEVSDIR)/$(EXECUTABLE)
 
 
 #
@@ -143,7 +143,7 @@ Makefile: Makefile.in ../config.status
 	gasp $< | $(AS) $(ASFLAGS) -o $@
 	#$(AS) $(ASFLAGS) $< -o $@
 
-$(TARGET):		$(OBJECTS) libaddroutines.a
+$(EXECUTABLE):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o \

@@ -1,5 +1,8 @@
 2003-07-24  Martin Blom  <martin@blom.org>
 
+	* Changed TARGET in Makefiles to EXECUTABLE, since TARGET
+	interferes with the AROS build environment. [Adam Chodorowski]
+
 	* ahi.device: Most of the library function gates are now
 	auto-generated.
 
