@@ -1,3 +1,10 @@
+2005-01-13  Martin Blom  <martin@blom.org>
+
+	* AHI preferences: Localized the anti-click time and CPU load
+	values as well. [Michael Malyshev]
+
+	* Added updated Russion translations by Michael Malyshev. Thanks!
+
 2005-01-12  Martin Blom  <martin@blom.org>
 
 	* The binary user archive now includes the .ct files for easy
