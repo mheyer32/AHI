@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.2  1997/04/02 22:48:03  lcs
+# *** empty log message ***
+#
 # Revision 4.1  1997/04/02 22:28:11  lcs
 # Bumped to version 4
 #
@@ -251,7 +254,7 @@ newcatalogs:
 ###############################################################################
 
 userdoc:
-	makeinfo --amiga-40 ahi.texinfo
+	makeinfo --amiga-40 ahiusr.texinfo
 	rep ahi.guide Ahi AHI AHI:User/Help/ahi.guide
 	delete ahi.guide
 	execute MakeManual
@@ -262,7 +265,7 @@ userdoc:
 ###############################################################################
 
 ci:
-	ci -l4.1 $(RCSFILES)
+	ci -l $(RCSFILES)
 
 ##
 ## Check out all files
