@@ -1,6 +1,12 @@
+2001-04-22  Martin Blom  <martin@blom.org>
+
+        * When using a filter hook with the audio mode requester, and 
+	AHIR_DoDefaultMode was TRUE, teh hook would receive AHI_INVALID_ID
+	instead of the user-selected default mode ID.
+
 2001-04-21  Martin Blom  <martin@blom.org>
 
-        * Released ahi.device 5.7.
+	* Released ahi.device 5.7.
 
 	* The default PlayerFunc (which is used unless the application
 	provides one) did not have an m68k wrapper when the device was
