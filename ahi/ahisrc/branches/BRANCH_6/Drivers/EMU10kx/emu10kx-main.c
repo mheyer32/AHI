@@ -371,13 +371,28 @@ _AHIsub_Start( ULONG                   flags,
       {
 	if( dd->card.is_audigy )
 	{
-	  dd->voices[i].params[0].send_dcba = 0x00ff00ff;
-	  dd->voices[i].params[0].send_hgfe = 0x00007f7f;
-	  dd->voices[i].params[1].send_dcba = 0xff00ff00;
-	  dd->voices[i].params[1].send_hgfe = 0x00007f7f;
+	  static int routes[] = {
+	    0x03020100, // Send FL/FR to ??/??, AHI_FRONT_L/MULTI_FRONT_R
+	    0x03020504, // Send RL/RR to ??/??, AHI_REAR_L/AHI_REAR_R
+	    0x03020706, // Send SL/SR to ??/??, AHI_SURROUND_L/AHI_SURROUND_R
+	    0x03020908, // Send C/LFE to ??/??, AHI_CENTER,AHI_LFE
+	  };
 
-	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = 0x03020100;
-	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0x07060504;
+	  dd->voices[i].params[0].send_dcba = 0x000000ff;
+	  dd->voices[i].params[0].send_hgfe = 0x00000000;
+	  dd->voices[i].params[1].send_dcba = 0x0000ff00;
+	  dd->voices[i].params[1].send_hgfe = 0x00000000;
+
+	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = routes[i];
+	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0x03020302;
+
+/* 	  dd->voices[i].params[0].send_dcba = 0x00ff00ff; */
+/* 	  dd->voices[i].params[0].send_hgfe = 0x00007f7f; */
+/* 	  dd->voices[i].params[1].send_dcba = 0xff00ff00; */
+/* 	  dd->voices[i].params[1].send_hgfe = 0x00007f7f; */
+
+/* 	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = 0x03020100; */
+/* 	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0x07060504; */
 	}
 	else
 	{
@@ -393,7 +408,6 @@ _AHIsub_Start( ULONG                   flags,
 	  dd->voices[i].params[1].send_dcba = 0x0000ff00;
 	  dd->voices[i].params[1].send_hgfe = 0;
 
-	  KPrintF("Route for %ld: %08lx\n", i, routes[i]);
 	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = routes[i];
 	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0;
 	}
@@ -814,8 +828,8 @@ _AHIsub_HardwareControl( ULONG                   attribute,
       }
       else
       {
-	emu10k1_set_volume_gpr( &dd->card, 0x19, 80, VOL_5BIT);
-	emu10k1_set_volume_gpr( &dd->card, 0x1a, 80, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, 0x19, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, 0x1a, 100, VOL_5BIT);
       }
       return TRUE;
 
