@@ -226,7 +226,7 @@ AHIGetELFSymbol( const char* name,
 {
   BOOL rc = FALSE;
 
-kprintf( "getting symbol %s: ", name );
+//kprintf( "getting symbol %s: ", name );
   if( PPCLibBase != NULL )
   {
     struct PPCObjectInfo oi =
@@ -253,7 +253,7 @@ kprintf( "getting symbol %s: ", name );
     rc = ELFGetSymbol( PPCObject, name, ptr );
   }
 
-kprintf( "%08lx (%ld)\n", *ptr, rc );
+//kprintf( "%08lx (%ld)\n", *ptr, rc );
   return rc;
 }
 

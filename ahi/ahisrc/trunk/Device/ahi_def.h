@@ -140,7 +140,7 @@ struct AHIBase
   ULONG                    ahib_Input;
   ULONG                    ahib_Output;
   Fixed                    ahib_MaxCPU;
-  ULONG                    ahib_AntiClickSamples;
+  Fixed                    ahib_AntiClickTime;
 };
 
 

@@ -607,7 +607,15 @@ ReadConfig ( struct AHIDevUnit *iounit,
                   AHIBase->ahib_Flags |= AHIBF_CLIPPING;
               }
 
-              AHIBase->ahib_AntiClickSamples = 256;  // FIXIT! User setable should it be, yes.
+              if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
+                                                    ahigp_AntiClickTime ) )
+              {
+                AHIBase->ahib_AntiClickTime = globalprefs->ahigp_AntiClickTime;
+              }
+              else
+              {
+                AHIBase->ahib_AntiClickTime = 0;
+              }
 
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);
