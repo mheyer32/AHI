@@ -1,0 +1,18 @@
+#  $Id$
+#
+#  Makefile.in for EMU10kx sound card driver
+#
+
+VPATH		= @srcdir@
+
+srcdir		= @srcdir@
+
+DRIVER		= emu10kx.audio
+MODEFILE	= EMU10KX
+
+OBJECTS		= emu10kx-init.o emu10kx.o emu10kx-accel.o \
+		  emu10kx-misc.o emu10kx-interrupt.o \
+		  main.o hwaccess.o emuadxmg.o efxmgr.o voicemgr.o \
+		  linuxsupport.o 
+
+include ../Common/Makefile.common
