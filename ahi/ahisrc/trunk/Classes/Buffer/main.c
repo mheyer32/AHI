@@ -93,6 +93,14 @@ AHIClassDispatch(Class*  class,
       result = MethodSampleFrameSize(class, object,
 				     (struct AHIP_Buffer_SampleFrameSize*) msg);
       break;
+
+    case AHIM_Buffer_Load:
+      result = MethodLoad(class, object, (struct AHIP_Buffer_Load*) msg);
+      break;
+
+    case AHIM_Buffer_Clone:
+      result = (ULONG) MethodClone(class, object, msg);
+      break;
       
     default:
       result = DoSuperMethodA(class, object, msg);

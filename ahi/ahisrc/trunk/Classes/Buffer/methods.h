@@ -19,4 +19,10 @@ ULONG
 MethodSampleFrameSize(Class* class, Object* object,
 		      struct AHIP_Buffer_SampleFrameSize* msg);
 
+BOOL
+MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg);
+
+Object*
+MethodClone(Class* class, Object* object, Msg msg);
+
 #endif /* AHI_Classes_Buffer_methods_h */
