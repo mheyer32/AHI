@@ -394,26 +394,31 @@ OpenLibs ( void )
 
 #ifndef VERSION68K
   /* PPC/PowerPC library */
+  /* This code preferes PowerUp, unless WarpUp is already in memory */
+
+  // Check if WarpUp already installed...
 
 //  Forbid();
-  
 //  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
 //                                             "powerpc.library" );
-
 //  Permit();
 
 
 //  if( PowerPCBase != NULL )
 //  {
-    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
+//    // If so, open it properly.
+//    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
 //  }
 //  else
-//  {
-//    PPCLibBase = OpenLibrary( "ppc.library", 46 );
-//  }
+  {
+    // If not, try PowerUp (pray it's not the emulator!).
+    PPCLibBase = OpenLibrary( "ppc.library", 46 );
+  }
 
 //  if( PPCLibBase == NULL )
 //  {
+//    // If WarpUp was not loaded and PowerUp could not be opened, try
+//    // WarpUp.
 //    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
 //  }
 

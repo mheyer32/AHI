@@ -224,9 +224,6 @@ addroutines_ppc.o:	addroutines_ppc.s
 $(TARGET):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
-addtest_ppc:	addtest.o addroutines_ppc.o
-	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
-	chmod 777 $@
 
 addtest:	addtest.o addroutines.o
 	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
@@ -235,6 +232,13 @@ addtest:	addtest.o addroutines.o
 addtest_68k:	addtest.o addroutines_68k.o
 	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
 	chmod 777 $@
+
+addtest_ppc:	addtest.o addroutines_ppc.o
+	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
+	chmod 777 $@
+
+elftest:	elftest.o elfloader.o asmfuncs.o
+	$(CC) $^ $(LIBS) -o $@
 
 localize.c:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd localize.c=$(srcdir)/C_c_AHI.sd 

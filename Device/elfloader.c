@@ -596,7 +596,7 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
 {
   ULONG addr = info->Address;
   char *name = info->Name;
-kprintf( "scanElfSymbols( 0x%08lx, 0x%08lx, %ld\n", eo, info, relmode );
+//kprintf( "scanElfSymbols( 0x%08lx, 0x%08lx, %ld\n", eo, info, relmode );
   if (relmode) {
     int i,j;
     struct ELFSection *es;
@@ -627,7 +627,7 @@ kprintf( "scanElfSymbols( 0x%08lx, 0x%08lx, %ld\n", eo, info, relmode );
     struct Elf32_Sym *stab = eo->symtab;
     int i = eo->nsyms;
     while (--i) {
-kprintf( "i=%ld\n", i );
+//kprintf( "i=%ld\n", i );
       if (getsyminfo(eo,info,++stab)) {
         if (!name) {
           if (info->Size) {
@@ -640,7 +640,7 @@ kprintf( "i=%ld\n", i );
           }
         }
         else {
-kprintf( "comparing %s and %s\n", name,info->Name );
+//kprintf( "comparing %s and %s\n", name,info->Name );
           if (!strcmp(name,info->Name))
             return (TRUE);
         }

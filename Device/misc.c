@@ -134,8 +134,8 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
     if( requirements & MEMF_NOCACHESYNCPPC )
       new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED );
 
-    if( requirements & ( MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K ) )
-      new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED | MEMF_CHIP ); // Sucks!
+    if( requirements & MEMF_NOCACHESYNCM68K )
+      new_requirements |= MEMF_CHIP;            // Sucks!
 
     return AllocVec32( byteSize, new_requirements );
   }
