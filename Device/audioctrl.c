@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.10  1997/02/04 15:44:30  lcs
+* AHIDB_MaxChannels didn't work in AHI_BestAudioID()
+*
 * Revision 1.9  1997/02/02 22:35:50  lcs
 * Localized it
 *
@@ -270,6 +273,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   }
   if(tag=FindTagItem(AHIDB_MaxChannels,tags))
   {
+    total++;
     if(tag->ti_Data <= channels )
       hits++;
   }
