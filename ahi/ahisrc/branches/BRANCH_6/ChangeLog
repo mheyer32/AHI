@@ -1,3 +1,12 @@
+2004-10-27  Martin Blom  <martin@blom.org>
+
+	* Device/devsupp.c: I obviously have a nasty habit of not testing
+	the code I write. "for (i = 0; i < size; ++size)"?! Yeah,
+	right. And you know what's REALLY scary? It's been like that since
+	late 2001! Anyway, recording in device mode or via AUDIO: should
+	now work again. [Vladimir Javorski, Denis Markovic, Alexey Ivanov,
+	Stefan Haubenthal]
+
 2004-10-23  Martin Blom  <martin@blom.org>
 
 	* Docs/ahiusr.texinfo: Fixed some typos. [Stefan Haubenthal]
