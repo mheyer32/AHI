@@ -10,7 +10,6 @@ struct AHIClassBase {
 };
 
 struct AHIClassData {
-    struct CommonData      common;
     struct SignalSemaphore semaphore;
     Object*                model_class;
     struct Locale*         locale;
