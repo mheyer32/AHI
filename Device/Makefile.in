@@ -44,6 +44,7 @@ AS		= ppc-amigaos-as
 AR		= ppc-amigaos-ar
 RANLIB		= ppc-amigaos-ranlib
 CFLAGS		= @CFLAGS@ -O3 -mcpu=$(CPU) -DCPU=\"$(CPU)\"
+CPPFLAGS	+= -I/gg/os-include -I/gg/include
 ASFLAGS		= @ASFLAGS@ -m$(CPU) -mregnames --defsym CPU=$(CPU)
 LDFLAGS		= -nostartfiles -nostdlib -r 
 LIBS		= -lgcc
@@ -81,6 +82,7 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 INSTALL_DATA	= @INSTALL_DATA@
 
 FLEXCAT		= @FLEXCAT@
+MAKEDEPEND	= @MAKEDEPEND@
 
 ifeq ($(strip $(FLEXCAT)),)
 FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
@@ -106,6 +108,7 @@ ifeq ($(host_cpu),m68k)
 endif
 
 ifeq ($(host_cpu),ppc)
+# Wishful thinking!
 OBJECTS		+= addroutines_ppc.o
 endif
 
@@ -251,25 +254,30 @@ warpup-test:		warpup-test.o elfloader.o asmfuncs.o
 # Dependencies
 ########################################
 
-SOURCES		= $(notdir $(wildcard $(srcdir)/*.c))
-HEADERS		= $(notdir $(wildcard $(srcdir)/*.h))
+SOURCES		= $(wildcard $(srcdir)/*.c)
+HEADERS		= $(wildcard $(srcdir)/*.h)
 
 ifneq ($(build_os),amigaos)
 
-Makefile.dep:	$(SOURCES) $(HEADERS) localize.c localize.h version.h
-	@echo Making $@
-	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+DEPENDENCIES	= $(SOURCES) $(HEADERS) localize.c localize.h version.h
+
 else
 	# The Amiga is way to slow to update the dependencies each time
+
 .PHONY:	depend
 
 depend:
 	$(RM) Makefile.dep
 	$(MAKE) Makefile.dep
+endif
 
-Makefile.dep:
+Makefile.dep:	$(DEPENDENCIES)
+	@echo Making $@
+ifeq ($(MAKEDEPEND),)
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+else
 	-@touch $@
-	-@makedepend -f $@ -I $(srcdir) $(SOURCES)
+	-@makedepend -f $@ -I $(srcdir) $(notdir $(SOURCES))
 endif
 
 include Makefile.dep

@@ -175,7 +175,7 @@ memset( void* s, int c, unsigned int n )
 
 /* M68k code *****************************************************************/
 
-static void
+static inline void
 CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                void* arg )
 {
@@ -223,9 +223,7 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
 
         case AHIAC_COM_SOUNDFUNC:
 //kprintf("3");
-          CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
-                       (struct AHIPrivAudioCtrl*) audioctrl,
-                       (APTR) audioctrl->ahiac_PPCArgument );
+          CallSoundHook( audioctrl, (void*) audioctrl->ahiac_PPCArgument );
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
@@ -293,13 +291,9 @@ MixPowerUp( REG(a0, struct Hook *Hook),
             break;
 
           case MB_WARPUP:
-            CacheClearE( sd->sd_Addr,
-                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ),
-                         CACRF_ClearD );
-// This function seem not to be callable from interrupts !?
-//            SetCache68K( CACHE_DCACHEFLUSH,
-//                         sd->sd_Addr,
-//                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+            SetCache68K( CACHE_DCACHEFLUSH,
+                         sd->sd_Addr,
+                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
             break;
 
           case MB_NATIVE:
@@ -311,16 +305,18 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     sd++;
   }
 
-//  if( ! flushed && MixBackend == MB_WARPUP )
-//  {
-//
-//    /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
-//       flush, or better, *invalidate* the cache before mixing starts. */
-//
-//    SetCache68K( CACHE_DCACHEINV,
-//                 audioctrl->ahiac_PPCMixBuffer,
-//                 audioctrl->ahiac_BuffSizeNow );
-//  }
+#ifdef WARPUP_INVALIDATE_CACHE
+  if( ! flushed && MixBackend == MB_WARPUP )
+  {
+
+    /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
+       flush, or better, *invalidate* the cache before mixing starts. */
+
+    SetCache68K( CACHE_DCACHEINV,
+                 audioctrl->ahiac_PPCMixBuffer,
+                 audioctrl->ahiac_BuffSizeNow );
+  }
+#endif
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
 
@@ -354,13 +350,15 @@ MixPowerUp( REG(a0, struct Hook *Hook),
       audioctrl->ahiac_PPCWarpUpContext->AudioCtrl    = (struct AudioCtrl*) audioctrl;
       audioctrl->ahiac_PPCWarpUpContext->Hook         = Hook;
       audioctrl->ahiac_PPCWarpUpContext->Dst          = audioctrl->ahiac_PPCMixBuffer;
-      audioctrl->ahiac_PPCWarpUpContext->MixLongWords = ( audioctrl->ahiac_BuffSizeNow + 3 / 4 );
+#ifndef WARPUP_INVALIDATE_CACHE
+      audioctrl->ahiac_PPCWarpUpContext->MixLongWords = ( audioctrl->ahiac_BuffSizeNow + 3 ) / 4;
+#endif
       audioctrl->ahiac_PPCWarpUpContext->Active       = TRUE;
 
       audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // Must be before
-      //kprintf("C");
+//      kprintf("C");
       CausePPCInterrupt();
-      //kprintf("c");
+//      kprintf("c");
       break;
 
     case MB_NATIVE:
@@ -437,8 +435,12 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       case MB_WARPUP:
         audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
             audioctrl->ac.ahiac_BuffSize,
-            MEMF_PUBLIC | MEMF_NOCACHEPPC | MEMF_NOCACHEM68K );
-//            MEMF_PUBLIC );
+#ifdef WARPUP_INVALIDATE_CACHE
+            MEMF_PUBLIC
+#else
+            MEMF_PUBLIC | MEMF_NOCACHEPPC | MEMF_NOCACHEM68K
+#endif
+            );
         break;
     }
 
@@ -561,6 +563,7 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
             if( audioctrl->ahiac_PPCWarpUpContext != NULL )
             {
+#ifndef WARPUP_INVALIDATE_CACHE
               audioctrl->ahiac_PPCWarpUpContext->MixBuffer = 
                 AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
                              MEMF_PUBLIC );
@@ -572,6 +575,7 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
               if( audioctrl->ahiac_PPCWarpUpContext->MixBuffer != NULL )
               {
+#endif
                 audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
 
                 args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
@@ -591,11 +595,13 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
                 {
                   Req( "Unable to fetch symbol 'InitWarpUp'." );
                 }
+#ifndef WARPUP_INVALIDATE_CACHE
               }
               else
               {
                 Req( "Out of memory in InitMixroutine()." );
               }
+#endif
             }
             else
             {
@@ -715,8 +721,9 @@ CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
         {
           Req( "Unable to fetch symbol 'CleanUpWarpUp'." );
         }
-
+#ifndef WARPUP_INVALIDATE_CACHE
         AHIFreeVec( audioctrl->ahiac_PPCWarpUpContext->MixBuffer );
+#endif
         AHIFreeVec( audioctrl->ahiac_PPCWarpUpContext );
         audioctrl->ahiac_PPCWarpUpContext = NULL;
       }
@@ -1110,9 +1117,9 @@ MixGeneric ( REG(a0, struct Hook *Hook),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 #else
 void
-MixGeneric ( struct Hook *unused_Hook, 
-             void *dst, 
-             struct AHIPrivAudioCtrl *audioctrl )
+MixGeneric ( struct Hook*             unused_Hook, 
+             void*                    dst, 
+             struct AHIPrivAudioCtrl* audioctrl )
 #endif
 {
   struct AHIChannelData	*cd;
@@ -1599,7 +1606,7 @@ CalcSamples ( Fixed64 Add,
 {
   Fixed64 len;
 
-  if(Type & AHIST_BW)
+  if( Type & AHIST_BW )
   {
     len = Offset - LastOffset; 
   }
@@ -1610,6 +1617,6 @@ CalcSamples ( Fixed64 Add,
 
   if(len < 0 || Add == 0) return 0; // Error!
 
-  return (LONG) (len / Add) + 1;
+  return (LONG) ( len / Add ) + 1;
 }
 

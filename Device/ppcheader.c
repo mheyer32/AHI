@@ -31,6 +31,7 @@
 #include "version.h"
 #include "ahi_def.h"
 #include "mixer.h"
+#include "ppcheader.h"
 
 /******************************************************************************
 ** Prototypes *****************************************************************
@@ -293,9 +294,14 @@ wc_PowerPCBase   = 8
 wc_XLock         = 12
 wc_Hook          = 16
 wc_Dst           = 20
+"
+#ifndef WARPUP_INVALIDATE_CACHE
+"
 wc_MixBuffer     = 24;
 wc_MixLongWords  = 28;
-
+"
+#endif
+"
 /* InitWarpUp ****************************************************************/
 
         .align  2
@@ -404,18 +410,29 @@ WarpUpInt:
         addi    3,3,magic@l
         lwz     3,0(3)
         lwz     4,wc_Hook(14)
-        lwz     5,wc_MixBuffer(14)
-#        lwz     5,wc_Dst(14)
         lwz     6,wc_AudioCtrl(14)
-        li      7,0                         # No need to flush the buffer!
-#        li      7,1                         # Do flush the buffer!
-
+"
+#ifdef WARPUP_INVALIDATE_CACHE
+"
+        lwz     5,wc_Dst(14)
+        li      7,1                          # Do flush the buffer!
+"
+#else
+"
+        lwz     5,wc_MixBuffer(14)
+        li      7,0                          # No need to flush the buffer!
+"
+#endif
+"
         bl      CallMixroutine
 
         lwz     2,8(1)
         lwz     13,12(1)
         addi    1,1,16
+"
+#ifndef WARPUP_INVALIDATE_CACHE
 
+"
 # Copy the cachable mixing buffer to the non-cachable (so the m68k can read it)
 
         lwz     3,wc_MixBuffer(14)
@@ -428,7 +445,9 @@ WarpUpInt:
         lwzu    5,4(3)
         stwu    5,4(4)
         bdnz    3b
-        
+"
+#endif
+"        
 2:
 
 # Restore MMU
