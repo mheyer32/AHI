@@ -223,11 +223,11 @@ addroutines_ppc.o:	addroutines_ppc.s
 $(TARGET):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
-addtest:	test2.o addroutines_ppc.o
+addtest_ppc:	addtest.o addroutines_ppc.o
 	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
 	chmod 777 $@
 
-addtest2:	test2.o addroutines.o
+addtest:	addtest.o addroutines.o
 	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
 	chmod 777 $@
 
