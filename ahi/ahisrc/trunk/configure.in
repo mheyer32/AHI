@@ -161,6 +161,7 @@ AC_CONFIG_FILES([AHI/Makefile
                  Classes/test/Makefile
                  Classes/Common/Makefile.common
                  Classes/AHI/Makefile
+                 Classes/Board/Makefile
                  Classes/Buffer/Makefile
                  Classes/Driver/Makefile
                  Classes/LFO/Makefile

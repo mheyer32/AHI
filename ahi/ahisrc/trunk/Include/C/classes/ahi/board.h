@@ -51,8 +51,8 @@ namespace AHI {
       /* A pointer to the input IClass */
       _AHIA(_P, InputClass,	(_AHIA_Dummy+50)),		/* OM_GET */
 
-      /* The number of discrete, independent analog mixers */
-      _AHIA(_P, Mixer,		(_AHIA_Dummy+51)),		/* OM_GET,
+      /* The number of discrete (analog?) mixers */
+      _AHIA(_P, Mixers,		(_AHIA_Dummy+51)),		/* OM_GET,
 								   OM_NOTIFY */
 
       /* A pointer to the mixer IClass */
