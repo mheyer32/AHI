@@ -1,5 +1,12 @@
 2005-02-02  Martin Blom  <martin@blom.org>
 
+	* Updated all copyright years to 2005.
+
+	* Bumped all version numbers to 6.0.
+
+	* Docs/ahidev.texinfo (The Author): Updated the authors address (5
+	years later).
+
 	* Added updated/new italian translations by Paolo Besser. Thanks!
 
 	* AHI preferences: Update the strings in the unit cycle gadget

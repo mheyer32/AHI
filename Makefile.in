@@ -106,7 +106,7 @@ bindist:
 
 revup:
 	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
-	@date +%y.%m.%d > $(srcdir)/version.date
+	@date +%d.%m.%y > $(srcdir)/version.date
 	@echo -n "New revision: "
 	@cat $(srcdir)/version.rev
 
