@@ -118,11 +118,11 @@ AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 
-ahiprefs_Cat.c:	ahiprefs.cd C_c_noauto.sd
-	$(FLEXCAT) $(srcdir)/ahiprefs.cd ahiprefs_Cat.c=$(srcdir)/C_c_noauto.sd
+$(srcdir)/ahiprefs_Cat.c:	$(srcdir)/ahiprefs.cd $(srcdir)/C_c_noauto.sd $(srcdir)/ahiprefs_Cat.h
+	$(FLEXCAT) $(srcdir)/ahiprefs.cd $(srcdir)/ahiprefs_Cat.c=$(srcdir)/C_c_noauto.sd
 
-ahiprefs_Cat.h:	ahiprefs.cd C_h_noauto.sd
-	$(FLEXCAT) $(srcdir)/ahiprefs.cd ahiprefs_Cat.h=$(srcdir)/C_h_noauto.sd
+$(srcdir)/ahiprefs_Cat.h:	$(srcdir)/ahiprefs.cd $(srcdir)/C_h_noauto.sd
+	$(FLEXCAT) $(srcdir)/ahiprefs.cd $(srcdir)/ahiprefs_Cat.h=$(srcdir)/C_h_noauto.sd
 
 %.catalog:	translations/%.ct
 	$(FLEXCAT) $(srcdir)/ahiprefs.cd $< CATALOG $@

@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.11  1999/08/29 23:43:48  lcs
+ * Added support for ahigp_AntiClickTime.
+ *
  * Revision 4.10  1999/04/22 19:41:08  lcs
  * Removed SAS/C smakefile.
  * I had the copyright date screwed up: Changed to 1996-1999 (which is only
@@ -235,12 +238,13 @@ void NewSettings(char *name) {
   FreeVec(Units);
   FreeList(UnitList);
 
-  globalprefs.ahigp_DebugLevel      = AHI_DEBUG_NONE;
-  globalprefs.ahigp_DisableSurround = FALSE;
-  globalprefs.ahigp_DisableEcho     = FALSE;
-  globalprefs.ahigp_FastEcho        = FALSE;
-  globalprefs.ahigp_MaxCPU = (90 << 16) / 100;
-  globalprefs.ahigp_ClipMasterVolume= FALSE;
+  globalprefs.ahigp_DebugLevel       = AHI_DEBUG_NONE;
+  globalprefs.ahigp_DisableSurround  = FALSE;
+  globalprefs.ahigp_DisableEcho      = FALSE;
+  globalprefs.ahigp_FastEcho         = FALSE;
+  globalprefs.ahigp_MaxCPU           = (90 << 16) / 100;
+  globalprefs.ahigp_ClipMasterVolume = FALSE;
+  globalprefs.ahigp_AntiClickTime    = 0;
 
   UnitList = GetUnits(name);
   Units = List2Array((struct List *) UnitList);

@@ -1,6 +1,6 @@
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "ahiprefs.cd".
+   from "../../ahisrc/AHI/ahiprefs.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
@@ -29,7 +29,7 @@
 /*
     Variables
 */
-struct FC_String ahiprefs_Strings[62] = {
+struct FC_String ahiprefs_Strings[63] = {
     { (STRPTR) "\000Project", 0 },
     { (STRPTR) "O\000Open...", 1 },
     { (STRPTR) "A\000Save As...", 2 },
@@ -91,7 +91,8 @@ struct FC_String ahiprefs_Strings[62] = {
     { (STRPTR) "Unable to open `%s´ version %ld.", 58 },
     { (STRPTR) "_Master volume", 59 },
     { (STRPTR) "Without clipping", 60 },
-    { (STRPTR) "With clipping", 61 }
+    { (STRPTR) "With clipping", 61 },
+    { (STRPTR) "Default anti-click time", 62 }
 };
 
 STATIC struct Catalog *ahiprefsCatalog = NULL;
@@ -126,7 +127,7 @@ VOID OpenahiprefsCatalog(VOID)
 	    struct FC_String *fc;
 	    int i;
 
-	    for (i = 0, fc = ahiprefs_Strings;  i < 62;  i++, fc++) {
+	    for (i = 0, fc = ahiprefs_Strings;  i < 63;  i++, fc++) {
 		 fc->msg = GetCatalogStr(ahiprefsCatalog, fc->id, (STRPTR) fc->msg);
 	    }
 	}
@@ -227,7 +228,7 @@ VOID InitahiprefsCatalog(STRPTR language)
 				    bytesRemaining -= 8 + (skipSize << 2);
 				    ptr += skipSize;
 
-				    for (i = 0, fc = ahiprefs_Strings;  i < 62;  i++, fc++) {
+				    for (i = 0, fc = ahiprefs_Strings;  i < 63;  i++, fc++) {
 					if (fc->id == id) {
 					    fc->msg = sptr;
 					}

@@ -1,6 +1,6 @@
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "ahiprefs.cd".
+   from "../../ahisrc/AHI/ahiprefs.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
@@ -31,7 +31,7 @@ struct FC_String {
     LONG id;
 };
 
-extern struct FC_String ahiprefs_Strings[62];
+extern struct FC_String ahiprefs_Strings[63];
 
 #define msgMenuProject (ahiprefs_Strings[0].msg)
 #define _msgMenuProject (ahiprefs_Strings+0)
@@ -157,5 +157,7 @@ extern struct FC_String ahiprefs_Strings[62];
 #define _msgMVNoClip (ahiprefs_Strings+60)
 #define msgMVClip (ahiprefs_Strings[61].msg)
 #define _msgMVClip (ahiprefs_Strings+61)
+#define msgGlobOptACTime (ahiprefs_Strings[62].msg)
+#define _msgGlobOptACTime (ahiprefs_Strings+62)
 
 #endif
