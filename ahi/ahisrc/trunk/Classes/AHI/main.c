@@ -51,7 +51,9 @@ AHIClassDispatch(Class*  class,
 	
 	if (error)
 	{
-	  SetIoErr(error);
+	  if (IoErr() != 0) {
+	    SetIoErr(error);
+	  }
 	  CoerceMethod(class, (Object*) result, OM_DISPOSE);
 	  result = NULL;
 	}
