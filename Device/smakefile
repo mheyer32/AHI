@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.18  1998/01/29 23:09:47  lcs
+# Playing with anticlick
+#
 # Revision 4.17  1998/01/13 20:24:04  lcs
 # Generic c version of the mixer finished.
 #
@@ -99,7 +102,7 @@ CFLAGS = CPU=$(CPU) MATH=$(MATH) DEFINE $(VER) NOLINK DEBUG=FULL\
 PARAMETERS=REGISTERS CODE=FAR DATA=FARONLY STRINGSECTION=CODE ABSFUNCPOINTER\
 NOSTACKCHECK UNSIGNEDCHARS UTILITYLIBRARY\
 NOVERSION NOICONS MEMORYSIZE=HUGE GST=gst\
-OPTIMIZE OPTTIME OPTSCHED
+#$(OPTIMIZE)
 
 #CCOMP	= gcc
 #CFLAGS	= -m$(CPU) -m$(MATH) -D$(VER) -c -g \
@@ -227,11 +230,15 @@ ci:
 ###############################################################################
 
 clean:
-	--delete \#?.(o|lnk|info|map|lst|bak) localize.c localize.h gst QUIET
+	--delete localize.(c|h) QUIET
+	--delete gst QUIET
+	--delete \#?.(o|lnk|info|map|lst|bak) QUIET
+	--avail flush   # Flush gst from memory
 
 allclean:
 	smake clean
-	--delete $(TARGET) $(TARGET).\#? \#?protos.h QUIET
+	--delete $(TARGET)(%|.\#?) QUIET
+	--delete \#?protos.h QUIET
 
 
 ##

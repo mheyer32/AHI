@@ -2,6 +2,9 @@
 
 /* $Id$
 * $Log$
+* Revision 4.8  1998/01/29 23:09:47  lcs
+* Playing with anticlick
+*
 * Revision 4.7  1998/01/13 20:24:04  lcs
 * Generic c version of the mixer finished.
 *
@@ -120,6 +123,7 @@ struct AHIBase
 	ULONG			 ahib_Input;
 	ULONG			 ahib_Output;
 	Fixed			 ahib_MaxCPU;
+	ULONG		 	 ahib_AntiClickSamples;
 };
 
 
@@ -177,10 +181,13 @@ struct AHIChannelData
 	LONG	cd_TempLastSampleL;	/* for linear interpolation routines */
 	LONG	cd_LastSampleR;		/* for linear interpolation routines */
 	LONG	cd_TempLastSampleR;	/* for linear interpolation routines */
+	LONG	cd_LastScaledSampleL;	/* for anticlick */
+	LONG	cd_LastScaledSampleR;	/* for anticlick */
 
 	struct AHIChannelData *cd_Succ;	/* For the wet and dry lists */
 	UWORD	cd_ChannelNo;
 	UWORD	cd_Pad;
+	LONG	cd_AntiClickCount;
 };
 
 #define AHIACB_NOMIXING	31		/* private ahiac_Flags flag */
@@ -229,6 +236,8 @@ struct AHIPrivAudioCtrl
 	struct Timer		 ahiac_Timer;
 	UWORD			 ahiac_UsedCPU;
 	UWORD			 ahiac_Pad;
+	APTR			 ahiac_AntiClickBuffer;
+	ULONG			 ahiac_AntiClickSize;	/* in bytes */
 	char			 ahiac_DriverName[DRIVERNAME_SIZEOF];
 };
 

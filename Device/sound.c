@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1998/01/29 23:09:47  lcs
+* Playing with anticlick
+*
 * Revision 4.3  1998/01/13 20:24:04  lcs
 * Generic c version of the mixer finished.
 *
@@ -460,6 +463,9 @@ SetSound ( REG(d0, UWORD channel),
 
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
 
+      /* Enable anti-click routine */
+      cd->cd_AntiClickCount = min(audioctrl->ac.ahiac_AntiClickSamples,
+                                  cd->cd_Samples);
     }
 
     SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
