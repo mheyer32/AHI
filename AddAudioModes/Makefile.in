@@ -21,7 +21,7 @@ CC		= @CC@
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 
-CPPFLAGS	= @CPPFLAGS@ -I.. -I../Include/gcc -I${srcdir} -I${top_srcdir}
+CPPFLAGS	= @CPPFLAGS@
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
 
