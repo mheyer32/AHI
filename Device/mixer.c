@@ -37,8 +37,9 @@
 # include <proto/dos.h>
 # include <proto/exec.h>
 # include <proto/utility.h>
-# include <clib/ahi_protos.h>
-# include <inline/ahi.h>
+# define __NOLIBBASE__
+# include <proto/ahi.h>
+# undef  __NOLIBBASE__
 #endif
 
 #include "ahi_def.h"

@@ -29,8 +29,9 @@
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-#include <clib/ahi_protos.h>
-#include <inline/ahi.h>
+#define __NOLIBBASE__
+#include <proto/ahi.h>
+#undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
 
 #include "ahi_def.h"
@@ -429,7 +430,7 @@ GetAudioAttrsA( ULONG                    id,
   {
     if(id == AHI_INVALID_ID)
     {
-      if(!(audioctrl=actrl))
+      if(!(audioctrl= (struct AHIAudioCtrlDrv*) actrl))
         rc=FALSE;
       else
         idtag[0].ti_Data=((struct AHIPrivAudioCtrl *)actrl)->ahiac_AudioID;

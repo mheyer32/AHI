@@ -23,6 +23,12 @@
 #ifndef ahi_device_h
 #define ahi_device_h	
 
+#include <exec/types.h>
+#include <dos/dos.h>
+
+struct AHIRequest;
+struct AHIBase;
+
 /*** New Style Device definitions ***/
 
 #define NSCMD_DEVICEQUERY   0x4000

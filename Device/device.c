@@ -36,6 +36,8 @@
 #include <dos/dostags.h>
 #include <libraries/iffparse.h>
 #include <prefs/prefhdr.h>
+
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/iffparse.h>
@@ -43,6 +45,7 @@
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
+
 #include <stddef.h>
 
 #include "ahi_def.h"

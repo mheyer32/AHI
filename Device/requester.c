@@ -23,27 +23,37 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-#include <math.h>
 #include <exec/memory.h>
 #include <graphics/rpattr.h>
 #include <intuition/gadgetclass.h>
 #include <intuition/intuition.h>
 #include <intuition/intuitionbase.h>
 #include <libraries/gadtools.h>
+
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/gadtools.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
-#include <clib/ahi_protos.h>
-#include <inline/ahi.h>
+#define __NOLIBBASE__
+#include <proto/ahi.h>
+#undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
+
+#ifdef morphos
+# include <stdio.h>
+#else
+# include "asmfuncs.h"
+# define sprintf Sprintf
+#endif
+
+#include <math.h>
 #include <string.h>
 
 #include "ahi_def.h"
 #include "localize.h"
-#include "asmfuncs.h"
 #include "modeinfo.h"
 #include "debug.h"
 
@@ -152,7 +162,7 @@ static struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 #define FREQTEXT2     "%lu Hz"
 #define FREQLEN2      (5+3) // 5 digits + space + "Hz"
 
-static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
+static LONG IndexToFrequency_func( struct Gadget *gad, WORD level)
 {
   LONG  freq = 0;
   ULONG id;
@@ -172,6 +182,17 @@ static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
   }
   return freq;
 }
+
+#ifdef morphos
+# error I have no idea...
+#else
+
+static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
+{
+  return IndexToFrequency_func( gad, level );
+}
+
+#endif
 
 static void FillReqStruct(struct AHIAudioModeRequesterExt *req, struct TagItem *tags)
 {
@@ -838,28 +859,28 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
 
     i = 0;
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoAudioID, req->Catalog),
+    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoAudioID, req->Catalog),
         id);
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
+    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
         bits, GetString((stereo ?
           (pan ? msgReqInfoStereoPan : msgReqInfoStereo) :
           msgReqInfoMono), req->Catalog));
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoChannels, req->Catalog),
+    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoChannels, req->Catalog),
         channels);
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoMixrate, req->Catalog),
+    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoMixrate, req->Catalog),
         minmix, maxmix);
     if(hifi)
     {
       AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-      Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoHiFi, req->Catalog));
+      sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoHiFi, req->Catalog));
     }
     if(record)
     {
       AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-      Sprintf(req->AttrNodes[i++].text, GetString(
+      sprintf(req->AttrNodes[i++].text, GetString(
           fullduplex ? msgReqInfoRecordFull : msgReqInfoRecordHalf, req->Catalog));
     }
 
@@ -1226,7 +1247,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID=id;
-      Sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
+      sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
           AHIDB_Name, (ULONG) node->node.ln_Name,
@@ -1256,7 +1277,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID = AHI_DEFAULT_ID;
-      Sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog));
+      sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog));
       AddTail((struct List *) req->list, (struct Node *)node);
     }
   } while(FALSE);
