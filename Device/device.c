@@ -54,6 +54,12 @@
 #include "header.h"
 #include "misc.h"
 
+#ifdef __MORPHOS__
+#define IS_MORPHOS 1
+#else
+#define IS_MORPHOS 0
+#endif
+
 /*
 ** Message passed to the Unit Process at
 ** startup time.
@@ -284,18 +290,17 @@ _DevOpen ( struct AHIRequest* ioreq,
     {
       AHI_LoadModeFile("DEVS:AudioModes");
 
-#ifdef __MORPHOS__
       // Be quiet here. - Piru
+      if (IS_MORPHOS)
       {
-        struct Process *Self = (struct Process *) FindTask(NULL);
-        APTR oldwindowptr = Self->pr_WindowPtr;
-        Self->pr_WindowPtr = (APTR) -1;
+        APTR *windowptr = &((struct Process *) FindTask(NULL))->pr_WindowPtr;
+        APTR oldwindowptr = *windowptr;
+        *windowptr = (APTR) -1;
 
         AHI_LoadModeFile("MOSSYS:DEVS/AudioModes");
 
-        Self->pr_WindowPtr = oldwindowptr;
+        *windowptr = oldwindowptr;
       }
-#endif
     }
   }
 
@@ -558,6 +563,7 @@ ReadConfig ( struct AHIDevUnit *iounit,
   struct IFFHandle *iff;
   struct StoredProperty *prhd,*ahig;
   struct CollectionItem *ci;
+  ULONG *mode;
 
   if(iounit)
   {
@@ -728,18 +734,12 @@ ReadConfig ( struct AHIDevUnit *iounit,
   // since doesn't open all sub libraries.
 
   if(iounit)
-  {
-    if(iounit->AudioMode == (ULONG) AHI_INVALID_ID)
-    {
-      iounit->AudioMode = AHI_BestAudioID(AHIDB_Realtime, TRUE, TAG_DONE);
-    }
-  }
+    mode = &iounit->AudioMode;
   else
-  {
-    if(AHIBase->ahib_AudioMode == (ULONG) AHI_INVALID_ID)
-    {
-      AHIBase->ahib_AudioMode = AHI_BestAudioID( AHIDB_Realtime, TRUE, TAG_DONE);
-    }
+    mode = &AHIBase->ahib_AudioMode;
+  if(mode[0] == (ULONG) AHI_INVALID_ID)
+  { static const Tag tags[] = { AHIDB_Realtime,TRUE,TAG_DONE };
+    mode[0] = AHI_BestAudioIDA((struct TagItem *)tags);
   }
 
   return TRUE;
