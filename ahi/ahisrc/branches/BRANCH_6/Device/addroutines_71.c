@@ -264,7 +264,7 @@ AddWords71( ADDARGS )
 
     dst[ 0 ] += ScaleLeft * startpointL;
     dst[ 1 ] += ScaleRight * startpointR;
-    dst += 0;
+    dst += 8;
 
     offset += Add;
   }
@@ -727,7 +727,7 @@ AddWords71B( ADDARGS )
 
     dst[ 0 ] += ScaleLeft * startpointL;
     dst[ 1 ] += ScaleRight * startpointR;
-    dst += 0;
+    dst += 8;
 
     offset -= Add;
   }
