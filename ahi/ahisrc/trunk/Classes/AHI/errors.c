@@ -20,6 +20,9 @@ get_error_message(struct AHIClassData* AHIClassData) {
     case AHIE_OK:
       return "No error";
 
+    case AHIE_AttributeNotApplicable:
+      return AHIC_AHI ": Attribute is not applicable";
+
 
     // ahi-buffer.class errors
 
