@@ -68,6 +68,24 @@ AHIAttemptSemaphore( struct SignalSemaphore* ss );
 
 
 
+APTR
+AHIAllocVec( ULONG byteSize,
+             ULONG requirements );
+
+void
+AHIFreeVec( APTR memoryBlock );
+
+void*
+AHILoadObject( const char* objname );
+
+void
+AHIUnloadObject( void* obj );
+
+BOOL
+AHIGetELFSymbol( const char* name,
+                 void** ptr );
+
+
 #if !defined( WORDS_BIGENDIAN )
 void EndianSwap( size_t size, void* data );
 #else
