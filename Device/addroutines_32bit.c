@@ -285,40 +285,49 @@ Add71Mono( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint = 0; // Make compiler happy
-  LONG     lastpoint;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
+  LONG     lastpointL, lastpointR;
 
-  lastpoint = 0;        // 0 doesn't affect the StopAtZero code
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == FirstOffsetI ) {
-      startpoint = *StartPointLeft << 16;
+      startpointL = *StartPointLeft << 16;
+      startpointR = *StartPointRight << 16;
     }
     else
     {
-      startpoint = src[ offseti * 8 + 6 - 8 ];
+      startpointL = src[ offseti * 8 + 0 - 8 ];
+      startpointR = src[ offseti * 8 + 1 - 8 ];
     }
 
-    endpoint = src[ offseti * 8 + 6 ];
+    endpointL = src[ offseti * 8 + 0 ];
+    endpointR = src[ offseti * 8 + 1 ];
 
-    startpoint += (LONG) (((LONGLONG) (endpoint - startpoint) * offsetf ) >> 32);
+    startpointL += (LONG) (((LONGLONG) (endpointL - startpointL) * offsetf ) >> 32);
+    startpointR += (LONG) (((LONGLONG) (endpointR - startpointR) * offsetf ) >> 32);
 
     if( StopAtZero &&
-        ( ( lastpoint < 0 && startpoint >= 0 ) ||
-          ( lastpoint > 0 && startpoint <= 0 ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastpoint = startpoint;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpoint ) >> 16 );
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpointL  ) >> 16 )
+      + (LONG) ( ( (LONGLONG) ScaleRight * startpointR ) >> 16 );
 
     offset += Add;
   }
 
-  *StartPointLeft = endpoint >> 16;
+  *StartPointLeft = endpointL >> 16;
+  *StartPointRight = endpointR >> 16;
 
   *Dst    = dst;
   *Offset = offset;
@@ -772,40 +781,49 @@ Add71MonoB( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint = 0; // Make compiler happy
-  LONG     lastpoint;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
+  LONG     lastpointL, lastpointR;
 
-  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == FirstOffsetI ) {
-      startpoint = *StartPointLeft << 16;
+      startpointL = *StartPointLeft << 16;
+      startpointR = *StartPointRight << 16;
     }
     else
     {
-      startpoint = src[ offseti * 8 + 6 + 8 ];
+      startpointL = src[ offseti * 8 + 0 + 8 ];
+      startpointR = src[ offseti * 8 + 1 + 8 ];
     }
 
-    endpoint = src[ offseti * 8 + 6 ];
+    endpointL = src[ offseti * 8 + 0 ];
+    endpointR = src[ offseti * 8 + 1 ];
 
-    startpoint += (LONG) (((LONGLONG) (endpoint - startpoint) * offsetf ) >> 32);
+    startpointL += (LONG) (((LONGLONG) (endpointL - startpointL) * offsetf ) >> 32);
+    startpointR += (LONG) (((LONGLONG) (endpointR - startpointR) * offsetf ) >> 32);
 
     if( StopAtZero &&
-        ( ( lastpoint < 0 && startpoint >= 0 ) ||
-          ( lastpoint > 0 && startpoint <= 0 ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastpoint = startpoint;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpoint ) >> 16 );
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpointL ) >> 16 ) +
+      (LONG) ( ( (LONGLONG) ScaleRight * startpointR ) >> 16 );
 
     offset -= Add;
   }
 
-  *StartPointLeft = endpoint >> 16;
+  *StartPointLeft = endpointL >> 16;
+  *StartPointRight = endpointR >> 16;
 
   *Dst    = dst;
   *Offset = offset;

@@ -163,7 +163,8 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     */
   }
 
-  ret = AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_MIXING | AHISF_TIMING;
+  ret = AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_KNOWMULTICHANNEL | \
+        AHISF_MIXING | AHISF_TIMING;
 
   for( i = 0; i < FREQUENCIES; ++i )
   {
@@ -254,6 +255,8 @@ _AHIsub_Start( ULONG                   flags,
 
   if( flags & AHISF_PLAY )
   {
+    int num_voices;
+    int i;
     ULONG dma_buffer_size;
     ULONG dma_sample_frame_size;
 
@@ -275,11 +278,11 @@ _AHIsub_Start( ULONG                   flags,
       return AHIE_NOMEM;
     }
 
-    /* Allocate a voice buffer large enough for 16-bit double-buffered
-       playback (mono or stereo) */
+    /* Allocate 1 or 4 voice buffers large enough for 16-bit double-buffered
+       playback (mono, stereo or 8 channels) */
 
-
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO ||
+	AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL)
     {
       dma_sample_frame_size = 4;
       dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
@@ -290,118 +293,143 @@ _AHIsub_Start( ULONG                   flags,
       dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
     }
 
-    if( emu10k1_voice_alloc_buffer( &dd->card,
-				    &dd->voice.mem,
-				    ( dma_buffer_size * 2 + PAGE_SIZE - 1 )
-				    / PAGE_SIZE ) < 0 )
+    if( AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL )
     {
-      Req( "Unable to allocate voice buffer." );
-      return AHIE_NOMEM;
-    }
-
-    memset( dd->voice.mem.addr, 0, dma_buffer_size * 2 );
-
-    dd->voice_buffer_allocated = TRUE;
-
-
-    dd->voice.usage = VOICE_USAGE_PLAYBACK;
-
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
-    {
-      dd->voice.flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
+      num_voices = 4;
     }
     else
     {
-      dd->voice.flags = VOICE_FLAGS_16BIT;
+      num_voices = 1;
     }
-
-    if( emu10k1_voice_alloc( &dd->card, &dd->voice ) < 0 )
-    {
-      Req( "Unable to allocate voice." );
-      return AHIE_UNKNOWN;
-    }
-
-    dd->voice_allocated = TRUE;
-
-    dd->voice.initial_pitch = (u16) ( srToPitch( AudioCtrl->ahiac_MixFreq ) >> 8 );
-    dd->voice.pitch_target  = SamplerateToLinearPitch( AudioCtrl->ahiac_MixFreq );
-
-    DPD(2, "Initial pitch --> %#x\n", dd->voice.initial_pitch);
-
-    /* start, startloop and endloop is unit sample frames, not bytes */
-
-    dd->voice.start     = ( ( dd->voice.mem.emupageindex << 12 )
-			    / dma_sample_frame_size );
-    dd->voice.endloop   = dd->voice.start + AudioCtrl->ahiac_MaxBuffSamples * 2;
-    dd->voice.startloop = dd->voice.start;
-
-
-    /* Make interrupt routine start at the correct location */
-
-    dd->current_position = dd->current_length;
-    dd->current_buffer   = ( dd->voice.mem.addr +
-			     dd->current_position * dma_sample_frame_size );
-
-    dd->voice.params[0].volume_target = 0xffff;
-    dd->voice.params[0].initial_fc = 0xff;
-    dd->voice.params[0].initial_attn = 0x00;
-    dd->voice.params[0].byampl_env_sustain = 0x7f;
-    dd->voice.params[0].byampl_env_decay = 0x7f;
     
-    if( dd->voice.flags & VOICE_FLAGS_STEREO )
+    for( i = 0; i < num_voices; ++i )
     {
-      if( dd->card.is_audigy )
+      if( emu10k1_voice_alloc_buffer( &dd->card,
+				      &dd->voices[i].mem,
+				      ( dma_buffer_size * 2 + PAGE_SIZE - 1 )
+				      / PAGE_SIZE ) < 0 )
       {
-	dd->voice.params[0].send_dcba = 0x00ff00ff;
-	dd->voice.params[0].send_hgfe = 0x00007f7f;
-	dd->voice.params[1].send_dcba = 0xff00ff00;
-	dd->voice.params[1].send_hgfe = 0x00007f7f;
+	Req( "Unable to allocate voice buffer." );
+	return AHIE_NOMEM;
+      }
 
-	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x03020100;
-	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0x07060504;
+      memset( dd->voices[i].mem.addr, 0, dma_buffer_size * 2 );
+
+      dd->voices[i].usage = VOICE_USAGE_PLAYBACK;
+
+      if( AudioCtrl->ahiac_Flags & AHIACF_STEREO ||
+	  AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL )
+      {
+	dd->voices[i].flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
       }
       else
       {
-	dd->voice.params[0].send_dcba = 0x000000ff;
-	dd->voice.params[0].send_hgfe = 0;
-	dd->voice.params[1].send_dcba = 0x0000ff00;
-	dd->voice.params[1].send_hgfe = 0;
-
-	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x3210;
-	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0;
+	dd->voices[i].flags = VOICE_FLAGS_16BIT;
       }
-
-      dd->voice.params[1].volume_target = 0xffff;
-      dd->voice.params[1].initial_fc = 0xff;
-      dd->voice.params[1].initial_attn = 0x00;
-      dd->voice.params[1].byampl_env_sustain = 0x7f;
-      dd->voice.params[1].byampl_env_decay = 0x7f;
     }
-    else
+    
+    dd->voice_buffers_allocated = num_voices;
+
+    for( i = 0; i < num_voices; ++i )
     {
-      if( dd->card.is_audigy )
+      if( emu10k1_voice_alloc( &dd->card, &dd->voices[i] ) < 0 )
       {
-	dd->voice.params[0].send_dcba = 0xffffffff;
-	dd->voice.params[0].send_hgfe = 0x0000ffff;
+	Req( "Unable to allocate voice." );
+	return AHIE_UNKNOWN;
+      }
+    }
+    
+    dd->voices_allocated = num_voices;
+
+    for( i = 0; i < num_voices; ++i )
+    {
+      dd->voices[i].initial_pitch = (u16) ( srToPitch( AudioCtrl->ahiac_MixFreq ) >> 8 );
+      dd->voices[i].pitch_target  = SamplerateToLinearPitch( AudioCtrl->ahiac_MixFreq );
+
+      DPD(2, "Initial pitch --> %#x\n", dd->voice.initial_pitch);
+
+      /* start, startloop and endloop is unit sample frames, not bytes */
+
+      dd->voices[i].start     = ( ( dd->voices[i].mem.emupageindex << 12 )
+				  / dma_sample_frame_size );
+      dd->voices[i].endloop   = dd->voices[i].start + AudioCtrl->ahiac_MaxBuffSamples * 2;
+      dd->voices[i].startloop = dd->voices[i].start;
+
+      /* Make interrupt routine start at the correct location */
+
+      dd->current_position = dd->current_length;
+      dd->current_buffers[i] = ( dd->voices[i].mem.addr +
+				 dd->current_position * dma_sample_frame_size );
+
+      dd->voices[i].params[0].volume_target = 0xffff;
+      dd->voices[i].params[0].initial_fc = 0xff;
+      dd->voices[i].params[0].initial_attn = 0x00;
+      dd->voices[i].params[0].byampl_env_sustain = 0x7f;
+      dd->voices[i].params[0].byampl_env_decay = 0x7f;
+    
+      if( dd->voices[i].flags & VOICE_FLAGS_STEREO )
+      {
+	if( dd->card.is_audigy )
+	{
+	  dd->voices[i].params[0].send_dcba = 0x00ff00ff;
+	  dd->voices[i].params[0].send_hgfe = 0x00007f7f;
+	  dd->voices[i].params[1].send_dcba = 0xff00ff00;
+	  dd->voices[i].params[1].send_hgfe = 0x00007f7f;
+
+	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = 0x03020100;
+	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0x07060504;
+	}
+	else
+	{
+	  static int routes[] = {
+	    0x3210, // Send FL/FR to ??/??, AHI_FRONT_L/MULTI_FRONT_R
+	    0x3254, // Send RL/RR to ??/??, AHI_REAR_L/AHI_REAR_R
+	    0x3276, // Send SL/SR to ??/??, AHI_SURROUND_L/AHI_SURROUND_R
+	    0x3298, // Send C/LFE to ??/??, AHI_CENTER,AHI_LFE
+	  };
+	    
+	  dd->voices[i].params[0].send_dcba = 0x000000ff;
+	  dd->voices[i].params[0].send_hgfe = 0;
+	  dd->voices[i].params[1].send_dcba = 0x0000ff00;
+	  dd->voices[i].params[1].send_hgfe = 0;
+
+	  KPrintF("Route for %ld: %08lx\n", i, routes[i]);
+	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = routes[i];
+	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0;
+	}
+
+	dd->voices[i].params[1].volume_target = 0xffff;
+	dd->voices[i].params[1].initial_fc = 0xff;
+	dd->voices[i].params[1].initial_attn = 0x00;
+	dd->voices[i].params[1].byampl_env_sustain = 0x7f;
+	dd->voices[i].params[1].byampl_env_decay = 0x7f;
+      }
+      else
+      {
+	if( dd->card.is_audigy )
+	{
+	  dd->voices[i].params[0].send_dcba = 0xffffffff;
+	  dd->voices[i].params[0].send_hgfe = 0x0000ffff;
  
-	dd->voice.params[0].send_routing  = 0x03020100;
-	dd->voice.params[0].send_routing2 = 0x07060504;
-     }
-      else
-      {
-	dd->voice.params[0].send_dcba = 0x000ffff;
-	dd->voice.params[0].send_hgfe = 0;
+	  dd->voices[i].params[0].send_routing  = 0x03020100;
+	  dd->voices[i].params[0].send_routing2 = 0x07060504;
+	}
+	else
+	{
+	  dd->voices[i].params[0].send_dcba = 0x000ffff;
+	  dd->voices[i].params[0].send_hgfe = 0;
 
-	dd->voice.params[0].send_routing  = 0x3210;
-	dd->voice.params[0].send_routing2 = 0;
+	  dd->voices[i].params[0].send_routing  = 0x3210;
+	  dd->voices[i].params[0].send_routing2 = 0;
+	}
       }
+
+      DPD(2, "voice: startloop=%x, endloop=%x\n",
+	  dd->voice.startloop, dd->voice.endloop);
+
+      emu10k1_voice_playback_setup( &dd->voices[i] );
     }
-
-    DPD(2, "voice: startloop=%x, endloop=%x\n",
-	dd->voice.startloop, dd->voice.endloop);
-
-    emu10k1_voice_playback_setup( &dd->voice );
-
+    
     dd->playback_interrupt_enabled = TRUE;
 
     /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
@@ -409,9 +437,9 @@ _AHIsub_Start( ULONG                   flags,
     emu10k1_timer_set( &dd->card, 48000 / TIMER_INTERRUPT_FREQUENCY );
     emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
 
-    emu10k1_voices_start( &dd->voice, 1, 0 );
+    emu10k1_voices_start( dd->voices, num_voices, 0 );
 
-    dd->voice_started = TRUE;
+    dd->voices_started = num_voices;
 
     dd->is_playing = TRUE;
   }
@@ -532,35 +560,41 @@ _AHIsub_Stop( ULONG                   flags,
 
   if( flags & AHISF_PLAY )
   {
+    int i;
     dd->is_playing= FALSE;
 
-    if( dd->voice_started )
+    if( dd->voices_started != 0 )
     {
       emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
 
 //      sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 0 );
-      emu10k1_voices_stop( &dd->voice, 1 );
-      dd->voice_started = FALSE;
+      emu10k1_voices_stop( dd->voices, dd->voices_started );
+      dd->voices_started = 0;
     }
 
-    if( dd->voice_allocated )
+    for( i = 0; i < dd->voices_allocated; ++i )
     {
-      emu10k1_voice_free( &dd->voice );
-      dd->voice_allocated = FALSE;
+      emu10k1_voice_free( &dd->voices[i] );
     }
 
-    if( dd->voice_buffer_allocated )
+    dd->voices_allocated = 0;
+
+    for( i = 0; i < dd->voice_buffers_allocated; ++i )
     {
-      emu10k1_voice_free_buffer( &dd->card, &dd->voice.mem );
-      dd->voice_buffer_allocated = FALSE;
+      emu10k1_voice_free_buffer( &dd->card, &dd->voices[i].mem );
     }
 
-    memset( &dd->voice, 0, sizeof( dd->voice ) );
+    dd->voice_buffers_allocated = 0;
 
-    dd->current_length   = 0;
-    dd->current_size     = 0;
-    dd->current_buffer   = NULL;
-    dd->current_position = 0;
+    memset( &dd->voices, 0, sizeof( dd->voices ) );
+
+    dd->current_length     = 0;
+    dd->current_size       = 0;
+    dd->current_buffers[0] = NULL;
+    dd->current_buffers[1] = NULL;
+    dd->current_buffers[2] = NULL;
+    dd->current_buffers[3] = NULL;
+    dd->current_position   = 0;
 
     FreeVec( dd->mix_buffer );
     dd->mix_buffer = NULL;

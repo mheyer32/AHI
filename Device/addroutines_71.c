@@ -72,7 +72,6 @@ AddByte71( ADDARGS )
   int      i;
   LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
-  LONG     scale_mono = ( ScaleLeft + ScaleRight ) / 2;
 
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
@@ -99,7 +98,8 @@ AddByte71( ADDARGS )
 
     lastpoint = startpoint;
 
-    dst[ 6 ] += scale_mono * startpoint;
+    dst[ 0 ] += ScaleLeft * startpoint;
+    dst[ 1 ] += ScaleRight * startpoint;
     dst += 8;
 
     offset += Add;
@@ -155,9 +155,9 @@ AddBytes71( ADDARGS )
     lastpointL = startpointL;
     lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * startpointL;
-    *dst++ += ScaleRight * startpointR;
-    dst += 6;
+    dst[ 0 ] += ScaleLeft * startpointL;
+    dst[ 1 ] += ScaleRight * startpointR;
+    dst += 8;
 
     offset += Add;
   }
@@ -179,7 +179,6 @@ AddWord71( ADDARGS )
   int      i;
   LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
-  LONG     scale_mono = ( ScaleLeft + ScaleRight ) / 2;
 
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
@@ -206,7 +205,8 @@ AddWord71( ADDARGS )
 
     lastpoint = startpoint;
 
-    dst[ 6 ] += scale_mono * startpoint;
+    dst[ 0 ] += ScaleLeft * startpoint;
+    dst[ 1 ] += ScaleRight * startpoint;
     dst += 8;
 
     offset += Add;
@@ -263,9 +263,9 @@ AddWords71( ADDARGS )
     lastpointL = startpointL;
     lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * startpointL;
-    *dst++ += ScaleRight * startpointR;
-    dst += 6;
+    dst[ 0 ] += ScaleLeft * startpointL;
+    dst[ 1 ] += ScaleRight * startpointR;
+    dst += 0;
 
     offset += Add;
   }
@@ -325,7 +325,8 @@ AddLong71( ADDARGS )
 
     lastpoint = startpoint;
 
-    dst[ 6 ] += (LONG) ( ( (LONGLONG) scale_mono * startpoint ) >> 16 );
+    dst[ 0 ] += (LONG) ( ( (LONGLONG) ScaleLeft * startpoint ) >> 16 );
+    dst[ 1 ] += (LONG) ( ( (LONGLONG) ScaleRight * startpoint ) >> 16 );
     dst += 8;
 
     offset += Add;
@@ -382,9 +383,9 @@ AddLongs71( ADDARGS )
     lastpointL = startpointL;
     lastpointR = startpointR;
 
-    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpointL ) >> 16 );
-    *dst++ += (LONG) ( ( (LONGLONG) ScaleRight * startpointR ) >> 16 );
-    dst += 6;
+    dst[ 0 ] += (LONG) ( ( (LONGLONG) ScaleLeft * startpointL ) >> 16 );
+    dst[ 1 ] += (LONG) ( ( (LONGLONG) ScaleRight * startpointR ) >> 16 );
+    dst += 8;
 
     offset += Add;
   }
