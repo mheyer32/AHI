@@ -137,7 +137,7 @@ catalogs:
 # Dependencies
 ########################################
 
-Makefile.dep:	$(SOURCES)
+Makefile.dep:	$(SOURCES) ahiprefs_Cat.h version.h
 #	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 	touch $@
 	makedepend -f $@ $(SOURCES)
