@@ -1,6 +1,6 @@
 /*
      AddAudioModes - Manipulates AHI's audio mode database 
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -19,6 +19,11 @@
 
 /* $Id$
 * $Log$
+* Revision 4.6  1999/04/22 19:41:29  lcs
+* Removed SAS/C smakefile.
+* I had the copyright date screwed up: Changed to 1996-1999 (which is only
+* partly correct, but still better than 1997-1999....)
+*
 * Revision 4.5  1999/03/28 22:31:15  lcs
 * AHI is now GPL/LGPL software.
 * Make target bindist work correctly when using a separate build directory.

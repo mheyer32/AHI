@@ -1,6 +1,6 @@
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -38,37 +38,6 @@ entry( struct Hook *Hook,
 
 void
 FlushCache( void* address, unsigned long length );
-
-#ifdef USE_PPC_PROCESS
-
-int
-main( void )
-{
-  struct AHIPrivAudioCtrl *audioctrl;
-
-  audioctrl = (struct AHIPrivAudioCtrl*) PPCGetTaskAttr( PPCTASKTAG_STARTUP_MSGDATA );
-
-  while( TRUE )
-  {
-    ULONG signals = PPCWait( SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D );
-
-    if( signals & SIGBREAKF_CTRL_C )
-    {
-      break;
-    }
-    
-    if( signals & SIGBREAKF_CTRL_D )
-    {
-      audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
-      entry( NULL, audioctrl->ahiac_PPCMixBuffer, audioctrl );
-    }
-
-  }
-
-  return 0;
-}
-
-#endif
 
 int
 entry( struct Hook *Hook, 

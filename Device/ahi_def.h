@@ -2,7 +2,7 @@
 
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -22,8 +22,6 @@
 
 #ifndef _AHI_DEF_H_
 #define _AHI_DEF_H_
-
-//#define USE_PPC_PROCESS
 
 /*** Debug stuff ***/
 

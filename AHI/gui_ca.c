@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -19,6 +19,11 @@
 
 /* $Id$
  * $Log$
+ * Revision 1.4  1999/04/22 19:41:18  lcs
+ * Removed SAS/C smakefile.
+ * I had the copyright date screwed up: Changed to 1996-1999 (which is only
+ * partly correct, but still better than 1997-1999....)
+ *
  * Revision 1.3  1999/03/28 22:30:46  lcs
  * AHI is now GPL/LGPL software.
  * Make target bindist work correctly when using a separate build directory.
@@ -1326,7 +1331,7 @@ void EventLoop(void) {
                 Req( (char *) msgButtonOK,
                     (char *) msgTextCopyright,
                     "",(char *) msgTextProgramName,
-                    "1997-1999 Martin Blom" );
+                    "1996-1999 Martin Blom" );
                 break;
 
               case ACTID_SAVE:

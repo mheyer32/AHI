@@ -2,7 +2,7 @@
 
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -253,8 +253,6 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
 
-  int res;
-
 //kprintf( "MixPowerUp\n" );
 
   // Flush all DYNAMICSAMPLE's 
@@ -262,7 +260,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
   //CacheClearU();
 
-  if( PowerPCBase != NULL )
+  if( PPCLibBase == NULL )
   {
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
        flush the cache before mixing starts. :( */
@@ -273,19 +271,18 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   }
 
 
-#ifdef USE_PPC_PROCESS
-
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
-  PPCSignalTask( audioctrl->ahiac_PPCTask, SIGBREAKF_CTRL_D );
-
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
-#else
-
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
 //kprintf( "1: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
 
-  res = PPCRunKernelObject( PPCObject, &mod );
+  if( PPCLibBase != NULL )
+  {
+    PPCRunKernelObject( PPCObject, &mod );
+  }
+  else
+  {
+    CausePPCInterrupt();
+  }
+
 //kprintf( "Ran KernelObject\n" );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
@@ -293,8 +290,6 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
 //kprintf( "Waited\n" );
 //kprintf( "3: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
-
-#endif
 
   // The PPC mix buffer is not m68k-cachable (or cleared); just read from it.
 
@@ -450,47 +445,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       // Sucess?
     
       rc = ( r != 0 ? TRUE : FALSE );
-
-#ifdef USE_PPC_PROCESS
-      if( rc )
-      {
-        audioctrl->ahiac_M68KPort = PPCCreatePortTags( TAG_DONE );
-
-        if( audioctrl->ahiac_M68KPort == 0 )
-        {
-          Req( "Unable to create M68k/PPC message port." );
-          rc = FALSE;
-        }
-        else
-        {
-          audioctrl->ahiac_PPCStartupMsg =
-              PPCCreateMessage( audioctrl->ahiac_M68KPort , 0 );
-
-          if( audioctrl->ahiac_PPCStartupMsg == NULL )
-          {
-            Req( "Unable to create PPC startup message." );
-            rc = FALSE;
-          }
-          else
-          {
-
-//kprintf( "Starting task\n");
-            audioctrl->ahiac_PPCTask = PPCCreateTaskTags( PPCObject,
-                PPCTASKTAG_STARTUP_MSG, (ULONG) audioctrl->ahiac_PPCStartupMsg,
-                PPCTASKTAG_STARTUP_MSGDATA, (ULONG) audioctrl,
-                TAG_DONE );
-
-            if( audioctrl->ahiac_PPCTask == NULL )
-            {
-              rc = FALSE;
-            }
-//kprintf( "Started task: %ld\n", rc);
-
-          }
-        }
-      }
-#endif
-
     }
     else // PPCObject
     {
@@ -540,41 +494,6 @@ void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
 //kprintf( "CleanUpMixroutine\n" );
-#ifdef USE_PPC_PROCESS
-  if( audioctrl->ahiac_PPCStartupMsg != NULL )
-  { 
-    if( audioctrl->ahiac_PPCTask != NULL )
-    {
-//kprintf( "Breaking\n" );
-      PPCSignalTask( audioctrl->ahiac_PPCTask, SIGBREAKF_CTRL_C );
-
-      while( TRUE )
-      {
-        void* PPCMsg = PPCGetMessage( audioctrl->ahiac_M68KPort );
-
-        if( PPCMsg == audioctrl->ahiac_PPCStartupMsg )
-        {
-//kprintf( "Get startupmessage\n" );
-          break;
-        }
-        else
-        {
-//kprintf( "Waiting\n" );
-          PPCWaitPort( audioctrl->ahiac_M68KPort );
-        }
-      }
-    }
-
-    PPCDeleteMessage( audioctrl->ahiac_PPCStartupMsg );
-  }
-
-  if( audioctrl->ahiac_M68KPort != NULL )
-  {
-    while( PPCDeletePort( audioctrl->ahiac_M68KPort ) == FALSE);
-  }
-
-//kprintf( "ok\n" );
-#endif
 
   RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
   FreeVec( audioctrl->ahiac_PPCMixInterrupt );
