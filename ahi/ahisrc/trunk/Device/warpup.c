@@ -77,14 +77,34 @@ CallMixroutine( struct PowerPCContext* context )
 
   audioctrl = context->AudioCtrl;
 
+  *((ULONG*) 0x100000) = 1;
+
   // Wait for start signal...
 
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_START );
+
+  *((ULONG*) 0x100000) = 2;
+
+  // Acknowledge
+
+  audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
+
+  *((ULONG*) 0x100000) = 3;
+
+  // Wait for continue signal...
+
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_CONTINUE );
+
+  *((ULONG*) 0x100000) = 4;
 
   // Start m68k interrupt handler
 
   audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+
+  *((ULONG*) 0x100000) = 5;
+
+#if 0
 
   // Invalidate dynamic sample sounds (which is faster than flushing).
   // Currently, the PPC is assumed not to modify dynamic samples.
@@ -119,9 +139,15 @@ CallMixroutine( struct PowerPCContext* context )
     sd++;
   }
 
+#endif
+
   // Wait for m68k interrupt handler to go active
 
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
+
+  *((ULONG*) 0x100000) = 6;
+
+#if 0
 
   // Mix
 
@@ -132,16 +158,27 @@ CallMixroutine( struct PowerPCContext* context )
 
   FlushCache( context->Dst, audioctrl->ahiac_BuffSizeNow );
 
+#endif
+
+  *((ULONG*) 0x100000) = 7;
+
   // Kill the m68k interrupt handler
 
   audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_QUIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
+  *((ULONG*) 0x100000) = 8;
+
   // Wait for it
 
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 
+  *((ULONG*) 0x100000) = 9;
+
   audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_FINISHED;
+
+  *((ULONG*) 0x100000) = 10;
+
   return 0;
 }
 
@@ -705,15 +742,21 @@ kprintf("d");
 kprintf("e");
 
   audioctrl->ahiac_PowerPCContext->Hook         = audioctrl->ac.ahiac_MixerFunc;
-  audioctrl->ahiac_PowerPCContext->Dst          = dst;
+  audioctrl->ahiac_PowerPCContext->Dst          = audioctrl->ahiac_PowerPCContext->MixBuffer;
   audioctrl->ahiac_PowerPCContext->Active       = TRUE;
   audioctrl->ahiac_PowerPCContext->Command      = PPCC_COM_START;
 
   CausePPCInterrupt();
 
 kprintf("f");
-  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
+
 kprintf("g");
+  audioctrl->ahiac_PowerPCContext->Command      = PPCC_COM_CONTINUE;
+
+kprintf("h");
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
+kprintf("i");
 
 #endif /* __PPC__ */
 

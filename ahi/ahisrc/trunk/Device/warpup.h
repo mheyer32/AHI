@@ -46,13 +46,14 @@ struct PowerPCContext
 };
 
 #define PPCC_COM_NONE          0
-#define PPCC_COM_START         1
-#define PPCC_COM_ACK           2
-#define PPCC_COM_INIT          3
-#define PPCC_COM_SOUNDFUNC     4
-#define PPCC_COM_QUIT          5
-#define PPCC_COM_DEBUG         6
-#define PPCC_COM_FINISHED      7
+#define PPCC_COM_ACK           1
+#define PPCC_COM_START         2
+#define PPCC_COM_CONTINUE      3
+#define PPCC_COM_INIT          4
+#define PPCC_COM_SOUNDFUNC     5
+#define PPCC_COM_QUIT          6
+#define PPCC_COM_DEBUG         7
+#define PPCC_COM_FINISHED      8
 
 BOOL
 WarpUpInit( struct AHIPrivAudioCtrl* audioctrl );
