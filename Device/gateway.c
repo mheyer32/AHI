@@ -28,7 +28,7 @@
 #include <clib/alib_protos.h>
 
 
-#if defined( __morphos__ ) || defined( __MORPHOS__ )
+#if defined( __MORPHOS__ )
 # define EMUL_NOQUICKMODE
 # include <emul/emulregs.h>
 #endif
@@ -56,7 +56,7 @@
  *
  */
 
-#if defined( __morphos__ ) || defined( __MORPHOS__ )
+#if defined( __MORPHOS__ )
 
 /******************************************************************************
 ** MorphOS gateway functions **************************************************

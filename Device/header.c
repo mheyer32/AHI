@@ -63,9 +63,9 @@ _start( void )
   return -1;
 }
 
-#if defined( __morphos__ ) || defined( __MORPHOS__ )
+#if defined( __MORPHOS__ )
 ULONG   __abox__=1;
-ULONG   __amigappc__=1;  // deprecated
+ULONG   __amigappc__=1;  // deprecated, used in MOS 0.4
 #endif
 
 /******************************************************************************
@@ -83,7 +83,7 @@ static const struct Resident RomTag =
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &RomTag + 1,
-#if defined( __morphos__ ) || defined( __MORPHOS__ ) || defined( __amithlon__ )
+#if defined( __MORPHOS__ ) || defined( __amithlon__ )
   RTF_PPC | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
@@ -265,7 +265,7 @@ DevExpunge( struct AHIBase* device )
 static const APTR funcTable[] =
 {
 
-#if defined( __morphos__ ) || defined( __MORPHOS__ ) || defined( __amithlon__ )
+#if defined( __MORPHOS__ ) || defined( __amithlon__ )
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
 
