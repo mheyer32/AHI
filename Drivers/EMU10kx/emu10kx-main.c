@@ -823,13 +823,13 @@ _AHIsub_HardwareControl( ULONG                   attribute,
 
       if( dd->output == 0 )
       {
-	emu10k1_set_volume_gpr( &dd->card, 0x19, 0, VOL_5BIT);
-	emu10k1_set_volume_gpr( &dd->card, 0x1a, 0, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_L, 0, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_R, 0, VOL_5BIT);
       }
       else
       {
-	emu10k1_set_volume_gpr( &dd->card, 0x19, 100, VOL_5BIT);
-	emu10k1_set_volume_gpr( &dd->card, 0x1a, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_R, 100, VOL_5BIT);
       }
       return TRUE;
 
