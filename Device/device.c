@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:06:35  lcs
+* "Finished" the code for CMD_WRITE
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -85,7 +88,7 @@ __asm ULONG DevOpen(
   ObtainSemaphore(&AHIBase->ahib_Lock);
 
 // Load database if not already loaded
-  if(AHI_NextAudioID(AHI_INVALID_ID) EQ AHI_INVALID_ID)
+  if(AHI_NextAudioID(AHI_INVALID_ID) == AHI_INVALID_ID)
   {
     AHI_LoadModeFile("DEVS:AudioModes");
   }
@@ -100,7 +103,7 @@ __asm ULONG DevOpen(
       if(!iounit) 
         error=TRUE;
     }
-    else if(unit EQ AHI_NO_UNIT)
+    else if(unit == AHI_NO_UNIT)
       InitUnit(unit,AHIBase);
   }
 
@@ -183,7 +186,7 @@ static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase )
   };
   struct MsgPort *replyport;
 
-  if( unit EQ AHI_NO_UNIT )
+  if( unit == AHI_NO_UNIT )
   {
     ReadConfig(NULL,AHIBase);
     return NULL;
@@ -313,7 +316,7 @@ static BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
           || CollectionChunk(iff,ID_PREF,ID_AHIU)
           || StopOnExit(iff,ID_PREF,ID_FORM)))
         {
-          if(ParseIFF(iff,IFFPARSE_SCAN) EQ IFFERR_EOC)
+          if(ParseIFF(iff,IFFPARSE_SCAN) == IFFERR_EOC)
           {
             prhd=FindProp(iff,ID_PREF,ID_PRHD);
             ahig=FindProp(iff,ID_PREF,ID_AHIG);
@@ -347,7 +350,7 @@ static BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
               if(iounit)
               {
-                if(unitprefs->ahiup_Unit EQ iounit->UnitNum)
+                if(unitprefs->ahiup_Unit == iounit->UnitNum)
                 {
                   iounit->AudioMode       = unitprefs->ahiup_AudioMode;
                   iounit->Frequency       = unitprefs->ahiup_Frequency;
@@ -361,7 +364,7 @@ static BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
               }
               else
               {
-                if(unitprefs->ahiup_Unit EQ AHI_NO_UNIT)
+                if(unitprefs->ahiup_Unit == AHI_NO_UNIT)
                 {
                   AHIBase->ahib_AudioMode       = unitprefs->ahiup_AudioMode;
                   AHIBase->ahib_Frequency       = unitprefs->ahiup_Frequency;
@@ -425,19 +428,19 @@ static BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
     {
       /* Set hardware properties */
       AHI_ControlAudio(iounit->AudioCtrl,
-          (iounit->MonitorVolume EQ -1 ? TAG_IGNORE : AHIC_MonitorVolume),
+          (iounit->MonitorVolume == -1 ? TAG_IGNORE : AHIC_MonitorVolume),
           iounit->MonitorVolume,
 
-          (iounit->InputGain EQ -1 ? TAG_IGNORE : AHIC_InputGain),
+          (iounit->InputGain == -1 ? TAG_IGNORE : AHIC_InputGain),
           iounit->InputGain,
 
-          (iounit->OutputVolume EQ -1 ? TAG_IGNORE : AHIC_OutputVolume),
+          (iounit->OutputVolume == -1 ? TAG_IGNORE : AHIC_OutputVolume),
           iounit->OutputVolume,
 
-          (iounit->Input EQ -1 ? TAG_IGNORE : AHIC_Input),
+          (iounit->Input == -1 ? TAG_IGNORE : AHIC_Input),
           iounit->Input,
 
-          (iounit->Output EQ -1 ? TAG_IGNORE : AHIC_Output),
+          (iounit->Output == -1 ? TAG_IGNORE : AHIC_Output),
           iounit->Output,
 
           TAG_DONE);
@@ -553,6 +556,11 @@ __asm void DevProc(register __a6 struct AHIBase *AHIBase)
         iounit->ValidRecord = TRUE;
         FeedReaders(iounit,AHIBase);
       }
+
+      if(signals & (1L << iounit->PlaySignal))
+      {
+        RethinkPlayers(iounit,AHIBase);
+      }
     }
   }
 
@@ -583,7 +591,7 @@ static __asm __interrupt BOOL RecordFunc(
 {
   struct AHIDevUnit *iounit;
   
-  if(recmsg->ahirm_Type EQ AHIST_S16S)
+  if(recmsg->ahirm_Type == AHIST_S16S)
   {
     iounit = (struct AHIDevUnit *) hook->h_Data;
     iounit->RecordBuffer = recmsg->ahirm_Buffer;
@@ -607,45 +615,45 @@ static __asm __interrupt void SoundFunc(
 
   iounit = (struct AHIDevUnit *) hook->h_Data;
   voice = &iounit->Voices[(WORD)sndmsg->ahism_Channel];
-  switch(voice->Offset)
+
+  if(voice->PlayingRequest)
+  {
+    voice->PlayingRequest->ahir_Std.io_Command = AHICMD_WRITTEN;
+  }
+  voice->PlayingRequest = voice->QueuedRequest;
+  voice->QueuedRequest  = NULL;
+
+  switch(voice->NextOffset)
   {
     case FREE:
       break;
     case MUTE:
+      voice->NextOffset = FREE;
       /* A AHI_NOSOUND is done, channel is silent */
-      voice->Offset=FREE;
       break;
     case PLAY:
+      voice->NextOffset = MUTE;
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,NULL);
-      voice->Offset=MUTE;
       break;
     default:
+      voice->NextOffset = PLAY;
       /* A normal sound is done, and another is waiting */
+      voice->QueuedRequest = voice->NextRequest;
       AHI_SetSound(sndmsg->ahism_Channel,
-          voice->Sound,
-          voice->Offset,
-          voice->Length,
+          voice->NextSound,
+          voice->NextOffset,
+          voice->NextLength,
           actrl,NULL);
       AHI_SetFreq(sndmsg->ahism_Channel,
-          voice->Frequency,
+          voice->NextFrequency,
           actrl,NULL);
       AHI_SetVol(sndmsg->ahism_Channel,
-          voice->Volume,
-          voice->Pan,
+          voice->NextVolume,
+          voice->NextPan,
           actrl,NULL);
-      voice->Offset=PLAY;
-      voice->FIFO[1]=TRUE;
       break;
   }
-/*
-  if(voice->SignalDone && voice->FIFO[0])
-  {
-    *voice->SignalDone=AHICMD_FINISHED;
-    voice->SignalDone=NULL;
-  }
-  voice->FIFO[0]=voice->FIFO[1];
-  voice->FIFO[1]=FALSE;
-*/
+
   Signal((struct Task *) iounit->Master, (1L << iounit->PlaySignal));
 }

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:06:35  lcs
+* "Finished" the code for CMD_WRITE
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -30,8 +33,12 @@ static void WriteCmd(struct AHIRequest *, struct AHIBase *);
 
 void FeedReaders(struct AHIDevUnit *,struct AHIBase *);
 static void FillReadBuffer(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
-void AddWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
-void PlayRequest(int, struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
+
+static void NewWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
+static void AddWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
+static void PlayRequest(int, struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
+void RethinkPlayers( struct AHIDevUnit *, struct AHIBase *);
+static void RemPlayers( struct List *, struct AHIDevUnit *, struct AHIBase *);
 
 // Should be moved to a separate file... IMHO.
 struct Node *FindNode(struct List *, struct Node *);
@@ -104,7 +111,7 @@ __asm ULONG DevAbortIO(
         while(node->ln_Succ)
         {
           next = node->ln_Succ;
-          if(node EQ (struct Node *) ioreq )
+          if(node == (struct Node *) ioreq )
           {
             Remove((struct Node *) ioreq);
             ioreq->ahir_Std.io_Error = IOERR_ABORTED;
@@ -138,6 +145,7 @@ static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
         ReplyMsg(&ioreq->ahir_Std.io_Message);
 }
 
+
 /******************************************************************************
 ** PerformIO ******************************************************************
 ******************************************************************************/
@@ -167,6 +175,31 @@ void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   }
 }
 
+
+/******************************************************************************
+** Findnode *******************************************************************
+******************************************************************************/
+
+// Find a node in a list
+
+struct Node *FindNode(struct List *list, struct Node *node)
+
+{
+  struct Node *currentnode;
+
+  for(currentnode = list->lh_Head;
+      currentnode->ln_Succ;
+      currentnode = currentnode->ln_Succ)
+  {
+    if(currentnode == node)
+    {
+      return currentnode;
+    }
+  }
+  return NULL;
+}
+
+
 /******************************************************************************
 ** Devicequery ****************************************************************
 ******************************************************************************/
@@ -195,7 +228,6 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   ioreq->ahir_Std.io_Actual = dqr->SizeAvailable;
   TermIO(ioreq, AHIBase);
 }
-
 
 
 
@@ -269,6 +301,21 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 ** WriteCmd *******************************************************************
 ******************************************************************************/
 
+const static UWORD type2snd[] =
+{
+  SND8,             // AHIST_M8S  (0)
+  SND16,            // AHIST_M16S (1)
+  AHI_NOSOUND,      // AHIST_S8S  (2)
+  AHI_NOSOUND,      // AHIST_S16S (3)
+  AHI_NOSOUND,      // AHIST_M8U  (4)
+  AHI_NOSOUND,
+  AHI_NOSOUND,
+  AHI_NOSOUND,
+  AHI_NOSOUND,      // AHIST_M32S (8)
+  AHI_NOSOUND,
+  AHI_NOSOUND       // AHIST_S32S (10)
+};
+
 static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
   struct AHIDevUnit *iounit;
@@ -300,13 +347,11 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   {
     ioreq->ahir_Std.io_Actual = 0;
     
-    switch( ioreq->ahir_Type )
+    switch(ioreq->ahir_Type)
     {
       case AHIST_M8S:
-        ioreq->ahir_Type=SND8;
         break;
       case AHIST_M16S:
-        ioreq->ahir_Type=SND16;
         ioreq->ahir_Std.io_Offset >>= 1;    // Address to sample offset
         ioreq->ahir_Std.io_Length >>= 1;    // Length in bytes to length in samples
         break;
@@ -319,7 +364,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
         error=AHIE_BADSAMPLETYPE;
     }
 
-    AddWriter(ioreq, iounit, AHIBase);
+    NewWriter(ioreq, iounit, AHIBase);
   }
 
   if(error)
@@ -361,6 +406,7 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
   }
   ReleaseSemaphore(&iounit->ListLock);
 }
+
 
 /******************************************************************************
 ** FillReadBuffer *************************************************************
@@ -495,12 +541,13 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 
 
 /******************************************************************************
-** AddWriter ******************************************************************
+** NewWriter ******************************************************************
 ******************************************************************************/
 
 // This function is called by WriteCmd when a new write request comes.
 
-void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
+static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
+    struct AHIBase *AHIBase)
 {
   int channel;
   BOOL delay=FALSE;
@@ -529,7 +576,7 @@ void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit, struct AHIBa
     }
   }
 
-// NOTE: ahir_Link changes direction here. When the user set's it, (s)he makes a new
+// NOTE: ahir_Link changes direction here. When the user set's it, she makes a new
 // request point to an old. We let the old point to the next (that's more natural,
 // anyway... It the user tries to link more than one request to another, we fail.
 
@@ -542,15 +589,16 @@ void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit, struct AHIBa
       ioreq->ahir_Link->ahir_Link = ioreq;
       ioreq->ahir_Link = NULL;
       Enqueue((struct List *) &iounit->WaitingList,(struct Node *) ioreq);
-      
+
       // Attach the request to the current playing one
 
+      iounit->Voices[channel].QueuedRequest = ioreq;
       AHI_Play(iounit->AudioCtrl,
           AHIP_BeginChannel,  channel,
           AHIP_LoopFreq,      ioreq->ahir_Frequency,
           AHIP_LoopVol,       ioreq->ahir_Volume,
           AHIP_LoopPan,       ioreq->ahir_Position,
-          AHIP_LoopSound,     ioreq->ahir_Type,
+          AHIP_LoopSound,     type2snd[ioreq->ahir_Type],
           AHIP_LoopOffset,    ioreq->ahir_Std.io_Offset + ioreq->ahir_Std.io_Actual,
           AHIP_LoopLength,    ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual,
           AHIP_EndChannel,    NULL,
@@ -558,7 +606,7 @@ void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit, struct AHIBa
 
     }
     else
-    {
+    { // She tried to add more than one requeste to unother
       ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
       TermIO(ioreq, AHIBase);
     }
@@ -566,85 +614,77 @@ void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit, struct AHIBa
   else
   {
     ioreq->ahir_Link=NULL;
-
-    // Search for a free channel, and use if found
-
-    for(channel=0; channel < iounit->Channels; channel++)
-    {
-      if(iounit->Voices[channel].Offset EQ FREE)
-      {
-        PlayRequest(channel, ioreq, iounit, AHIBase);
-        break;
-      }
-    }
-
-    if(channel EQ iounit->Channels)
-    {
-      struct AHIRequest *ioreq2;
-
-      // No free channel found. Check if we can kick the last one out...
-      // There is at least on node in the list, and the last one has lowest priority.
-
-      ioreq2 = (struct AHIRequest *) iounit->PlayingList.mlh_Tail; 
-      if(ioreq->ahir_Std.io_Message.mn_Node.ln_Pri
-          >= ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri)
-      {
-        // Let's steal his place!
-
-        RemTail((struct List *) &iounit->PlayingList);
-        Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq2);
-        PlayRequest(ioreq2->ahir_Channel, ioreq, iounit, AHIBase);
-      }
-      else
-      {
-        // Let's be quiet for a while.
-
-        Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
-      }
-    }
+    AddWriter(ioreq, iounit, AHIBase);
   }
 
   ReleaseSemaphore(&iounit->ListLock);
 
 }
 
+
 /******************************************************************************
-** Findnode *******************************************************************
+** AddWriter ******************************************************************
 ******************************************************************************/
 
-// Find a node in a list
+// This function is called by NewWriter and RethinkPlayers. It adds an
+// initialized request to either the playing or waiting list, and starts
+// the sound it if possible
 
-struct Node *FindNode(struct List *list, struct Node *node)
-
+static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
+    struct AHIBase *AHIBase)
 {
-  struct Node *currentnode;
+  int channel;
 
-  for(currentnode = list->lh_Head;
-      currentnode->ln_Succ;
-      currentnode = currentnode->ln_Succ)
+  // Search for a free channel, and use if found
+
+  for(channel=0; channel < iounit->Channels; channel++)
   {
-    if(currentnode EQ node)
+    if(iounit->Voices[channel].NextOffset == FREE)
     {
-      return currentnode;
+      Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
+      PlayRequest(channel, ioreq, iounit, AHIBase);
+      break;
     }
   }
-  return NULL;
+
+  if(channel == iounit->Channels)
+  {
+    struct AHIRequest *ioreq2;
+
+    // No free channel found. Check if we can kick the last one out...
+    // There is at least on node in the list, and the last one has lowest priority.
+
+    ioreq2 = (struct AHIRequest *) iounit->PlayingList.mlh_Tail; 
+    if(ioreq->ahir_Std.io_Message.mn_Node.ln_Pri
+        >= ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri)
+    {
+      // Let's steal his place!
+
+      RemTail((struct List *) &iounit->PlayingList);
+      Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq2);
+
+      Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
+      PlayRequest(ioreq2->ahir_Channel, ioreq, iounit, AHIBase);
+    }
+    else
+    {
+      // Let's be quiet for a while.
+
+      Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
+    }
+  }
 }
+
 
 /******************************************************************************
 ** PlayRequest ****************************************************************
 ******************************************************************************/
 
 // This begins to play an AHIRequest (starting at sample io_Actual).
-// The lists must be locked.
 
-void PlayRequest(int channel, struct AHIRequest *ioreq,
+static void PlayRequest(int channel, struct AHIRequest *ioreq,
     struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
 {
-  // Add the request to the list of writers, in priority order
-
-  Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
-
   // Start the sound
 
   ioreq->ahir_Channel=channel;
@@ -654,31 +694,108 @@ void PlayRequest(int channel, struct AHIRequest *ioreq,
     struct Voice        *v = & iounit->Voices[channel];
     struct AHIRequest   *r = ioreq->ahir_Link;
 
-    v->Sound     = r->ahir_Type;
-    v->Volume    = r->ahir_Volume;
-    v->Pan       = r->ahir_Position;
-    v->Frequency = r->ahir_Frequency;
-    v->Offset    = r->ahir_Std.io_Offset
-                 + r->ahir_Std.io_Actual;
-    v->Length    = r->ahir_Std.io_Length
-                 - r->ahir_Std.io_Actual;
+    v->NextSound     = type2snd[r->ahir_Type];
+    v->NextVolume    = r->ahir_Volume;
+    v->NextPan       = r->ahir_Position;
+    v->NextFrequency = r->ahir_Frequency;
+    v->NextOffset    = r->ahir_Std.io_Offset
+                     + r->ahir_Std.io_Actual;
+    v->NextLength    = r->ahir_Std.io_Length
+                     - r->ahir_Std.io_Actual;
+    v->NextRequest   = r;
   }
   else
   {
-    iounit->Voices[channel].Offset=MUTE;
+    iounit->Voices[channel].NextOffset  = PLAY;
+    iounit->Voices[channel].NextRequest = NULL;
   }
 
+  iounit->Voices[channel].PlayingRequest = ioreq;
+  iounit->Voices[channel].QueuedRequest = NULL;
   AHI_Play(iounit->AudioCtrl,
-      AHIP_BeginChannel, channel,
-      AHIP_Freq, ioreq->ahir_Frequency,
-      AHIP_Vol, ioreq->ahir_Volume,
-      AHIP_Pan, ioreq->ahir_Position,
-      AHIP_Sound, ioreq->ahir_Type,
-      AHIP_Offset, ioreq->ahir_Std.io_Offset+ioreq->ahir_Std.io_Actual,
-      AHIP_Length, ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual,
-      AHIP_LoopSound, AHI_NOSOUND,
-      AHIP_EndChannel, NULL,
+      AHIP_BeginChannel,  channel,
+      AHIP_Freq,          ioreq->ahir_Frequency,
+      AHIP_Vol,           ioreq->ahir_Volume,
+      AHIP_Pan,           ioreq->ahir_Position,
+      AHIP_Sound,         type2snd[ioreq->ahir_Type],
+      AHIP_Offset,        ioreq->ahir_Std.io_Offset+ioreq->ahir_Std.io_Actual,
+      AHIP_Length,        ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual,
+      AHIP_EndChannel,    NULL,
       TAG_DONE);
 }
 
 
+/******************************************************************************
+** RethinkPlayers *************************************************************
+******************************************************************************/
+
+// When a playing sample has reached it's end, this function is called.
+// It finds and terminates all finished requests, and moves their 'childs'
+// from the waiting list.
+// Then tries to restart all silent sounds.
+
+void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
+{
+  struct MinList templist;
+  struct AHIRequest *ioreq;
+
+  NewList((struct List *) &templist);
+
+  ObtainSemaphore(&iounit->ListLock);
+
+  RemPlayers((struct List *) &iounit->PlayingList, iounit, AHIBase);
+  RemPlayers((struct List *) &iounit->SilentList, iounit, AHIBase);
+
+  // Move all silent requests to our temporary list
+
+  while(ioreq = (struct AHIRequest *) RemHead((struct List *) &iounit->SilentList))
+  {
+    AddTail((struct List *) &templist, (struct Node *) ioreq);
+  }
+
+  // And add them back...
+  while(ioreq = (struct AHIRequest *) RemHead((struct List *) &templist))
+  {
+    AddWriter(ioreq, iounit, AHIBase);
+  }
+
+  ReleaseSemaphore(&iounit->ListLock);
+}
+
+
+/******************************************************************************
+** RemPlayers *****************************************************************
+******************************************************************************/
+
+// Removes all finished play requests from a list. The lists must be locked!
+
+static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
+    struct AHIBase *AHIBase)
+{
+  struct AHIRequest *ioreq, *node;
+
+
+  node = (struct AHIRequest *) list->lh_Head;
+  while(node->ahir_Std.io_Message.mn_Node.ln_Succ)
+  {
+    ioreq = node;
+    node = (struct AHIRequest *) node->ahir_Std.io_Message.mn_Node.ln_Succ;
+
+    if(ioreq->ahir_Std.io_Command == AHICMD_WRITTEN)
+    {
+      if(ioreq->ahir_Link)
+      {
+        // Move the attached one to the list
+        Enqueue(list, (struct Node *) ioreq->ahir_Link);
+        Remove((struct Node *) ioreq->ahir_Link);
+      }
+
+      Remove((struct Node *) ioreq);
+      ioreq->ahir_Std.io_Error = AHIE_OK;
+      ioreq->ahir_Std.io_Command = CMD_WRITE;
+      ioreq->ahir_Std.io_Actual = ioreq->ahir_Std.io_Length
+                                * AHI_SampleFrameSize(ioreq->ahir_Type);
+      TermIO(ioreq, AHIBase);
+    }
+  }
+}
