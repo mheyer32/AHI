@@ -118,7 +118,7 @@ bindist:	all
 	$(INSTALL) --directory $(DEVSDIR)
 
 	$(INSTALL_PROGRAM) $(TARGET) $(DEVSDIR)/$(TARGET)
-	$(STRIP) -s $(DEVSDIR)/$(TARGET)
+	$(STRIP) $(DEVSDIR)/$(TARGET)
 
 
 #

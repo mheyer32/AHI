@@ -74,10 +74,10 @@ maintainer-clean: distclean
 bindist:	all
 	$(INSTALL) --directory $(PREFSDIR)
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFSDIR)/AHI
-	$(STRIP) -s $(PREFSDIR)/AHI
+	$(STRIP) $(PREFSDIR)/AHI
 #	for i in $(TARGETS); do \
 #	  $(INSTALL_PROGRAM) $$i $(PREFSDIR)/$$i; \
-#	  $(STRIP) -s $(PREFSDIR)/$$i; \
+#	  $(STRIP) $(PREFSDIR)/$$i; \
 #	done
 	$(INSTALL_DATA) ${srcdir}/AHI.info $(PREFSDIR)
 	$(INSTALL_DATA) ${srcdir}/AHI.MWB.info $(PREFSDIR)
