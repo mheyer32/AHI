@@ -181,11 +181,7 @@ AHIObtainSemaphore( struct SignalSemaphore* sigSem )
   struct Task *me;
 
   Disable(); // Not Forbid()!
-  #ifndef __AMIGAOS4__
-  me=SysBase->ThisTask;
-  #else
   me = FindTask(NULL);
-  #endif
   sigSem->ss_QueueCount++;
   if( sigSem->ss_QueueCount == 0 )
   {
