@@ -611,10 +611,10 @@ SetSound ( REG(d0, UWORD channel),
 
         cd->cd_AntiClickCount = 0;
       }
-    else
-    {
-      cd->cd_SoundDelayed = TRUE;
-    }
+      else
+      {
+        cd->cd_SoundDelayed = TRUE;
+      }
 #endif
 
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
