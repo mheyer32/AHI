@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.13  1997/02/18 22:26:49  lcs
+* Fixed a bug in CMD_READ?
+*
 * Revision 1.12  1997/02/12 15:43:30  lcs
 * Added autodocs for CMD_START and CMD_STOP
 *
@@ -699,6 +702,9 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
     AddTail((struct List *) &iounit->ReadList,(struct Node *) ioreq);
 
     /* Copy the current buffer contents */
+#ifdef DEBUG
+    KPrintF("Copy old!\n");
+#endif
     FillReadBuffer(ioreq, iounit, AHIBase);
 
     ReleaseSemaphore(&iounit->ListLock);
@@ -758,7 +764,7 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 *   BUGS
 *       io_Data must be an even multiple of the sample frame size.
-*       32 bit samples is not allowed yet.
+*       32 bit samples are not allowed yet.
 *
 *   SEE ALSO
 *       <ahi/devices.h>, <exec/errors.h>
@@ -973,6 +979,10 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 {
   struct AHIRequest *ioreq;
 
+#ifdef DEBUG
+  KPrintF("FillReaders\n");
+#endif
+
   ObtainSemaphore(&iounit->ListLock);
   for(ioreq = (struct AHIRequest *)iounit->ReadList.mlh_Head;
       ioreq->ahir_Std.io_Message.mn_Node.ln_Succ;
@@ -985,8 +995,14 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 
   if( ! iounit->ReadList.mlh_Head->mln_Succ )
   {
+#ifdef DEBUG
+    KPrintF("Empty list\n");
+#endif
     if(--iounit->RecordOffDelay == 0)
     {
+#ifdef DEBUG
+      KPrintF("Removing\n");
+#endif
       AHI_ControlAudio(iounit->AudioCtrl,
           AHIC_Record,FALSE,
           TAG_DONE);
@@ -995,7 +1011,7 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
   }
   else
   {
-    iounit->RecordOffDelay = 1;  // FIXIT!!!
+    iounit->RecordOffDelay = 2;
   }
 
   ReleaseSemaphore(&iounit->ListLock);
@@ -1016,35 +1032,27 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
   APTR  oldaddress;
   BOOL  remove;
 
+#ifdef DEBUG
+  KPrintF("FillReadBuffer\n");
+#endif
   if(iounit->ValidRecord) // Make sure we have a valid source buffer
   {
     oldaddress = ioreq->ahir_Std.io_Data;
 
-    length = ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual;
+    length = (ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual)
+             / AHI_SampleFrameSize(ioreq->ahir_Type);
 
-    switch (ioreq->ahir_Type)
-    {
-      case AHIST_M8S:
-        break;
-      case AHIST_S8S:
-        length >>= 1;
-        break;
-      case AHIST_M16S:
-        length >>= 1;
-        break;
-      case AHIST_S16S:
-        length >>= 2;
-        break;
-      case AHIST_M32S:
-        length >>= 2;
-        break;
-      case AHIST_S32S:
-        length >>= 3;
-        break;
-    }
-
-    length2 = (iounit->RecordSize - ioreq->ahir_Std.io_Offset) >> 2;
+    length2 = (iounit->RecordSize - ioreq->ahir_Std.io_Offset)
+              / AHI_SampleFrameSize(AHIST_S16S);
+#ifdef DEBUG
+    KPrintF("Samples left in buffer: %ld\n", length2);
+#endif
     length2 = MultFixed(length2, (Fixed) ioreq->ahir_Frequency);
+
+#ifdef DEBUG
+    KPrintF("Left to store: %ld  Left to read: %ld\n",length, length2);
+#endif
+
 
     if(length <= length2)
     {
@@ -1055,6 +1063,12 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
       length = length2;
       remove = FALSE;
     }
+
+#ifdef DEBUG
+    KPrintF("Copying %ld bytes from 0x%08lx + 0x%08lx to 0x%08lx, add 0x%08lx\n",
+      length, iounit->RecordBuffer, ioreq->ahir_Std.io_Offset,
+      ioreq->ahir_Std.io_Data, ioreq->ahir_Frequency);
+#endif
 
     switch (ioreq->ahir_Type)
     {
@@ -1099,13 +1113,16 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
         remove = TRUE;
         break;
     }
-
+    
     ioreq->ahir_Std.io_Actual += ((ULONG) ioreq->ahir_Std.io_Data - (ULONG) oldaddress);
 
     if(remove)
     {
       Remove((struct Node *) ioreq);
       TermIO(ioreq, AHIBase);
+#ifdef DEBUG
+      KPrintF("Finished.\n");
+#endif
     }
     else
     {

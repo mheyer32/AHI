@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 1.3  1997/02/18 22:26:49  lcs
+* Fixed a bug in CMD_READ?
+*
 * Revision 1.2  1997/01/29 23:34:38  lcs
 * *** empty log message ***
 *
@@ -410,7 +413,7 @@ _MultFixed:
 	XREF	UDivMod64
 	bsr	UDivMod64		;d0 = (d1:d2)/d0
  ENDC
-	addq.l	#1,d0
+;	addq.l	#1,d0
 .exit
 	rts
 
