@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 4.6  1997/06/22 18:41:59  lcs
+* Bug fixes in the "normal" mixing routines (not fast or hifi).
+* Much faster HiFi routines.
+*
 * Revision 4.5  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -1120,8 +1124,15 @@ DoMasterVolume
 .16bittable
 	moveq	#0,d1
 .16bittable_loop
+ IFGE	__CPU-68020
 	move.w	(a1),d1
 	move.w	(a0,d1.l*2),(a1)+
+ ELSE
+	moveq	#0,d1
+	move.w	(a1),d1
+	add.w	d1,d1
+	move.w	(a0,d1.l),(a1)+
+ ENDC
 	subq.l	#1,d0
 	bne	.16bittable_loop
 	bra	.exit
@@ -1148,6 +1159,7 @@ DoMasterVolume
 	bra	.exit
 
 .32bit
+ IFGE	__CPU-68020
 	move.l	ahiac_SetMasterVolume(a2),d1
 	lsr.l	#8,d1
 .32bit_loop
@@ -1165,6 +1177,7 @@ DoMasterVolume
 	subq.l	#1,d0
 	bne	.32bit_loop
 	bra	.exit
+ ENDIF
 .exit
 
 .noclipping
@@ -1435,6 +1448,10 @@ FixVolBytesSVPH:
 FixVolWordMV:
 	add.l	d1,d0
  IFGE	__CPU-68020
+	cmp.l	#$10000,d0		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d0
+.1
 	asr.l	#1,d0
  ELSE
 	asr.l	#8,d0
@@ -1450,6 +1467,10 @@ FixVolWordMVT:
 
 FixVolWordSVl:
  IFGE	__CPU-68020
+	cmp.l	#$10000,d0		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d0
+.1
 	asr.l	#1,d0
  ELSE
 	asr.l	#8,d0
@@ -1459,6 +1480,10 @@ FixVolWordSVl:
 
 FixVolWordSVr:
  IFGE	__CPU-68020
+	cmp.l	#$10000,d1		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d1
+.1
 	asr.l	#1,d1
  ELSE
 	asr.l	#8,d1
@@ -1468,6 +1493,14 @@ FixVolWordSVr:
 
 FixVolWordSVP:
  IFGE	__CPU-68020
+	cmp.l	#$10000,d0		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d0
+.1
+	cmp.l	#$10000,d1		; Fix: 32768 doesn't fit a WORD!
+	bne	.2
+	move.l	#$ffff,d1
+.2
  	asr.l	#1,d0
  	asr.l	#1,d1
  ELSE
@@ -1511,6 +1544,14 @@ FixVolWordSVPH:
 ;******************************************************************************
 
 FixVolWordsMV:
+	cmp.l	#$10000,d0		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d0
+.1
+	cmp.l	#$10000,d1		; Fix: 32768 doesn't fit a WORD!
+	bne	.2
+	move.l	#$ffff,d1
+.2
 	asr.l	#1,d0
 	asr.l	#1,d1
 	lea	OffsWordsMV(pc),a0
@@ -1527,16 +1568,32 @@ FixVolWordsMVT:
 	rts
 
 FixVolWordsSVl:
+	cmp.l	#$10000,d0		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d0
+.1
 	asr.l	#1,d0
 	lea	OffsWordsSVl(pc),a0
 	rts
 
 FixVolWordsSVr:
+	cmp.l	#$10000,d1		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d1
+.1
 	asr.l	#1,d1
 	lea	OffsWordsSVr(pc),a0
 	rts
 
 FixVolWordsSVP:
+	cmp.l	#$10000,d0		; Fix: 32768 doesn't fit a WORD!
+	bne	.1
+	move.l	#$ffff,d0
+.1
+	cmp.l	#$10000,d1		; Fix: 32768 doesn't fit a WORD!
+	bne	.2
+	move.l	#$ffff,d1
+.2
  	asr.l	#1,d0
  	asr.l	#1,d1
 	lea	OffsWordsSVP(pc),a0
@@ -1767,27 +1824,24 @@ AddByteMVH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.b	-1(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -1808,28 +1862,24 @@ AddByteSVPH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.b	-1(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -1854,53 +1904,47 @@ AddBytesMVH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.b	-2(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleL
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.b	-1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleR
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -1921,53 +1965,47 @@ AddBytesSVPH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.b	-2(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleL
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.b	-1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleR
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -1988,25 +2026,22 @@ AddWordMVH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.w	-2(a3,d3.l*2),d7
 	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -2027,26 +2062,22 @@ AddWordSVPH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.w	-2(a3,d3.l*2),d7
 	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -2071,49 +2102,43 @@ AddWordsMVH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.w	-4(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleL
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.w	-2(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleR
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -2134,49 +2159,43 @@ AddWordsSVPH:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.w	-4(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleL
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.w	-2(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleR
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
-	muls.l	d4,d7
-	neg.w	d4
 	move.l	d7,a0
+.got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -2197,27 +2216,24 @@ AddByteMVHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.b	1(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sample
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -2235,28 +2251,24 @@ AddByteSVPHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.b	1(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sample
-	muls.l	d4,d7
 	move.l	d7,a0
-	move.b	0(a3,d3.l*2),d7
+.got_sample
+	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -2278,53 +2290,47 @@ AddBytesMVHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.b	2(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleL
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.b	3(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleR
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -2342,53 +2348,47 @@ AddBytesSVPHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.b	2(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleL
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.b	3(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-.got_sampleR
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -2406,25 +2406,22 @@ AddWordMVHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.w	2(a3,d3.l*2),d7
 	ext.l	d7
-.got_sample
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -2442,26 +2439,22 @@ AddWordSVPHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_first
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
 	move.w	2(a3,d3.l*2),d7
 	ext.l	d7
-.got_sample
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
@@ -2484,49 +2477,43 @@ AddWordsMVHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.w	4(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleL
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.w	6(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleR
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
@@ -2544,49 +2531,43 @@ AddWordsSVPHB:
 .nextsample
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstL
-	move.l	cd_LastSampleL(a5),d7
+	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
 	move.w	4(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleL
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullL
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullL
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
 	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
 	bne	.not_firstR
-	move.l	cd_LastSampleR(a5),d7
+	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
 	move.w	6(a3,d3.l*4),d7
 	ext.l	d7
-.got_sampleR
-	muls.l	d4,d7
 	move.l	d7,a0
+.got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleR(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.nullR
+	move.l	d7,cd_TempLastSampleL(a5)
+	sub.l	a0,d7
 	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.nullR
+	swap.w	d7
+	add.w	d7,a0
+
+	move.l	a0,d7
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
