@@ -1,0 +1,19 @@
+/* config.h.in.  Generated automatically from configure.in by autoheader.  */
+
+/* Define to empty if the keyword does not work.  */
+#undef const
+
+/* Define as __inline if that's what the C compiler calls it.  */
+#undef inline
+
+/* Define if WarpUp support code should be included.  */
+#undef ENABLE_WARPUP
+
+/* Define if you have the amiga library (-lamiga).  */
+#undef HAVE_LIBAMIGA
+
+/* Define if you have the m library (-lm).  */
+#undef HAVE_LIBM
+
+/* This one modifies the gcc include files */
+#undef USE_INLINE_STDARG
