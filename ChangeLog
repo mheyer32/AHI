@@ -1,5 +1,7 @@
 2001-12-14  Martin Blom  <martin@blom.org>
 
+	* Release AHI preferences 5.2.
+
 	* AHI: It's now possible to test the selected audio mode by
 	pressing the "Play a test sound" button.
 
