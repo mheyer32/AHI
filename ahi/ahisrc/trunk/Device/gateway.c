@@ -21,12 +21,8 @@
 */
 
 #include <config.h>
-#include <CompilerSpecific.h>
-
 #include <exec/types.h> 
-
 #include <clib/alib_protos.h>
-
 
 #if defined( __MORPHOS__ )
 # define EMUL_NOQUICKMODE
@@ -318,8 +314,8 @@ m68k_DevProc( void )
 
 /* m68k_PreTimer  ************************************************************/
 
-BOOL ASMCALL
-m68k_PreTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
+BOOL
+m68k_PreTimer( struct AHIPrivAudioCtrl* audioctrl __asm("a2") )
 {
   return PreTimer( audioctrl );
 }
@@ -328,7 +324,7 @@ m68k_PreTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
 /* m68k_PostTimer  ***********************************************************/
 
 void
-m68k_PostTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
+m68k_PostTimer( struct AHIPrivAudioCtrl* audioctrl __asm("a2") )
 {
   PostTimer( audioctrl );
 }
