@@ -5,31 +5,41 @@ dnl Process this file with autoconf to produce a configure script.
 
 AC_REVISION( $Revision$ )
 dnl
-AC_INIT( Makefile.in )
+AC_INIT( TODO )
 
 
 dnl General
 
 AC_PROG_MAKE_SET
+AC_CONFIG_HEADER( config.h )
 : ${CFLAGS='-noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
 : ${LDFLAGS='-noixemul'}
-AC_PREFIX_DEFAULT( /ahi ) 
+AC_PREFIX_DEFAULT( /tmp/ahi ) 
 
 dnl Checks for programs.
+
+AC_PROG_INSTALL
+AC_PROG_CC
+AC_CHECK_PROG( RM, rm, rm )
 
 
 dnl Checks for libraries.
 
+AC_CHECK_LIB( amiga, NewList,  , AC_MSG_ERROR( "libamiga is missing." ) )
+
 
 dnl Checks for header files.
 
+AC_CHECK_HEADER( CompilerSpecific.h, , AC_MSG_ERROR( "CompilerSpecific.h is missing." )) 
+
 
 dnl Checks for typedefs, structures, and compiler characteristics.
+
+AC_C_CONST
+AC_C_INLINE
 
 
 dnl Checks for library functions.
 
 
-AC_CONFIG_SUBDIRS( AHI AddAudioModes Device Docs )
-AC_OUTPUT(Makefile, echo timestamp > stamp-h)
-
+AC_OUTPUT(Makefile AddAudioModes/Makefile, echo timestamp > stamp-h)
