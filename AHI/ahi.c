@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -212,6 +212,7 @@ void NewSettings(char *name) {
   globalprefs.ahigp_MaxCPU           = (90 << 16) / 100;
   globalprefs.ahigp_ClipMasterVolume = FALSE;
   globalprefs.ahigp_AntiClickTime    = 0;
+  globalprefs.ahigp_ScaleMode        = AHI_SCALE_FIXED_0_DB;
 
   UnitList = GetUnits(name);
   Units = List2Array((struct List *) UnitList);
