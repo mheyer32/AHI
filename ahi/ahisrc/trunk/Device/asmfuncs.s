@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:06:35  lcs
+* Updated doc for CMD_WRITE
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -2719,8 +2722,8 @@ UnloadSound_nodebug
 *       ahir_Link       If non-zero, pointer to a previously sent AHIRequest
 *                       which this AHIRequest will be linked to. This
 *                       request will be delayed until the old one is
-*                       finished (used for double buffering). Must be NULL
-*                       if not used.
+*                       finished (used for double buffering). Must be set
+*                       to NULL if not used.
 *
 *   IO REQUEST RESULT
 *       io_Error        0 for success, or an error code as defined in
