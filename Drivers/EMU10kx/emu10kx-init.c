@@ -90,7 +90,7 @@ DriverInit( struct DriverBase* ahisubbase )
 
   if( EMU10kxBase->cards_found == 0 )
   {
-    Req( "No SoundBlaster Live! card present.\n" );
+//    Req( "No SoundBlaster Live! card present.\n" );
     return FALSE;
   }
 
