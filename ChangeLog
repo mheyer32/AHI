@@ -1,4 +1,7 @@
-2003-04-14  Martin Blom  <martin@blom.org>
+2003-04-17  Martin Blom  <martin@blom.org>
+
+	* The device and preference program are now endian aware when
+	reading IFF files.
 
 	* Ported AHI to AROS.
 
