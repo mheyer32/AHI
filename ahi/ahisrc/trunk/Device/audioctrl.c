@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.14  1997/03/06 22:36:03  lcs
+* Updated doc for Controlaudio(), regarding the timing feature.
+*
 * Revision 1.13  1997/02/15 14:02:02  lcs
 * All functions that take an audio mode id as input can now use
 * AHI_DEFAULT_ID as well.
@@ -856,7 +859,10 @@ __asm ULONG KillAudio(void)
 *       AHIA_UserData (APTR)
 *
 *       Note that AHIA_PlayerFreq must never be outside the limits specified
-*       with AHIA_MinPlayerFreq and AHIA_MaxPlayerFreq!
+*       with AHIA_MinPlayerFreq and AHIA_MaxPlayerFreq! Also note that the
+*       timing feature is designed to be used for music. When you change the
+*       frequency, be reasonable. Using 50 Hz one moment and 5 the other is
+*       to ask for trouble.
 *
 *   RESULT
 *       An error code, defined in <devices/ahi.h>.
