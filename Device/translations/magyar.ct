@@ -1,133 +1,99 @@
-## version $VER: ahi.catalog 4.2 (13.12.97)
+## chunk AUTH Dósa Márton (dm_@freemail.hu)
 ## language magyar
-## codeset 0
-;
-## chunk AUTH Translated by Viktor Vörös <v_viktor@hotmail.com>
-;
-; The .ct file was generated from
-; $Id$
-;
-;    AHI - Hardware independent audio subsystem
-;    Copyright (C) 1996-2001 Martin Blom <martin@blom.org>
-;     
-;    This library is free software; you can redistribute it and/or
-;    modify it under the terms of the GNU Library General Public
-;    License as published by the Free Software Foundation; either
-;    version 2 of the License, or (at your option) any later version.
-;     
-;    This library is distributed in the hope that it will be useful,
-;    but WITHOUT ANY WARRANTY; without even the implied warranty of
-;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;    Library General Public License for more details.
-;     
-;    You should have received a copy of the GNU Library General Public
-;    License along with this library; if not, write to the
-;    Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
-;    MA 02139, USA.
-;
-; Input and Output connector name
-;
+## version $VER: ahi.ct 4.2 (30.12.01)
 msgDefault
-Alap
-;Default
-;
-; The requesters menu
+Alapértelmezett
+;#DEF Default
+;#SET (//)
 msgMenuControl
-\000\000Irányítás
-;\000\000Control
-;
+\000\000Vezérlés
+;#DEF \000\000Control
+;#SET (//)
 msgMenuLastMode
-L\000Elôzô mód
-;L\000Last Mode
-;
+L\000Elõzõ mód
+;#DEF L\000Last Mode
+;#SET (//)
 msgMenuNextMode
-N\000Elôzô mód
-;N\000Next Mode
-;
+N\000Következõ mód
+;#DEF N\000Next Mode
+;#SET (//)
 msgMenuPropertyList
-?\000Tulajdonság lista...
-;?\000Property List...
-;
+?\000Tulajdonságok...
+;#DEF ?\000Property List...
+;#SET (//)
 msgMenuRestore
-R\000Viszzaállít
-;R\000Restore
-;
+R\000Visszaállítás
+;#DEF R\000Restore
+;#SET (//)
 msgMenuOK
-O\000OK
-;O\000OK
-;
+O\000Oké
+;#DEF O\000OK
+;#SET (//)
 msgMenuCancel
-C\000Mégsem
-;C\000Cancel
-;
-; Mode name in requester whose driver cannot be opened
-;
+C\000Mégse
+;#DEF C\000Cancel
+;#SET (//)
 msgUnknown
-ISMERETLEN Audio azonosító: 0x%08lx
-;UNKNOWN:Audio ID 0x%08lx
-;
-; The requester gadgets
-;
+ISMERETLEN:Audió ID 0x%08lx
+;#DEF UNKNOWN:Audio ID 0x%08lx
+;#SET (//)
 msgReqOK
-OK
-;OK
-;
+Oké
+;#DEF OK
+;#SET (//)
 msgReqCancel
-Mégsem
-;Cancel
-;
+Mégse
+;#DEF Cancel
+;#SET (//)
 msgReqFrequency
 Frekvencia
-;Frequency
-;
-; Name of default mode in requester
-;
+;#DEF Frequency
+;#SET (//)
 msgDefaultMode
-Alap audio mód
-;Default audio mode
-;
-; The requester's info-winodow
-;
+Alap audió mód
+;#DEF Default audio mode
+;#SET (//)
 msgReqInfoTitle
-Létezô módók
-;Mode Properties
-;
+Mód tulajdonságai
+;#DEF Mode Properties
+;#SET (//)
 msgReqInfoAudioID
-Audio mód azonodító: 0x%08lx
-;Audio mode ID: 0x%08lx
-;
+Audió mód ID: 0x%08lx
+;#DEF Audio mode ID: 0x%08lx
+;#SET (//)
 msgReqInfoResolution
 Felbontás: %ld bit %s
-;Resolution: %ld bit %s
-;
+;#DEF Resolution: %ld bit %s
+;#SET (//)
 msgReqInfoMono
-mono
-;mono
-;
+monó
+;#DEF mono
+;#SET (//)
 msgReqInfoStereo
 sztereó
-;stereo
-;
+;#DEF stereo
+;#SET (//)
 msgReqInfoStereoPan
-sztereó térhatással
-;stereo with panning
-;
+sztereó panorámázással
+;#DEF stereo with panning
+;#SET (//)
 msgReqInfoChannels
 Csatornák: %ld
-;Channels: %ld
-;
+;#DEF Channels: %ld
+;#SET (//)
 msgReqInfoMixrate
-Mixelési szint: %ld-%ld Hz
-;Mixing rates: %ld-%ld Hz
-;
+Keverési szintek: %ld-%ld Hz
+;#DEF Mixing rates: %ld-%ld Hz
+;#SET (//)
 msgReqInfoHiFi
-HiFi mixelés
-;HiFi mixing
-;
+HiFi keverés
+;#DEF HiFi mixing
+;#SET (//)
 msgReqInfoRecordHalf
-Rögzítés fél duplex-ben
-;Record in half duplex
-;
+Felvétel fél duplexben
+;#DEF Record in half duplex
+;#SET (//)
 msgReqInfoRecordFull
-Rögzítés teljes duplex-ben
-;Record in full duplex
+Felvétel duplexben
+;#DEF Record in full duplex
+;#SET (//)
