@@ -1,5 +1,7 @@
 2005-02-02  Martin Blom  <martin@blom.org>
 
+	* Added updated/new italian translations by Paolo Besser. Thanks!
+
 	* AHI preferences: Update the strings in the unit cycle gadget
 	when loading new prefs from disk or restoring to the
 	defaults. [Gunther Nikl]

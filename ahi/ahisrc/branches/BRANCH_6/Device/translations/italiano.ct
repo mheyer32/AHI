@@ -1,8 +1,8 @@
-## version $VER: ahi.catalog 4.2 (20.4.97)
+## version $VER: ahi.catalog 4.2 (2.2.2005)
 ## language italiano
 ## codeset 0
 ;
-## chunk AUTH Translated by Bernardo Innocenti <bernie@shock.cosmos.it>
+## chunk AUTH Translated by Bernardo Innocenti, revisione Paolo Besser
 ;#language english
 ;#version 4
 ;
@@ -132,10 +132,10 @@ Campionamento full duplex
 ; Record in full duplex
 ;
 msgReqInfoMultiChannel
-
+multicanale 7.1
 ; 7.1 multichannel
 ;
 msgFreqFmt
-
+%lu Hz
 ; %lu Hz
 ;
