@@ -140,8 +140,7 @@ Makefile: Makefile.in ../config.status
 ########################################
 
 %.o:	%.s
-	gasp $< | $(AS) $(ASFLAGS) -o $@
-	#$(AS) $(ASFLAGS) $< -o $@
+	$(AS) $(ASFLAGS) $< -o $@
 
 $(EXECUTABLE):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@

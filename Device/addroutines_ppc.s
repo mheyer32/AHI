@@ -40,10 +40,10 @@ BOOL	  StopAtZero		22(r1) word		StopAtZero
 
 */
 
-AddI		.equ	64 + 8
-AddF		.equ	64 + 12
-Offset		.equ	64 + 16
-StopAtZero	.equ	64 + 22
+.set	AddI,		64 + 8
+.set	AddF,		64 + 12
+.set	Offset,		64 + 16
+.set	StopAtZero,	64 + 22
 
 	.text
 
