@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.18  1997/03/27 12:16:27  lcs
+* Major bug in the device interface code fixed.
+*
 * Revision 1.17  1997/03/25 22:27:49  lcs
 * Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
 *
@@ -460,7 +463,7 @@ static __asm __interrupt void Sampler(
 *           problem. Note that the data type is Fixed, not integer. 50 Hz is
 *           50<<16.
 *
-*       AHIA_MinsPlayerFreq (Fixed) - The minimum frequency (AHIA_PlayerFreq)
+*       AHIA_MinPlayerFreq (Fixed) - The minimum frequency (AHIA_PlayerFreq)
 *           you will use. You should always supply this if you are using the
 *           device's interrupt feature!
 *
@@ -1633,7 +1636,7 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)", sound, audioctrl);
+    KPrintF("AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)", sound, type, info, audioctrl);
   }
 
   rc = AHIsub_LoadSound(sound, type, info, (struct AHIAudioCtrlDrv *) audioctrl);
@@ -1824,7 +1827,7 @@ __asm ULONG UnloadSound(register __d0 UWORD sound,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_UnloadSound(%ld, 0x%08lx)", sound, audioctrl);
+    KPrintF("AHI_UnloadSound(%ld, 0x%08lx)\n", sound, audioctrl);
   }
 
   rc = AHIsub_UnloadSound(sound, (struct AHIAudioCtrlDrv *) audioctrl);

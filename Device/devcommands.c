@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.17  1997/03/27 12:16:27  lcs
+* Major bug in the device interface code fixed.
+*
 * Revision 1.16  1997/03/20 02:07:02  lcs
 * Weiß nicht?
 *
@@ -1273,6 +1276,7 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 {
   int channel;
 
+  KPrintF("Addwriter\n");
 #ifdef DEBUG
   KPrintF("Addwriter\n");
 #endif
@@ -1297,6 +1301,11 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     // No free channel found. Check if we can kick the last one out...
     // There is at least on node in the list, and the last one has lowest priority.
 
+    KPrintF("No free channel\n");
+#ifdef DEBUG
+    KPrintF("No free channel\n");
+#endif
+
     ioreq2 = (struct AHIRequest *) iounit->PlayingList.mlh_TailPred; 
     if(ioreq->ahir_Std.io_Message.mn_Node.ln_Pri
         > ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri)
@@ -1307,6 +1316,12 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
       GetExtras(ioreq2)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq2);
 
+      KPrintF("Stealing %ld (my: %ld, her: %ld)\n",channel,
+        ioreq->ahir_Std.io_Message.mn_Node.ln_Pri, ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri);
+
+#ifdef DEBUG
+      KPrintF("Stealing %ld\n",channel);
+#endif
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
       PlayRequest(channel, ioreq, iounit, AHIBase);
     }
@@ -1314,6 +1329,10 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     {
       // Let's be quiet for a while.
 
+      KPrintF("Being quiet for a while.. \n");
+#ifdef DEBUG
+      KPrintF("Being quiet for a while.. \n");
+#endif
       GetExtras(ioreq)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
     }
