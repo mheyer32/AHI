@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.8  1997/07/27 18:07:52  lcs
+* Fixed an overflow error in the HiFi-routines.
+*
 * Revision 4.7  1997/07/15 00:52:05  lcs
 * This is the second bugfix release of AHI 4.
 *
@@ -1863,17 +1866,20 @@ AddByteMVH:
 .not_first
 	move.b	-1(a3,d3.l),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -1901,17 +1907,20 @@ AddByteSVPH:
 .not_first
 	move.b	-1(a3,d3.l),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -1943,17 +1952,20 @@ AddBytesMVH:
 .not_firstL
 	move.b	-2(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -1966,17 +1978,20 @@ AddBytesMVH:
 .not_firstR
 	move.b	-1(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2004,17 +2019,20 @@ AddBytesSVPH:
 .not_firstL
 	move.b	-2(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2027,17 +2045,20 @@ AddBytesSVPH:
 .not_firstR
 	move.b	-1(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2052,7 +2073,6 @@ AddBytesSVPH:
 
 ;in
 * d1.l	-65536..65536
-* d2.l	-65536..65536
 AddWordMVH:
  IFGE	__CPU-68020
 	subq.w	#1,d0
@@ -2063,17 +2083,19 @@ AddWordMVH:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
-	move.w	-2(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	-2(a3,d3.l*2),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2091,6 +2113,8 @@ AddWordMVH:
 * d2.l	-65536..65536
 AddWordSVPH:
  IFGE	__CPU-68020
+	move.l	#65536,d1
+	move.l	#32768,d2
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2099,20 +2123,23 @@ AddWordSVPH:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
-	move.w	-2(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	-2(a3,d3.l*2),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
+	asr.l	#1,d7
 	add.l	d7,(a4)+
 
 	move.l	a0,d7
@@ -2139,17 +2166,19 @@ AddWordsMVH:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
-	move.w	-4(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	-4(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2160,17 +2189,19 @@ AddWordsMVH:
 	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
-	move.w	-2(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	-2(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2196,17 +2227,19 @@ AddWordsSVPH:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
-	move.w	-4(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	-4(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2217,17 +2250,19 @@ AddWordsSVPH:
 	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
-	move.w	-2(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	-2(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2255,17 +2290,20 @@ AddByteMVHB:
 .not_first
 	move.b	1(a3,d3.l),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2290,17 +2328,20 @@ AddByteSVPHB:
 .not_first
 	move.b	1(a3,d3.l),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sample
 	move.b	0(a3,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2329,17 +2370,20 @@ AddBytesMVHB:
 .not_firstL
 	move.b	2(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2352,17 +2396,20 @@ AddBytesMVHB:
 .not_firstR
 	move.b	3(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2387,17 +2434,20 @@ AddBytesSVPHB:
 .not_firstL
 	move.b	2(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleL
 	move.b	0(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2410,17 +2460,20 @@ AddBytesSVPHB:
 .not_firstR
 	move.b	3(a3,d3.l*2),d7
 	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,a0
+;	ext.l	d7
+;	move.l	d7,a0
+	move.w	d7,a0
 .got_sampleR
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2443,17 +2496,19 @@ AddWordMVHB:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
-	move.w	2(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	2(a3,d3.l*2),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2476,17 +2531,19 @@ AddWordSVPHB:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sample
 .not_first
-	move.w	2(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	2(a3,d3.l*2),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sample
 	move.w	0(a3,d3.l*2),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2514,17 +2571,19 @@ AddWordsMVHB:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
-	move.w	4(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	4(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2535,17 +2594,19 @@ AddWordsMVHB:
 	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
-	move.w	6(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	6(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
@@ -2568,17 +2629,19 @@ AddWordsSVPHB:
 	move.l	cd_LastSampleL(a5),a0
 	bra	.got_sampleL
 .not_firstL
-	move.w	4(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	4(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleL
 	move.w	0(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d1,d7
@@ -2589,17 +2652,19 @@ AddWordsSVPHB:
 	move.l	cd_LastSampleR(a5),a0
 	bra	.got_sampleR
 .not_firstR
-	move.w	6(a3,d3.l*4),d7
-	ext.l	d7
-	move.l	d7,a0
+	move.w	6(a3,d3.l*4),a0
+;	ext.l	d7
+;	move.l	d7,a0
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
 	move.l	d7,cd_TempLastSampleL(a5)
 	sub.l	a0,d7
+	asr.l	#1,d7
 	muls.l	d4,d7
-	swap.w	d7
-	add.w	d7,a0
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a0
 
 	move.l	a0,d7
 	muls.l	d2,d7
