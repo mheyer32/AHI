@@ -31,7 +31,7 @@ HAVE_OPENPCI	= @HAVE_OPENPCI@
 
 .PHONY:		all clean distclean maintainer-clean bindist
 
-SUBDIRS		= Filesave Void
+SUBDIRS		= Filesave #Void
 
 ifneq ($(strip $(HAVE_OPENPCI)),)
 SUBDIRS		+= EMU10kx
