@@ -78,8 +78,17 @@ DriverInit( struct DriverBase* ahisubbase )
   EMU10kxBase->cards_found = 0;
   dev = NULL;
 
+  // Search for Live! cards
   while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
 				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				  dev ) ) != NULL )
+  {
+    ++EMU10kxBase->cards_found;
+  }
+
+  // Search for Audigy cards
+  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				  PCI_DEVICE_ID_CREATIVE_AUDIGY,
 				  dev ) ) != NULL )
   {
     ++EMU10kxBase->cards_found;
@@ -90,7 +99,7 @@ DriverInit( struct DriverBase* ahisubbase )
 
   if( EMU10kxBase->cards_found == 0 )
   {
-//    Req( "No SoundBlaster Live! card present.\n" );
+//    Req( "No SoundBlaster Live! or Audigy card present.\n" );
     return FALSE;
   }
 
@@ -133,7 +142,7 @@ DriverInit( struct DriverBase* ahisubbase )
   EMU10kxBase->ac97.GetFunc.h_Data     = NULL;
 
   EMU10kxBase->ac97.SetFunc.h_Entry    = HookEntry;
-  EMU10kxBase->ac97.SetFunc.h_SubEntry = AC97SetFunc;
+  EMU10kxBase->ac97.SetFunc.h_SubEntry = (HOOKFUNC) AC97SetFunc;
   EMU10kxBase->ac97.SetFunc.h_Data     = NULL;
 
   AddSemaphore( &EMU10kxBase->ac97.Semaphore );
@@ -152,6 +161,16 @@ DriverInit( struct DriverBase* ahisubbase )
 
   card_no = 0;
 
+  // Live! cards ... 
+  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				  dev ) ) != NULL )
+  {
+    EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
+    ++card_no;
+  }
+
+  // Audigy cards ...
   while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
 				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
 				  dev ) ) != NULL )

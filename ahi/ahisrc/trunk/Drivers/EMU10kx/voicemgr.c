@@ -29,11 +29,67 @@
  **********************************************************************
  */
 
-#include <proto/openpci.h>
+#ifdef AHI
+# include <proto/openpci.h>
+# include "linuxsupport.h"
 
-#include "linuxsupport.h"
+void
+MyKPrintFArgs2( const char*           fmt,
+	       APTR                  args );
+
+#define KPrintF( fmt, ... )        \
+({                                 \
+  ULONG _args[] = { __VA_ARGS__ }; \
+  MyKPrintFArgs2( (fmt), _args );   \
+})
+
+static UWORD rawputchar_m68k[] = 
+{
+  0x2C4B,             // MOVEA.L A3,A6
+  0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
+  0x4E75              // RTS
+};
+
+void
+MyKPrintFArgs2( const char*           fmt,
+	       APTR                  args )
+{
+  RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
+}
+
+
+#endif
+
 #include "voicemgr.h"
 #include "8010.h"
+
+#define PITCH_48000 0x00004000
+#define PITCH_96000 0x00008000
+#define PITCH_85000 0x00007155
+#define PITCH_80726 0x00006ba2
+#define PITCH_67882 0x00005a82
+#define PITCH_57081 0x00004c1c
+
+u32 emu10k1_select_interprom(struct emu10k1_card *card, struct emu_voice *voice)
+{
+	if(voice->pitch_target==PITCH_48000)
+		return CCCA_INTERPROM_0;
+	else if(voice->pitch_target<PITCH_48000)
+		return CCCA_INTERPROM_1;
+	else  if(voice->pitch_target>=PITCH_96000)
+		return CCCA_INTERPROM_0;
+	else  if(voice->pitch_target>=PITCH_85000)
+		return CCCA_INTERPROM_6;
+	else  if(voice->pitch_target>=PITCH_80726)
+		return CCCA_INTERPROM_5;
+	else  if(voice->pitch_target>=PITCH_67882)
+		return CCCA_INTERPROM_4;
+	else  if(voice->pitch_target>=PITCH_57081)
+		return CCCA_INTERPROM_3;
+	else  
+		return CCCA_INTERPROM_2;
+}
+
 
 /**
  * emu10k1_voice_alloc_buffer -
@@ -46,7 +102,7 @@
 int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem, u32 pages)
 {
 	u32 pageindex, pagecount;
-	unsigned long busaddx;
+	u32 busaddx;
 	int i;
 
 	DPD(2, "requested pages is: %d\n", pages);
@@ -57,24 +113,39 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 		return -1;
 	}
 
-	/* Fill in virtual memory table */
-
+#ifdef AHI
 	if ((mem->addr = pci_alloc_consistent(card->pci_dev, pages * PAGE_SIZE, &mem->dma_handle))
 	    == NULL) {
-		mem->pages = 0;
-		DPF(1, "couldn't allocate dma memory\n");
-		return -1;
+	  mem->pages = 0;
+	  DPF(1, "couldn't allocate dma memory\n");
+	  return -1;
 	}
-
+	KPrintF("Got addr %08lx, dma handler %08lx\n", mem->addr, mem->dma_handle);
+#endif
+	
+	/* Fill in virtual memory table */
 	for (pagecount = 0; pagecount < pages; pagecount++) {
-		DPD(2, "Virtual Addx: %p\n", mem->addr + pagecount * PAGE_SIZE);
+#ifndef AHI
+		if ((mem->addr[pagecount] = pci_alloc_consistent(card->pci_dev, PAGE_SIZE, &mem->dma_handle[pagecount]))
+			== NULL) {
+			mem->pages = pagecount;
+			DPF(1, "couldn't allocate dma memory\n");
+			return -1;
+		}
 
+		DPD(2, "Virtual Addx: %p\n", mem->addr[pagecount]);
+#endif
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {
-			busaddx = (u32) pci_logic_to_physic_addr( 
+#ifdef AHI
+			busaddx = (u32) pci_logic_to_physic_addr(
 			  mem->addr + pagecount * PAGE_SIZE, card->pci_dev )
 			  + i * EMUPAGESIZE;
+#else
+			busaddx = (u32) mem->dma_handle[pagecount] + i * EMUPAGESIZE;
+#endif
+	                KPrintF("Got bus addr %08lx for address %08lx\n", busaddx, mem->addr + pagecount * PAGE_SIZE);
 
-			DPD(3, "Bus Addx: %#lx\n", busaddx);
+			DPD(3, "Bus Addx: %#x\n", busaddx);
 
 			pageindex = mem->emupageindex + pagecount * PAGE_SIZE / EMUPAGESIZE + i;
 
@@ -100,15 +171,22 @@ void emu10k1_voice_free_buffer(struct emu10k1_card *card, struct voice_mem *mem)
 	if (mem->emupageindex < 0)
 		return;
 
+#ifdef AHI
 	pci_free_consistent(card->pci_dev, mem->pages * PAGE_SIZE,
 			    mem->addr,
 			    mem->dma_handle);
-
+#endif
 	for (pagecount = 0; pagecount < mem->pages; pagecount++) {
+#ifndef AHI
+		pci_free_consistent(card->pci_dev, PAGE_SIZE,
+					mem->addr[pagecount],
+					mem->dma_handle[pagecount]);
+#endif
+
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {
 			pageindex = mem->emupageindex + pagecount * PAGE_SIZE / EMUPAGESIZE + i;
 			((u32 *) card->virtualpagetable.addr)[pageindex] =
-				cpu_to_le32((card->silentpage.dma_handle * 2) | pageindex);
+				cpu_to_le32(((u32) card->silentpage.dma_handle * 2) | pageindex);
 		}
 	}
 
@@ -222,23 +300,31 @@ void emu10k1_voice_playback_setup(struct emu_voice *voice)
 	voice->start += start;
 
 	for (i = 0; i < (voice->flags & VOICE_FLAGS_STEREO ? 2 : 1); i++) {
-		sblive_writeptr(card, FXRT, voice->num + i, voice->params[i].send_routing << 16);
+		if (card->is_audigy) {
+			sblive_writeptr(card, A_FXRT1, voice->num + i, voice->params[i].send_routing);
+			sblive_writeptr(card, A_FXRT2, voice->num + i, voice->params[i].send_routing2);
+			sblive_writeptr(card,  A_SENDAMOUNTS, voice->num + i, voice->params[i].send_hgfe);
+		} else {
+			sblive_writeptr(card, FXRT, voice->num + i, voice->params[i].send_routing << 16);
+		}
 
 		/* Stop CA */
 		/* Assumption that PT is already 0 so no harm overwriting */
-		sblive_writeptr(card, PTRX, voice->num + i, (voice->params[i].send_a << 8) | voice->params[i].send_b);
+		sblive_writeptr(card, PTRX, voice->num + i, ((voice->params[i].send_dcba & 0xff) << 8)
+				| ((voice->params[i].send_dcba & 0xff00) >> 8));
 
 		sblive_writeptr_tag(card, voice->num + i,
 				/* CSL, ST, CA */
-				    DSL, voice->endloop | (voice->params[i].send_d << 24),
-				    PSST, voice->startloop | (voice->params[i].send_c << 24),
-				    CCCA, (voice->start) | CCCA_INTERPROM_0 | ((voice->flags & VOICE_FLAGS_16BIT) ? 0 : CCCA_8BITSELECT),
+				    DSL, voice->endloop | (voice->params[i].send_dcba & 0xff000000),
+				    PSST, voice->startloop | ((voice->params[i].send_dcba & 0x00ff0000) << 8),
+				    CCCA, (voice->start) |  emu10k1_select_interprom(card,voice) |
+				        ((voice->flags & VOICE_FLAGS_16BIT) ? 0 : CCCA_8BITSELECT),
 				    /* Clear filter delay memory */
 				    Z1, 0,
 				    Z2, 0,
 				    /* Invalidate maps */
-				    MAPA, MAP_PTI_MASK | (card->silentpage.dma_handle * 2),
-				    MAPB, MAP_PTI_MASK | (card->silentpage.dma_handle * 2),
+				    MAPA, MAP_PTI_MASK | ((u32) card->silentpage.dma_handle * 2),
+				    MAPB, MAP_PTI_MASK | ((u32) card->silentpage.dma_handle * 2),
 				/* modulation envelope */
 				    CVCF, 0x0000ffff,
 				    VTFT, 0x0000ffff,

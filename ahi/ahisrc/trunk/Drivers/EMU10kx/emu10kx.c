@@ -337,43 +337,53 @@ _AHIsub_Start( ULONG                   flags,
     dd->current_buffer   = ( dd->voice.mem.addr +
 			     dd->current_position * dma_sample_frame_size );
 
-
+    dd->voice.params[0].volume_target = 0xffff;
+    dd->voice.params[0].initial_fc = 0xff;
+    dd->voice.params[0].initial_attn = 0x00;
+    dd->voice.params[0].byampl_env_sustain = 0x7f;
+    dd->voice.params[0].byampl_env_decay = 0x7f;
+    
     if( dd->voice.flags & VOICE_FLAGS_STEREO )
     {
-      dd->voice.params[0].send_a             = 0xff;
-      dd->voice.params[0].send_b             = 0x00;
-      dd->voice.params[0].send_c             = 0x00;
-      dd->voice.params[0].send_d             = 0x00;
-      dd->voice.params[0].send_routing       = 0x3210;
-      dd->voice.params[0].volume_target      = 0xffff;
-      dd->voice.params[0].initial_fc         = 0xff;
-      dd->voice.params[0].initial_attn       = 0x00;
-      dd->voice.params[0].byampl_env_sustain = 0x7f;
-      dd->voice.params[0].byampl_env_decay   = 0x7f;
+      if( dd->card.is_audigy )
+      {
+	dd->voice.params[0].send_dcba = 0x00ff00ff;
+	dd->voice.params[0].send_hgfe = 0x00007f7f;
+	dd->voice.params[1].send_dcba = 0xff00ff00;
+	dd->voice.params[1].send_hgfe = 0x00007f7f;
 
-      dd->voice.params[1].send_a             = 0x00;
-      dd->voice.params[1].send_b             = 0xff;
-      dd->voice.params[1].send_c             = 0x00;
-      dd->voice.params[1].send_d             = 0x00;
-      dd->voice.params[1].send_routing       = 0x3210;
-      dd->voice.params[1].volume_target      = 0xffff;
-      dd->voice.params[1].initial_fc         = 0xff;
-      dd->voice.params[1].initial_attn       = 0x00;
-      dd->voice.params[1].byampl_env_sustain = 0x7f;
-      dd->voice.params[1].byampl_env_decay   = 0x7f;
+	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x03020100;
+	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0x07060504;
+      }
+      else
+      {
+	dd->voice.params[0].send_dcba = 0x000000ff;
+	dd->voice.params[0].send_hgfe = 0;
+	dd->voice.params[1].send_dcba = 0x0000ff00;
+	dd->voice.params[1].send_hgfe = 0;
+
+	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x3210;
+	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0;
+      }
     }
     else
     {
-      dd->voice.params[0].send_a             = 0xff;
-      dd->voice.params[0].send_b             = 0xff;
-      dd->voice.params[0].send_c             = 0x00;
-      dd->voice.params[0].send_d             = 0x00;
-      dd->voice.params[0].send_routing       = 0x3210;
-      dd->voice.params[0].volume_target      = 0xffff;
-      dd->voice.params[0].initial_fc         = 0xff;
-      dd->voice.params[0].initial_attn       = 0x00;
-      dd->voice.params[0].byampl_env_sustain = 0x7f;
-      dd->voice.params[0].byampl_env_decay   = 0x7f;
+      if( dd->card.is_audigy )
+      {
+	dd->voice.params[0].send_dcba = 0xffffffff;
+	dd->voice.params[0].send_hgfe = 0x0000ffff;
+ 
+	dd->voice.params[0].send_routing  = 0x03020100;
+	dd->voice.params[0].send_routing2 = 0x07060504;
+     }
+      else
+      {
+	dd->voice.params[0].send_dcba = 0x000ffff;
+	dd->voice.params[0].send_hgfe = 0;
+
+	dd->voice.params[0].send_routing  = 0x3210;
+	dd->voice.params[0].send_routing2 = 0;
+      }
     }
 
     DPD(2, "voice: startloop=%x, endloop=%x\n",
@@ -385,11 +395,13 @@ _AHIsub_Start( ULONG                   flags,
 
     /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
 
-    emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / TIMER_INTERRUPT_FREQUENCY );
+    emu10k1_timer_set( &dd->card, 48000 / TIMER_INTERRUPT_FREQUENCY );
     emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
 
     emu10k1_voices_start( &dd->voice, 1, 0 );
 
+    dd->voice_started = TRUE;
+    
     dd->is_playing = TRUE;
   }
 
@@ -517,7 +529,7 @@ _AHIsub_Stop( ULONG                   flags,
     {
       emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
 
-      sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 0 );
+//      sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 0 );
       emu10k1_voices_stop( &dd->voice, 1 );
       dd->voice_started = FALSE;
     }

@@ -102,14 +102,15 @@ AllocDriverData( struct pci_dev*    dev,
 
   // FIXME: How about latency/pcibios_set_master()??
 
-  dd->card.iobase  = dev->base_address[ 0 ];
-  dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
-  dd->card.irq     = dev->irq;
-  dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
-  dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
-  dd->card.isaps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
-					     dd->card.pci_dev )
-		       == EMU_APS_SUBID );
+  dd->card.iobase    = dev->base_address[ 0 ];
+  dd->card.length    = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
+  dd->card.irq       = dev->irq;
+  dd->card.chiprev   = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
+  dd->card.model     = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
+  dd->card.is_audigy = ( dev->device == PCI_DEVICE_ID_CREATIVE_AUDIGY );
+  dd->card.is_aps    = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
+					       dd->card.pci_dev )
+			 == EMU_APS_SUBID );
 
   pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
 

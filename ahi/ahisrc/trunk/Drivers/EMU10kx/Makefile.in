@@ -17,7 +17,7 @@ OBJECTS		= emu10kx-init.o emu10kx.o emu10kx-accel.o \
 		  linuxsupport.o 
 
 include ../Common/Makefile.common
-
+CPPFLAGS	+= -DAHI
 
 # CAMD driver
 

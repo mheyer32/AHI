@@ -41,6 +41,12 @@
 
 //#include <linux/types.h>
 
+// Driver version:
+#define MAJOR_VER 0
+#define MINOR_VER 20
+#define DRIVER_VERSION "0.20a"
+
+
 // Audigy specify registers are prefixed with 'A_'
 
 /************************************************************************************************/
@@ -63,8 +69,8 @@
 						/* the relevant bits and zero to the other bits	*/
 
 /* The next two interrupts are for the midi port on the Audigy Drive (A_MPU1)			*/
-#define IPR_A_MIDITRANSBUFEMPTY2 0x10000000	/* MIDI UART transmit buffer empty		*/
-#define IPR_A_MIDIRECVBUFEMPTY2	0x08000000	/* MIDI UART receive buffer empty		*/
+#define A_IPR_MIDITRANSBUFEMPTY2	0x10000000	/* MIDI UART transmit buffer empty		*/
+#define A_IPR_MIDIRECVBUFEMPTY2	0x08000000	/* MIDI UART receive buffer empty		*/
 
 #define IPR_SAMPLERATETRACKER	0x01000000	/* Sample rate tracker lock status change	*/
 #define IPR_FXDSP		0x00800000	/* Enable FX DSP interrupts			*/
@@ -90,8 +96,8 @@
 						/* IP is written with CL set, the bit in CLIPL	*/
 						/* or CLIPH corresponding to the CIN value 	*/
 						/* written will be cleared.			*/
-#define IPR_A_MIDITRANSBUFEMPTY1  IPR_MIDITRANSBUFEMPTY	/* MIDI UART transmit buffer empty		*/
-#define IPR_A_MIDIRECVBUFEMPTY1 IPR_MIDIRECVBUFEMPTY	/* MIDI UART receive buffer empty		*/
+#define A_IPR_MIDITRANSBUFEMPTY1	IPR_MIDITRANSBUFEMPTY	/* MIDI UART transmit buffer empty		*/
+#define A_IPR_MIDIRECVBUFEMPTY1	IPR_MIDIRECVBUFEMPTY	/* MIDI UART receive buffer empty		*/
 
 
 
@@ -122,8 +128,8 @@
 						/* lockups if enabled.				*/
 
 /* The next two interrupts are for the midi port on the Audigy Drive (A_MPU1)			*/
-#define INTE_A_MIDITXENABLE2	0x00020000	/* Enable MIDI transmit-buffer-empty interrupts	*/
-#define INTE_A_MIDIRXENABLE2	0x00010000	/* Enable MIDI receive-buffer-empty interrupts	*/
+#define A_INTE_MIDITXENABLE2	0x00020000	/* Enable MIDI transmit-buffer-empty interrupts	*/
+#define A_INTE_MIDIRXENABLE2	0x00010000	/* Enable MIDI receive-buffer-empty interrupts	*/
 
 
 #define INTE_SAMPLERATETRACKER	0x00002000	/* Enable sample rate tracker interrupts	*/
@@ -143,8 +149,8 @@
 #define INTE_MIDIRXENABLE	0x00000001	/* Enable MIDI receive-buffer-empty interrupts	*/
 
 /* The next two interrupts are for the midi port on the Audigy (A_MPU2)	*/
-#define INTE_A_MIDITXENABLE1  	INTE_MIDITXENABLE
-#define INTE_A_MIDIRXENABLE1	INTE_MIDIRXENABLE
+#define A_INTE_MIDITXENABLE1  	INTE_MIDITXENABLE
+#define A_INTE_MIDIRXENABLE1	INTE_MIDIRXENABLE
 
 #define WC			0x10		/* Wall Clock register				*/
 #define WC_SAMPLECOUNTER_MASK	0x03FFFFC0	/* Sample periods elapsed since reset		*/
@@ -225,13 +231,12 @@
 #define A_GPINPUT_MASK		0xff00
 #define A_GPOUTPUT_MASK		0x00ff
 
-#define TIMER			0x1a		/* Timer terminal count register		*/
+#define TIMER			0x1a		/* Timer terminal count register (16-bit)	*/
 						/* NOTE: After the rate is changed, a maximum	*/
 						/* of 1024 sample periods should be allowed	*/
 						/* before the new rate is guaranteed accurate.	*/
-#define TIMER_RATE_MASK		0x000003ff	/* Timer interrupt rate in sample periods	*/
+#define TIMER_RATE_MASK		0x03ff		/* Timer interrupt rate in sample periods	*/
 						/* 0 == 1024 periods, [1..4] are not useful	*/
-#define TIMER_RATE		0x0a00001a
 
 #define AC97DATA		0x1c		/* AC97 register set data register (16 bit)	*/
 
@@ -477,8 +482,10 @@
 
 #define FXWC			0x43		/* FX output write channels register			*/
 						/* When set, each bit enables the writing of the	*/
-						/* corresponding FX output channel into host memory	*/
-
+						/* corresponding FX output channel (internal registers  */
+						/* 0x20-0x3f) into host memory. This mode of recording	*/
+						/* is 16bit, 48KHz only. All 32	channels can be enabled */
+						/* simultaneously.					*/
 #define TCBS			0x44		/* Tank cache buffer size register			*/
 #define TCBS_MASK		0x00000007	/* Tank cache buffer size field				*/
 #define TCBS_BUFFSIZE_16K	0x00000000
@@ -559,7 +566,7 @@
 #define REG53			0x53		/* DO NOT PROGRAM THIS REGISTER!!! MAY DESTROY CHIP */
 
 #define A_DBG			 0x53
-#define A_DBG_SINGLE_STEP_ADDR	 0x00020000	/* Set to zero to start dsp */
+#define A_DBG_SINGLE_STEP	 0x00020000	/* Set to zero to start dsp */
 #define A_DBG_ZC		 0x40000000	/* zero tram counter */
 #define A_DBG_STEP_ADDR		 0x000003ff
 #define A_DBG_SATURATION_OCCURED 0x20000000
@@ -628,6 +635,12 @@
 #define SRCS_RATELOCKED		0x01000000	/* Sample rate locked				*/
 #define SRCS_ESTSAMPLERATE	0x0007ffff	/* Do not modify this field.			*/
 
+
+/* Note that these values can vary +/- by a small amount                                        */
+#define SRCS_SPDIFRATE_44	0x0003acd9
+#define SRCS_SPDIFRATE_48	0x00040000
+#define SRCS_SPDIFRATE_96	0x00080000
+
 #define MICIDX                  0x63            /* Microphone recording buffer index register   */
 #define MICIDX_MASK             0x0000ffff      /* 16-bit value                                 */
 #define MICIDX_IDX		0x10000063
@@ -653,22 +666,28 @@
 #define A_MUCMD2		0x73
 #define A_MUSTAT2		A_MUCMD2	
 
+/* The next two are the Audigy equivalent of FXWC						*/
+/* the Audigy can record any output (16bit, 48kHz, up to 64 channel simultaneously) 		*/
+/* Each bit selects a channel for recording */
+#define A_FXWC1			0x74            /* Selects 0x7f-0x60 for FX recording           */
+#define A_FXWC2			0x75		/* Selects 0x9f-0x80 for FX recording           */
+
 #define A_SPDIF_SAMPLERATE	0x76		/* Set the sample rate of SPDIF output		*/
-#define A_SPDIF_48000		0x00000000
-#define A_SPDIF_44100		0x00000040
-#define A_SPDIF_96000		0x00000080
+#define A_SPDIF_48000		0x00000080
+#define A_SPDIF_44100		0x00000000
+#define A_SPDIF_96000		0x00000040
 
 #define A_FXRT2			0x7c
-#define A_FXRT_CHANNELE		0x0000003f	/* Effects send bus number for channel's effects send A	*/
-#define A_FXRT_CHANNELF		0x00003f00	/* Effects send bus number for channel's effects send B	*/
-#define A_FXRT_CHANNELG		0x003f0000	/* Effects send bus number for channel's effects send C	*/
-#define A_FXRT_CHANNELH		0x3f000000	/* Effects send bus number for channel's effects send D	*/
+#define A_FXRT_CHANNELE		0x0000003f	/* Effects send bus number for channel's effects send E	*/
+#define A_FXRT_CHANNELF		0x00003f00	/* Effects send bus number for channel's effects send F	*/
+#define A_FXRT_CHANNELG		0x003f0000	/* Effects send bus number for channel's effects send G	*/
+#define A_FXRT_CHANNELH		0x3f000000	/* Effects send bus number for channel's effects send H	*/
 
 #define A_SENDAMOUNTS		0x7d
-#define A_FXSENDAMOUNT_E_MASK	0xFF000000
-#define A_FXSENDAMOUNT_F_MASK	0x00FF0000
-#define A_FXSENDAMOUNT_G_MASK	0x0000FF00
-#define A_FXSENDAMOUNT_H_MASK	0x000000FF
+#define A_FXSENDAMOUNT_E_MASK	0xff000000
+#define A_FXSENDAMOUNT_F_MASK	0x00ff0000
+#define A_FXSENDAMOUNT_G_MASK	0x0000ff00
+#define A_FXSENDAMOUNT_H_MASK	0x000000ff
 
 /* The send amounts for this one are the same as used with the emu10k1 */
 #define A_FXRT1			0x7e
