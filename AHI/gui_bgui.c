@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.3  1997/04/09 03:00:06  lcs
+ * Fixed globaloptions and "Restore"
+ *
  * Revision 4.2  1997/04/07 01:36:51  lcs
  * Localized it, bug fixes
  *
@@ -1099,7 +1102,7 @@ void EventLoop(void) {
             break;
 
           case ACTID_RESTORE:
-            NewSettings(ENVFILE);
+            NewSettings(args.from);
             GUINewSettings();
             break;
 
