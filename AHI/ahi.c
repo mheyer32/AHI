@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.5  1997/05/04 22:13:29  lcs
+ * Version label now public
+ *
  * Revision 4.4  1997/04/27 16:16:06  lcs
  * Added "Mastervolume with(out) clipping".
  *
@@ -33,7 +36,7 @@
 
 #define DBSTEP      0.5
 
-static const char *Version[] = {"$VER: AHI preferences 4.3 "__AMIGADATE__"\r\n"};
+const char *Version[] = {"$VER: AHI preferences 4.3 "__AMIGADATE__"\r\n"};
 
 struct List      *UnitList   = NULL;
 struct List      *ModeList   = NULL;
