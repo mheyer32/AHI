@@ -133,6 +133,7 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
     case MB_WARPUP:
     {
       ULONG new_requirements;
+      void* v;
 
       new_requirements = requirements & ~MEMF_PPCMASK;
 
@@ -148,7 +149,9 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
         new_requirements |= MEMF_CHIP;            // Sucks!
       }
 
-      return AllocVec32( byteSize, new_requirements );
+      v = AllocVec32( byteSize, new_requirements );
+      CacheClearU();
+      return v;
     }
   }
 
