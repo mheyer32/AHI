@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/04/07 13:12:35  lcs
+* Removed some KPrintFs :(
+*
 * Revision 4.1  1997/04/02 22:28:11  lcs
 * Bumped to version 4
 *
@@ -1279,7 +1282,6 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 {
   int channel;
 
-  KPrintF("Addwriter\n");
 #ifdef DEBUG
   KPrintF("Addwriter\n");
 #endif
@@ -1304,7 +1306,6 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     // No free channel found. Check if we can kick the last one out...
     // There is at least on node in the list, and the last one has lowest priority.
 
-    KPrintF("No free channel\n");
 #ifdef DEBUG
     KPrintF("No free channel\n");
 #endif
@@ -1319,10 +1320,9 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
       GetExtras(ioreq2)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq2);
 
+#ifdef DEBUG
       KPrintF("Stealing %ld (my: %ld, her: %ld)\n",channel,
         ioreq->ahir_Std.io_Message.mn_Node.ln_Pri, ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri);
-
-#ifdef DEBUG
       KPrintF("Stealing %ld\n",channel);
 #endif
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
@@ -1332,7 +1332,6 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     {
       // Let's be quiet for a while.
 
-      KPrintF("Being quiet for a while.. \n");
 #ifdef DEBUG
       KPrintF("Being quiet for a while.. \n");
 #endif
