@@ -56,25 +56,6 @@
 ** Prototypes *****************************************************************
 ******************************************************************************/
 
-#if 0
-
-static void*
-memset( void* s, int c, unsigned int n )
-{
-  char* dst = s;
-
-  while( n > 0 )
-  {
-    *dst++ = c;
-    n--;
-  }
-
-  return s;
-}
-
-#endif
-
-
 void
 CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                void* arg )
@@ -101,6 +82,7 @@ MixerFunc( struct Hook*             hook,
            struct AHIPrivAudioCtrl* audioctrl,
            void*                    dst )
 {
+KPrintF(".");
   switch( MixBackend )
   {
     case MB_NATIVE:

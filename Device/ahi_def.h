@@ -25,21 +25,6 @@
 
 #include <config.h>
 
-/*** Debug stuff ***/
-
-#if 0
-#if defined( ENABLE_MORPHOS )
-
-# include <public/proto/quark/syscall_protos.h>
-# define KPrintF dprintf
-
-#else
-
-extern void KPrintF(char *fmt,...);
-
-#endif
-#endif
-
 /*** AHI include files ***/
 
 #include <config.h>
