@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.10  1997/03/20 02:07:02  lcs
+* Weiﬂ nicht?
+*
 * Revision 1.9  1997/03/15 09:51:52  lcs
 * Dynamic sample loading in the device: No more alignment restrictions.
 *
@@ -88,6 +91,8 @@ struct Extras
 {
 	UWORD	Channel;
 	UWORD	Sound;
+	LONG	BuffSamples;
+	LONG	Count;
 };
 
 struct Voice

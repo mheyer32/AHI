@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.2  1997/03/20 02:07:02  lcs
+* Weiﬂ nicht?
+*
 * Revision 1.1  1997/01/31 19:12:25  lcs
 * Initial revision
 *
@@ -535,6 +538,7 @@ do_DSPEchoMono16:
 
 	muls.w	ahiecho_FeedbackNS(a0),d1
 	add.l	d1,d2				;d2=...+FeedbackNS*x[n]
+	swap.w	d2
 
 	move.w	d2,(a6)+			;store d2
 	DSPECHO_POST

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.19  1997/03/20 02:07:02  lcs
+* Weiß nicht?
+*
 * Revision 1.18  1997/03/15 09:51:52  lcs
 * Dynamic sample loading in the device: No more alignment restrictions.
 *
@@ -318,7 +321,7 @@ __asm ULONG DevOpen(
 
 // One more check...
 
-  if(ioreq->ahir_Version >= Version)
+  if((unit != AHI_NO_UNIT) && (ioreq->ahir_Version >= Version))
   {
     if(ioreq->ahir_Std.io_Message.mn_Length < sizeof(struct AHIRequest))
     {

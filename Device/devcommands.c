@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.16  1997/03/20 02:07:02  lcs
+* Weiß nicht?
+*
 * Revision 1.15  1997/03/15 09:51:52  lcs
 * Dynamic sample loading in the device: No more alignment restrictions.
 *
@@ -835,6 +838,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
     // Initialize the structure
     GetExtras(ioreq)->Channel = NOCHANNEL;
     GetExtras(ioreq)->Sound   = AHI_NOSOUND;
+    GetExtras(ioreq)->Count   = 2;
   }
 
   if(iounit->IsPlaying && !error)
