@@ -113,15 +113,15 @@ revup:
 	@cat $(srcdir)/version.rev
 
 bindist:	all
-	$(INSTALL) --directory $(CATDIR)
+	$(INSTALL) -d $(CATDIR)
 	$(INSTALL_DATA) ${srcdir}/ahi.cd $(CATDIR)
 	$(INSTALL_DATA) ${srcdir}/ahi.ct $(CATDIR)
 	for i in $(LANGUAGES); do \
-	  $(INSTALL) --directory $(CATDIR)/$$i; \
+	  $(INSTALL) -d $(CATDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahi.catalog; \
 	done
 
-	$(INSTALL) --directory $(DEVSDIR)
+	$(INSTALL) -d $(DEVSDIR)
 
 	$(INSTALL_PROGRAM) $(EXECUTABLE) $(DEVSDIR)/$(EXECUTABLE)
 	$(STRIP) $(DEVSDIR)/$(EXECUTABLE)
