@@ -1,6 +1,9 @@
 /* $Id$
  * $Log$
- * Revision 1.5  1997/01/29 15:44:49  lcs
+ * Revision 1.6  1997/02/01 14:10:08  lcs
+ * A couple of bugs fixed.
+ *
+ * Revision 1.5  1997/01/29  15:44:49  lcs
  * It's "finished"!
  *
  * Revision 1.4  1997/01/24  23:20:47  lcs
@@ -142,7 +145,7 @@ void kprintf(char *, ...);
  *  Global variables
  */
 
-const static char ID[] = "$VER: AHI-Handler 1.5 (29.1.96)\r\n";
+const static char ID[] = "$VER: AHI-Handler 1.6 (1.2.96)\r\n";
 
 struct List        HanList;
 struct DeviceNode *DevNode;
@@ -420,7 +423,7 @@ void _main ()
             data->offset = 0;
 
             if(data->readreq->ahir_Std.io_Error) {
-              packet->dp_Res1 = -1;
+              packet->dp_Res2 = ERROR_READ_PROTECTED;
               length = 0;
               break;
             }
@@ -802,20 +805,16 @@ LONG ReadCOMMchunk(struct HandlerData *data, UBYTE *buffer, LONG length) {
       common = (ExtCommonChunk *) (src + 4);
       data->channels    = common->numChannels;
       data->bits        = common->sampleSize;
-/*
-      data->totallength = common->numSampleFrames *
+      data->totallength = common->numSampleFrames * common->numChannels *
           (data->bits <= 8 ? 1 : (data->bits <= 16 ? 2 : (data->bits <= 32 ? 4 : 0)));
-*/
       data->freq = extended2long(&common->sampleRate);
 
       if(!data->args.channels)
         data->args.channels = &data->channels;
       if(!data->args.bits)
         data->args.bits     = &data->bits;
-/*
       if(!data->args.length)
         data->args.length   = &data->totallength;
-*/
       if(!data->args.freq)
         data->args.freq     = &data->freq;
     }
@@ -914,9 +913,6 @@ long ParseArgs(struct HandlerData *data, char *initstring) {
       else if(Stricmp("SIGNED", data->args.type) == 0) {
         data->args.format = SIGNED;
       }
-      else if(Stricmp("UNSIGNED", data->args.type) == 0) {
-        data->args.format = UNSIGNED;
-      }
       else if(Stricmp("AIFF", data->args.type) == 0) {
         data->args.format = AIFF;
       }
@@ -952,11 +948,11 @@ long ParseArgs(struct HandlerData *data, char *initstring) {
 #define S32bitmode     8
 
 #define Sstereoflag    2
-#define Sunsignedflag  4
 
 long InitHData(struct HandlerData *data) {
-  ULONG bits = 8, channels = 1, freq = 8000, volume = 100, position = 0;
-  LONG priority = 0, length = MAXINT, buffersize = 32768;
+  ULONG bits = 8, channels = 1, freq = 8000;
+  LONG  volume = 100, position = 0, priority = 0, 
+        length = MAXINT, buffersize = 32768;
   long rc = 0;
 
   data->initialized = TRUE;
@@ -1010,8 +1006,14 @@ long InitHData(struct HandlerData *data) {
   data->channels = *data->args.channels;
   data->freq     = *data->args.freq;
   data->vol      = *data->args.volume * 0x10000 / 100;
-  data->pos      = *data->args.position * 0x8000 / 100 + 0x8000;
+  { // Don't ask why... :(
+    LONG a;
+    a = *data->args.position * 0x8000;
+    a = a / 100 + 0x8000;
+    data->pos      = a;
+  }
   data->priority = *data->args.priority;
+
   if(data->args.seconds) {
     data->totallength = *data->args.seconds * data->freq 
                         * AHI_SampleFrameSize(data->type);
@@ -1024,9 +1026,6 @@ long InitHData(struct HandlerData *data) {
   data->format = data->args.format;
 
   switch(data->format) {
-    case UNSIGNED:
-      data->type |= Sunsignedflag;
-      break;
     case AIFF:
     case AIFC:
       data->totallength = data->totallength & ~1;    // Make even
