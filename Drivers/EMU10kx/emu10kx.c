@@ -279,26 +279,26 @@ static const ULONG Frequencies[ FREQUENCIES ] =
 
 static const STRPTR Inputs[ INPUTS ] =
 {
+  "Mixer",
+  "Line in",
   "Mic",
   "CD",
-  "Video",
   "Aux",
-  "Line in",
-  "Mixer",
-  "Mixer (mono)",
-  "Phone"
+  "Phone",
+  "Video",
+  "Mixer (mono)"
 };
 
 static const UWORD InputBits[ INPUTS ] =
 {
+  AC97_RECMUX_STEREO_MIX,
+  AC97_RECMUX_LINE,
   AC97_RECMUX_MIC,
   AC97_RECMUX_CD,
-  AC97_RECMUX_VIDEO,
   AC97_RECMUX_AUX,
-  AC97_RECMUX_LINE,
-  AC97_RECMUX_STEREO_MIX,
-  AC97_RECMUX_MONO_MIX,
-  AC97_RECMUX_PHONE
+  AC97_RECMUX_PHONE,
+  AC97_RECMUX_VIDEO,
+  AC97_RECMUX_MONO_MIX
 };
 
 
@@ -647,9 +647,11 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
     emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
 
     emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0000 );
+    emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT,     InputBits[ 0 ] );
     
     emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0404 );
     emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x0002 );
+
     emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0202 );
     emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
     emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0202 );
@@ -1099,14 +1101,16 @@ LibStop( REG( d0, ULONG flags ),
 
   if( flags & AHISF_RECORD )
   {
-    dd->is_recording = FALSE;
-
     emu10k1_irq_disable( &dd->card, INTE_ADCBUFENABLE );
     
     sblive_writeptr( &dd->card, ADCCR, 0, 0 );
     sblive_writeptr( &dd->card, ADCBS, 0, ADCBS_BUFSIZE_NONE );
 
-    RestoreMixerState( dd );
+    if( dd->is_recording )
+    {
+      // Do not restore mixer unless they have been saved
+      RestoreMixerState( dd );
+    }
 
     if( dd->record_buffer != NULL )
     {
@@ -1118,6 +1122,8 @@ LibStop( REG( d0, ULONG flags ),
     
     dd->record_buffer = NULL;
     dd->record_dma_handle = NULL;
+
+    dd->is_recording = FALSE;
   }
 }
 
@@ -1639,7 +1645,7 @@ UpdateMonitorMixer( struct DriverData* dd )
   UWORD s  = dd->monitor_volume_bits;
   UWORD mm = AC97_MUTE | 0x0008;
   UWORD sm = AC97_MUTE | 0x0808;
-  
+
   if( i == AC97_RECMUX_STEREO_MIX ||
       i == AC97_RECMUX_MONO_MIX )
   {
