@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# From configure.in Revision: 1.11  
+# From configure.in Revision: 1.12  
 # Guess values for system-dependent variables and create Makefiles.
 # Generated automatically using autoconf version 2.12.1 
 # Copyright (C) 1992, 93, 94, 95, 96 Free Software Foundation, Inc.
@@ -685,7 +685,7 @@ fi
 
 
 
-: ${CFLAGS='-g -O0 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
+: ${CFLAGS='-g -I. -O0 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
 : ${CPPFLAGS='-I/gg/os-include'}
 : ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}

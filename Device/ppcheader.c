@@ -21,8 +21,8 @@ entry( struct Hook *Hook,
   while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
 
   MixGeneric( Hook, dst, audioctrl );
-
-  // TODO: Clear cache here!
+  
+  // Flush Cache( dst, audioctrl->ahiac_BuffSizeNow );
 
   audioctrl->ahiac_Com = AHIAC_COM_QUIT;
   while( audioctrl->ahiac_Com != AHIAC_COM_ACK );

@@ -9,6 +9,13 @@ To configure on a PC running Linux:
 ./configure --host=m68k-amigaos --build=i686-pc-linux-gnu
 
 
+You can build in separate directories, which is very useful when
+working on the PPC version:
+
+mkdir build060
+cd build060
+sh ../ahisrc/configure --host=m68k-unknown-amigaos
+
 
 The following targets are available:
 
@@ -60,3 +67,4 @@ FlexCat
 Makedepend
 PhxAss
 RoboDoc
+UnixDirs3 (when using separate build directories)

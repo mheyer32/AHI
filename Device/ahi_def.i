@@ -129,8 +129,8 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	UWORD	ahiac_Com			* PPC communication variable
 	UWORD	ahiac_ChannelNo			* PPC communication variable
 	UWORD	ahiac_Pad
-	APTR	ahiac_AntiClickBuffer
-	ULONG	ahiac_AntiClickSize		* in bytes
+	LONG	ahiac_ComV;			* PPC communication variable
+	APTR	ahiac_PPCMixBuffer;
 	STRUCT	ahiac_DriverName,256
 	LABEL	AHIPrivAudioCtrl_SIZEOF
 
