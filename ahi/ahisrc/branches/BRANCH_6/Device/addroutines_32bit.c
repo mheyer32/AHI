@@ -277,6 +277,113 @@ AddLongsStereo( ADDARGS )
   return i;
 }
 
+
+LONG
+Add71Mono( ADDARGS )
+{
+  LONG    *src    = Src;
+  LONG    *dst    = *Dst;
+  Fixed64  offset = *Offset;
+  int      i;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
+  LONG     lastpoint;
+
+  lastpoint = 0;        // 0 doesn't affect the StopAtZero code
+
+  for( i = 0; i < Samples; i++)
+  {
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft << 16;
+    }
+    else
+    {
+      startpoint = src[ offseti * 8 + 6 - 8 ];
+    }
+
+    endpoint = src[ offseti * 8 + 6 ];
+
+    startpoint += (LONG) (((LONGLONG) (endpoint - startpoint) * offsetf ) >> 32);
+
+    if( StopAtZero &&
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
+    {
+      break;
+    }
+
+    lastpoint = startpoint;
+
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpoint ) >> 16 );
+
+    offset += Add;
+  }
+
+  *StartPointLeft = endpoint >> 16;
+
+  *Dst    = dst;
+  *Offset = offset;
+
+  return i;
+}
+
+
+LONG
+Add71Stereo( ADDARGS )
+{
+  LONG    *src    = Src;
+  LONG    *dst    = *Dst;
+  Fixed64  offset = *Offset;
+  int      i;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
+  LONG     lastpointL, lastpointR;
+
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
+
+  for( i = 0; i < Samples; i++)
+  {
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft << 16;
+      startpointR = *StartPointRight << 16;
+    }
+    else
+    {
+      startpointL = src[ offseti * 8 + 0 - 8 ];
+      startpointR = src[ offseti * 8 + 1 - 8 ];
+    }
+
+    endpointL = src[ offseti * 8 + 0 ];
+    endpointR = src[ offseti * 8 + 1 ];
+
+    startpointL += (LONG) (((LONGLONG) (endpointL - startpointL) * offsetf ) >> 32);
+    startpointR += (LONG) (((LONGLONG) (endpointR - startpointR) * offsetf ) >> 32);
+
+    if( StopAtZero &&
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
+    {
+      break;
+    }
+
+    lastpointL = startpointL;
+    lastpointR = startpointR;
+
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpointL ) >> 16 );
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleRight * startpointR ) >> 16 );
+
+    offset += Add;
+  }
+
+  *StartPointLeft = endpointL >> 16;
+  *StartPointRight = endpointR >> 16;
+
+  *Dst    = dst;
+  *Offset = offset;
+
+  return i;
+}
+
 /*****************************************************************************/
 
 /* Lofi mixing code */
@@ -656,6 +763,114 @@ AddLongsStereoB( ADDARGS )
 
   return i;
 }
+
+
+LONG
+Add71MonoB( ADDARGS )
+{
+  LONG    *src    = Src;
+  LONG    *dst    = *Dst;
+  Fixed64  offset = *Offset;
+  int      i;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
+  LONG     lastpoint;
+
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
+
+  for( i = 0; i < Samples; i++)
+  {
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft << 16;
+    }
+    else
+    {
+      startpoint = src[ offseti * 8 + 6 + 8 ];
+    }
+
+    endpoint = src[ offseti * 8 + 6 ];
+
+    startpoint += (LONG) (((LONGLONG) (endpoint - startpoint) * offsetf ) >> 32);
+
+    if( StopAtZero &&
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
+    {
+      break;
+    }
+
+    lastpoint = startpoint;
+
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpoint ) >> 16 );
+
+    offset -= Add;
+  }
+
+  *StartPointLeft = endpoint >> 16;
+
+  *Dst    = dst;
+  *Offset = offset;
+
+  return i;
+}
+
+
+LONG
+Add71StereoB( ADDARGS )
+{
+  LONG    *src    = Src;
+  LONG    *dst    = *Dst;
+  Fixed64  offset = *Offset;
+  int      i;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
+  LONG     lastpointL, lastpointR;
+
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
+
+  for( i = 0; i < Samples; i++)
+  {
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft << 16;
+      startpointR = *StartPointRight << 16;
+    }
+    else
+    {
+      startpointL = src[ offseti * 8 + 0 + 8 ];
+      startpointR = src[ offseti * 8 + 1 + 8 ];
+    }
+
+    endpointL = src[ offseti * 8 + 0 ];
+    endpointR = src[ offseti * 8 + 1 ];
+
+    startpointL += (LONG) (((LONGLONG) (endpointL - startpointL) * offsetf ) >> 32);
+    startpointR += (LONG) (((LONGLONG) (endpointR - startpointR) * offsetf ) >> 32);
+
+    if( StopAtZero &&
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
+    {
+      break;
+    }
+
+    lastpointL = startpointL;
+    lastpointR = startpointR;
+
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleLeft * startpointL ) >> 16 );
+    *dst++ += (LONG) ( ( (LONGLONG) ScaleRight * startpointR ) >> 16 );
+
+    offset -= Add;
+  }
+
+  *StartPointLeft = endpointL >> 16;
+  *StartPointRight = endpointR >> 16;
+
+  *Dst    = dst;
+  *Offset = offset;
+
+  return i;
+}
+
 
 /*****************************************************************************/
 
