@@ -36,6 +36,12 @@ AC_SUBST(ENABLE_WARPUP)
 AC_MSG_RESULT(${enable_warpup})
 
 case $host in
+ i?86be-pc-amithlon)
+  : ${CPU="i686"}
+  linkerflags="-noixemul -r"
+  optflags="-mcpu=${CPU} -O2"
+  asflags="-m${CPU} --defsym CPU=${CPU}"
+ ;;
  m68k-unknown-amigaos)
   : ${CPU="68020"}
   linkerflags="-noixemul"
@@ -47,6 +53,9 @@ case $host in
   linkerflags="-noixemul"
   optflags="-mcpu=${CPU} -O2"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
+ ;;
+ *)
+  AC_MSG_WARN(Unknown architecture!)
  ;;
 esac
 
@@ -79,6 +88,20 @@ AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
 AC_CHECK_PROG( ASM, PhxAss, PhxAss )
+AC_CHECK_PROG( FD2INLINE, fd2inline, fd2inline )
+AC_CHECK_PROG( FD2PRAGMA, fd2pragma, fd2pragma )
+
+if test -z "$FD2INLINE"; then
+ AC_MSG_ERROR( fd2inline missing. )
+fi
+
+if test -z "$FD2PRAGMA"; then
+ AC_MSG_WARN( fd2pragma missing. )
+else
+ if test -n "`$FD2PRAGMA --help | grep -- --mode`"; then
+  AC_SUBST( FD2PRAGMA_PRE, -- )
+ fi
+fi
 
 
 dnl Checks for libraries.

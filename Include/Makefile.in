@@ -22,6 +22,10 @@ build_os	= @build_os@
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
 
+FD2INLINE	= @FD2INLINE@
+FD2PRAGMA	= @FD2PRAGMA@
+FD2PP		= @FD2PRAGMA_PRE@
+
 VPATH		= @srcdir@
 
 
@@ -38,8 +42,8 @@ SASFILES	= SAS-pragmas-ahi_pragmas.h SAS-pragmas-ahi_sub_pragmas.h \
 		  SAS-proto-ahi.h SAS-proto-ahi_sub.h
 
 GCCFILES	= gcc-inline-ahi.h gcc-inline-ahi_sub.h \
-		  gcc-ppcinline-ahi.h gcc-ppcinline-ahi_sub.h \
-		  gcc-proto-ahi.h gcc-proto-ahi_sub.h
+		  gcc-proto-ahi.h gcc-proto-ahi_sub.h \
+#		  gcc-ppcinline-ahi.h gcc-ppcinline-ahi_sub.h
 
 TARGETS		= $(ASMFILES) $(STORMFILES) $(SASFILES) $(GCCFILES)
 
@@ -101,49 +105,59 @@ Makefile: Makefile.in ../config.status
 ########################################
 
 Asm-lvo-ahi_lib.i:	FD/ahi_lib.fd
-	fd2pragma $< 22 TO $@
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 23
+	mv ahi_lib.i $@
 
 Asm-lvo-ahi_sub_lib.i:	FD/ahi_sub_lib.fd
-	fd2pragma $< 22 TO $@
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 23
+	mv ahi_sub_lib.i $@
 
 Storm-pragma-ahi_lib.h:	FD/ahi_lib.fd
-	fd2pragma $< 5 TO $@ COMMENT
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 5
+	mv ahi_lib.h $@
 
 Storm-pragma-ahi_sub_lib.h:	FD/ahi_sub_lib.fd
-	fd2pragma $< 5 TO $@ COMMENT
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 5
+	mv ahi_sub_lib.h $@
 
 Storm-proto-ahi.h:	FD/ahi_lib.fd
-	fd2pragma $< 30 TO $@
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 30
+	mv ahi.h $@
 
 Storm-proto-ahi_sub.h:	FD/ahi_sub_lib.fd
-	fd2pragma $< 30 TO $@
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 30
+	mv ahi_sub.h $@
 
 SAS-pragmas-ahi_pragmas.h:	FD/ahi_lib.fd
-	fd2pragma $< 3 TO $@ COMMENT
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 3
+	mv ahi_pragmas.h $@
 
 SAS-pragmas-ahi_sub_pragmas.h:	FD/ahi_sub_lib.fd
-	fd2pragma $< 3 TO $@ COMMENT
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 3
+	mv ahi_sub_pragmas.h $@
 
 SAS-proto-ahi.h:	FD/ahi_lib.fd
-	fd2pragma $< 33 TO $@
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 33
+	mv ahi.h $@
 
 SAS-proto-ahi_sub.h:	FD/ahi_sub_lib.fd
-	fd2pragma $< 33 TO $@
+	$(FD2PRAGMA) $(FD2PP)infile $< $(FD2PP)special 33
+	mv ahi_sub.h $@
 
 gcc-inline-ahi.h:	FD/ahi_lib.fd C/clib/ahi_protos.h
-	fd2inline --new $< $(srcdir)/C/clib/ahi_protos.h -o $@
+	$(FD2INLINE) --new $< $(srcdir)/C/clib/ahi_protos.h -o $@
 
 gcc-inline-ahi_sub.h:	FD/ahi_sub_lib.fd C/clib/ahi_sub_protos.h
-	fd2inline --new $< $(srcdir)/C/clib/ahi_sub_protos.h -o $@
+	$(FD2INLINE) --new $< $(srcdir)/C/clib/ahi_sub_protos.h -o $@
 
-gcc-ppcinline-ahi.h:	FD/ahi_lib.fd C/clib/ahi_protos.h
-	fd2inline --new --powerup $< $(srcdir)/C/clib/ahi_protos.h -o $@
+#gcc-ppcinline-ahi.h:	FD/ahi_lib.fd C/clib/ahi_protos.h
+#	$(FD2INLINE) --new --powerup $< $(srcdir)/C/clib/ahi_protos.h -o $@
 
-gcc-ppcinline-ahi_sub.h:	FD/ahi_sub_lib.fd C/clib/ahi_sub_protos.h
-	fd2inline --new --powerup $< $(srcdir)/C/clib/ahi_sub_protos.h -o $@
+#gcc-ppcinline-ahi_sub.h:	FD/ahi_sub_lib.fd C/clib/ahi_sub_protos.h
+#	$(FD2INLINE) --new --powerup $< $(srcdir)/C/clib/ahi_sub_protos.h -o $@
 
 gcc-proto-ahi.h:		FD/ahi_lib.fd
-	fd2inline --proto --powerup $< -o $@
+	$(FD2INLINE) --proto $< -o $@
 
 gcc-proto-ahi_sub.h:	FD/ahi_sub_lib.fd
-	fd2inline --proto --powerup $< -o $@
+	$(FD2INLINE) --proto $< -o $@
