@@ -1,5 +1,10 @@
 2003-07-23  Martin Blom  <martin@blom.org>
 
+	* ahi.device: The linear interpolation code was like totally
+	fucked up when sounds were looping or joined. The test sine in the
+	preferences program finally sounds ok at other frequencies than 48
+	kHz.
+
 	* AHI: "Play a test sound" now plays a 16 bit sample instead of 8
 	bit, and it's always played at full volume.
 

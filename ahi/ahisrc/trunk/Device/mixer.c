@@ -787,8 +787,42 @@ Mix( struct Hook*             unused_Hook,
           {
             /* Linear interpol. stuff */
 
-            cd->cd_StartPointL = cd->cd_TempStartPointL;
-            cd->cd_StartPointR = cd->cd_TempStartPointR;
+	    ULONG lo = (ULONG) (cd->cd_LastOffset >> 32);
+	    KPrintF("lo: %08lx:%08lx\n",lo,(ULONG)cd->cd_LastOffset);
+	    switch( cd->cd_Type ) {
+
+	      case AHIST_M8S:
+		cd->cd_StartPointL = ((BYTE*) cd->cd_DataStart)[ lo ] << 8;
+		break;
+
+	      case AHIST_S8S:
+		cd->cd_StartPointL = ((BYTE*) cd->cd_DataStart)[ lo*2+0 ] << 8;
+		cd->cd_StartPointR = ((BYTE*) cd->cd_DataStart)[ lo*2+1 ] << 8;
+		break;
+
+	      case AHIST_M16S:
+		cd->cd_StartPointL = ((WORD*) cd->cd_DataStart)[ lo ];
+		break;
+
+	      case AHIST_S16S:
+		cd->cd_StartPointL = ((WORD*) cd->cd_DataStart)[ lo*2+0 ];
+		cd->cd_StartPointR = ((WORD*) cd->cd_DataStart)[ lo*2+1 ];
+		break;
+
+	      case AHIST_M32S:
+		cd->cd_StartPointL = ((LONG*) cd->cd_DataStart)[ lo ] >> 16;
+		break;
+
+	      case AHIST_S32S:
+		cd->cd_StartPointL = ((LONG*) cd->cd_DataStart)[ lo*2+0 ] >> 16;
+		cd->cd_StartPointR = ((LONG*) cd->cd_DataStart)[ lo*2+1 ] >> 16;
+		break;
+	    }
+
+//	    This old code is totally fucked up ... Why didn't anybody
+//	    complain?!
+//            cd->cd_StartPointL = cd->cd_TempStartPointL;
+//            cd->cd_StartPointR = cd->cd_TempStartPointR;
 
 /* 	    KPrintF( "cd->cd_StartPointL=%08lx, cd->cd_StartPointR=%08lx\n", */
 /* 		     cd->cd_StartPointL, cd->cd_StartPointR ); */
