@@ -49,6 +49,10 @@
 #include "devsupp.h"
 
 
+#ifdef __AMIGAOS4
+#define IAHIsub ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_IAHIsub
+#endif
+
 static void TermIO(struct AHIRequest *, struct AHIBase *);
 static void Devicequery(struct AHIRequest *, struct AHIBase *);
 static void ResetCmd(struct AHIRequest *, struct AHIBase *);

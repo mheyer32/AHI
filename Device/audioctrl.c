@@ -473,6 +473,9 @@ _AHI_AllocAudioA( struct TagItem* tags,
   struct Library *AHIsubBase;
   struct AHI_AudioDatabase *audiodb;
   struct TagItem *dbtags;
+#ifdef __AMIGAOS4__
+  struct AHIsubIFace* IAHIsub;
+#endif
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -497,10 +500,11 @@ _AHI_AllocAudioA( struct TagItem* tags,
     goto error;
 
 #ifdef __AMIGAOS4__
-  if ((IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) == NULL)
+  if ((audioctrl->ahiac_IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) == NULL)
   {    
        goto error;
   }
+  IAHIsub = audioctrl->ahiac_IAHIsub;
 #endif
 
   // Never allow drivers that are newer than ahi.device.
@@ -719,6 +723,9 @@ _AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
 {
   struct Library *AHIsubBase;
   int i;
+#ifdef __AMIGAOS4__
+  struct AHIsubIFace* IAHIsub = audioctrl->ahiac_IAHIsub;
+#endif
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -939,6 +946,9 @@ _AHI_ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
   UBYTE update=FALSE;
   struct TagItem *tag,*tstate=tags;
   struct Library *AHIsubBase=audioctrl->ahiac_SubLib;
+#ifdef __AMIGAOS4__
+  struct AHIsubIFace* IAHIsub = audioctrl->ahiac_IAHIsub;
+#endif
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {

@@ -122,11 +122,14 @@ static const struct Resident RomTag =
 ** Globals ********************************************************************
 ******************************************************************************/
 
+#if !defined( __AMIGAOS4__ )
 struct ExecBase           *SysBase        = NULL;
-struct AHIBase            *AHIBase        = NULL;
 struct DosLibrary         *DOSBase        = NULL;
-struct Library            *GadToolsBase   = NULL;
 struct GfxBase            *GfxBase        = NULL;
+#endif
+
+struct AHIBase            *AHIBase        = NULL;
+struct Library            *GadToolsBase   = NULL;
 struct Library            *IFFParseBase   = NULL;
 struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
@@ -134,8 +137,10 @@ struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 
 #if defined( __AMIGAOS4__ )
+struct Library            *SysBase        = NULL;
+struct Library            *DOSBase        = NULL;
+struct Library            *GfxBase        = NULL;
 struct ExecIFace          *IExec          = NULL;
-struct AHIIFace           *IAHI           = NULL;
 struct DOSIFace           *IDOS           = NULL;
 struct GadToolsIFace      *IGadTools      = NULL;
 struct GraphicsIFace      *IGraphics      = NULL;
@@ -144,7 +149,6 @@ struct IntuitionIFace     *IIntuition     = NULL;
 struct LocaleIFace        *ILocale        = NULL;
 struct TimerIFace         *ITimer         = NULL;
 struct UtilityIFace       *IUtility       = NULL;
-struct AHIsubIFace        *IAHIsub        = NULL;
 #endif
 
 struct Resident           *MorphOSRes     = NULL;
@@ -240,7 +244,7 @@ static const char VersTag[] =
  " version.\r\n";
 #else
 static const char VersTag[] =
- "$VER: " AHINAME " " VERS " ©1994-2003 Martin Blom. "
+ "$VER: " AHINAME " " VERS " (C)1994-2003 Martin Blom. "
  "603e" 
  " version.\r\n";
 #endif

@@ -39,6 +39,9 @@
 #include "misc.h"
 #include "mixer.h"
 
+#ifdef __AMIGAOS4__
+#define IAHIsub audioctrl->ahiac_IAHIsub
+#endif
 
 /***********************************************
 ***** NOTE: The mixing routine might execute while we are inside these
