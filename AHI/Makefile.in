@@ -94,7 +94,7 @@ version.h:	version.rev version.date
 
 revup:
 	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
-	@date +%y.%m.%d > version.date
+	@date +%d.%m.%y > version.date
 	@echo -n "New revision: "
 	@cat version.rev
 
