@@ -138,7 +138,7 @@ InternalSampleFrameSize( ULONG sampletype )
 
 /* PPC code ******************************************************************/
 
-static void
+static inline void
 CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                void* arg )
 {
@@ -148,7 +148,7 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
-static void
+static inline void
 CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
   audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
@@ -206,19 +206,23 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
 kprintf("I");
     while( running )
     {
+kprintf("0");
       switch( audioctrl->ahiac_PPCCommand )
       {
         case AHIAC_COM_INIT:
+kprintf("1");
           // Keep looping
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
         case AHIAC_COM_ACK:
+kprintf("2");
           // Keep looping, try not to waste to much memory bandwidth...
           asm( "stop #(1<<13) | (2<<8)" : );
           break;
 
         case AHIAC_COM_SOUNDFUNC:
+kprintf("3");
           CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                        (struct AHIPrivAudioCtrl*) audioctrl,
                        (APTR) audioctrl->ahiac_PPCArgument );
@@ -226,17 +230,20 @@ kprintf("I");
           break;
 
         case AHIAC_COM_DEBUG:
+kprintf("4");
           CallDebug( audioctrl, (ULONG) audioctrl->ahiac_PPCArgument );
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
         case AHIAC_COM_QUIT:
+kprintf("5");
           running = FALSE;
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
         
         case AHIAC_COM_NONE:
         default:
+kprintf("6");
           // Error
           running  = FALSE;
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
@@ -258,17 +265,6 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   struct AHISoundData *sd;
   int                  i;
   BOOL                 flushed = FALSE;
-
-  struct ModuleArgs mod =
-  {
-    IF_CACHEFLUSHNO, 0, 0,
-    IF_CACHEFLUSHNO | IF_ASYNC, 0, 0,
-
-    0xC0DECAFE,
-    (ULONG) Hook, (ULONG) audioctrl->ahiac_PPCMixBuffer, (ULONG) audioctrl,
-    0, 0, 0, 0,
-    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-  };
 
 kprintf("M");
   // Flush all DYNAMICSAMPLE's
@@ -330,14 +326,34 @@ kprintf("M");
   switch( MixBackend )
   {
     case MB_POWERUP:
+    {
+      struct ModuleArgs mod =
+      {
+        IF_CACHEFLUSHNO, 0, 0,
+        IF_CACHEFLUSHNO | IF_ASYNC, 0, 0,
+
+        0xC0DECAFE,
+        (ULONG) Hook, (ULONG) audioctrl->ahiac_PPCMixBuffer, (ULONG) audioctrl,
+        0, 0, 0, 0,
+        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+      };
+
       kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
       kprintf("k");
+
+      audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // I like it better after
       break;
+    }
 
     case MB_WARPUP:
+      audioctrl->ahiac_PPCWarpUpContext->AudioCtrl = (struct AudioCtrl*) audioctrl;
+      audioctrl->ahiac_PPCWarpUpContext->Hook      = Hook;
+      audioctrl->ahiac_PPCWarpUpContext->Dst       = audioctrl->ahiac_PPCMixBuffer;
+      audioctrl->ahiac_PPCWarpUpContext->Active    = TRUE;
+
+      audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // Must be before
       kprintf("C");
-      audioctrl->ahiac_PPCWarpUpContext->Active = TRUE;
       CausePPCInterrupt();
       kprintf("c");
       break;
@@ -347,7 +363,6 @@ kprintf("M");
       break;
   }
 
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
 
   // The PPC mix buffer is not m68k-cachable (or cleared); just read from it.
@@ -533,8 +548,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
             if( audioctrl->ahiac_PPCWarpUpContext != NULL )
             {
               audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
-              audioctrl->ahiac_PPCWarpUpContext->AudioCtrl   = 
-                  (struct AudioCtrl*) audioctrl;
 
               args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
 
