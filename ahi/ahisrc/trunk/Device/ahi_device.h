@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/04/07 13:12:35  lcs
+* Increased playerfreq to 100 Hz again
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -80,7 +83,7 @@ struct NSDeviceQueryResult
 
 #define AHI_PRI		50	/* Priority for the device process */
 
-#define PLAYERFREQ	50	/* How often the PlayerFunc is called */
+#define PLAYERFREQ	100	/* How often the PlayerFunc is called */
 
 #define AHICMD_END	CMD_NONSTD
 
