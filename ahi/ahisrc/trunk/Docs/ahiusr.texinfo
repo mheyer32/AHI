@@ -63,6 +63,10 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.6  2003/02/09 15:04:48  martin
+Added a link to CyberSound.lha for 14 bit Paula calibration.
+Clarified the relationshit between units and sound cards.
+
 Revision 5.5  2003/02/08 14:14:18  martin
 Wrote about the "Paula:DMA 8 bit stereo" mode.
 
@@ -588,6 +592,9 @@ hardware, namely the @dfn{output volume}, @dfn{monitor volume} and
 @dfn{input gain}.  Finally, you can select which input and output
 connectors you wish to use.
 
+Normally, you configure one unit per sound card. Since most people
+only have one sound card, all units but unit 0 are often unused.
+
 The @samp{Music unit} is the defaults for low-level programs.  Such
 programs often have an audio mode requester that lets you chose an audio
 mode.  If you chose @samp{Default audio mode} from this requester, these
@@ -911,12 +918,17 @@ at the Kato Development Group's WWW page:
 @cindex Calibration, 14 bit
 
 @item paula.audio
-On startup, the file @file{ENV:CyberSound/SoundDrivers/14Bit_Calibration}
-is read and used for the 14 bit DAC calibration.
+On startup, the file
+@file{ENV:CyberSound/SoundDrivers/14Bit_Calibration} is read and used
+for the 14 bit DAC calibration. This file can be created by using
+Christian Buchner's CyberSound calibration tool, which is avalilable
+from
+@url{http://www.lysator.liu.se/~lcs/files/ahi/extras/CyberSound.lha},
+among other places.
 
-The 14 bit modes cannot be used for recording, but the 8 bit modes supports
-both generic parallel port samplers as well as both the Aura and Clarity
-samplers.
+The 14 bit modes cannot be used for recording, but the 8 bit modes
+supports both generic parallel port samplers as well as both the Aura
+and Clarity samplers.
 
 @cindex DMA
 
