@@ -9,8 +9,8 @@ CPU	= 68030
 
 #Can be VERSION68K, VERSIONGEN, VERSIONPOWERUP or VERSIONWARPUP:
 
-VER	= VERSION68K
-			
+VER	= VERSIONGEN
+
 
 #
 # Autoconfig stuff
@@ -27,6 +27,7 @@ CATDIR		= ${DISTDIR}/User/Catalogs
 build_os	= @build_os@
 
 CC		= @CC@
+AS		= @AS@
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 FLEXCAT		= @FLEXCAT@
@@ -34,6 +35,7 @@ ASM		= @ASM@
 
 CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
 CFLAGS		= @CFLAGS@ -m$(CPU)
+ASFLAGS		= @ASFLAGS@ -m$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
 ASMFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD \
@@ -139,6 +141,9 @@ Makefile: Makefile.in ../config.status
 ########################################
 
 %.o:	%.s
+	$(AS) $(ASFLAGS) $< -o $@
+
+asmfuncs.o devsupp.o dspecho_68k.o header.o mixer_68k.o:
 	$(ASM) $(ASMFLAGS) $<
 	objcopy $@ --output-target=a.out-amiga
 
