@@ -1,6 +1,9 @@
 #
 # $Id$
 # $Log$
+# Revision 1.5  2002/01/03 09:01:58  martin
+# Tweaked smakefile so I could build a binary.
+#
 # Revision 1.4  2002/01/03 08:51:06  martin
 # Imported RCS archive to the AHI CVS tree.
 # Imported the last source snapshot I got from Teemu.
@@ -28,6 +31,8 @@ CFLAGS	= CPU=68060 SAVEDS\
 PARAMS=REGISTER LIBCODE NOSTACKCHECK DEBUG=FULL STRINGMERGE\
 DATA=NEAR NOVERSION UTILITYLIB OPTIMIZE OPTTIME OPTSCHED
 
+AFLAGS  = SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD INCPATH=Include:
+
 LFLAGS	= \
 LIBFD FD:toccata_lib.fd NOICONS SMALLDATA SMALLCODE \
 LIBVERSION $(VERSION) LIBREVISION $(REVISION) LIBID "$(VSTRING)"
@@ -37,14 +42,14 @@ all:		$(DEST)
 $(DEST):	$(OBJECTS)
 	slink $(LFLAGS) TO $@ FROM lib:libent.o $(OBJECTS) \
 		LIB LIB:sc.lib LIB:amiga.lib
-	slink toccata.library to libs:toccata.library nodebug
+	slink toccata.library to $(DEST) nodebug
 	--flushmem
 
 .c.o:
 	sc $(CFLAGS) $*.c
 
 .a.o:
-  	genam $*.a
+  	phxass $(AFLAGS) $*.a
 
 libinit.o:	libinit.c
 	sc $(CFLAGS) DEF ONE_GLOBAL_SECTION $<
