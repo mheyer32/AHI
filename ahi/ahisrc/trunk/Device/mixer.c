@@ -287,24 +287,30 @@ kprintf("M");
       }
       else
       {
-        if( PPCLibBase != NULL )
+        switch( MixBackend )
         {
-          PPCCacheClearE( sd->sd_Addr,
-                          sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ),
-                          CACRF_ClearD );
-        }
-        else
-        {
-          SetCache68K( CACHE_DCACHEFLUSH,
-                       sd->sd_Addr,
-                       sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+          case MB_POWERUP:
+            PPCCacheClearE( sd->sd_Addr,
+                            sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ),
+                            CACRF_ClearD );
+            break;
+
+          case MB_WARPUP:
+            SetCache68K( CACHE_DCACHEFLUSH,
+                         sd->sd_Addr,
+                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+            break;
+
+          default:
+            // Ugh!
+            break;
         }
       }
     }
     sd++;
   }
 
-  if( ! flushed && PPCLibBase == NULL )
+  if( ! flushed && MixBackend == MB_WARPUP )
   {
 
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
@@ -318,16 +324,22 @@ kprintf("M");
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
 
-  if( PPCLibBase != NULL )
+  switch( MixBackend )
   {
-kprintf("K");
-    PPCRunKernelObject( PPCObject, &mod );
-kprintf("k");
-  }
-  else
-  {
-//kprintf( "." );
+    case MB_POWERUP:
+      kprintf("K");
+      PPCRunKernelObject( PPCObject, &mod );
+      kprintf("k");
+      break;
+
+    case MB_WARPUP:
+//    kprintf( "." );
 //    CausePPCInterrupt();
+      break;
+
+    default:
+      // Ugh!
+      break;
   }
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
@@ -484,37 +496,49 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
       if( r != 0 )
       {
-        if( PPCLibBase != NULL )
+        switch( MixBackend )
         {
-          rc = TRUE;
-        }
-        else
-        {
-          // Initialize the WarpUp side
-        
-          struct PPCArgs args = 
-          {
-            NULL,
-            0,
-            0,
-            NULL,
-            0,
-            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-            { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-          };
+          case MB_NATIVE:
+            Req( "Internal error: Illegal MixBackend in InitMixroutine()" );
+            break;
 
-          if( AHIGetELFSymbol( "WarpInit", &args.PP_Code ) )
+          case MB_POWERUP:
+            rc = TRUE;
+            break;
+
+          case MB_WARPUP:
           {
-            int status;
+            // Initialize the WarpUp side
+        
+            struct PPCArgs args = 
+            {
+              NULL,
+              0,
+              0,
+              NULL,
+              0,
+              { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+              { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+            };
+
+            if( AHIGetELFSymbol( "WarpInit", &args.PP_Code ) )
+            {
+              int status;
 
 //            status = RunPPC( &args );
             
 //            if( status == PPERR_SUCCESS )
-            {
-              rc = TRUE;
+              {
+                rc = TRUE;
+              }
             }
+            
+            break;
           }
 
+          default:
+            Req( "Internal error: Unknown MixBackend in InitMixroutine()" );
+            break;
         }
       }
       else

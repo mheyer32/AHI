@@ -76,20 +76,7 @@ struct AHIDevUnit;
 
 /*** Globals ***/
 
-extern struct ExecBase          *SysBase;
 extern struct AHIBase           *AHIBase;
-extern struct DosLibrary        *DOSBase;
-extern struct Library           *GadToolsBase;
-extern struct GfxBase           *GfxBase;
-extern struct Library           *IFFParseBase;
-extern struct IntuitionBase     *IntuitionBase;
-extern struct LocaleBase        *LocaleBase;
-extern struct Device            *TimerBase;
-extern struct UtilityBase       *UtilityBase;
-extern struct Library           *PowerPCBase;
-extern struct Library           *PPCLibBase;
-extern void                     *PPCObject;
-
 
 /*** Definitions ***/
 
@@ -141,7 +128,6 @@ struct AHISoundData
   ULONG   sd_Type;
   APTR    sd_Addr;
   ULONG   sd_Length;
-  APTR    sd_InputBuffer[3];
 };
 
 /* Private AHIChannelData */
