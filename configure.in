@@ -160,6 +160,8 @@ AC_CONFIG_FILES([AHI/Makefile
                  Classes/Makefile
                  Classes/Common/Makefile.common
                  Classes/AHIRootClass/Makefile
+                 Classes/Buffer/Makefile
+                 Classes/Processor/Makefile
                  Device/Makefile
                  Docs/Makefile
                  Drivers/Makefile
