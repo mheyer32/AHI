@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.19  1998/08/01 02:14:41  lcs
+* Changed DEVS:ahi to DEVS:AHI
+*
 * Revision 4.18  1998/01/29 23:09:47  lcs
 * Playing with anticlick
 *
@@ -213,7 +216,7 @@ CreateAudioCtrl(struct TagItem *tags)
           audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
         }
 #endif
-        stpcpy(stpcpy(stpcpy(audioctrl->ahiac_DriverName,"DEVS:ahi/"),
+        stpcpy(stpcpy(stpcpy(audioctrl->ahiac_DriverName,"DEVS:AHI/"),
             (char *)GetTagData(AHIDB_Driver,(ULONG)"",dbtags)),".audio");
         error=FALSE;
       }
