@@ -23,6 +23,9 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
+// Fix broken includes
+struct VSPrite;
+
 #include <exec/memory.h>
 #include <graphics/rpattr.h>
 #include <intuition/gadgetclass.h>
@@ -435,7 +438,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
     gad=CreateGadget(LISTVIEW_KIND,gad,&ng,
         GTLV_ScrollWidth,(fontwidth>8 ? fontwidth*2 : 18),
         GTLV_Labels, (ULONG) req->list,
-        GTLV_ShowSelected,NULL,
+        GTLV_ShowSelected,0,
         ((selected == ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
         (selected == ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
         GTLV_Selected,selected,
@@ -1180,7 +1183,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
   struct AHIAudioModeRequesterExt *req=(struct AHIAudioModeRequesterExt *)req_in;
   struct MinList list;
   struct IDnode *node = NULL, *node2 = NULL;
-  ULONG screenTag=TAG_IGNORE,screenData = NULL ,id=AHI_INVALID_ID;
+  ULONG screenTag=TAG_IGNORE,screenData = 0 ,id=AHI_INVALID_ID;
   BOOL  rc=TRUE;
   struct Requester lockreq;
   BOOL  locksuxs = FALSE;
@@ -1329,7 +1332,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
     WA_Activate,TRUE,
     WA_SimpleRefresh,TRUE,
     WA_AutoAdjust,TRUE,
-    WA_IDCMP,(req->Flags & ownIDCMP ? NULL : MY_IDCMPS),
+    WA_IDCMP,(req->Flags & ownIDCMP ? 0 : MY_IDCMPS),
     WA_NewLookMenus, TRUE,
     TAG_DONE);
 

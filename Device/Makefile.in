@@ -35,15 +35,7 @@ ARFLAGS         = @ARFLAGS@
 
 LIBS		= @LIBS@
 
-ASM		= @ASM@
-ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
-		  QUIET NOEXE OPT NRQBPSMD
-
 TARGET		= ahi.device
-
-ifeq ($(strip $(ASM)),)
-ASM		= @echo 'No suitable assembler found; cannot make $@!'; false \#
-endif
 
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
@@ -64,7 +56,7 @@ ENABLE_WARPUP	= @ENABLE_WARPUP@
 LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
-OBJECTS		= header.o gateway.o device.o devcommands.o \
+OBJECTS		= header.o gateway.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  audioctrl.o effectinit.o sound.o misc.o\
 		  mixer.o 
@@ -74,7 +66,7 @@ OBJECTS		+= elfloader.o warpup.o
 endif
 
 ifeq ($(host_cpu),m68k)
-OBJECTS		+= devsupp.o addroutines_68k.o
+OBJECTS		+= addroutines_68k.o
 endif
 
 ifeq ($(host_cpu),ppc)
@@ -143,9 +135,6 @@ Makefile: Makefile.in ../config.status
 	gasp $< | $(AS) $(ASFLAGS) -o $@
 	#$(AS) $(ASFLAGS) $< -o $@
 
-asmfuncs.o devsupp.o:
-	$(ASM) $(ASMFLAGS) $< TO $@
-
 $(TARGET):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
@@ -176,7 +165,7 @@ localize.h:		ahi.cd C_c_AHI.sd
 
 # Just some test code...
 
-elftest:		elftest.o elfloader.o asmfuncs.o
+elftest:		elftest.o elfloader.o
 	$(CC) $^ $(LIBS) -o $@
 
 
@@ -201,8 +190,6 @@ Makefile.dep:	$(DEPENDENCIES) localize.c localize.h version.h
 
 include Makefile.dep
 
-asmfuncs.o:	asmfuncs.s
-devsupp.o:	devsupp.s
 addroutines_ppc.o:	addroutines_ppc.s
 addroutines_68k.o:	addroutines_68k.s
 

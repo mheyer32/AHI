@@ -50,12 +50,13 @@ CloseLibs ( void );
 ** Device entry ***************************************************************
 ******************************************************************************/
 
-int Start( void )
+int
+_start( void )
 {
   return -1;
 }
 
-#ifdef __morphos__
+#if defined( __morphos__ ) || defined( __MORPHOS__ )
 ULONG   __amigappc__=1;
 #endif
 
@@ -67,12 +68,14 @@ extern const char DevName[];
 extern const char IDString[];
 static const APTR InitTable[4];
 
+// This structure must reside in the text segment or the read-only data segment!
+// "const" makes it happen.
 static const struct Resident RomTag =
 {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &RomTag + 1,
-#ifdef __morphos__
+#if defined( __morphos__ ) || defined( __MORPHOS__ ) || defined( __amithlon__ )
   RTF_PPC | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
@@ -243,7 +246,7 @@ Null( void )
 static const APTR funcTable[] =
 {
 
-#ifdef __morphos__
+#if defined( __morphos__ ) || defined( __MORPHOS__ ) || defined( __amithlon__ )
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
 
@@ -610,10 +613,11 @@ OpenLibs ( void )
       switch( MixBackend )
       {
         case MB_NATIVE:
-#ifdef __morphos__
+#if defined( __morphos__ ) || defined( __MORPHOS__ )
           backend = "MorphOS/" CPU;
+#elif defined( __amithlon__ )
+          backend = "Amithlon/" CPU;
 #else
-          backend = "AmigaOS/" CPU;
 #endif
           break;
 

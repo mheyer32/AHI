@@ -71,9 +71,10 @@ maintainer-clean: distclean
 
 bindist:	all
 	$(INSTALL) --directory $(PREFSDIR)
-	for i in $(TARGETS); do \
-	  $(INSTALL_PROGRAM) --strip $$i $(PREFSDIR)/$$i; \
-	done
+	$(INSTALL_PROGRAM) --strip AHI_MUI $(PREFSDIR)/AHI
+#	for i in $(TARGETS); do \
+#	  $(INSTALL_PROGRAM) --strip $$i $(PREFSDIR)/$$i; \
+#	done
 	$(INSTALL_DATA) ${srcdir}/AHI.info $(PREFSDIR)
 	$(INSTALL_DATA) ${srcdir}/AHI.MWB.info $(PREFSDIR)
 	for i in $(LANGUAGES); do \
