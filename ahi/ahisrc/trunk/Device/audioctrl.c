@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.9  1997/02/02 22:35:50  lcs
+* Localized it
+*
 * Revision 1.8  1997/02/02 18:15:04  lcs
 * Added protection against CPU overload
 *
@@ -22,7 +25,7 @@
 */
 
 #include "ahi_def.h"
-
+#include "localize.h"
 
 #include <exec/memory.h>
 #include <exec/alerts.h>
@@ -733,10 +736,14 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
               break;
 // Input & Output strings
             case AHIDB_Input:
-              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,GetTagData(AHIDB_InputArg,0,tags),(ULONG)"Default",dbtags,audioctrl),stringlen);
+              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,
+                  GetTagData(AHIDB_InputArg,0,tags),
+                  (ULONG) GetAHIString(msgDefault),dbtags,audioctrl),stringlen);
               break;
             case AHIDB_Output:
-              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,GetTagData(AHIDB_OutputArg,0,tags),(ULONG)"Default",dbtags,audioctrl),stringlen);
+              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,
+                  GetTagData(AHIDB_OutputArg,0,tags),
+                  (ULONG) GetAHIString(msgDefault),dbtags,audioctrl),stringlen);
               break;
 // Other
             case AHIDB_Bits:

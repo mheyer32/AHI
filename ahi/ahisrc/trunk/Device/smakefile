@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.8  1997/02/02 22:35:50  lcs
+# Localized it
+#
 # Revision 1.7  1997/02/01 19:44:18  lcs
 # Added dspecho.a
 #
@@ -28,12 +31,12 @@ OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
 TARGET	= AHI:User/Devs/ahi.device
 
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
-device.c devsupp.a dspecho.a footer.a header.a requester.c
+device.c devsupp.a dspecho.a footer.a header.a localize.c requester.c
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h AHI.sd smakefile
 
 OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
-device.o devsupp.o dspecho.o footer.o requester.o header.o 
+device.o devsupp.o dspecho.o footer.o localize.o requester.o header.o 
 
 CCOMP	= SC:c/sc
 CFLAGS	= DEBUG=FULL DATA=FARONLY PARAMETERS=REGISTERS NOSTACKCHECK UNSIGNEDCHARS\
@@ -85,16 +88,24 @@ ahi_rev.i: $(SOURCES)
 .c.o:
 	$(CCOMP) $(CFLAGS) $*.c
 
-header.o:	header.a ahi_def.i ahi_rev.i
-device.o:	device.c ahi_def.h ahi_device.h
-devcommands.o:	devcommands.c ahi_def.h ahi_device.h
-devsupp.o:	devsupp.a
-asmfuncs.o:	asmfuncs.a ahi_def.i
-cfuncs.o:	cfuncs.c ahi_def.h
-database.o:	database.c ahi_def.h
+localize.c:	AHI.cd C_c_AHI.sd
+	FlexCat AHI.cd localize.c=C_c_AHI.sd 
+
+localize.h:	AHI.cd C_c_AHI.sd
+	FlexCat AHI.cd localize.h=C_h.sd
+
 addroutines.o:	addroutines.a ahi_def.i
-requester.o:	requester.c ahi_def.h
+asmfuncs.o:	asmfuncs.a ahi_def.i
+cfuncs.o:	cfuncs.c localize.h ahi_def.h
+database.o:	database.c ahi_def.h
+devcommands.o:	devcommands.c ahi_def.h ahi_device.h
+device.o:	device.c ahi_def.h ahi_device.h
+devsupp.o:	devsupp.a
+dspecho.o:	dspecho.a ahi_def.i
 footer.o:	footer.a
+header.o:	header.a ahi_def.i ahi_rev.i
+localize.o:	localize.c
+requester.o:	requester.c localize.h ahi_def.h
 
 ##
 ## Prototypes
@@ -102,7 +113,7 @@ footer.o:	footer.a
 ###############################################################################
 
 protos: device_protos.h cfuncs_protos.h database_protos.h requester_protos.h\
-	devcommands_protos.h devsupp_protos.h
+	devcommands_protos.h devsupp_protos.h localize_protos.h
 
 device_protos.h: device.c
 	$(CCOMP) GPROTO $(CFLAGS) device.c
@@ -166,6 +177,22 @@ autodocs:
 	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.html HTML SORT #XREF T:ahi.xref
 	--move ahi.doc ahi.guide ahi.html ahi_sub.doc ahi_sub.guide ahi_sub.html AHI:Developer/Docs/ QUIET
 	--delete T:ahi.xref T:ahi_sub.xref QUIET
+
+##
+## Build catalog files
+##
+###############################################################################
+
+catalogs:
+	FlexCat AHI.cd Svenska.ct CATALOG AHI:User/Catalogs/Svenska/AHI.catalog
+
+##
+## Update catalog files
+##
+###############################################################################
+
+newcatalogs:
+	FlexCat AHI.cd Svenska.ct NEWCTFILE Svenska.ct
 
 ##
 ## Check in all files

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.8  1997/02/02 22:35:50  lcs
+* Localized it
+*
 * Revision 1.7  1997/02/02 18:15:04  lcs
 * Added protection against CPU overload
 *
@@ -45,6 +48,7 @@ extern __far struct Library		*GadToolsBase;
 extern __far struct GfxBase		*GfxBase;
 extern __far struct Library		*IFFParseBase;
 extern __far struct IntuitionBase	*IntuitionBase;
+extern __far struct Library		*LocaleBase;
 extern __far struct Library		*TimerBase;
 extern __far struct Library		*UtilityBase;
 
