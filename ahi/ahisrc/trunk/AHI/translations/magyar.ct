@@ -1,310 +1,259 @@
-## version $VER: ahiprefs.catalog 4.5 (13.12.97)
+## chunk AUTH Dósa Márton (dm_@freemail.hu)
 ## language magyar
-## codeset 0
-;
-## chunk AUTH Translated by Vörös Viktor <v_viktor@hotmail.com>
-;
-; The .ct file was generated from
-; $Id$
-;
-;    AHI - Hardware independent audio subsystem
-;    Copyright (C) 1996-2001 Martin Blom <martin@blom.org>
-;     
-;    This library is free software; you can redistribute it and/or
-;    modify it under the terms of the GNU Library General Public
-;    License as published by the Free Software Foundation; either
-;    version 2 of the License, or (at your option) any later version.
-;     
-;    This library is distributed in the hope that it will be useful,
-;    but WITHOUT ANY WARRANTY; without even the implied warranty of
-;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;    Library General Public License for more details.
-;     
-;    You should have received a copy of the GNU Library General Public
-;    License along with this library; if not, write to the
-;    Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
-;    MA 02139, USA.
-;
-; *** Menus ***
-;
+## version $VER: ahiprefs.ct 4.5 (30.12.01)
 msgMenuProject
-\000Állomány
-;\000Project
-;
+\000Projekt
+;#DEF \000Project
+;#SET (//)
 msgItemOpen
 O\000Megnyitás...
-;O\000Open...
-;
+;#DEF O\000Open...
+;#SET (//)
 msgItemSaveAs
-A\000Más néven mentés...
-;A\000Save As...
-;
+A\000Mentés mint...
+;#DEF A\000Save As...
+;#SET (//)
 msgItemAbout
-?\000Rólam...
-;?\000About...
-;
+?\000Névjegy...
+;#DEF ?\000About...
+;#SET (//)
 msgItemQuit
 Q\000Kilépés
-;Q\000Quit
-;
+;#DEF Q\000Quit
+;#SET (//)
 msgMenuEdit
 \000Szerkesztés
-;\000Edit
-;
+;#DEF \000Edit
+;#SET (//)
 msgItemDefaults
-D\000Alapértelmezés
-;D\000Reset To Defaults
-;
+D\000Alapértelmezettek visszaállítása
+;#DEF D\000Reset To Defaults
+;#SET (//)
 msgItemLastSaved
-L\000Utoljára tárolt
-;L\000Last Saved
-;
+L\000Utoljára mentett
+;#DEF L\000Last Saved
+;#SET (//)
 msgItemRestore
-R\000Eddig használt
-;R\000Restore
-;
+R\000Visszaállítás
+;#DEF R\000Restore
+;#SET (//)
 msgMenuSettings
-\000Opciók
-;\000Settings
-;
+\000Beállítások
+;#DEF \000Settings
+;#SET (//)
 msgItemCreateIcons
-I\000Ikonokat készít?
-;I\000Create Icons?
-;
+I\000Ikonok létrehozása?
+;#DEF I\000Create Icons?
+;#SET (//)
 msgMenuHelp
 \000Segítség
-;\000Help
-;
+;#DEF \000Help
+;#SET (//)
 msgItemHelp
 Help\000Segítség...
-;Help\000Help...
-;
+;#DEF Help\000Help...
+;#SET (//)
 msgItemUsersGuide
-H\000AHI felhasználói leírás...
-;H\000AHI User's guide...
-;
+H\000AHI felhasználói segédlet...
+;#DEF H\000AHI User's guide...
+;#SET (//)
 msgItemConceptIndex
-\000Index...
-;\000Concept Index...
-;
-; *** The pages ***
-;
+\000Elgondolás index...
+;#DEF \000Concept Index...
+;#SET (//)
 msgPageMode
-Mód beállítások
-;Mode settings
-;
+Módbeállítások
+;#DEF Mode settings
+;#SET (//)
 msgPageAdvanced
-Részletes beállítások
-;Advanced settings
-;
-; *** The units ***
-;
+Haladó beállítások
+;#DEF Advanced settings
+;#SET (//)
 msgUnitDevice
 %ld. egység
-;Unit %ld
-;
+;#DEF Unit %ld
+;#SET (//)
 msgUnitMusic
 Zene egység
-;Music unit
-;
-; *** Properties box ***
-;
+;#DEF Music unit
+;#SET (//)
 msgProperties
-Mód azonosító\nRögzítés\nKészítô\nCopyright\nMeghajtó\nVerzió
-;Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion
-;
+Mód ID\nFelvétel\nSzerzõ\nCopyright\nMeghajtóprogram\nVerzió
+;#DEF Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion
+;#SET (//)
 msgPropRecordFull
-Teljes duplex
-;Full duplex
-;
+Duplex
+;#DEF Full duplex
+;#SET (//)
 msgPropRecordHalf
 Fél duplex
-;Half duplex
-;
+;#DEF Half duplex
+;#SET (//)
 msgPropRecordNone
-Nincs
-;Nope
-;
-; *** Options ***
-;
+Nem
+;#DEF Nope
+;#SET (//)
 msgOptions
 Opciók
-;Options
-;
+;#DEF Options
+;#SET (//)
 msgOptFrequency
 _Frekvencia
-;_Frequency
-;
+;#DEF _Frequency
+;#SET (//)
 msgOptChannels
-C_satornák
-;C_hannels
-;
+Csatornák
+;#DEF C_hannels
+;#SET (//)
 msgOptNoChannels
 
-;
-;
+;#DEF 
+;#SET (//)
 msgOptVolume
-_Hangerô
-;_Volume
-;
+Hangerõ
+;#DEF _Volume
+;#SET (//)
 msgOptMonitor
-M_onitor
-;_Monitor
-;
+_Monitor
+;#DEF _Monitor
+;#SET (//)
 msgOptGain
-_Erôsítés
-;_Gain
-;
+_Gain
+;#DEF _Gain
+;#SET (//)
 msgOptMuted
-Néma
-;Muted
-;
+Némítva
+;#DEF Muted
+;#SET (//)
 msgOptInput
-_Bemenet
-;_Input
-;
+Bemenet
+;#DEF _Input
+;#SET (//)
 msgOptNoInputs
-Nincs bemenet
-;No inputs
-;
+Nincsenek bemenetek
+;#DEF No inputs
+;#SET (//)
 msgOptOutput
-_Kimenet
-;_Output
-;
+Kimenet
+;#DEF _Output
+;#SET (//)
 msgOptNoOutputs
-Nincs kimenet
-;No outputs
-;
-;
-; *** Global Options ***
-;
+Nincsenek kimenetek
+;#DEF No outputs
+;#SET (//)
 msgGlobalOptions
 Globális opciók
-;Global options
-;
+;#DEF Global options
+;#SET (//)
 msgGlobOptDebugLevel
-_Debug szint
-;_Debug level
-;
+Hibakeresés szintje
+;#DEF _Debug level
+;#SET (//)
 msgGlobOptEcho
-_Visszhang
-;_Echo
-;
+Visszhang
+;#DEF _Echo
+;#SET (//)
 msgGlobOptSurround
-_Térhatás "Fast" módban
-;Surround in "_Fast" modes
-;
+Térhatás a "Gyors" módokban
+;#DEF Surround in "_Fast" modes
+;#SET (//)
 msgGlobOptCPULimit
-CPU haszná_lati határ
-;CPU usage _limit
-;
-; *** Debug levels ***
-;
+CPU használati határ
+;#DEF CPU usage _limit
+;#SET (//)
 msgDebugNone
 Nincs
-;None
-;
+;#DEF None
+;#SET (//)
 msgDebugLow
 Alacsony
-;Low
-;
+;#DEF Low
+;#SET (//)
 msgDebugHigh
 Magas
-;High
-;
+;#DEF High
+;#SET (//)
 msgDebugFull
 Teljes
-;Full
-;
-; *** Echo ***
-;
+;#DEF Full
+;#SET (//)
 msgEchoEnabled
-Engedélyezve
-;Enabled
-;
+Bekapcsolva
+;#DEF Enabled
+;#SET (//)
 msgEchoFast
 Gyors
-;Fast
-;
+;#DEF Fast
+;#SET (//)
 msgEchoDisabled
-Nincs engedélyezve
-;Disabled
-;
-; *** Surround ***
-;
+Kikapcsolva
+;#DEF Disabled
+;#SET (//)
 msgSurroundEnabled
-Engedélyezve
-;Enabled
-;
+Bekapcsolva
+;#DEF Enabled
+;#SET (//)
 msgSurroundDisabled
-Nincs engedélyezve
-;Disabled
-;
-; *** Buttons ***
-;
+Kikapcsolva
+;#DEF Disabled
+;#SET (//)
 msgButtonSave
-_Mentés
-;_Save
-;
+Ment_sd
+;#DEF _Save
+;#SET (//)
 msgButtonUse
-_Használd
-;_Use
-;
+Használd
+;#DEF _Use
+;#SET (//)
 msgButtonCancel
-Mé_gsem
-;_Cancel
-;
+Mégse
+;#DEF _Cancel
+;#SET (//)
 msgButtonOK
-OK
-;OK
-;
-; *** Texts ***
-;
+Oké
+;#DEF OK
+;#SET (//)
 msgTextProgramName
 AHI beállítások
-;AHI preferences
-;
-;You can use something like "%s%s\nCopyright ©%s\nEnglish translation by Your Name" here...
+;#DEF AHI preferences
+;#SET (//)
 msgTextCopyright
-%s%s\nCopyright ©%s\nMagyar fordítás: Vörös Viktor
-;%s%s\nCopyright ©%s
-;
+%s%s\nCopyright ©%s
+;#DEF %s%s\nCopyright ©%s
+;#SET (//)
 msgTextNoWindow
-Nem tudom megnyitni az ablakot.
-;Unable to open window.
-;
+Nem tudok ablakot nyitni.
+;#DEF Unable to open window.
+;#SET (//)
 msgTextNoFileRequester
-Nemtudom a fájl kérdezôt allokálni
-;Unable to allocate file requester.
-;
+Nem tudok fájlkérdezõt lefoglalni.
+;#DEF Unable to allocate file requester.
+;#SET (//)
 msgTextNoFind
-Nem találom `%s'-t!
-;Unable to find `%s'!
-;
+Nem találom: '%s'!
+;#DEF Unable to find `%s'!
+;#SET (//)
 msgTextNoOpen
-Nem tudom a `%s´ %ld verzióját megnyitni.
-;Unable to open `%s´ version %ld.
-;
-; *** Additions
-;
+Nem tudom megnyitni: '%s' %ld verzió.
+;#DEF Unable to open `%s´ version %ld.
+;#SET (//)
 msgGlobOptMasterVol
-_Fô hangerô
-;_Master volume
-;
+_Mester hangerõ
+;#DEF _Master volume
+;#SET (//)
 msgMVNoClip
-Levágás nélkül
-;Without clipping
-;
+Vágás nélkül
+;#DEF Without clipping
+;#SET (//)
 msgMVClip
-Levágással
-;With clipping
-;
+Vágással
+;#DEF With clipping
+;#SET (//)
 msgGlobOptACTime
-
-;Default anti-click time
-;
+Alap anti-klikk idõ
+;#DEF Default anti-click time
+;#SET (//)
 msgButtonPlay
-
-;_Play a test sound
-; ***NEW***
-;
+Teszthang lejátszása
+;#DEF _Play a test sound
+;#SET (//)

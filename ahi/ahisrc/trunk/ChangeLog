@@ -1,4 +1,8 @@
-2001-12-29  Martin Blom  <martin@matilda.localnet>
+2002-01-02  Martin Blom  <martin@blom.org>
+
+	* Updated the Hungarian catalogs. [Márton Dósa]
+
+2001-12-29  Martin Blom  <martin@blom.org>
 
 	* When cross-building, the wrong 'strip' was used on the binaries.
 
