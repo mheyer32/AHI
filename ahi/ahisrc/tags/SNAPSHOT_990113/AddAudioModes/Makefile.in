@@ -1,0 +1,86 @@
+#  $Id$
+#
+#  Makefile.in for the AddAudioModes program
+#
+
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+top_srcdir	= @top_srcdir@
+srcdir		= @srcdir@
+DISTDIR		= @DISTDIR@
+CDIR		= ${DISTDIR}/User/C
+
+build_os	= @build_os@
+
+CC		= @CC@
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
+CFLAGS		= @CFLAGS@
+LDFLAGS		= @LDFLAGS@
+
+VPATH		= @srcdir@
+
+
+#
+# Files
+########################################
+
+SOURCES		= AddAudioModes.c
+OBJECTS		= $(SOURCES:%.c=%.o)
+TARGET		= AddAudioModes
+
+
+#
+# Targets
+########################################
+
+.PHONY:		all clean distclean maintainer-clean bindist
+
+all:		$(TARGET)
+
+clean:
+	$(RM) $(TARGET) version.h *.o *.bak *~ \#*\# core Makefile.dep
+
+distclean:	clean
+	$(RM) Makefile
+
+maintainer-clean: distclean
+
+bindist:	$(TARGET)
+	$(INSTALL) --directory $(CDIR)
+	$(INSTALL_PROGRAM) --strip $(TARGET) $(CDIR)/$(TARGET)
+
+version.h:	AddAudioModes.c
+	@echo Creating $@
+	@grep '$$Id' AddAudioModes.c | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
+
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in ../config.status
+	(cd .. && ./config.status)
+
+
+#
+# Dependencies
+########################################
+
+Makefile.dep:	$(SOURCES) version.h
+ifneq ($(build_os),"amigaos")
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+else
+	# This is much faster...
+	-@touch $@
+	-@makedepend -f $@ $(SOURCES)
+endif
+
+include Makefile.dep

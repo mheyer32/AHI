@@ -1,0 +1,137 @@
+## version $VER: ahi.catalog 4.2 (06.10.97)
+## language hrvatski
+## codeset 0
+;
+## chunk AUTH Translated by Sini¹a Loliæ <vegi@usa.net>
+;
+; $Id$
+; $Log$
+; Revision 1.1  1998/12/20 12:09:29  lcs
+; Initial revision
+;
+; Revision 4.2  1997/05/03 19:59:56  lcs
+; Set version to 4
+;
+; Revision 4.1  1997/04/02 22:29:53  lcs
+; Bumped to version 4
+;
+; Revision 1.4  1997/02/20 10:26:13  lcs
+; New Flexcat caused some problems
+;
+; Revision 1.3  1997/02/10 02:23:06  lcs
+; Infowindow in the requester added.
+;
+; Revision 1.2  1997/02/04 22:14:27  lcs
+; The users preffered audio mode can now be selected in the requester
+;
+; Revision 1.1  1997/02/02 22:37:47  lcs
+; Initial revision
+;
+;
+;
+; Input and Output connector name
+;
+msgDefault
+Osnovni
+;Default
+;
+; The requesters menu
+msgMenuControl
+\000\000Kontrola
+;\000\000Control
+;
+msgMenuLastMode
+P\000Prethodni naèin
+;L\000Last Mode
+;
+msgMenuNextMode
+S\000Slijedeæi naèin
+;N\000Next Mode
+;
+msgMenuPropertyList
+?\000Popis osobina...
+;?\000Property List...
+;
+msgMenuRestore
+V\000Vrati
+;R\000Restore
+;
+msgMenuOK
+U\000U redu
+;O\000OK
+;
+msgMenuCancel
+Z\000Zaboravi
+;C\000Cancel
+;
+; Mode name in requester whose driver cannot be opened
+;
+msgUnknown
+NEPOZNAT:Audio ID 0x%08lx
+;UNKNOWN:Audio ID 0x%08lx
+;
+; The requester gadgets
+;
+msgReqOK
+U redu
+;OK
+;
+msgReqCancel
+Zaboravi
+;Cancel
+;
+msgReqFrequency
+Frekvencija
+;Frequency
+;
+; Name of default mode in requester
+;
+msgDefaultMode
+Osnovni audio naèin
+;Default audio mode
+;
+; The requester's info-winodow
+;
+msgReqInfoTitle
+Osobine naèina
+;Mode Properties
+;
+msgReqInfoAudioID
+ID audio naèina: 0x%08lx
+;Audio mode ID: 0x%08lx
+;
+msgReqInfoResolution
+Rezolucija: %ld bit %s
+;Resolution: %ld bit %s
+;
+msgReqInfoMono
+mono
+;mono
+;
+msgReqInfoStereo
+stereo
+;stereo
+;
+msgReqInfoStereoPan
+Stereo s panoramom
+;stereo with panning
+;
+msgReqInfoChannels
+Kanali: %ld
+;Channels: %ld
+;
+msgReqInfoMixrate
+Omjeri miksanja: %ld-%ld Hz
+;Mixing rates: %ld-%ld Hz
+;
+msgReqInfoHiFi
+HiFi miksanje
+;HiFi mixing
+;
+msgReqInfoRecordHalf
+Half Duplex snimanje
+;Record in half duplex
+;
+msgReqInfoRecordFull
+Full Duplex snimanje
+;Record in full duplex
