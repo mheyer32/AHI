@@ -53,6 +53,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.15  1998/03/11 09:28:51  lcs
+Added info about how to make the Amiga video 31 kHz.
+
 Revision 4.14  1998/01/18 19:50:42  lcs
 Updated the acknowledges. Probably more.
 
@@ -859,6 +862,7 @@ Copy ENV:AHIpaulaFilterFreq ENVARC:
 @end example
 
 @cindex AHIpaulaSampleLimit variable
+@cindex VGA screen mode
 
 The variable @file{AHIpaulaSampleLimit} is also checked.  This variable
 controls how the driver should handle mixing frequencies greater than 28
@@ -885,6 +889,28 @@ Delete ENVARC:AHIpaulaSampleLimit
 
 This will turn on the screen mode checking again.
 
+@cindex CyberGraphX
+@cindex AddAudioModes
+
+Please note that this 31 kHz screen mode is not neccessary the screen mode
+you're seeing on your monitor.  If you're using a graphic card, you must
+force the Amiga video signal to 31 kHz.  CyberGraphX users might want to
+try this command (@pxref{AddAudioModes} for more information):
+
+@example
+AddAudioModes DBLSCAN
+@end example
+
+@cindex Picasso96
+@cindex AmigaVideo
+
+Picasso 96 users just need to set the @file{Picasso96/AmigaVideo} variable
+to @samp{31kHz}:
+
+@example
+SetEnv Picasso96/AmigaVideo 31kHz
+@end example
+
 @cindex AHIpaulaSwapChannels variable
 
 Because of incorrect hardware documentation, there is great confusion about
@@ -903,7 +929,7 @@ swapped.
 Finally, the variable @file{AHIpaulaBufferLength} controls the minimum
 playback buffer size to use.  Because of the limited @dfn{Chip RAM}
 bandwidth, a @dfn{MC68060} CPU might run into trouble when using the
-default minumum buffer size (0).  By setting this variable to @samp{1024},
+default minimum buffer size (0).  By setting this variable to @samp{1024},
 for example, you will reduce the number of interrupts caused and increase
 the number of samples transferred each time to at least 1024 samples.  But
 take care!  Setting this variable too high will cause long periods with
