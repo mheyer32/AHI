@@ -1,5 +1,10 @@
 /* $Id$
 * $Log$
+* Revision 4.8  1997/08/02 11:24:29  lcs
+* CMD_START was never executed, the distpatched didn't understand that
+* command!
+* NSCMD_DEVICEQUERY didn't know about CMD_START and CMD_STOP.
+*
 * Revision 4.7  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -154,6 +159,7 @@ __asm void DevBeginIO(
     case CMD_RESET:
     case CMD_READ:
     case CMD_WRITE:
+    case CMD_START:
       ioreq->ahir_Std.io_Flags &= ~IOF_QUICK;
       PutMsg(&ioreq->ahir_Std.io_Unit->unit_MsgPort,&ioreq->ahir_Std.io_Message);
       break;
@@ -426,6 +432,8 @@ static UWORD commandlist[] =
   CMD_RESET,
   CMD_READ,
   CMD_WRITE,
+  CMD_STOP,
+  CMD_START,
   CMD_FLUSH,
   NULL
 };
