@@ -2,7 +2,7 @@
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename devguide.guide
-@settitle @ahi Developers's Guide, version @value{ahiver}
+@settitle @sc{Ahi} Developers's Guide, version @value{ahiver}
 @setchapternewpage odd
 @iftex
 @afourpaper
@@ -21,6 +21,9 @@
 
 @c $Id$
 @c $Log$
+@c Revision 4.6  1997/08/21 01:11:30  lcs
+@c Added description of the samle formats AHI_LoadSound() understands
+@c
 @c Revision 4.5  1997/08/10 15:38:57  lcs
 @c Added @ahi macro!
 @c Added note about LoadSound:ing the most important sounds first
@@ -109,11 +112,11 @@ publication, even if advised of the possibility of such damage.}
 
 @ifinfo
 
-@majorheading @ahi Developer's Guide, version @value{ahiver}
+@majorheading @sc{Ahi} Developer's Guide, version @value{ahiver}
 
 Copyright @copyright{} 1994-1997 Martin Blom
 
-The latest release of @ahi can always be found at
+The latest release of @sc{Ahi} can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
 
 @menu
@@ -171,7 +174,7 @@ Data Types And Structures
 @cindex Overview
 
 This document was written in order to make it easier for developers to
-understand and use @ahi in their own productions, and write Software
+understand and use @sc{Ahi} in their own productions, and write Software
 That Works(TM).
 
 @code{ahi.device} has two different API's; one library-like function
@@ -184,8 +187,8 @@ play audio streams or record samples as easily as possible.
 As with everything else, it is important that you chose the right tool for
 the job---you'll only get frustrated otherwise.
 
-Not everything about @ahi is documented here; for more information, see
-@cite{@ahi User's Guide} and the autodocs.
+Not everything about @sc{Ahi} is documented here; for more information, see
+@cite{@sc{Ahi} User's Guide} and the autodocs.
 
 
 @c ***********************************************************************
@@ -205,19 +208,19 @@ Not everything about @ahi is documented here; for more information, see
 
 Copyright @copyright{} 1994-1997 Martin Blom
 
-@ahi is available as @dfn{freeware}.  That is, it may be freely
+@sc{Ahi} is available as @dfn{freeware}.  That is, it may be freely
 distributed in unmodified form with no changes what so ever, but you may
 not charge more than a nominal fee covering distribution costs. However,
-donations are welcome (see @cite{@ahi User's Guide}).
+donations are welcome (see @cite{@sc{Ahi} User's Guide}).
 
 If you use this software in a commercial or shareware product, please
 consider giving the author (@pxref{The Author})---and preferably each one
-of the contributors too (see @cite{@ahi User's Guide})---an original or
-registered version of your work.  Should you want to distribute the @ahi
+of the contributors too (see @cite{@sc{Ahi} User's Guide})---an original or
+registered version of your work.  Should you want to distribute the @sc{Ahi}
 software with your own product, there is really nothing to consider, is it?
 
 If you wish to distribute this software with a hardware product, contact
-the author (@pxref{The Author}).  Distribution of @ahi with hardware
+the author (@pxref{The Author}).  Distribution of @sc{Ahi} with hardware
 products is @emph{not} free.
 
 @sc{This software is provided by the author and contributors ``as is'' and any
@@ -243,7 +246,7 @@ damage.}
 @chapter The Author
 
 @cindex The Author
-@cindex Author of @ahi
+@cindex Author of @sc{Ahi}
 
 The author can be reached at the following addresses:
 
@@ -284,7 +287,7 @@ document.
 @item Sample
 A sample is one binary number, representing the amplitude at a fixed point
 in time.  A sample is often stored as an 8 bit signed integer, a 16 bit
-signed integer, a 32 bit floating point number etc.  @ahi only
+signed integer, a 32 bit floating point number etc.  @sc{Ahi} only
 supports integers.
 
 @cindex Sample frame
@@ -300,7 +303,7 @@ is for the left channel, the second for the right.
 Many sample frames stored in sequence as an array can be called a sound.  A
 sound is, however, not limited to being formed by samples, it can also be
 parameters to an analog synth or a MIDI instrument, or be white noise.
-@ahi only supports sounds formed by samples.
+@sc{Ahi} only supports sounds formed by samples.
 
 @end table
 
@@ -541,7 +544,7 @@ if(AHImp = CreateMsgPort())
 @code{AHI_AllocAudioA()}.  @code{AHI_AllocAudioA()} returns an
 @code{AHIAudioCtrl} structure, or @code{NULL} if the hardware could not be
 allocated.  The @code{AHIAudioCtrl} structure has only one public field,
-@code{ahiac_UserData}.  This is unused by @ahi and you may store
+@code{ahiac_UserData}.  This is unused by @sc{Ahi} and you may store
 anything you like here.
 
  If @code{AHI_AllocAudioA()} fails it is important that you handle the
@@ -585,14 +588,14 @@ wish to use.  In general it takes more CPU power the more channels you use
 and the volume gets lower and lower.
 
 @item AHIA_Sounds
-You must tell @ahi how many different sounds you are going to play.
+You must tell @sc{Ahi} how many different sounds you are going to play.
 @xref{Declaring Sounds} for more information.
 
 @tindex AHISoundMessage
 @vindex ahism_Channel
 
 @item AHIA_SoundFunc
-With this tag you tell @ahi to call a hook when a sound has been
+With this tag you tell @sc{Ahi} to call a hook when a sound has been
 started.  It works just like Paula's audio interrupts.  The hook receives an
 @code{AHISoundMessage} structure as message.
 @code{AHISoundMessage->ahism_Channel} indicates which channel the sound
@@ -654,7 +657,7 @@ directly.
 @findex AHI_LoadSound()
 
 Before you can play a sample array, you must @code{AHI_LoadSound()} it.
-Why?  Because if @ahi knows what kind of sounds that will be played
+Why?  Because if @sc{Ahi} knows what kind of sounds that will be played
 later, tables and stuff can be set up in advance.  Some drivers may even
 upload the samples to the sound cards local RAM and play all samples from
 there, drastically reducing CPU and bus load.
@@ -697,10 +700,35 @@ frequency the sound will be played at and Fm is the actual mixing frequency
 
 
 @c @item AHIST_INPUT
-@c This sound type is used to use @ahi's DSP-effects in real-time.  [It
+@c This sound type is used to use @sc{Ahi}'s DSP-effects in real-time.  [It
 @c does not work yet. FIXIT]
 
 @end vtable
+
+The samples can be in one of four different formats, named @code{AHIST_M8S},
+@code{AHIST_S8S}, @code{AHIST_M16S}, and @code{AHIST_S16S}.
+
+@vtable @code
+
+@item AHIST_M8S
+This is an 8 bit mono sound. Each sample frame is just one signed byte.
+
+@item AHIST_S8S
+This is an 8 bit stereo sound. Each sample frame is one signed byte representing
+the left channel, followed by another one for the right channel.
+
+@item AHIST_M16S
+This is a 16 bit mono sound.  Each sample frame is just one signed 16 bit
+word, in big endian/network order format (most significant byte first).
+
+@item AHIST_S16S
+This is a 16 bit stereo sound.  Each sample frame is one signed 16 bit
+word, in big endian/network order format (most significant byte first)
+representing the left channel, followed by another one for the right
+channel.
+
+@end vtable
+
 
 @findex AHI_UnloadSound()
 
@@ -813,13 +841,13 @@ with @code{AHISF_IMM} set, and then use @code{AHI_SetSound(ch, AHI_NOSOUND,
 0, 0, actrl, 0L)} to stop the sound when it has reached the end.  You can
 also set one loop segment this way.
 
- @code{AHI_PlayA()} was added in @ahi version 4, and combines
+ @code{AHI_PlayA()} was added in @sc{Ahi} version 4, and combines
 @code{AHI_SetSound()}, @code{AHI_SetFreq()} and @code{AHI_SetVol()} into
 one tag-based function.  It also allows you to set one loop and play
 one-shot sounds.
 
  To play a sound with more than one loop segment or ping-pong looping, a
-sample interrupt needs to be used.  @ahi{}'s @dfn{SoundFunc} works like Paula's
+sample interrupt needs to be used.  @sc{Ahi}'s @dfn{SoundFunc} works like Paula's
 interrupts and is very easy to use.
 
  The @dfn{SoundFunc} hook will be called with an @code{AHIAudioCtrl}
@@ -847,7 +875,7 @@ __asm __saveds ULONG SoundFunc(register __a0 struct Hook *hook,
 @end example
 
 
- This example is from an old version of the @ahi NotePlayer for
+ This example is from an old version of the @sc{Ahi} NotePlayer for
 @dfn{DeliTracker 2}.  @code{ChannelDatas} is an array where the start and
 length of the repeat part is stored.  Here, a repeat length of zero
 indicates a one-shot sound.  Note that this particular example only uses
@@ -1192,7 +1220,7 @@ First, there is no way to change the precedence of a playing sound, so the
 precedences should be set from the beginning.  Second, it is not
 recommended to use the device interface to play music.  However, playing an
 audio stream from CD or disk comes very close.  Third, there are no channels
-to free in @ahi since they are dynamically allocated by the device.
+to free in @sc{Ahi} since they are dynamically allocated by the device.
 
 
 @c ***********************************************************************
@@ -1278,7 +1306,7 @@ represent the stereo position of a sound.  0 is far left, 0.5 is center and
 
  These structures are used in the @code{AHIU} and @code{AHIG} chunks,
 respective, which are part of the settings file (@file{ENV:Sys/ahi.prefs}),
-The file is read by @ahi on each call to @code{OpenDevice()}, just
+The file is read by @sc{Ahi} on each call to @code{OpenDevice()}, just
 before the audio hardware is allocated.
 
  @code{AHIUnitPrefs} specifies the audio mode and its parameters to use for
@@ -1287,7 +1315,7 @@ each device unit (currently 0-3 and @code{AHI_NO_UNIT}; unit 0 is also called
 
  @code{AHIGlobalPrefs} contains some global options that can be used to
 gain speed on slow CPUs, the global debug level and a protection against
-CPU overload.  The debug level specifies which of the functions in @ahi
+CPU overload.  The debug level specifies which of the functions in @sc{Ahi}
 should print debugging information to the serial port (the output can be
 redirected to a console window or a file with tools like @dfn{Sushi}
 @footnote{Available from AmiNet, for example @*
