@@ -264,3 +264,9 @@ msgChanFmt (//15)
 msgVolFmt (//15)
 %+4.1f dB
 ;
+msgACTimeFmt (//)
+%ld ms
+;
+msgPercentFmt (//)
+%ld%%
+;
