@@ -1,31 +1,32 @@
 
-The second beta release of AHI/PPC
+The third beta release of AHI/PPC
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-...or what will eventually be known as AHI version 5 (not to be confused
-with that I hoped to be version 5 before -- that will be another release)
-is here.
+Well, well, well...  What do you know, another beta release.  Basically,
+this release just adds support for MorphOS.  Under MorphOS, the performace
+of AHI in terms of speed is, well, better than before.  Much better, if you
+run the right applications.
 
-This version supports WarpUp!  But more work needs to be done, because this
-version is a full 35% slower when run under WarpUp than PowerUp.  Don't
-expect speed!  Just tell me that it works.  A bug in WarpUp was recently
-discovered (yesterday, actually), which prevents AHI from using proper
-cache handling.  A later beta of AHI will either add a work-around fix or
-require a later WarpUp version.
+If you have installed earlier beta versions of the AHI preference program,
+MUST install the new one, go to the "advanced" page, reset the default
+anti-click time and save your preferences; a data structure has changed.
 
-I also fixed a couple of bugs in the ppc mixing routines.  Then I found
-some more, that I didn't fix.  Especially the anti-click code seem to have
-problems, so don't turn it on unless you have to!  And even if you have to,
-please, do listen carefully to the result before pressing your CDs!  If you
-find any predictable and repeatable problems, do let me know!
+Developers, take care with the new include files!  A couple of things have
+changed there as well:
 
-The lock-up problem with AmigaAMP has not been found yet.  Unfortunately,
-it happened with WarpUp as well, which kind of blew my theory about it
-being a PowerUp bug.  It now looks like it's a problem with either my or
-Thomas code.  Probably mine.
+* In the audio mode requester structure, ahiam_UserData has been moved to
+  become 32-bit aligned.  AHI still works with old programs, of course, but
+  NEW programs will not work with the old device, unless you use the tag
+  AHIR_ObsoleteUserData instead of AHIR_UserData.
 
-So, what else is new?  I played Quake Arena for the first time a couple of
-weeks ago.  It sucked.  Whatever happened to all great games that was fun
-to play, like Gianna Sisters, Rally Speedway and Commando?
+* In the preference file structure, ahigp_AntiClickTime has been 32-bit
+  aligned as well.  Since this was added in a beta version, this
+  modification is not backward compatible.
+
+I'd estimate that exactly one program is affected by these changes (the AHI
+preferences program), but maybe there are a few more.  Sorry about that.
+
+Oh...  I had to temporary remove recording in device mode.  Sorry, no more
+copying from the AUDIO: device....
 
 
 Things still to do before the full release
