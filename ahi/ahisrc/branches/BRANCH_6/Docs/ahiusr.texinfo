@@ -23,7 +23,7 @@ This file documents AHI release @value{ahiver}, a hardware independent
 audio subsystem for Amiga. The version number of this document is
 @value{docver}.
 
-Copyright @copyright{} 1994-2004 Martin Blom.
+Copyright @copyright{} 1994-2005 Martin Blom.
 
 Permission is granted to make and distribute verbatim copies of this manual
 provided the copyright notice and this permission notice are preserved on
@@ -63,6 +63,14 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.6  2005/02/02 21:49:52  martin
+* Updated all copyright years to 2005.
+
+* Bumped all version numbers to 6.0.
+
+* Docs/ahidev.texinfo (The Author): Updated the authors address (5
+years later).
+
 Revision 5.9.2.5  2005/01/08 22:38:09  martin
 Added note about the volume scaling.
 Removed list of names in Honourable mention.
@@ -202,7 +210,7 @@ Initial revision.
 
 @vskip 0pt plus 1filll
 
-Copyright @copyright{} 1994-2004 Martin Blom. 
+Copyright @copyright{} 1994-2005 Martin Blom. 
 
 Permission is granted to make and distribute verbatim copies of this manual
 provided the copyright notice and this permission notice are preserved on
@@ -245,7 +253,7 @@ publication, even if advised of the possibility of such damage.}
 
 For @sc{Ahi} release @value{ahiver}. Document version @value{docver}.
 
-Copyright @copyright{} 1994-2004 Martin Blom
+Copyright @copyright{} 1994-2005 Martin Blom
 
 The latest release of @sc{Ahi} can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
@@ -344,7 +352,7 @@ ever get.
 @cindex Software license
 @cindex Copyright
 
-Copyright @copyright{} 1994-2004 Martin Blom
+Copyright @copyright{} 1994-2005 Martin Blom
 
 @sc{Ahi} is available under a dual license. The device itself is under
 the ``GNU Library General Public License'' (@pxref{LGPL}), while the

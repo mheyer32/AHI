@@ -1,6 +1,6 @@
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -242,12 +242,12 @@ const char IDString[]  = AHINAME " " VERS "\r\n";
 
 #ifndef __AMIGAOS4__
 static const char VersTag[] =
- "$VER: " AHINAME " " VERS " ©1994-2004 Martin Blom. "
+ "$VER: " AHINAME " " VERS " ©1994-2005 Martin Blom. "
  CPU 
  " version.\r\n";
 #else
 static const char VersTag[] =
- "$VER: " AHINAME " " VERS " (C)1994-2004 Martin Blom. "
+ "$VER: " AHINAME " " VERS " (C)1994-2005 Martin Blom. "
  "603e" 
  " version.\r\n";
 #endif
