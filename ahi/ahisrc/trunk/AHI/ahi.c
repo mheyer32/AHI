@@ -19,6 +19,10 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.2  2002/07/07 14:39:17  martin
+ * No enforcer hits if no modes are available. [Don Cox]
+ * Version 5.7.
+ *
  * Revision 5.1  2002/02/24 15:40:36  martin
  * Increased driver info buffers from 32 to 64 characters.
  *
@@ -295,7 +299,7 @@ void NewUnit(int selectedunit) {
   }
 
   if(mode->node.ln_Succ == NULL) {
-    modeselected = 0;
+    modeselected = ~0;
   }
   
   NewMode(modeselected);
@@ -307,8 +311,9 @@ void NewUnit(int selectedunit) {
 ******************************************************************************/
 
 void NewMode(int selectedmode) {
-  struct UnitNode *unit;
-  ULONG id;
+  struct UnitNode *unit = NULL;
+  struct ModeNode *mode = NULL;
+  ULONG id = AHI_INVALID_ID;
   Fixed MinOutVol = 0, MaxOutVol = 0, MinMonVol = 0, MaxMonVol = 0;
   Fixed MinGain = 0, MaxGain = 0;
   double Min, Max, Current;
@@ -318,28 +323,36 @@ void NewMode(int selectedmode) {
 
   unit = (struct UnitNode *) GetNode(state.UnitSelected, UnitList);
 
-  id = ((struct ModeNode *) GetNode(selectedmode, ModeList))->ID;
+  if( selectedmode != ~0 )
+  {
+    mode = (struct ModeNode *) GetNode(selectedmode, ModeList);
+  }
 
-  AHI_GetAudioAttrs(id, NULL,
-      AHIDB_IndexArg,         unit->prefs.ahiup_Frequency,
-      AHIDB_Index,            (ULONG) &state.FreqSelected,
-      AHIDB_Frequencies,      (ULONG) &state.Frequencies,
-      AHIDB_MaxChannels,      (ULONG) &state.Channels,
-      AHIDB_Inputs,           (ULONG) &state.Inputs,
-      AHIDB_Outputs,          (ULONG) &state.Outputs,
-      AHIDB_MinOutputVolume,  (ULONG) &MinOutVol,
-      AHIDB_MaxOutputVolume,  (ULONG) &MaxOutVol,
-      AHIDB_MinMonitorVolume, (ULONG) &MinMonVol,
-      AHIDB_MaxMonitorVolume, (ULONG) &MaxMonVol,
-      AHIDB_MinInputGain,     (ULONG) &MinGain,
-      AHIDB_MaxInputGain,     (ULONG) &MaxGain,
+  if( mode != NULL )
+  {
+    id = mode->ID;
+    
+    AHI_GetAudioAttrs(id, NULL,
+		      AHIDB_IndexArg,         unit->prefs.ahiup_Frequency,
+		      AHIDB_Index,            (ULONG) &state.FreqSelected,
+		      AHIDB_Frequencies,      (ULONG) &state.Frequencies,
+		      AHIDB_MaxChannels,      (ULONG) &state.Channels,
+		      AHIDB_Inputs,           (ULONG) &state.Inputs,
+		      AHIDB_Outputs,          (ULONG) &state.Outputs,
+		      AHIDB_MinOutputVolume,  (ULONG) &MinOutVol,
+		      AHIDB_MaxOutputVolume,  (ULONG) &MaxOutVol,
+		      AHIDB_MinMonitorVolume, (ULONG) &MinMonVol,
+		      AHIDB_MaxMonitorVolume, (ULONG) &MaxMonVol,
+		      AHIDB_MinInputGain,     (ULONG) &MinGain,
+		      AHIDB_MaxInputGain,     (ULONG) &MaxGain,
 
-      AHIDB_BufferLen,        64,
-      AHIDB_Author,           (ULONG) authorBuffer,
-      AHIDB_Copyright,        (ULONG) copyrightBuffer,
-      AHIDB_Driver,           (ULONG) driverBuffer,
-      AHIDB_Version,          (ULONG) versionBuffer,
-      TAG_DONE);
+		      AHIDB_BufferLen,        64,
+		      AHIDB_Author,           (ULONG) authorBuffer,
+		      AHIDB_Copyright,        (ULONG) copyrightBuffer,
+		      AHIDB_Driver,           (ULONG) driverBuffer,
+		      AHIDB_Version,          (ULONG) versionBuffer,
+		      TAG_DONE);
+  }
 
   state.ChannelsSelected = unit->prefs.ahiup_Channels;
   state.InputSelected    = unit->prefs.ahiup_Input;
@@ -470,7 +483,8 @@ void NewMode(int selectedmode) {
 ******************************************************************************/
 
 void FillUnit() {
-  struct UnitNode *unit;
+  struct UnitNode *unit = NULL;
+  struct ModeNode *mode = NULL;
   ULONG id;
   double db;
 
@@ -483,14 +497,20 @@ void FillUnit() {
     unit->prefs.ahiup_Channels    = 0;
   }
 
-  id = ((struct ModeNode *) GetNode(state.ModeSelected, ModeList))->ID;
+  if( state.ModeSelected != ~0 )
+  {
+    mode = (struct ModeNode *) GetNode(state.ModeSelected, ModeList);
+  }
 
-  unit->prefs.ahiup_AudioMode     = id;
+  if( mode != NULL )
+  {
+    unit->prefs.ahiup_AudioMode = mode->ID;
 
-  AHI_GetAudioAttrs(id, NULL,
-      AHIDB_FrequencyArg, state.FreqSelected,
-      AHIDB_Frequency,    (ULONG) &unit->prefs.ahiup_Frequency,
-      TAG_DONE);
+    AHI_GetAudioAttrs(mode->ID, NULL,
+		      AHIDB_FrequencyArg, state.FreqSelected,
+		      AHIDB_Frequency,    (ULONG) &unit->prefs.ahiup_Frequency,
+		      TAG_DONE);
+  }
 
   db = state.OutVolOffset + DBSTEP * 
       (state.OutVolSelected - (state.OutVolMute ? 1 : 0) );
@@ -521,12 +541,21 @@ void FillUnit() {
 
 char *getFreq(void) {
   LONG freq = 0;
+  struct ModeNode *mode = NULL;
 
-  AHI_GetAudioAttrs(
-      ((struct ModeNode *) GetNode(state.ModeSelected, ModeList))->ID, NULL,
+  if( state.ModeSelected != ~0 )
+  {
+    mode = (struct ModeNode *) GetNode(state.ModeSelected, ModeList);
+  }
+
+  if( mode != NULL )
+  {
+    AHI_GetAudioAttrs(
+      mode->ID, NULL,
       AHIDB_FrequencyArg, state.FreqSelected,
       AHIDB_Frequency,    (ULONG) &freq,
       TAG_DONE);
+  }
 
   sprintf(freqBuffer, "%ld Hz", freq);
   return freqBuffer;
@@ -602,17 +631,40 @@ char *getOutput(void) {
 
 ULONG getAudioMode(void) {
 
-  return ((struct ModeNode *) GetNode(state.ModeSelected, ModeList))->ID;
+  struct ModeNode * mode = NULL;
+  
+  if( state.ModeSelected == ~0 )
+  {
+    return AHI_INVALID_ID;
+  }
+
+  mode = (struct ModeNode *) GetNode(state.ModeSelected, ModeList);
+
+  if( mode == NULL )
+  {
+    return AHI_INVALID_ID;
+  }
+  
+  return mode->ID;
 }
 
 char *getRecord(void) {
   ULONG record = FALSE, fullduplex = FALSE;
+  struct ModeNode *mode = NULL;
 
-  AHI_GetAudioAttrs(
-      ((struct ModeNode *) GetNode(state.ModeSelected, ModeList))->ID, NULL,
+  if( state.ModeSelected != ~0 )
+  {
+    mode = (struct ModeNode *) GetNode(state.ModeSelected, ModeList);
+  }
+
+  if( mode != NULL )
+  {
+    AHI_GetAudioAttrs(
+      mode->ID, NULL,
       AHIDB_Record,     (ULONG) &record,
       AHIDB_FullDuplex, (ULONG) &fullduplex,
       TAG_DONE);
+  }
   
   return (char *) (record ? (fullduplex ? msgPropRecordFull : msgPropRecordHalf )
                           : msgPropRecordNone);
