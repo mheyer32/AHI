@@ -459,7 +459,7 @@ ELFLoadObject( const char* objname )
             struct Elf32_Shdr *shdrs;
             ULONG shdrsize = (ULONG) hdr->e_shnum * (ULONG) hdr->e_shentsize;
 
-            kprintf("elf32ppcbe format recognized\n");
+//            kprintf("elf32ppcbe format recognized\n");
 
             shdrs = alloc32( shdrsize );
 
@@ -472,9 +472,9 @@ ELFLoadObject( const char* objname )
                 if( loadelf32( elfobj, shdrs ) )
                 {
                   void* start;
-                  kprintf("ELF object loaded (0x%08lx)\n", elfobj );
+//                  kprintf("ELF object loaded (0x%08lx)\n", elfobj );
                   start = loadprogram( elfobj );
-                  kprintf("Start of PPC code: 0x%08lx\n", start );
+//                  kprintf("Start of PPC code: 0x%08lx\n", start );
                   free32( shdrs );
                   return (elfobj);
                 }
@@ -526,7 +526,11 @@ ELFGetSymbol( void* obj,
 
   oi.Name = (char*) name;
   rc = scanElfSymbols( (struct ElfObject*) obj, &oi, FALSE );
-  *ptr = (void*) oi.Address;
+
+  if( rc )
+  {
+    *ptr = (void*) oi.Address;
+  }
 
   return rc;
 }
@@ -711,14 +715,14 @@ static APTR loadprogram(struct ElfObject *eo)
         if (!(s->flags & ElfSecF_NOBITS)) {
           /* a PROGBITS section - load it from file */
 
-          kprintf("%sreading section %s\n",FN,s->name);
+//          kprintf("%sreading section %s\n",FN,s->name);
           if (prstream(eo,s->offset,p,s->size)) {
             if (text) {
               /* get start address of PPC program in .text */
               entry = p;
               if ((*entry & 0xfc) == 0) {
-                kprintf("%sgcc traceback status word "
-                        "detected\n",FN);
+//                kprintf("%sgcc traceback status word "
+//                        "detected\n",FN);
                 entry += 4;  /* 1st long reserved for gcc traceback word */
               }
               /* copy kernel stubs */
@@ -756,7 +760,7 @@ static APTR loadprogram(struct ElfObject *eo)
   else
     freeprogram(eo);
 
-  kprintf("%sreturning with entry=0x%08lx\n",FN,entry);
+//  kprintf("%sreturning with entry=0x%08lx\n",FN,entry);
   return (entry);
 }
 
@@ -788,8 +792,8 @@ static BOOL relocate(struct ElfObject *eo)
       struct Elf32_Rela *r;
       int i;
 
-      kprintf("relocate(): relocating section %s "
-              "at 0x%08lx\n",es->name,es->address);
+//      kprintf("relocate(): relocating section %s "
+//              "at 0x%08lx\n",es->name,es->address);
       for (i=0,r=es->relocs; i<es->nrel; i++,r++) {
         struct Elf32_Sym *sym = &eo->symtab[ELF32_R_SYM(r->r_info)];
         long s = (long)eo->sections[sym->st_shndx]->address + sym->st_value;
@@ -1011,8 +1015,8 @@ static BOOL common_symbols(struct ElfObject *eo)
       if (!strcmp(s->name,bssname) && (s->flags & ElfSecF_NOBITS)) {
         idx = i;
         offset = s->size;
-        kprintf("%sfound %s at index %ld with size=%ld\n",
-                FN,bssname,idx,offset);
+//        kprintf("%sfound %s at index %ld with size=%ld\n",
+//                FN,bssname,idx,offset);
         break;
       }
       else
@@ -1030,7 +1034,7 @@ static BOOL common_symbols(struct ElfObject *eo)
       offset = 0;
       idx = eo->nsects-1;
       eo->sections[idx] = s;
-      kprintf("%screated new %s at index %ld\n",FN,bssname,idx);
+//      kprintf("%screated new %s at index %ld\n",FN,bssname,idx);
     }
     else
       return (FALSE);
@@ -1046,8 +1050,8 @@ static BOOL common_symbols(struct ElfObject *eo)
       cnt++;
     }
   }
-  kprintf("%sassigned %ld common symbols (%ld bytes)\n",
-          FN,cnt,offset-s->size);
+//  kprintf("%sassigned %ld common symbols (%ld bytes)\n",
+//          FN,cnt,offset-s->size);
   s->size = offset;  /* set new .bss section size */
 
   return (TRUE);

@@ -158,26 +158,26 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 
 	$(INSTALL) --directory $(DEVSDIR)
 
-#	make clean
-#	make bindist-install VER=GEN CPU=68000
+#	$(MAKE) clean
+#	$(MAKE) bindist-install VER=GEN CPU=68000
 
-#	make clean
-#	make bindist-install VER=GEN CPU=68020
+#	$(MAKE) clean
+#	$(MAKE) bindist-install VER=GEN CPU=68020
 
-	make clean
-	make bindist-install VER=GEN CPU=68030
+	$(MAKE) clean
+	$(MAKE) bindist-install VER=GEN CPU=68030
 
-	make clean
-	make bindist-install VER=GEN CPU=68040
+	$(MAKE) clean
+	$(MAKE) bindist-install VER=GEN CPU=68040
 
-	make clean
-	make bindist-install VER=GEN CPU=68060
+	$(MAKE) clean
+	$(MAKE) bindist-install VER=GEN CPU=68060
 
-	make clean
-	make bindist-install VER=PPC CPU=603
+	$(MAKE) clean
+	$(MAKE) bindist-install VER=PPC CPU=603
 
-	make clean
-	make bindist-install VER=PPC CPU=604
+	$(MAKE) clean
+	$(MAKE) bindist-install VER=PPC CPU=604
 
 
 bindist-install: $(TARGET)
@@ -254,11 +254,20 @@ warpup-test:		warpup-test.o elfloader.o asmfuncs.o
 SOURCES		= $(notdir $(wildcard $(srcdir)/*.c))
 HEADERS		= $(notdir $(wildcard $(srcdir)/*.h))
 
+ifneq ($(build_os),amigaos)
+
 Makefile.dep:	$(SOURCES) $(HEADERS) localize.c localize.h version.h
 	@echo Making $@
-ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 else
+	# The Amiga is way to slow to update the dependencies each time
+.PHONY:	depend
+
+depend:
+	$(RM) Makefile.dep
+	$(MAKE) Makefile.dep
+
+Makefile.dep:
 	-@touch $@
 	-@makedepend -f $@ -I $(srcdir) $(SOURCES)
 endif
