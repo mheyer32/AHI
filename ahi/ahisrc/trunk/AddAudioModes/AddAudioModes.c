@@ -1,10 +1,8 @@
 /* $Id$
 * $Log$
-* Revision 1.4  1997/02/08 12:22:11  lcs
-* Changed back again... sigh. ;)
-*
-* Revision 1.3  1997/02/08 11:34:00  lcs
-* Changed the template (FILES/M => FILE/M)
+* Revision 1.5  1997/02/18 22:24:45  lcs
+* Better DBLSCAN handling.
+* The device is now opened with the AHIDF_NOMODESCAN flag.
 *
 * Revision 1.2  1997/01/04 00:24:51  lcs
 * Added DBLSCAN switch + some other small changes
@@ -34,14 +32,15 @@ BYTE               AHIDevice = -1;
 
 LONG __OSlibversion=37;
 
-const static UBYTE version[]="$VER: AddAudioModes 1.2 "__AMIGADATE__"\n\r";
+const static UBYTE version[]="$VER: AddAudioModes 1.5 "__AMIGADATE__"\n\r";
 
 void OpenAHI(void) {
   if(AHIDevice) {
     if(AHImp=CreateMsgPort()) {
       if(AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest))) {
         AHIio->ahir_Version=AHIVERSION;
-        AHIDevice=OpenDevice(AHINAME,AHI_NO_UNIT,(struct IORequest *)AHIio,NULL);
+        AHIDevice=OpenDevice(AHINAME,AHI_NO_UNIT,
+            (struct IORequest *)AHIio,AHIDF_NOMODESCAN);
       }
     }
 
@@ -116,7 +115,7 @@ LONG main(void) {
 
     // Make display mode doublescan (allowing > 28 kHz sample rates)
     if(args.dblscan) {
-      ULONG id;
+      ULONG id = INVALID_ID, bestid = INVALID_ID, minper = MAXINT;
       struct Screen *screen = NULL;
       const static struct ColorSpec colorspecs[] = {
         { 0, 0, 0, 0 },
@@ -124,13 +123,35 @@ LONG main(void) {
         {-1, 0, 0, 0 }
       };
       
-      id = BestModeID(
-          BIDTAG_DIPFMustHave, DIPF_IS_SCANDBL,
-          BIDTAG_DIPFMustNotHave, DIPF_IS_FOREIGN,
-          TAG_DONE);
-      if(id != INVALID_ID) {
+      while( (id = NextDisplayInfo(id)) != INVALID_ID) {
+        union {
+          struct MonitorInfo mon;
+          struct DisplayInfo dis;
+        } buffer;
+
+        ULONG period;
+
+        if(GetDisplayInfoData(NULL, (UBYTE*)&buffer.dis, sizeof(buffer.dis),
+            DTAG_DISP, id)) {
+          if( ! (buffer.dis.PropertyFlags & (DIPF_IS_ECS | DIPF_IS_AA))) {
+            continue;
+          }
+        }
+
+        if(GetDisplayInfoData(NULL, (UBYTE*)&buffer.mon, sizeof(buffer.mon),
+            DTAG_MNTR, id)) {
+          period = buffer.mon.TotalColorClocks * buffer.mon.TotalRows
+                   / (2 * (buffer.mon.TotalRows - buffer.mon.MinRow + 1));
+          if(period < minper) {
+            minper = period;
+            bestid = id;
+          }
+        }
+      }
+
+      if(bestid != INVALID_ID) {
         screen = OpenScreenTags(NULL,
-            SA_DisplayID,  id,
+            SA_DisplayID,  bestid,
             SA_Colors,    &colorspecs,
             TAG_DONE);
       }
