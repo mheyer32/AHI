@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/04/09 02:25:23  lcs
+* Added AHIE_HALFDUPLEX
+*
 * Revision 4.2  1997/04/07 13:12:35  lcs
 * Removed some KPrintFs :(
 *
@@ -699,7 +702,7 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   {
     if( (! iounit->FullDuplex) && iounit->IsPlaying)
     {
-      error = AHIE_UNKNOWN;   // FIXIT!
+      error = AHIE_HALFDUPLEX;   // FIXIT!
     }
     else
     {
@@ -821,7 +824,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   {
     if( (! iounit->FullDuplex) && iounit->IsRecording)
     {
-      error = AHIE_UNKNOWN;   // FIXIT!
+      error = AHIE_HALFDUPLEX;   // FIXIT!
     }
     else
     {
