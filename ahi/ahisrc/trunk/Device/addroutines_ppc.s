@@ -830,11 +830,11 @@ AddWordMono:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_firstZ
-	lwz	r14,-2(r13)		# Fetch src[ offset - 1 ]
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r14,-2(r13)		# Fetch src[ offset - 1 ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 4:	# .got_sampleZ
 	extsh	r21,r21
@@ -874,11 +874,11 @@ AddWordMono:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_first
-	lwz	r14,-2(r13)		# Fetch src[ offset - 1 ]
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r14,-2(r13)		# Fetch src[ offset - 1 ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 4:	# .got_sample
 	extsh	r21,r21
@@ -903,7 +903,7 @@ AddWordMono:
 8:	# .exit
 	slwi	r13,r16,1		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 	stw	r14,0(r6)
 
@@ -945,14 +945,14 @@ AddWordsMono:
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r15,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_firstZ
-	lwz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
-	lwz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
+	lhz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 4:	# .got_sampleZ
@@ -1013,14 +1013,14 @@ AddWordsMono:
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r15,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_first
-	lwz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
-	lwz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
+	lhz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 4:	# .got_sample
@@ -1053,8 +1053,8 @@ AddWordsMono:
 8:	# .exit
 	slwi	r13,r16,2		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 	stw	r14,0(r6)
@@ -1097,11 +1097,11 @@ AddWordStereo:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_firstZ
-	lwz	r14,-2(r13)		# Fetch src[ offset - 1 ]
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r14,-2(r13)		# Fetch src[ offset - 1 ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 4:	# .got_sampleZ
 	extsh	r21,r21
@@ -1145,11 +1145,11 @@ AddWordStereo:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_first
-	lwz	r14,-2(r13)		# Fetch src[ offset - 1 ]
-	lwz	r21,0(r13)		# Fetch src[ offset ]
+	lhz	r14,-2(r13)		# Fetch src[ offset - 1 ]
+	lhz	r21,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 4:	# .got_sample
 	extsh	r21,r21
@@ -1178,7 +1178,7 @@ AddWordStereo:
 8:	# .exit
 	slwi	r13,r16,1		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 	stw	r14,0(r6)
 
@@ -1220,14 +1220,14 @@ AddWordsStereo:
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r15,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_firstZ
-	lwz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
-	lwz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
+	lhz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 4:	# .got_sampleZ
@@ -1290,14 +1290,14 @@ AddWordsStereo:
 	bne+	3f
 	lwz	r14,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r15,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r22,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_first
-	lwz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
-	lwz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
-	lwz	r21,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,-4(r13)		# Fetch src[ offset - 2 ] (left)
+	lhz	r15,-2(r13)		# Fetch src[ offset - 1 ] (right)
+	lhz	r21,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 4:	# .got_sample
@@ -1332,8 +1332,8 @@ AddWordsStereo:
 8:	# .exit
 	slwi	r13,r16,2		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 	stw	r14,0(r6)
@@ -1947,11 +1947,11 @@ AddWordMonoB:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r14,0(r13)
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_firstZ
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ]
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r21,r21
 4:	# .got_sampleZ
 	extsh	r14,r14
@@ -1991,11 +1991,11 @@ AddWordMonoB:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_first
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ]
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r21,r21
 4:	# .got_sample
 	extsh	r14,r14
@@ -2020,7 +2020,7 @@ AddWordMonoB:
 8:	# .exit
 	slwi	r13,r16,1		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 	stw	r14,0(r6)
 
@@ -2063,14 +2063,14 @@ AddWordsMonoB:
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r22,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_firstZ
-	lwz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
-	lwz	r22,6(r13)		# Fetch src[ offset + 3 ] (right)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
+	lhz	r22,6(r13)		# Fetch src[ offset + 3 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r21,r21
 	extsh	r22,r22
 4:	# .got_sampleZ
@@ -2131,14 +2131,14 @@ AddWordsMonoB:
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r22,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_first
-	lwz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
-	lwz	r21,6(r13)		# Fetch src[ offset + 3 ] (right)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
+	lhz	r21,6(r13)		# Fetch src[ offset + 3 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r21,r21
 	extsh	r22,r22
 4:	# .got_sample
@@ -2171,8 +2171,8 @@ AddWordsMonoB:
 8:	# .exit
 	slwi	r13,r16,2		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 	stw	r14,0(r6)
@@ -2215,11 +2215,11 @@ AddWordStereoB:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_firstZ
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ]
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r21,r21
 4:	# .got_sampleZ
 	extsh	r14,r14
@@ -2263,11 +2263,11 @@ AddWordStereoB:
 	add	r13,r8,r13
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	b	4f
 3:	# .not_first
-	lwz	r21,2(r13)		# Fetch src[ offset + 1 ]
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r21,2(r13)		# Fetch src[ offset + 1 ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r21,r21
 4:	# .got_sample
 	extsh	r14,r14
@@ -2296,7 +2296,7 @@ AddWordStereoB:
 8:	# .exit
 	slwi	r13,r16,1		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ]
+	lhz	r14,0(r13)		# Fetch src[ offset ]
 	extsh	r14,r14
 	stw	r14,0(r6)
 
@@ -2338,14 +2338,14 @@ AddWordsStereoB:
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r22,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_firstZ
 	lwz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
 	lwz	r22,6(r13)		# Fetch src[ offset + 3 ] (right)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r21,r21
 	extsh	r22,r22
 4:	# .got_sampleZ
@@ -2408,14 +2408,14 @@ AddWordsStereoB:
 	bne+	3f
 	lwz	r21,0(r6)		# Fetch left lastpoint (normalized)
 	lwz	r22,0(r7)		# Fetch right lastpoint (normalized)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	b	4f
 3:	# .not_first
-	lwz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
-	lwz	r22,6(r13)		# Fetch src[ offset + 3 ] (right)
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r21,4(r13)		# Fetch src[ offset + 2 ] (left)
+	lhz	r22,6(r13)		# Fetch src[ offset + 3 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r21,r21
 	extsh	r22,r22
 4:	# .got_sample
@@ -2450,8 +2450,8 @@ AddWordsStereoB:
 8:	# .exit
 	slwi	r13,r16,2		# (Calculate &src[ offset ])
 	add	r13,r8,r13
-	lwz	r14,0(r13)		# Fetch src[ offset ] (left)
-	lwz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
+	lhz	r14,0(r13)		# Fetch src[ offset ] (left)
+	lhz	r15,2(r13)		# Fetch src[ offset + 1 ] (right)
 	extsh	r14,r14
 	extsh	r15,r15
 	stw	r14,0(r6)

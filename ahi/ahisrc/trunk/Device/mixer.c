@@ -202,7 +202,7 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
   else
   {
     BOOL running = TRUE;
-
+kprintf("I");
     while( running )
     {
       switch( audioctrl->ahiac_PPCCommand )
@@ -242,6 +242,7 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
       }
     }
+kprintf("i");
 
     /* End chain! */
     return 1;
@@ -268,6 +269,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
 
+kprintf("M");
   // Flush all DYNAMICSAMPLE's
 
   sd = audioctrl->ahiac_SoundDatas;
@@ -318,7 +320,9 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
   if( PPCLibBase != NULL )
   {
+kprintf("K");
     PPCRunKernelObject( PPCObject, &mod );
+kprintf("k");
   }
   else
   {
@@ -340,6 +344,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   /*** AHIET_CHANNELINFO ***/
 
   DoChannelInfo(audioctrl);
+kprintf("m");
 
   return;
 }
