@@ -262,11 +262,11 @@ _AddByteMono:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -382,14 +382,25 @@ _AddBytesMono:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -400,7 +411,7 @@ _AddBytesMono:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -514,11 +525,11 @@ _AddByteStereo:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -640,14 +651,25 @@ _AddBytesStereo:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -658,7 +680,7 @@ _AddBytesStereo:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -769,11 +791,11 @@ _AddWordMono:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -879,14 +901,25 @@ _AddWordsMono:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -897,7 +930,7 @@ _AddWordsMono:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -1000,11 +1033,11 @@ _AddWordStereo:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -1116,14 +1149,25 @@ _AddWordsStereo:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -1134,7 +1178,7 @@ _AddWordsStereo:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -1241,11 +1285,11 @@ _AddByteMonoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -1363,14 +1407,25 @@ _AddBytesMonoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -1381,7 +1436,7 @@ _AddBytesMonoB:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -1497,11 +1552,11 @@ _AddByteStereoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -1625,14 +1680,25 @@ _AddBytesStereoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -1643,7 +1709,7 @@ _AddBytesStereoB:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -1756,11 +1822,11 @@ _AddWordMonoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -1868,14 +1934,25 @@ _AddWordsMonoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -1886,7 +1963,7 @@ _AddWordsMonoB:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -1928,7 +2005,7 @@ _AddWordsMonoB:
 	add.l	d7,(a1)+
 	
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 7:	/* .abort */
@@ -1991,11 +2068,11 @@ _AddWordStereoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
@@ -2109,14 +2186,25 @@ _AddWordsStereoB:
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
-	tst.l	d7
+	tst.l	a3
 	bge	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
-	tst.l	d7
+	tst.l	a3
 	ble	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
+
+	tst.l	a6
+	bgt.b	5f
+	beq.b	6f
+	tst.l	a4
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	a4
+	ble	7f
+6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
@@ -2127,7 +2215,7 @@ _AddWordsStereoB:
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	0b
+	bne	0b
 	bra.b	8f
 
 0:	/* .next_sample */
