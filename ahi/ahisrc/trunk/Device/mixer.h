@@ -29,6 +29,9 @@
 
 #include "addroutines.h"
 
+ULONG
+InternalSampleFrameSize( ULONG sampletype );
+
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
 

@@ -29,17 +29,20 @@ main( void )
 
     if( PPCObject != NULL )
     {
-      void* init = NULL;
+      void* init    = NULL;
+      void* cleanup = NULL;
       
       ELFGetSymbol( PPCObject, "InitWarpUp", &init );
+      ELFGetSymbol( PPCObject, "CleanUpWarpUp", &cleanup );
 
-      printf( "init: 0x%08lx\n", (ULONG) init );
+      printf( "init:    0x%08lx\n", (ULONG) init );
+      printf( "cleanup: 0x%08lx\n", (ULONG) cleanup );
 
-      if( init != NULL )
+      if( init != NULL && cleanup != NULL )
       {
         LONG status;
         
-        struct PPCArgs pps = 
+        struct PPCArgs init_pps = 
         {
           init,
           0,
@@ -54,12 +57,37 @@ main( void )
             0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
           }
         };
+
+        struct PPCArgs cleanup_pps = 
+        {
+          cleanup,
+          0,
+          0,
+          NULL,
+          0,
+          { 
+            (ULONG) PowerPCBase, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0
+          },
+          {
+            0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+          }
+        };
+
+        void* xlock = NULL;
         
-        status = RunPPC( &pps );
+        status = RunPPC( &init_pps );
+        xlock  = (void*) init_pps.PP_Regs[ 0 ];
+        
+        printf( "status: %ld; xlock: 0x%08lx\n", status, (ULONG) xlock);
+
+        CausePPCInterrupt();
+
+        cleanup_pps.PP_Regs[ 1 ] = (ULONG) xlock;
+
+        status = RunPPC( &cleanup_pps );
         
         printf( "status: %ld\n", status );
-        printf( "r3: 0x%08lx, r4: 0x%08lx\n", 
-                pps.PP_Regs[ 0 ], pps.PP_Regs[ 1 ] );
       }
 
       ELFUnLoadObject( PPCObject );

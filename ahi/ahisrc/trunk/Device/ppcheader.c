@@ -33,7 +33,9 @@
 #include "ahi_def.h"
 #include "mixer.h"
 
-void WarpUpInt( void );
+/******************************************************************************
+** Prototypes *****************************************************************
+******************************************************************************/
 
 int
 CallMixroutine( unsigned int magic,
@@ -50,13 +52,48 @@ FlushCacheAll( void  );
 void
 InvalidateCache( void* address, unsigned long length );
 
-ULONG
-InternalSampleFrameSize( ULONG sampletype );
+//ULONG
+//InternalSampleFrameSize( ULONG sampletype );
+
+void WarpUpInt( void );
+
+/******************************************************************************
+** First address **************************************************************
+******************************************************************************/
+
+// This must be the first code in the ELF object due to a bug in
+// ppc.library < 46.26
+
+asm("
+        .align  2
+        .globl  KernelObject
+      	.type   KernelObject,@function
 
 
-// This must be the first code in the ELF object!
+KernelObject:
+        stwu    1,-24(1)
+        mflr    0
+        stw     0,28(1)
+        stw     11,8(1)
+        stw     12,12(1)
+        stw     13,16(1)
 
-// Function used to call the actual mixing routine.
+        bl      CallMixroutine
+
+        lwz     11,8(1)
+        lwz     12,12(1)
+        lwz     13,16(1)
+        lwz     0,28(1)
+        mtlr    0
+        addi    1,1,24
+        blr
+
+");
+
+
+/******************************************************************************
+** Function used to call the actual mixing routine ****************************
+******************************************************************************/
 
 int
 CallMixroutine( unsigned int magic,
@@ -96,7 +133,7 @@ CallMixroutine( unsigned int magic,
     {
       if( sd->sd_Addr == NULL )
       {
-        // *Flush* all and exit (add an L2 cache and listen to random noise!)
+        // *Flush* all and exit (add an L2 cache and watch this code break!)
 
         FlushCacheAll();
         break;
@@ -114,15 +151,6 @@ CallMixroutine( unsigned int magic,
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
-/*
-  for( i = 0; i < 150; i++ )
-  {
-    audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
-    *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
-    while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
-  }
-*/
-
   MixGeneric( Hook, dst, audioctrl );
 
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
@@ -136,96 +164,11 @@ CallMixroutine( unsigned int magic,
   return 0;
 }
 
+/******************************************************************************
+** Cache manipulation routines ************************************************
+******************************************************************************/
+
 asm( "
-
-EXCATTR_CODE      = 0x80101000
-EXCATTR_DATA      = 0x80101001
-EXCATTR_TASK      = 0x80101002
-EXCATTR_EXCID     = 0x80101003
-EXCATTR_FLAGS     = 0x80101004
-EXCATTR_NAME      = 0x80101005
-EXCATTR_PRI       = 0x80101006
-
-EXCF_GLOBAL       = 1<<0
-EXCF_LOCAL        = 1<<1
-EXCF_SMALLCONTEXT = 1<<2
-EXCF_LARGECONTEXT = 1<<3
-EXCF_ACTIVE       = 1<<4
-
-EXCF_MCHECK       = 1<<2
-EXCF_DACCESS      = 1<<3
-EXCF_IACCESS      = 1<<4
-EXCF_INTERRUPT    = 1<<5
-EXCF_ALIGN        = 1<<6
-EXCF_PROGRAM      = 1<<7
-EXCF_FPUN         = 1<<8
-EXCF_TRACE        = 1<<13
-EXCF_PERFMON      = 1<<15
-EXCF_IABR         = 1<<19
-
-TAG_DONE          = 0
-
-/*     r3 = struct PowerPCBase*
- *     r4 = struct AudioCtrl*
- */
-
-        .align  2
-        .globl  InitWarpUp
-        .type   InitWarpUp,@function
-
-InitWarpUp:
-        li      3,0xcafe
-        li      4,0xbeef
-        blr
-
-
-        mflr    0
-        stw     0,8(1)
-        mfcr    0
-        stw     0,4(1)
-        stw     13,-4(1)
-        subi    13,1,4
-        stwu    1,-(28+13*4)(1)
-
-        mr      8,3                         # Save _PowerPCBase in r8
-        mr      9,4                         # Save AHIAudioCtrl in r9
-
-        lis     4,_PowerPCBase@ha
-        addi    4,4,_PowerPCBase@l
-        stw     3,0(4)                      # Store _PowerPCBase for IntHandler
-
-# Build the tag list on the stack
-
-        lis     4,(InitTags-4)@ha
-        addi    4,4,InitTags-4@l
-
-        addi    5,1,28-4
-
-1:
-        lwzu    6,4(4)
-        stwu    6,4(5)
-        cmpwi   0,6,0
-        lwzu    6,4(4)
-        stwu    6,4(5)
-        bne     1b
-
-        stw     9,28+3*4(1)                 # Store AHIAudioCtrl in tag list
-
-        lwz     1,0(1)
-        lwz     13,-4(1)
-        lwz     0,4(1)
-        mtcr    0
-        lwz     0,8(1)
-        mtlr    0
-        blr
-
-
-        .align  2
-        .globl  WarpUpInt
-        .type   WarpUpInt,@function
-
-WarpUpInt:
-
 
 /*     r3 = beginning address of data block to flush
  *     r4 = size of data block to flush (in bytes)
@@ -296,31 +239,14 @@ InvalidateCache:
         sync                    /* force mem transactions to complete */
         blr                     /* return to calling routine */
 
-
-        .align  2
-        .globl  KernelObject
-      	.type   KernelObject,@function
-
-KernelObject:
-        stwu    1,-24(1)
-        mflr    0
-        stw     0,28(1)
-        stw     11,8(1)
-        stw     12,12(1)
-        stw     13,16(1)
-
-        bl      CallMixroutine
-
-        lwz     11,8(1)
-        lwz     12,12(1)
-        lwz     13,16(1)
-        lwz     0,28(1)
-        mtlr    0
-        addi    1,1,24
-        blr
 ");
 
-// WarpUp stuff
+
+/******************************************************************************
+** WarpUp stuff ***************************************************************
+******************************************************************************/
+
+static void* blinkbase = 0xbfe001;
 
 static void* _PowerPCBase = NULL;
 
@@ -336,6 +262,165 @@ struct TagItem InitTags[] =
   { EXCATTR_FLAGS, EXCF_GLOBAL | EXCF_LARGECONTEXT,   },
   { TAG_DONE,      0                                  }
 };
+
+asm( "
+
+_LVOSetExcHandler = -516
+_LVORemExcHandler = -522
+_LVOSetExcMMU     = -576
+_LVOClearExcMMU   = -582
+
+EXCRETURN_ABORT   = 1
+
+/*     r3 = struct PowerPCBase*
+ *     r4 = struct AudioCtrl*
+ */
+
+        .align  2
+        .globl  InitWarpUp
+        .type   InitWarpUp,@function
+
+InitWarpUp:
+        mflr    0
+        stw     0,8(1)
+        mfcr    0
+        stw     0,4(1)
+        stw     13,-4(1)
+        subi    13,1,4
+        stwu    1,-(28+14*4)(1)
+
+        mr      8,3                         # Save _PowerPCBase in r8
+        mr      9,4                         # Save AHIAudioCtrl in r9
+
+
+# Store _PowerPCBase for IntHandler
+
+        lis     4,_PowerPCBase@ha
+        addi    4,4,_PowerPCBase@l
+        stw     3,0(4)
+
+# Build the tag list on the stack
+
+        lis     4,(InitTags-4)@ha
+        addi    4,4,InitTags-4@l
+
+        addi    5,1,28-4
+
+1:
+        lwzu    6,4(4)
+        stwu    6,4(5)
+        cmpwi   0,6,0
+        lwzu    6,4(4)
+        stwu    6,4(5)
+        bne     1b
+
+        stw     9,28+3*4(1)                 # Store AHIAudioCtrl in tag list
+
+# Register the exception handler
+
+        mr      3,8
+        addi    4,1,28
+        lwz     0,_LVOSetExcHandler+2(3)
+        mtlr    0
+        blrl
+
+        lwz     1,0(1)
+        lwz     13,-4(1)
+        lwz     0,4(1)
+        mtcr    0
+        lwz     0,8(1)
+        mtlr    0
+        blr
+
+
+        .align  2
+        .globl  WarpUpInt
+        .type   WarpUpInt,@function
+
+WarpUpInt:
+        mflr    0
+        stw     0,8(1)
+        mfcr    0
+        stw     0,4(1)
+        stw     13,-4(1)
+        subi    13,1,4
+        stwu    1,-(28+2*4)(1)
+
+        stw     14,28(1)
+        stw     15,32(1)
+
+        mr      14,3
+        lis     15,_PowerPCBase@ha
+        addi    15,15,_PowerPCBase@l
+        lwz     15,0(15)
+
+        mr      3,15
+        lwz     0,_LVOSetExcMMU+2(3)
+        mtlr    0
+        blrl
+
+        lis     3,blinkbase@ha
+        addi    3,3,blinkbase@l
+        lwz     3,0(3)
+
+        lbz     4,0(3)
+        xor     4,4,2
+        stb     4,0(3)
+
+        mr      3,15
+        lwz     0,_LVOClearExcMMU+2(3)
+        mtlr    0
+        blrl
+
+        li      3,EXCRETURN_ABORT
+
+        lwz     14,28(1)
+        lwz     15,32(1)
+
+        lwz     1,0(1)
+        lwz     13,-4(1)
+        lwz     0,4(1)
+        mtcr    0
+        lwz     0,8(1)
+        mtlr    0
+        blr
+
+        .align  2
+        .globl  CleanUpWarpUp
+        .type   CleanUpWarpUp,@function
+
+/*     r3 = struct PowerPCBase*
+ *     r4 = void* XLock
+ */
+
+CleanUpWarpUp:
+        mflr    0
+        stw     0,8(1)
+        mfcr    0
+        stw     0,4(1)
+        stw     13,-4(1)
+        subi    13,1,4
+        stwu    1,-28(1)
+
+# Unregister the exception handler
+
+        lwz     0,_LVORemExcHandler+2(3)  # Arguments are already set up
+        mtlr    0
+        blrl
+
+        lwz     1,0(1)
+        lwz     13,-4(1)
+        lwz     0,4(1)
+        mtcr    0
+        lwz     0,8(1)
+        mtlr    0
+        blr
+");
+
+
+/******************************************************************************
+** Library & Linking **********************************************************
+******************************************************************************/
 
 // Just some library stuff... All the stuff will have to be added 
 // in the final release.

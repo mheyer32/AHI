@@ -983,7 +983,7 @@ MixGeneric ( REG(a0, struct Hook *Hook),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 #else
 void
-MixGeneric ( struct Hook *Hook, 
+MixGeneric ( struct Hook *unused_Hook, 
              void *dst, 
              struct AHIPrivAudioCtrl *audioctrl )
 #endif
