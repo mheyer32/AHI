@@ -531,8 +531,6 @@ Mix( struct Hook*             unused_Hook,
   void                  *dstptr;
   LONG                   samplesleft;
 
-//KPrintF(".");
- 
   /* Clear the buffer */
 
   memset( dst, 0, audioctrl->ahiac_BuffSizeNow );
@@ -580,7 +578,7 @@ Mix( struct Hook*             unused_Hook,
           {
             cd->cd_TempStartPointL = cd->cd_StartPointL;
             cd->cd_TempStartPointR = cd->cd_StartPointR;
-//KPrintF("*");
+
             processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
                                                          cd->cd_ScaleLeft,
                                                          cd->cd_ScaleRight,
@@ -687,10 +685,6 @@ Mix( struct Hook*             unused_Hook,
             cd->cd_TempStartPointL = cd->cd_StartPointL;
             cd->cd_TempStartPointR = cd->cd_StartPointR;
 	    
-//KPrintF( "Offset1: %08lx:%08lx -- Add: %08lx:%08lx\n",
-//	 (int) (cd->cd_Offset >> 32), (int) cd->cd_Offset,
-//	 (int) (cd->cd_Add >> 32), (int) cd->cd_Add );
-  
 	    processed = ((ADDFUNC *) cd->cd_AddRoutine)( samples,
                                                          cd->cd_ScaleLeft,
                                                          cd->cd_ScaleRight,
@@ -702,13 +696,7 @@ Mix( struct Hook*             unused_Hook,
                                                          cd->cd_Add,
                                                         &cd->cd_Offset,
                                                          FALSE );
-//KPrintF( "Offset2: %08lx:%08lx -- Add: %08lx:%08lx\n",
-//	 (int) (cd->cd_Offset >> 32), (int) cd->cd_Offset,
-//	 (int) (cd->cd_Add >> 32), (int) cd->cd_Add );
 
-// KPrintF( "%ld processed: cd->cd_Samples = %ld; samplesleft = %ld\n",
-//	  processed, cd->cd_Samples, samplesleft );
- 
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
           }
@@ -1035,17 +1023,5 @@ CalcSamples ( Fixed64 Add,
 
   if(len < 0 || Add == 0) return 0; // Error!
 
-//KPrintF( "LastOffset: %08lx:%08lx -- Offset: %08lx:%08lx\n",
-//	 (int) (LastOffset >> 32), (int) LastOffset,
-//	 (int) (Offset >> 32), (int) Offset );
-
-//KPrintF( "len: %08lx:%08lx -- Add: %08lx:%08lx\n",
-//	 (int) (len >> 32), (int) len,
-//	 (int) (Add >> 32), (int) Add );
-
-#ifdef __amithlon__
- return (LONG) ( (len >> 16) / (LONG)(Add>>16) ) + 1;
-#else
   return (LONG) ( len / Add ) + 1;
-#endif
 }
