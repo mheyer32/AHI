@@ -201,6 +201,33 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 
 /******************************************************************************
+** HookEntry ******************************************************************
+******************************************************************************/
+
+#if defined( __MORPHOS__ )
+
+/* Should be in libamiga, but isn't? */
+
+static ULONG
+gw_HookEntry( void )
+{
+  struct Hook* h   = (struct Hook*) REG_A0;
+  void*        o   = (void*)        REG_A2; 
+  void*        msg = (void*)        REG_A1;
+
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
+struct EmulLibEntry _HookEntry =
+{
+  TRAP_LIB, 0, (void (*)(void)) &gw_HookEntry
+};
+
+__asm( ".globl HookEntry;HookEntry=_HookEntry" );
+
+#endif
+
+/******************************************************************************
 ** Library init ***************************************************************
 ******************************************************************************/
 
