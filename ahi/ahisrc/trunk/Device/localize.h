@@ -1,7 +1,7 @@
 /* $Id$
 * $Log$
-* Revision 5.1  2000/12/11 20:08:38  lcs
-* Made it build in MorphOS.
+* Revision 5.2  2001/03/11 18:28:15  lcs
+* Bumped revision.
 *
 * Revision 5.0  2000/11/28 00:15:18  lcs
 * Bumped CVS revision to 5.0.
