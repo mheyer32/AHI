@@ -1,3 +1,8 @@
+2005-03-24  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Removed unnecessary OS4-only interrupt disable
+	code.
+
 2005-03-21  Martin Blom  <martin@blom.org>
 
 	* emu10kx.audio: Applied a fix from Davy for the recording problem
