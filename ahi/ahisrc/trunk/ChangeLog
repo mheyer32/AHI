@@ -1,3 +1,9 @@
+2002-05-25  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Fixed the low PCM volume by using the full
+	digital dynamic range. Set the default analog PCM mixer to 0 dB
+	(was +6 dB).
+
 2002-05-13  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 4.9.

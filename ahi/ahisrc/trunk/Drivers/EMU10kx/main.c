@@ -370,7 +370,7 @@ static int fx_init(struct emu10k1_card *card)
 //	right = (card->ac97.mixer_state[SOUND_MIXER_VOLUME] >> 8) & 0xff;
 
 //	left = right = 0x43;
-	left = right = 80;
+	left = right = 100;
 	
 	emu10k1_set_volume_gpr(card, 8, left, 1 << 5);
 	emu10k1_set_volume_gpr(card, 9, right, 1 << 5);
