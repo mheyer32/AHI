@@ -39,7 +39,7 @@
 #ifndef _8010_H
 #define _8010_H
 
-#include <linux/types.h>
+//#include <linux/types.h>
 
 // Audigy specify registers are prefixed with 'A_'
 
