@@ -1,5 +1,8 @@
 i# $Id$
 # $Log$
+# Revision 1.2  1997/05/04 22:13:29  lcs
+# Added the locale headerfile to the protos depend.
+#
 # Revision 1.1  1997/05/04 05:32:27  lcs
 # Initial revision
 #
@@ -56,13 +59,13 @@ AHI_MUI: $(OBJS) $(OBJS_MUI) smakefile
 protos:	ahi_protos.h gui_protos.h support_protos.h
 
 
-ahi_protos.h: ahi.c
+ahi_protos.h: ahi.c ahi.h ahiprefs_Cat.h
 	sc GPROTO ahi.c
 
-gui_protos.h: gui_bgui.c
+gui_protos.h: gui_bgui.c ahi.h ahiprefs_Cat.h
 	sc GPROTO gui_bgui.c GPFILE gui_protos.h
 
-support_protos.h: support.c
+support_protos.h: support.c ahi.h ahiprefs_Cat.h
 	sc GPROTO support.c
 
 
@@ -132,4 +135,4 @@ ci:
 ###############################################################################
 
 clean:
-	delete AHI_BGUI AHI_MUI \#?.(o|map|lnk|tmp) \#?_protos.h
+	delete AHI_BGUI AHI_MUI \#?.(o|map|lnk|tmp) \#?_protos.h ahiprefs_Cat\#?
