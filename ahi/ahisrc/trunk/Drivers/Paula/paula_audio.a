@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.18  1998/02/09 00:41:36  lcs
-* Fixed a interrupt problem (playback could touch record's enable bits!).
+* Revision 4.19  1998/02/16 02:38:15  lcs
+* Recording didn't work in all modes!
 *
+*
+* Revision 4.16  1997/12/02 09:28:28  lcs
+* Fixed all known problems in the DMA mode.
 *
 * Revision 4.15  1997/12/02 09:27:33  lcs
 * Added a DMA mode (beta).
@@ -854,7 +857,7 @@ AHIsub_AllocAudio:
 
 * try to allocate parallel port
 	clr.b	p_Parallel(a3)
-	and.b	#~(PF_14BIT|PF_DMA),d0
+	move.l	pb_MiscResource(a5),a6
 	moveq	#MR_PARALLELBITS,d0
 	lea	IDString(pc),a1
 	jsr	MR_ALLOCMISCRESOURCE(a6)
@@ -1887,8 +1890,9 @@ AHIsub_Start:
 	and.b	#PF_14BIT|PF_DMA,d0
 	bne	.error_unknown
 
+	moveq	#AHISF_RECORD,d0
 	call	AHIsub_Stop			;Stop current recording if any.
-	and.b	#~(PF_14BIT|PF_DMA),d0
+
 	move.l	a6,a5
 	move.l	pb_SysLib(a5),a6
 
