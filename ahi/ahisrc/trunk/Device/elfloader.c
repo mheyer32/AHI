@@ -471,7 +471,10 @@ ELFLoadObject( const char* objname )
               {
                 if( loadelf32( elfobj, shdrs ) )
                 {
+                  void* start;
                   kprintf("ELF object loaded (0x%08lx)\n", elfobj );
+                  start = loadprogram( elfobj );
+                  kprintf("Start of PPC code: 0x%08lx\n", start );
                   free32( shdrs );
                   return (elfobj);
                 }
