@@ -1,5 +1,11 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/06/21 18:13:43  lcs
+* ahiam_AudioID and ahiam_MixFreq are now left unchanged if the user
+* cancels the audio mode requester.
+*
+* Changed BOOL return values to ULONG in ordet to set all 32 bits.
+*
 * Revision 4.3  1997/05/28 20:35:18  lcs
 * AudioID and MixFreq is not changed if the user cancels the requester
 * anymore.
@@ -1173,7 +1179,7 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 *
 */
 
-__asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, register __a1 struct TagItem *tags )
+__asm ULONG AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, register __a1 struct TagItem *tags )
 {
   struct AHIAudioModeRequesterExt *req=(struct AHIAudioModeRequesterExt *)req_in;
   struct MinList list;
@@ -1480,7 +1486,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
   {
     KPrintF("=>%s\n",rc ? "TRUE" : "FALSE" );
   }
-  return rc;
+  return (ULONG) rc;
 }
 
 
