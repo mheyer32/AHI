@@ -86,63 +86,43 @@ Slave( struct ExecBase* SysBase )
 	WORD* src;
 	WORD* dst;
 
-	skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc,
-			      (Object*) AudioCtrl, 0 );
-	
-        CallHookPkt( AudioCtrl->ahiac_PlayerFunc, AudioCtrl, NULL );
-
-	if( ! skip_mix )
-	{
-	  CallHookPkt( AudioCtrl->ahiac_MixerFunc, AudioCtrl, dd->mixbuffer );
-	}
-
-	switch( AudioCtrl->ahiac_BuffType )
-	{
-	  case AHIST_M16S:
-	    skip = 1;
-	    offset = 0;
-	    break;
-	    
-	  case AHIST_M32S:
-	    skip = 2;
-	    offset = 1;
-	    break;
-	    
-	  case AHIST_S16S:
-	    skip = 1;
-	    offset = 0;
-	    samples *= 2;
-	    bytes *= 2;
-	    break;
-
-	  case AHIST_S32S:
-	    skip = 2;
-	    offset = 1;
-	    samples *= 2;
-	    bytes *= 2;
-	    break;
-	}
-
-	src = ((WORD*) dd->mixbuffer) + offset;
-	dst = dd->mixbuffer;
-
-	for( i = 0; i < samples; ++i )
-	{
-	  *dst++ = *src;
-	  src += skip;
-	}
-	
-	OSS_Write( dd->mixbuffer,  bytes );
-	
-	CallHookA( AudioCtrl->ahiac_PostTimerFunc, (Object*) AudioCtrl, 0 );
-
-	// Now Delay() until there are at least 'bytes' bytes available
-	// again.
-	
 	while( TRUE )
 	{
 	  int frag_avail, frag_alloc, frag_size, bytes_avail;
+	  
+	  samples  = AudioCtrl->ahiac_BuffSamples;
+	  bytes    = AudioCtrl->ahiac_BuffSamples * 2;
+	
+	  switch( AudioCtrl->ahiac_BuffType )
+	  {
+	    case AHIST_M16S:
+	      skip = 1;
+	      offset = 0;
+	      break;
+	    
+	    case AHIST_M32S:
+	      skip = 2;
+	      offset = 1;
+	      break;
+	    
+	    case AHIST_S16S:
+	      skip = 1;
+	      offset = 0;
+	      samples *= 2;
+	      bytes *= 2;
+	      break;
 
+	    case AHIST_S32S:
+	      skip = 2;
+	      offset = 1;
+	      samples *= 2;
+	      bytes *= 2;
+	      break;
+	  }
+
+	  // Now Delay() until there are at least 'bytes' bytes available
+	  // again.
+	
 	  OSS_GetOutputInfo( &frag_avail, &frag_alloc, &frag_size,
 			     &bytes_avail );
 
@@ -157,6 +137,29 @@ Slave( struct ExecBase* SysBase )
 	  
 //	  KPrintF( "%ld fragments available, %ld alloced (%ld bytes each). %ld bytes total\n", frag_avail, frag_alloc, frag_size, bytes_avail );
 	}
+
+	skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc,
+			      (Object*) AudioCtrl, 0 );
+	
+        CallHookPkt( AudioCtrl->ahiac_PlayerFunc, AudioCtrl, NULL );
+
+	if( ! skip_mix )
+	{
+	  CallHookPkt( AudioCtrl->ahiac_MixerFunc, AudioCtrl, dd->mixbuffer );
+	}
+
+	src = ((WORD*) dd->mixbuffer) + offset;
+	dst = dd->mixbuffer;
+
+	for( i = 0; i < samples; ++i )
+	{
+	  *dst++ = *src;
+	  src += skip;
+	}
+	
+	OSS_Write( dd->mixbuffer,  bytes );
+	
+	CallHookA( AudioCtrl->ahiac_PostTimerFunc, (Object*) AudioCtrl, 0 );
       }
     }
   }
