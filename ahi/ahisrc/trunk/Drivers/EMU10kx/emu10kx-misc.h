@@ -25,9 +25,20 @@
 #include <devices/ahi.h>
 #include <DriverData.h>
 
+
+#ifdef __AMIGAOS4__
+
+struct EMU10kxData*
+AllocDriverData( struct PCIDevice*    dev,
+		 struct DriverBase* AHIsubBase );
+
+#else
+
 struct EMU10kxData*
 AllocDriverData( struct pci_dev*    dev,
 		 struct DriverBase* AHIsubBase );
+
+#endif
 
 void
 FreeDriverData( struct EMU10kxData* dd,

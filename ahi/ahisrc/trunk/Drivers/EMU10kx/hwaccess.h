@@ -165,7 +165,12 @@ struct emu10k1_card
 	u16			timer_delay;
 	spinlock_t		timer_lock;
 #endif
+
+#ifdef __AMIGAOS4__
+	struct PCIDevice	*pci_dev;
+#else
 	struct pci_dev		*pci_dev;
+#endif
 	unsigned long           iobase;
 	unsigned long		length;
 	unsigned short		model;

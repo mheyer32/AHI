@@ -19,25 +19,38 @@
 
 #include <config.h>
 
-#include <exec/execbase.h>
-#include <libraries/ahi_sub.h>
+#ifdef __AMIGAOS4__
+#include <proto/expansion.h>
+#else
 #include <libraries/openpci.h>
-
-#include <clib/alib_protos.h>
-#include <proto/exec.h>
 #include <proto/openpci.h>
+#include <clib/alib_protos.h>
+#endif
+
+#include <libraries/ahi_sub.h>
+#include <exec/execbase.h>
+#include <proto/exec.h>
 
 #include "library.h"
 #include "8010.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
+#ifdef __AMIGAOS4__
+# define CallHookA CallHookPkt
+#endif
+
 /******************************************************************************
 ** Hardware interrupt handler *************************************************
 ******************************************************************************/
 
+#ifdef __AMIGAOS4__
+LONG
+EMU10kxInterrupt( struct ExceptionContext *pContext, struct ExecBase *SysBase, struct EMU10kxData* dd )
+#else
 ULONG
 EMU10kxInterrupt( struct EMU10kxData* dd )
+#endif
 {
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
@@ -45,8 +58,12 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
   ULONG intreq;
   BOOL  handled = FALSE;
-
-  while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
+  
+  #ifdef __AMIGAOS4__
+  while ( ( intreq = SWAPLONG( ((struct PCIDevice * ) dd->card.pci_dev)->InLong(dd->card.iobase + IPR ) ) ) != 0 )
+  #else
+   while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
+  #endif
   {
 //    KPrintF("IRQ: %08lx\n", intreq );
     if( intreq & IPR_INTERVALTIMER &&
@@ -57,7 +74,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
       if( diff < 0 )
       {
-	diff += AudioCtrl->ahiac_MaxBuffSamples * 2;
+         diff += AudioCtrl->ahiac_MaxBuffSamples * 2;
       }
 
 //      KPrintF( ">>> hw_pos = %08lx; current_pos = %08lx; diff=%ld <<<\n",
@@ -65,13 +82,13 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
       if( (ULONG) diff < dd->current_length )
       {
-	if( dd->playback_interrupt_enabled )
-	{
-	  /* Invoke softint to fetch new sample data */
+         if( dd->playback_interrupt_enabled )
+         {
+            /* Invoke softint to fetch new sample data */
 
-	  dd->playback_interrupt_enabled = FALSE;
-	  Cause( &dd->playback_interrupt );
-	}
+            dd->playback_interrupt_enabled = FALSE;
+            Cause( &dd->playback_interrupt );
+         }
       }
     }
 
@@ -79,23 +96,23 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
     {
       if( intreq & IPR_ADCBUFHALFFULL )
       {
-	dd->current_record_buffer = dd->record_buffer;
+         dd->current_record_buffer = dd->record_buffer;
       }
       else
       {
-	dd->current_record_buffer = ( dd->record_buffer +
+         dd->current_record_buffer = ( dd->record_buffer +
 				      RECORD_BUFFER_SAMPLES * 4 / 2 );
       }
 
       if( dd->record_interrupt_enabled )
       {
-	/* Invoke softint to convert and feed AHI with the new sample data */
+         /* Invoke softint to convert and feed AHI with the new sample data */
 
-	dd->record_interrupt_enabled = FALSE;
-	Cause( &dd->record_interrupt );
+         dd->record_interrupt_enabled = FALSE;
+         Cause( &dd->record_interrupt );
       }
     }
-
+    
     if( intreq & IPR_MIDIRECVBUFEMPTY )
     {
       unsigned char b;
@@ -142,14 +159,17 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 	emu10k1_irq_disable( &dd->card, INTE_MIDITXENABLE );	
       }
     }
-   
 
     /* Clear interrupt pending bit(s) */
+    #ifdef __AMIGAOS4__
+    ((struct PCIDevice * ) dd->card.pci_dev)->OutLong( dd->card.iobase + IPR, SWAPLONG( intreq ) );
+    #else
     pci_outl( SWAPLONG( intreq ), dd->card.iobase + IPR );
+    #endif
 
     handled = TRUE;
   }
-
+  
   return handled;
 }
 
@@ -158,31 +178,37 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 ** Playback interrupt handler *************************************************
 ******************************************************************************/
 
+#ifdef __AMIGAOS4__
+void
+PlaybackInterrupt( struct ExceptionContext *pContext, struct ExecBase *SysBase, struct EMU10kxData* dd )
+#else
 void
 PlaybackInterrupt( struct EMU10kxData* dd )
+#endif
 {
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
-
+    
   if( dd->mix_buffer != NULL && dd->current_buffer != NULL )
   {
     BOOL   skip_mix;
+
     WORD*  src;
     WORD*  dst;
     size_t skip;
     size_t samples;
     int    i;
-
-    skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc, (Object*) AudioCtrl, 0 );
     
+    skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc, (Object*) AudioCtrl, 0 );
+
     CallHookA( AudioCtrl->ahiac_PlayerFunc, (Object*) AudioCtrl, NULL );
 
     if( ! skip_mix )
     {
       CallHookA( AudioCtrl->ahiac_MixerFunc, (Object*) AudioCtrl, dd->mix_buffer );
     }
-
+    
     /* Now translate and transfer to the DMA buffer */
 
     skip    = ( AudioCtrl->ahiac_Flags & AHIACF_HIFI ) ? 2 : 1;
@@ -223,7 +249,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 		     (ULONG) dst - (ULONG) dd->current_buffer,
 		     CACRF_ClearD );
       }
-      
+
       dst = dd->voice.mem.addr;
       dd->current_position = 0;
 
@@ -242,19 +268,20 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 
       if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
       {
-	samples *= 2;
+	      samples *= 2;
       }
 
       while( samples > 0 )
       {
-	*dst = ( ( *src & 0xff ) << 8 ) | ( ( *src & 0xff00 ) >> 8 );
+         *dst = ( ( *src & 0xff ) << 8 ) | ( ( *src & 0xff00 ) >> 8 );
+         
+         src += skip;
+         dst += 1;
 
-	src += skip;
-	dst += 1;
-
-	--samples;
+         --samples;
       }
     }
+
 
     if( EMU10kxBase->flush_caches )
     {
@@ -262,7 +289,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 		   (ULONG) dst - (ULONG) dd->current_buffer,
 		   CACRF_ClearD );
     }
-      
+    
     /* Update 'current_buffer' */
 
     dd->current_buffer = dst;
@@ -278,8 +305,13 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 ** Record interrupt handler ***************************************************
 ******************************************************************************/
 
+#ifdef __AMIGAOS4__
+void
+RecordInterrupt( struct ExceptionContext *pContext, struct ExecBase *SysBase, struct EMU10kxData* dd )
+#else
 void
 RecordInterrupt( struct EMU10kxData* dd )
+#endif
 {
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
@@ -294,7 +326,7 @@ RecordInterrupt( struct EMU10kxData* dd )
 
   int   i   = 0;
   WORD* ptr = dd->current_record_buffer;
-  
+
   if( EMU10kxBase->flush_caches )
   {
     // This is used to invalidate the cache
@@ -303,7 +335,7 @@ RecordInterrupt( struct EMU10kxData* dd )
 		 RECORD_BUFFER_SAMPLES / 2 * 4,
 		 CACRF_ClearD );
   }
-  
+
   while( i < RECORD_BUFFER_SAMPLES / 2 * 2 )
   {
     *ptr = ( ( *ptr & 0xff ) << 8 ) | ( ( *ptr & 0xff00 ) >> 8 );
@@ -324,8 +356,10 @@ RecordInterrupt( struct EMU10kxData* dd )
 		 RECORD_BUFFER_SAMPLES / 2 * 4,
 		 CACRF_ClearD );
   }
-  
+
   CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
 
   dd->record_interrupt_enabled = TRUE;
 }
+
+

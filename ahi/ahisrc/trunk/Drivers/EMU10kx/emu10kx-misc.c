@@ -20,14 +20,20 @@
 #include <config.h>
 
 #include <exec/memory.h>
+#ifdef __AMIGAOS4__
+#include <proto/expansion.h>
+#else
 #include <libraries/openpci.h>
-#include <proto/dos.h>
 #include <proto/openpci.h>
+#endif
+
+#include <proto/dos.h>
 
 #include "library.h"
 #include "8010.h"
 #include "emu10kx-interrupt.h"
 #include "emu10kx-misc.h"
+
 
 /* Global in emu10kx.c */
 extern const UWORD InputBits[];
@@ -48,15 +54,22 @@ INTGW( static, void,  playbackinterrupt, PlaybackInterrupt );
 INTGW( static, void,  recordinterrupt,   RecordInterrupt );
 INTGW( static, ULONG, emu10kxinterrupt,  EMU10kxInterrupt );
 
+
+#ifdef __AMIGAOS4__
+struct EMU10kxData*
+AllocDriverData( struct PCIDevice *    dev,
+		 struct DriverBase* AHIsubBase )
+#else
 struct EMU10kxData*
 AllocDriverData( struct pci_dev*    dev,
 		 struct DriverBase* AHIsubBase )
+#endif
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
   struct EMU10kxData* dd;
   UWORD               command_word;
 
-  // FIXME: This shoule be non-cachable, DMA-able memory
+  // FIXME: This should be non-cachable, DMA-able memory
   dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
 
   if( dd == NULL )
@@ -68,24 +81,24 @@ AllocDriverData( struct pci_dev*    dev,
 
   dd->ahisubbase = AHIsubBase;
 
-  dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
+  dd->interrupt.is_Node.ln_Type = INTERRUPT_NODE_TYPE;
   dd->interrupt.is_Node.ln_Pri  = 0;
   dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
   dd->interrupt.is_Code         = (void(*)(void)) &emu10kxinterrupt;
   dd->interrupt.is_Data         = (APTR) dd;
 
-  dd->playback_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+  dd->playback_interrupt.is_Node.ln_Type = INTERRUPT_NODE_TYPE;
   dd->playback_interrupt.is_Node.ln_Pri  = 0;
   dd->playback_interrupt.is_Node.ln_Name = (STRPTR) LibName;
   dd->playback_interrupt.is_Code         = (void(*)(void)) &playbackinterrupt;
   dd->playback_interrupt.is_Data         = (APTR) dd;
 
-  dd->record_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+  dd->record_interrupt.is_Node.ln_Type = INTERRUPT_NODE_TYPE;
   dd->record_interrupt.is_Node.ln_Pri  = 0;
   dd->record_interrupt.is_Node.ln_Name = (STRPTR) LibName;
   dd->record_interrupt.is_Code         = (void(*)(void)) &recordinterrupt;
   dd->record_interrupt.is_Data         = (APTR) dd;
-
+  
   dd->card.pci_dev = dev;
 
 //  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
@@ -94,31 +107,51 @@ AllocDriverData( struct pci_dev*    dev,
 //    goto error;
 //  }
 
+  #ifdef __AMIGAOS4__
+  command_word = dev->ReadConfigWord( PCI_COMMAND );  
+  command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
+  dev->WriteConfigWord( PCI_COMMAND, command_word );
+  #else
   command_word = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
   command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
   pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
+  #endif
 
   dd->pci_master_enabled = TRUE;
 
   // FIXME: How about latency/pcibios_set_master()??
 
-  dd->card.iobase    = dev->base_address[ 0 ];
-  dd->card.length    = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
-  dd->card.irq       = dev->irq;
-  dd->card.chiprev   = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
-  dd->card.model     = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
+  #ifdef __AMIGAOS4__
+  dd->card.iobase  = dev->GetResourceRange(0)->BaseAddress;
+  dd->card.length  = ~( dev->GetResourceRange(0)->Size & PCI_BASE_ADDRESS_IO_MASK );
+  dd->card.irq     = dev->MapInterrupt();
+  dd->card.chiprev = dev->ReadConfigByte( PCI_REVISION_ID);
+  dd->card.model   = dev->ReadConfigWord( PCI_SUBSYSTEM_ID);
+  dd->card.is_audigy = ( dev->ReadConfigWord( PCI_DEVICE_ID) == PCI_DEVICE_ID_CREATIVE_AUDIGY );
+  dd->card.is_aps   = ( dev->ReadConfigLong( PCI_SUBSYSTEM_VENDOR_ID)
+		       == EMU_APS_SUBID );
+
+  dev->OutLong(dd->card.iobase + IPR, 0xffffffff);
+  dev->OutLong(dd->card.iobase + INTE, 0);
+
+  AddIntServer(dev->MapInterrupt(), &dd->interrupt );
+  #else
+  dd->card.iobase  = dev->base_address[ 0 ];
+  dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
+  dd->card.irq     = dev->irq;
+  dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
+  dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
   dd->card.is_audigy = ( dev->device == PCI_DEVICE_ID_CREATIVE_AUDIGY );
-  dd->card.is_aps    = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
-					       dd->card.pci_dev )
-			 == EMU_APS_SUBID );
+  dd->card.is_aps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
+					     dd->card.pci_dev )
+		       == EMU_APS_SUBID );
 
   pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
+  #endif
 
   dd->interrupt_added = TRUE;
 
-    
   /* Initialize chip */
-
   if( emu10k1_init( &dd->card ) < 0 )
   {
     Req( "Unable to initialize EMU10kx subsystem.");
@@ -138,6 +171,7 @@ AllocDriverData( struct pci_dev*    dev,
     Req( "ac97 codec not present.");
     return NULL;
   }
+
 
   dd->input          = 0;
   dd->output         = 0;
@@ -191,22 +225,32 @@ FreeDriverData( struct EMU10kxData* dd,
     {
       if( dd->emu10k1_initialized )
       {
-	emu10k1_cleanup( &dd->card );
+        emu10k1_cleanup( &dd->card );
       }
 
       if( dd->pci_master_enabled )
       {
-	UWORD cmd;
+        UWORD cmd;
 
-	cmd = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
-	cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
-	pci_write_config_word( PCI_COMMAND, cmd, dd->card.pci_dev );
+        #ifdef __AMIGAOS4__
+        cmd = ((struct PCIDevice * ) dd->card.pci_dev)->ReadConfigWord( PCI_COMMAND );
+        cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
+        ((struct PCIDevice * ) dd->card.pci_dev)->WriteConfigWord( PCI_COMMAND, cmd );
+        #else
+        cmd = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
+        cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
+        pci_write_config_word( PCI_COMMAND, cmd, dd->card.pci_dev );
+        #endif
       }
     }
 
     if( dd->interrupt_added )
     {
+      #ifdef __AMIGAOS4__
+      RemIntServer(((struct PCIDevice * ) dd->card.pci_dev)->MapInterrupt(), &dd->interrupt );
+      #else
       pci_rem_intserver( &dd->interrupt, dd->card.pci_dev );
+      #endif
     }
 
     FreeVec( dd );

@@ -31,15 +31,20 @@ driver! Anything that is based on this driver has to be GPL:ed.
 
 #include <config.h>
 
+#ifdef __AMIGAOS4__
+#include <proto/expansion.h>
+#else
+#include <libraries/openpci.h>
+#include <proto/openpci.h>
+#include <clib/alib_protos.h>
+#endif
+
 #include <devices/ahi.h>
 #include <exec/memory.h>
 #include <libraries/ahi_sub.h>
-#include <libraries/openpci.h>
 
-#include <clib/alib_protos.h>
 #include <proto/ahi_sub.h>
 #include <proto/exec.h>
-#include <proto/openpci.h>
 #include <proto/utility.h>
 
 #include <string.h>
@@ -407,14 +412,13 @@ _AHIsub_Start( ULONG                   flags,
     emu10k1_voices_start( &dd->voice, 1, 0 );
 
     dd->voice_started = TRUE;
-    
+
     dd->is_playing = TRUE;
   }
 
   if( flags & AHISF_RECORD )
   {
     int adcctl = 0;
-
     /* Find out the recording frequency */
 
     switch( AudioCtrl->ahiac_MixFreq )
@@ -458,8 +462,7 @@ _AHIsub_Start( ULONG                   flags,
     adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;
 
     /* Allocate a new recording buffer (page aligned!) */
-
-    dd->record_buffer = pci_alloc_consistent( &dd->card.pci_dev,
+    dd->record_buffer = pci_alloc_consistent( dd->card.pci_dev,
 					      RECORD_BUFFER_SAMPLES * 4,
 					      &dd->record_dma_handle );
 

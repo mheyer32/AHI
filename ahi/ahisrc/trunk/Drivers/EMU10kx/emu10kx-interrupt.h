@@ -24,6 +24,17 @@
 
 #include "DriverData.h"
 
+#ifdef __AMIGAOS4__
+ULONG
+EMU10kxInterrupt( struct ExceptionContext *pContext, struct ExecBase *SysBase, struct EMU10kxData* dd );
+
+void
+PlaybackInterrupt( struct ExceptionContext *pContext, struct ExecBase *SysBase, struct EMU10kxData* dd );
+
+void
+RecordInterrupt( struct ExceptionContext *pContext, struct ExecBase *SysBase, struct EMU10kxData* dd );
+#else
+
 ULONG
 EMU10kxInterrupt( struct EMU10kxData* dd );
 
@@ -32,5 +43,7 @@ PlaybackInterrupt( struct EMU10kxData* dd );
 
 void
 RecordInterrupt( struct EMU10kxData* dd );
+
+#endif
 
 #endif /* AHI_Drivers_EMU10kx_emu10kx_interrupt_h */
