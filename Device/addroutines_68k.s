@@ -339,6 +339,8 @@ _AddBytesMono:
 	bne.b	1f
 	tst.l	d1
 	bne	2f
+	tst.l	d2
+	bne	2f
 	bsr	AddSilenceMono
 	bra	7f
 
@@ -496,6 +498,8 @@ _AddByteStereo:
 	bne.b	1f
 	tst.l	d1
 	bne.b	2f
+	tst.l	d2
+	bne.b	2f
 	bsr	AddSilenceStereo
 	bra	7f
 
@@ -607,6 +611,8 @@ _AddBytesStereo:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
+	bne	2f
+	tst.l	d2
 	bne	2f
 	bsr	AddSilenceStereo
 	bra	7f
@@ -864,6 +870,8 @@ _AddWordsMono:
 	bne.b	1f
 	tst.l	d1
 	bne	2f
+	tst.l	d2
+	bne	2f
 	bsr	AddSilenceMono
 	bra	7f
 
@@ -1007,6 +1015,8 @@ _AddWordStereo:
 	bne.b	1f
 	tst.l	d1
 	bne.b	2f
+	tst.l	d2
+	bne.b	2f
 	bsr	AddSilenceStereo
 	bra	7f
 
@@ -1111,6 +1121,8 @@ _AddWordsStereo:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
+	bne	2f
+	tst.l	d2
 	bne	2f
 	bsr	AddSilenceStereo
 	bra	7f
@@ -1523,6 +1535,8 @@ _AddByteStereoB:
 	bne.b	1f
 	tst.l	d1
 	bne.b	2f
+	tst.l	d2
+	bne.b	2f
 	bsr	AddSilenceStereoB
 	bra	7f
 
@@ -1636,6 +1650,8 @@ _AddBytesStereoB:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
+	bne	2f
+	tst.l	d2
 	bne	2f
 	bsr	AddSilenceStereoB
 	bra	7f
@@ -1897,6 +1913,8 @@ _AddWordsMonoB:
 	bne.b	1f
 	tst.l	d1
 	bne	2f
+	tst.l	d2
+	bne	2f
 	bsr	AddSilenceMonoB
 	bra	7f
 
@@ -2042,6 +2060,8 @@ _AddWordStereoB:
 	bne.b	1f
 	tst.l	d1
 	bne.b	2f
+	tst.l	d2
+	bne.b	2f
 	bsr	AddSilenceStereoB
 	bra	7f
 
@@ -2148,6 +2168,8 @@ _AddWordsStereoB:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
+	bne	2f
+	tst.l	d2
 	bne	2f
 	bsr	AddSilenceStereoB
 	bra	7f
