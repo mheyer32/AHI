@@ -1,6 +1,9 @@
 #
 # $Id$
 # $Log$
+# Revision 1.6  2002/01/03 09:02:35  martin
+# smake clean now deletes toccata.library too.
+#
 # Revision 1.5  2002/01/03 09:01:58  martin
 # Tweaked smakefile so I could build a binary.
 #
@@ -65,5 +68,5 @@ ci:
 	ci -l $(RCSFILES)
 
 clean:
-	--delete \#?.o \#?.tmp \#?.info version.h QUIET
+	--delete \#?.o \#?.tmp \#?.info version.h $(DEST) QUIET
 
