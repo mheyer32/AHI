@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.6  1997/05/09 14:02:17  lcs
+ * Now uses FindTask("Picasso96") instead of OpenLibrary("rtg.library").
+ *
  * Revision 4.5  1997/05/04 02:33:07  lcs
  * Changed name to gui_bgui.c
  *
@@ -606,11 +609,10 @@ BOOL BuildGUI(char *screenname) {
 
   UpdateStrings();
 
-  // Kludge for Piccaso 96.
-
-  if(rtgbase = OpenLibrary("rtg.library", 0)) {
+  // Kludge for Piccaso 96/BGUI.
+  if(FindTask("Picasso96"))
+  {
     PopUpMenus = FALSE;
-    CloseLibrary(rtgbase);
   }
 
   BGUIBase = (void *)OpenLibrary("bgui.library", 41);
