@@ -118,8 +118,8 @@ DummyHook( void )
 static struct Hook DefPlayerHook =
 {
   {0, 0},
-  DummyHook,
-  0,
+  (HOOKFUNC) m68k_HookEntry,
+  (HOOKFUNC) DummyHook,
   0
 };
 
