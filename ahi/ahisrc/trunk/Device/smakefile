@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.4  1997/01/15 14:59:50  lcs
+# Added include support for StormC
+#
 # Revision 1.3  1997/01/04 13:26:41  lcs
 # *** empty log message ***
 #
@@ -116,21 +119,33 @@ requester_protos.h: requester.c
 
 includes:
 	# Assembler library offsets
-	Programmering:DevKit/lvo ahi EQUATES > AHI:Developer/include/lvo/ahi_lib.i
-	Programmering:DevKit/lvo ahi_sub EQUATES > AHI:Developer/include/lvo/ahi_sub_lib.i
-	# SAS/C pragmas
-	fd2pragma AHI:Developer/include/fd/ahi_lib.fd\
-	          AHI:Developer/include/sas/pragmas/ahi_pragmas.h
-	fd2pragma AHI:Developer/include/fd/ahi_sub_lib.fd\
-	          AHI:Developer/include/sas/pragmas/ahi_sub_pragmas.h 
-	fixpragma.rexx AHI:Developer/include/sas/pragmas/ahi_pragmas.h
+	Programmering:DevKit/lvo ahi EQUATES > AHI:Developer/Include/Asm/lvo/ahi_lib.i
+	Programmering:DevKit/lvo ahi_sub EQUATES > AHI:Developer/Include/Asm/lvo/ahi_sub_lib.i
+	# Storm pragma & proto
+	fd2pragma AHI:Developer/include/FD/ahi_lib.fd COMMENT 5\
+	       TO AHI:Developer/include/Storm/pragma/ahi_lib.h
+	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd COMMENT 5\
+	       TO AHI:Developer/include/Storm/pragma/ahi_sub_lib.h
+	fd2pragma AHI:Developer/include/FD/ahi_lib.fd 15\
+	       TO AHI:Developer/include/Storm/proto/ahi.h
+	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd 15\
+	       TO AHI:Developer/include/Storm/proto/ahi_sub.h
+	# SAS/C pragmas & proto
+	fd2pragma AHI:Developer/include/FD/ahi_lib.fd COMMENT 3\
+	       TO AHI:Developer/include/SAS/pragmas/ahi_pragmas.h
+	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd COMMENT 3\
+	       TO AHI:Developer/include/SAS/pragmas/ahi_sub_pragmas.h
+	fd2pragma AHI:Developer/include/FD/ahi_lib.fd 18\
+	       TO AHI:Developer/include/SAS/proto/ahi.h
+	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd 18\
+	       TO AHI:Developer/include/SAS/proto/ahi_sub.h
 	# ADE gcc inlines
-	fd2inline AHI:Developer/include/fd/ahi_lib.fd\
-	          AHI:Developer/include/clib/ahi_protos.h\
-	       -o AHI:Developer/include/ade/inline/ahi.h
-	fd2inline AHI:Developer/include/fd/ahi_sub_lib.fd\
-	          AHI:Developer/include/clib/ahi_sub_protos.h\
-	       -o AHI:Developer/include/ade/inline/ahi_sub.h
+	fd2inline AHI:Developer/include/FD/ahi_lib.fd\
+	          AHI:Developer/include/C/clib/ahi_protos.h\
+	       -o AHI:Developer/include/ADE/inline/ahi.h
+	fd2inline AHI:Developer/include/FD/ahi_sub_lib.fd\
+	          AHI:Developer/include/C/clib/ahi_sub_protos.h\
+	       -o AHI:Developer/include/ADE/inline/ahi_sub.h
 
 ##
 ## Build autodoc files
