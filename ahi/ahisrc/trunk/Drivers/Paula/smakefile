@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.2  1998/01/10 19:47:33  lcs
+# Alright, the DMA version is ready for release.
+#
 # Revision 4.1  1997/12/02 09:34:56  lcs
 # First RCS'ed version.
 #
@@ -27,11 +30,13 @@ $(PDEST): prefsfile.a smakefile
 	basm -ua+ -o$(PDEST) prefsfile.a
 	AHI:User/C/AddAudioModes $(PDEST)
 
+version.i: paula_audio.a version.rexx smakefile
+	grep $$Id: paula_audio.a | version.rexx > version.i
 
-paula_audio.o: paula_audio.a smakefile
+paula_audio.o: paula_audio.a version.i smakefile
 	PhxAss $(AFLAGS) TO $@ MACHINE 68020 paula_audio.a
 
-paula_audio.000.o: paula_audio.a smakefile
+paula_audio.000.o: paula_audio.a version.i smakefile
 	PhxAss $(AFLAGS) TO $@ MACHINE 68000 paula_audio.a
 
 debug.o: debug.a
@@ -48,7 +53,7 @@ clean:
 
 allclean:
 	smake clean
-	--delete $(DEST) $(DEST000) $(PDEST)
+	--delete version.i $(DEST) $(DEST000) $(PDEST) 
 
 ci:
 	ci -l paula_audio.a debug.a prefsfile.a smakefile
