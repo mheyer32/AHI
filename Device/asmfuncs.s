@@ -1,10 +1,10 @@
 * $Id$
 * $Log$
+* Revision 1.14  1997/02/09 19:02:01  lcs
+* Hertz was misspelled!
+*
 * Revision 1.13  1997/02/03 16:23:42  lcs
 * AHIR_Locale should work now
-*
-* Revision 1.12  1997/02/03 01:40:18  lcs
-* *** empty log message ***
 *
 * Revision 1.11  1997/02/02 18:15:04  lcs
 * Added protection against CPU overload
@@ -762,7 +762,7 @@ SetVol_nodebug
 *
 *   INPUTS
 *       channel - The channel to set playback frequency for.
-*       freq - The playback frequency in Herz. Can also be AHI_MIXFREQ,
+*       freq - The playback frequency in Hertz. Can also be AHI_MIXFREQ,
 *           is the current mixing frequency (only usable with AHIST_INPUT
 *           sounds), or 0 to temporary stop the sound (it will restart at
 *           the same point when its frequency changed).
@@ -2295,7 +2295,7 @@ UnloadSound_nodebug
 *           the current channel. If AHIP_EndChannel is omitted, the result
 *           is undefined. ti_Data MUST BE NULL!
 *
-*       AHIP_Freq (ULONG) - The playback frequency in Herz or AHI_MIXFREQ.
+*       AHIP_Freq (ULONG) - The playback frequency in Hertz or AHI_MIXFREQ.
 *
 *       AHIP_Vol (Fixed) - The desired volume. If omitted, but AHIP_Pan is
 *           present, AHIP_Vol defaults to 0.
@@ -2571,7 +2571,7 @@ UnloadSound_nodebug
 *       io_Offset       Set to 0 when you use for the first time or after
 *                       a delay.
 *       ahir_Type       The desired sample format, see <ahi/devices.h>.
-*       ahir_Frequency  The desired sample frequency in Herz.
+*       ahir_Frequency  The desired sample frequency in Hertz.
 *
 *   IO REQUEST RESULT
 *       io_Error        0 for success, or an error code as defined in
@@ -2613,7 +2613,7 @@ UnloadSound_nodebug
 *                       sample frame size (see ahir_Type).
 *       io_Offset       Must be 0.
 *       ahir_Type       The desired sample format, see <ahi/devices.h>.
-*       ahir_Frequency  The desired sample frequency in Herz.
+*       ahir_Frequency  The desired sample frequency in Hertz.
 *       ahir_Volume     The desired volume. The range is 0 to 0x10000, where
 *                       0 means muted and 0x10000 (== 1.0) means full volume.
 *       ahir_Position   Defines the stereo balance. 0 is far left, 0x8000 is
