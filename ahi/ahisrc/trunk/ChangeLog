@@ -1,3 +1,13 @@
+2002-07-01  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 4.11.
+
+	* emu10kx.audio: Set all active AC97 inputs to 0 dB at startup.
+
+2002-05-28  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 4.10.
+
 2002-05-25  Martin Blom  <martin@blom.org>
 
 	* emu10kx.audio: Fixed the low PCM volume by using the full
