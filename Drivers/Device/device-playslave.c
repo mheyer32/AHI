@@ -2,6 +2,7 @@
 #include <config.h>
 
 #include <devices/ahi.h>
+#include <dos/dos.h>
 #include <libraries/ahi_sub.h>
 #include <proto/ahi.h>
 #include <proto/exec.h>
