@@ -284,6 +284,6 @@ FORMAT_WAVE		.EQU	4
 	CHUNK_END
 
 	FORM_END
-	.balign	4,0
+
 	.END
 	
