@@ -60,6 +60,10 @@ struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
+#ifndef VERSION68K
+struct Library            *PPCLibBase     = NULL;
+void                      *AHIPPCObject   = NULL;
+#endif
 
 /* linker can use symbol b for symbol a if a is not defined */
 #define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
@@ -94,11 +98,8 @@ const char VersTag[]   = "$VER: ahi.device " VERS " "
 # endif /* mc68040 */
 #endif /* mc68060 */
 
-#ifdef VERSIONPOWERUP
-                         "/PowerUp"
-#endif
-#ifdef VERSIONWARPUP
-                         "/WarpUp"
+#ifndef VERSION68K
+                         "/PPC"
 #endif
                          " version.\r\n";
 
