@@ -28,7 +28,7 @@ case $host in
  m68k-unknown-amigaos)
   : ${CPU="68020-60"}
   linkerflags="-noixemul"
-  optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math"
+  optflags="-m${CPU} -m68881 -O2 -fomit-frame-pointer -ffast-math"
   asCPU=`echo ${CPU} | sed 's/-.*//'`
   asflags="-m${asCPU} --register-prefix-optional --bitwise-or --defsym CPU=${asCPU}"
   resident="-resident"

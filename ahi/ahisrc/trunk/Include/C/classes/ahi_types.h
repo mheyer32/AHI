@@ -51,7 +51,7 @@ typedef LONG	Fixed28;
 typedef QUAD	Fixed64;
 
 /* A 32 bit fixed point value (16.16 bits) representing a dB value */
-/* typedef Fixed	dBFixed; */
+typedef Fixed	dBFixed;
 
 /* A stereo position type. 0 is far left and 0x10000 is far right */
 typedef Fixed	sposition;

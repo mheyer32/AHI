@@ -59,13 +59,13 @@ namespace AHI {
       struct _AHIP(_P, Gain) {
 	ULONG		MethodID;
 	ULONG		Channels;
-	Fixed*		Gains;
+	dBFixed*	Gains;
       };
 
       /* AHIM_GainProcessor_SetAll */
       struct _AHIP(_P, GainAll ) {
 	ULONG		MethodID;
-	Fixed		Gain;
+	dBFixed		Gain;
       };
 
 /*****************************************************************************/
