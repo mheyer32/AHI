@@ -2,12 +2,12 @@
 DEVICES_AHI_I		SET	1
 
 **
-**	$VER: ahi.i 5.2 (19.1.2003)
+**	$VER: ahi.i 5.4 (25.7.2004)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi.device definitions
 **
-**	(C) Copyright 1994-2003 Martin Blom
+**	(C) Copyright 1994-2004 Martin Blom
 **	All Rights Reserved.
 **
 **
@@ -160,7 +160,7 @@ CLOSEAHI MACRO
 	UWORD	ahiam_ObsoleteUserData0;
 	UWORD	ahiam_ObsoleteUserData1;
 	UWORD	ahiam_Pad;
-	APTR	ahiam_UserData;			; You can store your own data here (V5)
+	APTR	ahiam_UserData;			; You can store your own data here (V6)
 
 	; Lots of private data follows!
 	LABEL	AHIAudioModeRequester_SIZEOF
@@ -229,7 +229,7 @@ AHIA_MinPlayerFreq	EQU AHI_TagBase+8	; Minimum Frequency for player Hook
 AHIA_MaxPlayerFreq	EQU AHI_TagBase+9	; Maximum Frequency for player Hook
 AHIA_RecordFunc		EQU AHI_TagBase+10	; Sample recording Hook
 AHIA_UserData		EQU AHI_TagBase+11	; What to put in ahiac_UserData
-AHIA_AntiClickSamples	EQU AHI_TagBase+13	; # of samples to smooth (V5)
+AHIA_AntiClickSamples	EQU AHI_TagBase+13	; # of samples to smooth (V6)
 
   ; AHI_PlayA tags (V4)
 AHIP_BeginChannel 	EQU AHI_TagBase+40	; All command tags should be...
@@ -310,6 +310,8 @@ AHIDB_Output		EQU AHI_TagBase+141
 * --- New for V4, they will be ignored by V2 and earlier ---
 AHIDB_Data		EQU AHI_TagBaseR+142	; Private!
 AHIDB_DriverBaseName	EQU AHI_TagBaseR+143	; Private!
+* --- New for V6, they will be ignored by V4 and earlier ---
+AHIDB_MultiChannel	EQU AHI_TagBase+144	; Boolean
 
  ; AHI_BestAudioIDA tags
 * --- New for V4, they will be ignored by V2 and earlier ---
@@ -324,7 +326,7 @@ AHIR_PrivateIDCMP	EQU AHI_TagBase+203	; Allocate private IDCMP?
 AHIR_IntuiMsgFunc	EQU AHI_TagBase+204	; Function to handle IntuiMessages
 AHIR_SleepWindow	EQU AHI_TagBase+205	; Block input in AHIR_Window?
 AHIR_ObsoleteUserData	EQU AHI_TagBase+206	; V4 UserData
-AHIR_UserData		EQU AHI_TagBase+207	; What to put in ahiam_UserData (V5)
+AHIR_UserData		EQU AHI_TagBase+207	; What to put in ahiam_UserData (V6)
    ; Text display
 AHIR_TextAttr		EQU AHI_TagBase+220	; Text font to use for gadget text
 AHIR_Locale		EQU AHI_TagBase+221	; Locale to use for text
@@ -364,7 +366,7 @@ AHI_NOSOUND		EQU ~0			; Turns a channel off
 	BITDEF	AHIS,IMM,0			; Trigger action immediately
 	BITDEF	AHIS,NODELAY,1			; Don't wait for zero-crossing 
 
-AHISF_NONE		EQU 0			; No flags (V5)
+AHISF_NONE		EQU 0			; No flags (V6)
 
 
  ; Effect types
@@ -385,7 +387,7 @@ AHIST_BW		EQU 1<<30		; Private
 
  ; Sample types
 ; Note that only AHIST_M8S, AHIST_S8S, AHIST_M16S and AHIST_S16S
-; (plus AHIST_M32S and AHIST_S32S in V6)
+; (plus AHIST_M32S, AHIST_S32S and AHIST_L7_1 in V6)
 ; are supported by AHI_LoadSound().
 AHIST_M8S		EQU 0			; Mono, 8 bit signed (BYTE)
 AHIST_M16S		EQU 1			; Mono, 16 bit signed (WORD)
@@ -395,6 +397,8 @@ AHIST_M32S		EQU 8			; Mono, 32 bit signed (LONG)
 AHIST_S32S		EQU 10			; Stereo, 32 bit signed (2×LONG)
 
 AHIST_M8U		EQU 4			; OBSOLETE!
+
+AHIST_L7_1		EQU $00c3000a		; 7.1, 32 bit signed (8×LONG)
 
  ; Error codes
 AHIE_OK			EQU 0			; No error
@@ -422,7 +426,7 @@ ID_AHIG 		EQU "AHIG"
 
 	STRUCTURE AHIUnitPrefs,0
 	UBYTE	ahiup_Unit
-        UBYTE	ahiup_Pad
+        UBYTE	ahiup_ScaleMode				; See below (V6)
         UWORD	ahiup_Channels
         ULONG	ahiup_AudioMode
         ULONG	ahiup_Frequency
@@ -433,6 +437,14 @@ ID_AHIG 		EQU "AHIG"
         ULONG	ahiup_Output
 	LABEL	AHIUnitPrefs_SIZEOF
 
+ ; Scale modes
+AHI_SCALE_FIXED_SAFE	EQU (0)			; x=y*1/max(ch)
+AHI_SCALE_DYNAMIC_SAFE	EQU (1)			; x=y*1/ch
+AHI_SCALE_FIXED_0_DB	EQU (2)			; x=y
+AHI_SCALE_FIXED_3_DB	EQU (3)			; x=y*1/sqrt(2)
+AHI_SCALE_FIXED_6_DB	EQU (4)			; x=y*1/2
+
+
 	STRUCTURE AHIGlobalPrefs,0
 	UWORD	ahigp_DebugLevel			; Range: 0-3 (for None, Low,
 							; High and All
@@ -442,7 +454,7 @@ ID_AHIG 		EQU "AHIG"
 	Fixed	ahigp_MaxCPU
 	BOOL	ahigp_ClipMasterVolume
 	UWORD	ahigp_Pad;
-	Fixed	ahigp_AntiClickTime;			; In seconds (V5)
+	Fixed	ahigp_AntiClickTime;			; In seconds (V6)
 	LABEL	AHIGlobalPrefs_SIZEOF
 
  ; Debug levels

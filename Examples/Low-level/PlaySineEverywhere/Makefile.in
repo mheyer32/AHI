@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for PlaySineEverywhere
 #
@@ -64,7 +63,7 @@ revup:
 	@cat $(srcdir)/version.rev
 
 bindist:	all
-	$(INSTALL) --directory $(CDIR)
+	$(INSTALL) -d $(CDIR)
 	$(INSTALL_PROGRAM) $(EXECUTABLE) $(CDIR)/$(EXECUTABLE)
 	$(STRIP) $(CDIR)/$(EXECUTABLE)
 

@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -39,6 +37,9 @@
 #include "misc.h"
 #include "mixer.h"
 
+#ifdef __AMIGAOS4__
+#define IAHIsub audioctrl->ahiac_IAHIsub
+#endif
 
 /***********************************************
 ***** NOTE: The mixing routine might execute while we are inside these
@@ -106,8 +107,7 @@ update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl )
 
 #define mode_stereo 1
 #define mode_32bit  2
-#define mode_ncnm   4       // No cross, no mix
-#define mode_fast   8
+#define mode_multi  4
 
 BOOL
 update_DSPEcho ( struct AHIEffDSPEcho *echo,
@@ -115,6 +115,22 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 {
   ULONG size, samplesize;
   struct Echo *es;
+
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+#endif
+  }
 
   /* Set up the delay buffer format */
 
@@ -130,14 +146,18 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
       samplesize = 4;
       break;
 
+    case AHIST_L7_1:
+      samplesize = 16;
+      break;
+      
     default:
       return FALSE; // Panic
   }
 
   size = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
 
-  es = AllocVec( sizeof(struct Echo) + size,
-		 MEMF_PUBLIC | MEMF_CLEAR );
+  es = AHIAllocVec( sizeof(struct Echo) + size,
+                    data_flags );
   
   if(es)
   {
@@ -165,6 +185,9 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
       case AHIST_S32S:
         mode |= (mode_32bit | mode_stereo);
         break;
+      case AHIST_L7_1:
+	mode |= (mode_32bit | mode_multi);
+	break;
     }
 
     es->ahiecho_Delay      = echo->ahiede_Delay;
@@ -205,9 +228,14 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
         es->ahiecho_Code   = do_DSPEchoStereo32;
         break;
 
+      // multichannel 32 bit
+      case 6:
+	es->ahiecho_Code   = do_DSPEchoMulti32;
+	break;
+
       // Should not happen!
       default:
-        FreeVec(es);
+        AHIFreeVec(es);
         return FALSE;
     }
 
@@ -229,7 +257,7 @@ free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl )
 
   // Hide it from mixing routine before freeing it!
   audioctrl->ahiac_EffDSPEchoStruct = NULL;
-  FreeVec(p);
+  AHIFreeVec(p);
 
   audioctrl->ahiac_EchoMasterVolume = 0x10000;
   update_MasterVolume( audioctrl );
