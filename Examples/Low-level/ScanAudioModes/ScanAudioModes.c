@@ -116,7 +116,8 @@ int main(void)
         AHI_GetAudioAttrs(id, NULL,
             AHIDB_BufferLen,LEN,
             AHIDB_OutputArg,i,
-            AHIDB_Output,(ULONG) &outputdesc);
+            AHIDB_Output,(ULONG) &outputdesc,
+	    TAG_DONE);
         Printf(" %s",(ULONG) &outputdesc);
       }
     }
@@ -129,7 +130,8 @@ int main(void)
         AHI_GetAudioAttrs(id, NULL,
             AHIDB_BufferLen,LEN,
             AHIDB_InputArg,i,
-            AHIDB_Input,(ULONG) &inputdesc);
+            AHIDB_Input,(ULONG) &inputdesc,
+	    TAG_DONE);
         Printf(" %s",(ULONG) &inputdesc);
       }
     }
