@@ -25,6 +25,11 @@
 #define INTUITIONNAME "intuition.library"
 #endif
 
+#ifdef __amithlon__
+# define RTF_NATIVE (1<<3)
+# define FUNCARRAY_32BIT_NATIVE 0xfffefffe
+#endif
+
 #if !defined( __AROS__ ) && !defined( __amithlon__ )
 extern void _etext;
 #else
@@ -137,7 +142,7 @@ static const struct Resident RomTag =
 #if defined( __MORPHOS__ ) 
   RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
 #elif defined( __amithlon__ )
-  RTF_PPC | RTF_AUTOINIT,
+  RTF_NATIVE | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
 #endif

@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for EMU10kx sound card driver
 #
@@ -14,7 +13,7 @@ OBJECTS		= emu10kx-init.o emu10kx-main.o emu10kx-accel.o \
 		  emu10kx-misc.o emu10kx-interrupt.o emu10kx-camd.o \
 		  emu10kx-ac97.o \
 		  main.o hwaccess.o emuadxmg.o efxmgr.o voicemgr.o \
-		  linuxsupport.o 
+		  linuxsupport.o pci_wrapper.o
 
 include ../Common/Makefile.common
 CPPFLAGS	+= -DAHI
@@ -34,7 +33,7 @@ camd-clean:
 	$(RM) camdstubs.c camdstubs.h CAMD/emu10kx CAMD/emu10kx.o CAMD.stamp
 
 camd-bindist:	all
-	$(INSTALL) --directory $(CAMDDIR)
+	$(INSTALL) -d $(CAMDDIR)
 	$(INSTALL_PROGRAM) CAMD/emu10kx $(CAMDDIR)
 	$(STRIP) $(CAMDDIR)/emu10kx
 
