@@ -90,8 +90,7 @@ struct Extras
 {
         UWORD   Channel;
         UWORD   Sound;
-        LONG    BuffSamples;
-        LONG    Count;
+        LONG    VolumeDiv;
 };
 
 /* Voice->Flags definitions */
