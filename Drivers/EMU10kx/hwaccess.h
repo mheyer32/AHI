@@ -48,10 +48,13 @@
 #include "midi.h"
 
 #else
-#include "EMU10k1.h"
-#include <proto/dos.h>
-#define KERN_NOTICE ""
-#define printk Printf
+
+#include "linuxsupport.h"
+
+#define SOUND_MIXER_NRDEVICES 1
+
+#include "efxmgr.h"
+
 #endif
 
 #define EMUPAGESIZE     4096            /* don't change */
@@ -65,7 +68,6 @@
 #define FLAGS_AVAILABLE     0x0001
 #define FLAGS_READY         0x0002
 
-#ifdef lcs
 struct memhandle
 {
 	dma_addr_t dma_handle;
@@ -73,14 +75,13 @@ struct memhandle
 	u32 size;
 };
 
-#endif
 
 
 #define DEBUG_LEVEL 2
 
 #ifdef EMU10K1_DEBUG
-# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , y );} while(0)
-# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x  );} while(0)
+# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: " x , y );} while(0)
+# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: " x  );} while(0)
 #else
 # define DPD(level,x,y...) do { } while (0) /* not debugging: nothing */
 # define DPF(level,x) do { } while (0)
@@ -88,9 +89,9 @@ struct memhandle
 
 #define ERROR() DPF(1,"error\n")
 
-#ifdef lcs
 /* DATA STRUCTURES */
 
+#ifdef lcs
 struct emu10k1_waveout
 {
 	u32 send_routing[3];
@@ -146,54 +147,53 @@ struct mixer_private_ioctl {
 //up this number when breaking compatibility
 #define PRIVATE3_VERSION 1
 
-#ifdef lcs
 struct emu10k1_card 
 {
-	struct list_head list;
+//	struct list_head list;
 
 	struct memhandle	virtualpagetable;
 	struct memhandle	tankmem;
 	struct memhandle	silentpage;
 
-	spinlock_t		lock;
+//	spinlock_t		lock;
 
 	u8			voicetable[NUM_G];
 	u16			emupagetable[MAXPAGES];
 
-	struct list_head	timers;
-	unsigned		timer_delay;
-	spinlock_t		timer_lock;
+//	struct list_head	timers;
+//	unsigned		timer_delay;
+//	spinlock_t		timer_lock;
 
-	struct pci_dev		*pci_dev;
+	void*                   pci_dev;
 	unsigned long           iobase;
 	unsigned long		length;
 	unsigned short		model;
 	unsigned int irq; 
 
-	int	audio_dev;
-	int	audio_dev1;
-	int	midi_dev;
-#ifdef EMU10K1_SEQUENCER
-	int seq_dev;
-	struct emu10k1_mididevice *seq_mididev;
-#endif
+//	int	audio_dev;
+//	int	audio_dev1;
+//	int	midi_dev;
+//#ifdef EMU10K1_SEQUENCER
+//	int seq_dev;
+//	struct emu10k1_mididevice *seq_mididev;
+//#endif
 
-	struct ac97_codec ac97;
-	int ac97_supported_mixers;
-	int ac97_stereo_mixers;
+//	struct ac97_codec ac97;
+//	int ac97_supported_mixers;
+//	int ac97_stereo_mixers;
 
-	/* Number of first fx voice for multichannel output */
-	u8 mchannel_fx;
-	struct emu10k1_waveout	waveout;
-	struct emu10k1_wavein	wavein;
-	struct emu10k1_mpuout	*mpuout;
-	struct emu10k1_mpuin	*mpuin;
+//	/* Number of first fx voice for multichannel output */
+//	u8 mchannel_fx;
+//	struct emu10k1_waveout	waveout;
+//	struct emu10k1_wavein	wavein;
+//	struct emu10k1_mpuout	*mpuout;
+//	struct emu10k1_mpuin	*mpuin;
 
-	struct semaphore	open_sem;
-	mode_t			open_mode;
-	wait_queue_head_t	open_wait;
+//	struct semaphore	open_sem;
+//	mode_t			open_mode;
+//	wait_queue_head_t	open_wait;
 
-	u32	    mpuacqcount;	  // Mpu acquire count
+//	u32	    mpuacqcount;	  // Mpu acquire count
 	u32	    has_toslink;	       // TOSLink detection
 
 	u8 chiprev;                    /* Chip revision                */
@@ -201,9 +201,8 @@ struct emu10k1_card
 	u8 isaps;
 
 	struct patch_manager mgr;
-	struct pt_data pt;
+//	struct pt_data pt;
 };
-#endif
 
 int emu10k1_addxmgr_alloc(u32, struct emu10k1_card *);
 void emu10k1_addxmgr_free(struct emu10k1_card *, int);

@@ -1,28 +1,16 @@
 
-#ifndef AHI_Drivers_EMU10k1
-#define AHI_Drivers_EMU10k1
+#ifndef AHI_Drivers_EMU10k1_h
+#define AHI_Drivers_EMU10k1_h
 
 #include <exec/types.h>
+#include <exec/interrupts.h>
 
+#include "hwaccess.h"
 
-typedef unsigned int   u32;
-typedef unsigned short u16;
-typedef unsigned char  u8;
-
-typedef signed int     s32;
-typedef signed short   s16;
-typedef signed char    s8;
-
-struct emu10k1_card
+struct EMU10k1
 {
-    APTR   pci_dev;
-    ULONG  iobase;
-    ULONG  length;
-    UBYTE  irq;
-    UBYTE  chiprev;
-    UWORD  model;
-    BOOL   audigy;
-    BOOL   isaps;
+    struct Interrupt    interrupt;
+    struct emu10k1_card card;
 };
 
-#endif /* AHI_Drivers_EMU10k1 */
+#endif /* AHI_Drivers_EMU10k1_h */

@@ -47,7 +47,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 # Files
 ########################################
 
-OBJECTS		= main.o hwaccess.o emuadxmg.c
+OBJECTS		= main.o hwaccess.o emuadxmg.c efxmgr.o linuxsupport.o
 
 
 #
@@ -109,7 +109,7 @@ $(DRIVER):		$(OBJECTS)
 
 version.h:	version.rev version.date
 	@echo Creating $@
-	@ver=`cat $(top_srcdir)/version.ver` \
+	@ver=`cat $(srcdir)/version.ver` \
 	 rev=`cat $(srcdir)/version.rev` \
 	 date=`cat $(srcdir)/version.date` && \
 	 echo "#define VERSION $$ver" > $@ && \
