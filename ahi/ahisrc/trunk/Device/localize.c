@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 5.0  2000/11/28 00:15:34  lcs
+* Bumped CVS revision to 5.0.
+*
 * Revision 4.5  2000/08/03 20:12:57  lcs
 * *** empty log message ***
 *

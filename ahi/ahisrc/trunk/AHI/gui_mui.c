@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.0  2000/11/28 00:13:26  lcs
+ * Bumped CVS revision to 5.0.
+ *
  * Revision 4.12  2000/11/27 22:58:46  lcs
  * Fixed a lame rounding problem with maxcpu and anticlicktime.
  *
