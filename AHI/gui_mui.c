@@ -26,6 +26,7 @@
 #include <libraries/mui.h>
 
 #include <clib/alib_protos.h>
+#include <proto/ahi.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
@@ -567,18 +568,21 @@ BOOL BuildGUI(char *screenname)
           MUIA_CycleChain, 1,
           MUIA_Cycle_Entries, EchoLabels,
           MUIA_Cycle_Active, (globalprefs.ahigp_DisableEcho ? 2 : 0) | (globalprefs.ahigp_FastEcho ? 1 : 0),
+          MUIA_Disabled, AHIBase->lib_Version >= 5,
         End,
         Child, MUITSurround = SpecialButton((STRPTR)msgGlobOptSurround),
         Child, MUISurround = CycleObject,
           MUIA_CycleChain, 1,
           MUIA_Cycle_Entries, SurroundLabels,
           MUIA_Cycle_Active, globalprefs.ahigp_DisableSurround,
+          MUIA_Disabled, AHIBase->lib_Version >= 5,
         End,
         Child, MUITClipvol = SpecialButton((STRPTR)msgGlobOptMasterVol),
         Child, MUIClipvol = CycleObject,
           MUIA_CycleChain, 1,
           MUIA_Cycle_Entries, ClipMVLabels,
           MUIA_Cycle_Active, globalprefs.ahigp_ClipMasterVolume,
+          MUIA_Disabled, AHIBase->lib_Version >= 5,
         End,
         Child, MUITCpu = SpecialButton((STRPTR)msgGlobOptCPULimit),
         Child, MUICpu = SliderObject,
@@ -597,6 +601,7 @@ BOOL BuildGUI(char *screenname)
           MUIA_Numeric_Max, 100,
           MUIA_Numeric_Value,(globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
           MUIA_Numeric_Format,"%ld% ms",
+          MUIA_Disabled, AHIBase->lib_Version <= 4,
         End,
       End,
       Child, HVSpace,
