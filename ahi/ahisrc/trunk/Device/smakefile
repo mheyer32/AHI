@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.7  1997/05/03 19:59:56  lcs
+# Catalog fixes, and more
+#
 # Revision 4.6  1997/04/22 01:35:21  lcs
 # This is release 4! Finally.
 #
@@ -60,6 +63,7 @@
 
 CPU	= 68030
 OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
+DEBUG   = DEBUG=FULL
 TARGET	= AHI:User/Devs/ahi.device
 
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
@@ -73,7 +77,7 @@ database.o requester.o devcommands.o device.o devsupp.o localize.o\
 footer.o
 
 CCOMP	= SC:c/sc
-CFLAGS = DEBUG=FULL CODE=FAR DATA=FARONLY ABSFUNCPOINTER PARAMETERS=REGISTERS\
+CFLAGS = $(DEBUG) CODE=FAR DATA=FARONLY ABSFUNCPOINTER PARAMETERS=REGISTERS\
 NOSTACKCHECK UNSIGNEDCHARS COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS\
 MEMORYSIZE=HUGE STRINGSECTION=CODE GST=include:all.gst CPU=$(CPU)\
 $(OPTIMIZE)
@@ -83,7 +87,7 @@ AFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
 
 LINKER	= SC:c/slink
 LFLAGS	= ADDSYM NOALVS NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
-DEBUG	= LIB:debug.lib LIB:amiga.lib
+LDEBUG	= LIB:debug.lib LIB:amiga.lib
 
 
 ##
@@ -92,15 +96,9 @@ DEBUG	= LIB:debug.lib LIB:amiga.lib
 ###############################################################################
 
 $(TARGET): $(OBJECTS)
-	$(LINKER) $(LFLAGS) TO Devs:ahi.device FROM $(OBJECTS) LIB LIB:sc.lib $(DEBUG)
+	$(LINKER) $(LFLAGS) TO Devs:ahi.device FROM $(OBJECTS) LIB LIB:sc.lib $(LDEBUG)
 	slink FROM Devs:ahi.device to $(TARGET) ND NOICONS
 
-##
-## Everything!
-##
-###############################################################################
-
-dist:	protos cpu support
 
 ##
 ## CPU=68000 and CPU=68030 versions
@@ -114,13 +112,21 @@ cpu:
 	smake clean
 	smake
 
+
 ##
-## Dependences (doesn't work with asm files anyway!)
+## Support files
 ##
 ###############################################################################
 
-depend:
-	makedepend >NIL: -f smakefile $(OBJECTS)
+support: includes autodocs catalogs hyperdoc printeddoc
+
+
+##
+## Everything!
+##
+###############################################################################
+
+dist:	protos cpu support
 
 
 ##
@@ -128,8 +134,8 @@ depend:
 ##
 ###############################################################################
 
-ahi_rev.i: $(SOURCES)
-	@revup VERSION 4 PROJECTNAME ahi ASM TINY
+ahi.device_rev.i: $(SOURCES)
+	@revup VERSION 4 PROJECTNAME ahi.device ASM TINY
 
 
 ##
@@ -159,9 +165,10 @@ devsupp.o:	devsupp.a
 dspinit.o:	dspinit.c ahi_def.h dsp.h
 dspecho.o:	dspecho.a ahi_def.i dsp.i
 footer.o:	footer.a
-header.o:	header.a ahi_def.i ahi_rev.i
+header.o:	header.a ahi_def.i ahi.device_rev.i
 localize.o:	localize.c
 requester.o:	requester.c localize.h ahi_def.h
+
 
 ##
 ## Prototypes
@@ -192,12 +199,6 @@ requester_protos.h: requester.c
 dspinit_protos.h: dspinit.c
 	$(CCOMP) GPROTO $(CFLAGS) dspinit.c
 
-##
-## Support files
-##
-###############################################################################
-
-support: includes autodocs newcatalogs catalogs hyperdoc printeddoc
 
 ##
 ## Build include files
@@ -236,6 +237,7 @@ includes:
 	Programmering:AmigaE/Bin/IConvert AHIINC:E/libraries/ahi_sub.i
 	delete AHIINC:E/\#?.fd AHIINC:E/\#?/\#?.i
 
+
 ##
 ## Build autodoc files
 ##
@@ -256,34 +258,30 @@ autodocs:
 	--move ahi.doc ahi.guide ahi.html ahi_sub.doc ahi_sub.guide ahi_sub.html AHI:Developer/Docs/ QUIET
 	--delete T:ahi.xref T:ahi_sub.xref T:AHI-AD.tmp QUIET
 
+
 ##
 ## Build catalog files
 ##
 ###############################################################################
 
 catalogs:
-	# Make sure the directories exists
-	echo > T:catscript "FailAt 11"
-	list \#?.ct >> T:catscript lformat "MakeDir >NIL: AHI:User/Catalogs/%m"
-	--execute T:catscript
-	# Make catalogs
-	list \#?.ct > T:catscript lformat\
-		"FlexCat ahi.cd %n CATALOG AHI:User/Catalogs/%m/ahi.catalog"
-	execute T:catscript
-	delete T:catscript
-
-##
-## Update tranlation files
-##
-###############################################################################
-
-newcatalogs:
-	# Make NewCatalog.ct
-	--FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
-	copy ahi.cd AHI:User/Catalogs/
 	# Update the translations
-	list \#?.ct > T:catscript lformat "FlexCat ahi.cd %n NEWCTFILE %n"
-	execute T:catscript
+	list > T:catscript translations lformat\
+	  "FlexCat ahi.cd %p%n NEWCTFILE %p%n"
+
+	# Make sure the directories exist
+	echo >> T:catscript "FailAt 11"
+	list >> T:catscript translations lformat\
+	  "MakeDir >NIL: AHI:User/Catalogs/%m"
+	echo >> T:catscript "FailAt 10"
+
+	# Make catalogs
+	list >> T:catscript translations lformat\
+	  "FlexCat ahi.cd %p%n CATALOG AHI:User/Catalogs/%m/ahi.catalog"
+
+	FlexCat ahi.cd ahi.ct NEWCTFILE ahi.ct
+	copy ahi.(cd|ct) AHI:User/Catalogs/
+	--execute T:catscript
 	delete T:catscript
 
 ##
@@ -292,13 +290,14 @@ newcatalogs:
 ###############################################################################
 
 hyperdoc:
-	makeinfo --amiga-40 ahiusr.texinfo
-	rep ahi.guide Ahi AHI AHI:User/Help/ahi.guide
-	delete ahi.guide
+	makeinfo --amiga-40 --output AHI:User/Help/ahi.guide ahiusr.texinfo
+#	rep ahi.guide Ahi AHI AHI:User/Help/ahi.guide
+#	delete ahi.guide
 
-	makeinfo --amiga-40 ahidev.texinfo
-	rep devguide.guide Ahi AHI AHI:Developer/docs/devguide.guide
-	delete devguide.guide
+	makeinfo --amiga-40 --output AHI:Developer/docs/devguide.guide ahidev.texinfo
+#	rep devguide.guide Ahi AHI AHI:Developer/docs/devguide.guide
+#	delete devguide.guide
+
 
 ##
 ## Build printed documentation
@@ -308,6 +307,7 @@ hyperdoc:
 printeddoc:
 	execute MakeManual
 
+
 ##
 ## Check in all files
 ##
@@ -316,13 +316,6 @@ printeddoc:
 ci:
 	ci -l $(RCSFILES)
 
-##
-## Check out all files
-##
-###############################################################################
-
-co:
-	co -l $(RCSFILES)
 
 ##
 ## Remove all objects
@@ -331,10 +324,3 @@ co:
 
 clean:
 	--delete \#?.o localize.c localize.h QUIET
-
-##
-## Autogenerated dependencies follows...
-##
-###############################################################################
-
-#DEPENDENCIES
