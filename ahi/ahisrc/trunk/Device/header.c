@@ -2,7 +2,7 @@
 
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2000 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -149,7 +149,7 @@ const char DevName[]   = AHINAME;
 const char IDString[]  = AHINAME " " VERS "\r\n";
 
 static const char VersTag[] =
- "$VER: " AHINAME " " VERS " ©1994-1999 Martin Blom. "
+ "$VER: " AHINAME " " VERS " ©1994-2000 Martin Blom. "
  CPU 
  "/PPC"
  " version.\r\n";
