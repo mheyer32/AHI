@@ -36,6 +36,7 @@ Added		Fixed		What?
 991111				Open the filesave requester on the user's screen.
 001213				If AHISF_TIMING is not used, ahiac_BuffSize is not set.
 010422				Zero-sized CMD_WRITE sometimes locks AHI.
+010815				toccata.library emulation uses hardcoded "fast" modes.
 
 
 V5 Proposal, improvements and new lowlevel soundcard access
