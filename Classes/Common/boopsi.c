@@ -95,7 +95,7 @@ static const APTR FuncTable[] = {
 
 
 static const APTR InitTable[4] = {
-  (APTR) sizeof(struct AHIClassBase),
+  (APTR) sizeof(struct ClassData),
   (APTR) &FuncTable,
   NULL,
 #if defined (__MORPHOS__) || defined (__amithlon__)
@@ -169,16 +169,16 @@ _ClassInit(struct ClassLibrary*  library,
   static const char superlib[]  = "AHI/" _AHI_SUPER_NAME;
   static const int  supervers   = _AHI_SUPER_VERS;
   
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) library;
+  struct ClassData* ClassData = (struct ClassData*) library;
   SysBase = sysbase;
 
-  AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Type = NT_LIBRARY;
-  AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Name = (STRPTR) ClassName;
-  AHIClassBase->common.cl.cl_Lib.lib_Flags        = LIBF_SUMUSED | LIBF_CHANGED;
-  AHIClassBase->common.cl.cl_Lib.lib_Version      = VERSION;
-  AHIClassBase->common.cl.cl_Lib.lib_Revision     = REVISION;
-  AHIClassBase->common.cl.cl_Lib.lib_IdString     = (STRPTR) ClassIDString;
-  AHIClassBase->common.seglist                    = seglist;
+  ClassData->common.cl.cl_Lib.lib_Node.ln_Type = NT_LIBRARY;
+  ClassData->common.cl.cl_Lib.lib_Node.ln_Name = (STRPTR) ClassName;
+  ClassData->common.cl.cl_Lib.lib_Flags        = LIBF_SUMUSED | LIBF_CHANGED;
+  ClassData->common.cl.cl_Lib.lib_Version      = VERSION;
+  ClassData->common.cl.cl_Lib.lib_Revision     = REVISION;
+  ClassData->common.cl.cl_Lib.lib_IdString     = (STRPTR) ClassIDString;
+  ClassData->common.seglist                    = seglist;
 
   IntuitionBase = (struct IntuitionBase*) OpenLibrary(INTUITIONNAME, 37);
   DOSBase       = (struct DosLibrary*)    OpenLibrary(DOSNAME, 37);
@@ -200,44 +200,44 @@ _ClassInit(struct ClassLibrary*  library,
   }
 
   if (supername[0] != '\0') {
-    AHIClassBase->common.super = (struct ClassLibrary*)
+    ClassData->common.super = (struct ClassLibrary*)
       OpenLibrary(superlib, supervers);
 
-    if (AHIClassBase->common.super == NULL) { 
+    if (ClassData->common.super == NULL) { 
       Req("Unable to open super class library\n"
 	  "'%s' version %ld", (ULONG) superlib, supervers );
       goto error;
     }
 
-    AHIClassBase->common.cl.cl_Class =
-      MakeClass(classname, NULL, AHIClassBase->common.super->cl_Class,
-		sizeof (struct AHIClassData), 0);
+    ClassData->common.cl.cl_Class =
+      MakeClass(classname, NULL, ClassData->common.super->cl_Class,
+		sizeof (struct ObjectData), 0);
   }
   else {
-    AHIClassBase->common.cl.cl_Class =
+    ClassData->common.cl.cl_Class =
       MakeClass(classname, ROOTCLASS, NULL,
-		sizeof (struct AHIClassData), 0);
+		sizeof (struct ObjectData), 0);
   }
   
-  if (AHIClassBase->common.cl.cl_Class == NULL) {
+  if (ClassData->common.cl.cl_Class == NULL) {
     Req("Unable to create " _AHI_CLASS_NAME " Class.");
     goto error;
   }
   
-  if (! AHIClassInit(AHIClassBase)) {
+  if (! AHIClassInit(ClassData)) {
     goto error;
   }
 
-  AHIClassBase->common.cl.cl_Class->cl_Dispatcher.h_Entry    = HookEntry;
-  AHIClassBase->common.cl.cl_Class->cl_Dispatcher.h_SubEntry = AHIClassDispatch;
-  AHIClassBase->common.cl.cl_Class->cl_UserData              = (ULONG) AHIClassBase;
+  ClassData->common.cl.cl_Class->cl_Dispatcher.h_Entry    = HookEntry;
+  ClassData->common.cl.cl_Class->cl_Dispatcher.h_SubEntry = AHIClassDispatch;
+  ClassData->common.cl.cl_Class->cl_UserData              = (ULONG) ClassData;
 
   // Go public
-  AddClass(AHIClassBase->common.cl.cl_Class);
-  return &AHIClassBase->common.cl;
+  AddClass(ClassData->common.cl.cl_Class);
+  return &ClassData->common.cl;
 
 error:
-  _ClassExpunge(AHIClassBase);
+  _ClassExpunge(ClassData);
   return NULL;
 }
 
@@ -247,49 +247,49 @@ error:
 ******************************************************************************/
 
 BPTR
-_ClassExpunge(struct AHIClassBase* AHIClassBase) {
+_ClassExpunge(struct ClassData* ClassData) {
   BPTR seglist = 0;
 
-  if (AHIClassBase->common.cl.cl_Lib.lib_OpenCnt == 0) {
-    if (AHIClassBase->common.cl.cl_Class != NULL) {
+  if (ClassData->common.cl.cl_Lib.lib_OpenCnt == 0) {
+    if (ClassData->common.cl.cl_Class != NULL) {
       KPrintF("Freeing class " _AHI_CLASS_NAME "\n");
 
       // FreeClass() will also RemoveClass() us
-      if (! FreeClass(AHIClassBase->common.cl.cl_Class)) {
+      if (! FreeClass(ClassData->common.cl.cl_Class)) {
 	Req("Unable to free BOOPSI class.");
 
 	/* What to do?? */
-	AHIClassBase->common.cl.cl_Lib.lib_Flags |= LIBF_DELEXP;
+	ClassData->common.cl.cl_Lib.lib_Flags |= LIBF_DELEXP;
 	return 0;
       }
     }
     
-    seglist = AHIClassBase->common.seglist;
+    seglist = ClassData->common.seglist;
 
     /* Since ClassInit() calls us on failure, we have to check if we're
        really added to the library list before removing us. */
 
-    if (AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Succ != NULL) {
-      Remove((struct Node *) AHIClassBase);
+    if (ClassData->common.cl.cl_Lib.lib_Node.ln_Succ != NULL) {
+      Remove((struct Node *) ClassData);
     }
 
-    AHIClassCleanup(AHIClassBase);
+    AHIClassCleanup(ClassData);
 
     /* Close super class */
-    CloseLibrary((struct Library*) AHIClassBase->common.super);
+    CloseLibrary((struct Library*) ClassData->common.super);
     
     /* Close libraries */
     CloseLibrary((struct Library*) DOSBase);
     CloseLibrary((struct Library*) IntuitionBase);
     CloseLibrary((struct Library*) UtilityBase);
 
-    FreeMem((APTR) (((char*) AHIClassBase) -
-		      AHIClassBase->common.cl.cl_Lib.lib_NegSize),
-             (AHIClassBase->common.cl.cl_Lib.lib_NegSize +
-	       AHIClassBase->common.cl.cl_Lib.lib_PosSize));
+    FreeMem((APTR) (((char*) ClassData) -
+		      ClassData->common.cl.cl_Lib.lib_NegSize),
+             (ClassData->common.cl.cl_Lib.lib_NegSize +
+	       ClassData->common.cl.cl_Lib.lib_PosSize));
   }
   else {
-    AHIClassBase->common.cl.cl_Lib.lib_Flags |= LIBF_DELEXP;
+    ClassData->common.cl.cl_Lib.lib_Flags |= LIBF_DELEXP;
   }
 
   return seglist;
@@ -301,11 +301,11 @@ _ClassExpunge(struct AHIClassBase* AHIClassBase) {
 ******************************************************************************/
 
 struct ClassLibrary*
-_ClassOpen(ULONG version, struct AHIClassBase* AHIClassBase) {
-  AHIClassBase->common.cl.cl_Lib.lib_Flags &= ~LIBF_DELEXP;
-  AHIClassBase->common.cl.cl_Lib.lib_OpenCnt++;
+_ClassOpen(ULONG version, struct ClassData* ClassData) {
+  ClassData->common.cl.cl_Lib.lib_Flags &= ~LIBF_DELEXP;
+  ClassData->common.cl.cl_Lib.lib_OpenCnt++;
 
-  return &AHIClassBase->common.cl;
+  return &ClassData->common.cl;
 }
 
 
@@ -314,14 +314,14 @@ _ClassOpen(ULONG version, struct AHIClassBase* AHIClassBase) {
 ******************************************************************************/
 
 BPTR
-_ClassClose(struct AHIClassBase* AHIClassBase) {
+_ClassClose(struct ClassData* ClassData) {
   BPTR seglist = 0;
 
-  AHIClassBase->common.cl.cl_Lib.lib_OpenCnt--;
+  ClassData->common.cl.cl_Lib.lib_OpenCnt--;
 
-  if (AHIClassBase->common.cl.cl_Lib.lib_OpenCnt == 0) {
-    if (AHIClassBase->common.cl.cl_Lib.lib_Flags & LIBF_DELEXP) {
-      seglist = _ClassExpunge(AHIClassBase);
+  if (ClassData->common.cl.cl_Lib.lib_OpenCnt == 0) {
+    if (ClassData->common.cl.cl_Lib.lib_Flags & LIBF_DELEXP) {
+      seglist = _ClassExpunge(ClassData);
     }
   }
 
@@ -334,8 +334,8 @@ _ClassClose(struct AHIClassBase* AHIClassBase) {
 ******************************************************************************/
 
 Class*
-_ObtainEngine(struct AHIClassBase* AHIClassBase) {
-  return AHIClassBase->common.cl.cl_Class;
+_ObtainEngine(struct ClassData* ClassData) {
+  return ClassData->common.cl.cl_Class;
 }
 
 
@@ -344,6 +344,6 @@ _ObtainEngine(struct AHIClassBase* AHIClassBase) {
 ******************************************************************************/
 
 ULONG
-_ClassNull(struct AHIClassBase* AHIClassBase) {
+_ClassNull(struct ClassData* ClassData) {
   return 0;
 }

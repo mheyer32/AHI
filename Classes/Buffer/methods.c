@@ -21,35 +21,35 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   struct TagItem* tstate = msg->ops_AttrList;
   struct TagItem* tag;
   ULONG result = 0;
 
-  AHIClassData->sample_type = AHIST_NOTYPE;
+  ObjectData->sample_type = AHIST_NOTYPE;
 
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Buffer_SampleType:
-	AHIClassData->sample_type = tag->ti_Data;
+	ObjectData->sample_type = tag->ti_Data;
 	break;
 
       case AHIA_Buffer_SampleFreqInt:
-	AHIClassData->sample_freq_int = tag->ti_Data;
+	ObjectData->sample_freq_int = tag->ti_Data;
 	break;
 
       case AHIA_Buffer_SampleFreqFract:
-	AHIClassData->sample_freq_fract = tag->ti_Data;
+	ObjectData->sample_freq_fract = tag->ti_Data;
 	break;
 	
       case AHIA_Buffer_Capacity:
-	AHIClassData->capacity = tag->ti_Data;
+	ObjectData->capacity = tag->ti_Data;
 	break;
  
       case AHIA_Buffer_PreLength:
-	AHIClassData->pre_length = tag->ti_Data;
+	ObjectData->pre_length = tag->ti_Data;
 	break;
 	
      default:
@@ -57,9 +57,9 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
     }
   }
 
-  AHIClassData->prelen_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
-				       AHIClassData->sample_type,
-				       AHIClassData->pre_length, NULL);
+  ObjectData->prelen_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
+				       ObjectData->sample_type,
+				       ObjectData->pre_length, NULL);
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
@@ -69,21 +69,21 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
     return result;
   }
 
-  if (AHIClassData->sample_freq_int == 0 &&
-      AHIClassData->sample_freq_fract == 0) {
+  if (ObjectData->sample_freq_int == 0 &&
+      ObjectData->sample_freq_fract == 0) {
     return AHIE_Buffer_InvalidSampleFreq;
   }
   
-  if (AHIClassData->length == 0) {
-    AHIClassData->length = AHIClassData->capacity;
+  if (ObjectData->length == 0) {
+    ObjectData->length = ObjectData->capacity;
   }
 
-  if (AHIClassData->capacity == 0) {
+  if (ObjectData->capacity == 0) {
     return AHIE_Buffer_InvalidCapacity;
   }
   else {
     ULONG size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
-			  AHIClassData->sample_type, AHIClassData->capacity, NULL);
+			  ObjectData->sample_type, ObjectData->capacity, NULL);
 
     if (size == 0) {
 
@@ -91,11 +91,11 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
       return AHIE_Buffer_InvalidSampleType;
     }
     
-    AHIClassData->data = AllocVec(size + AHIClassData->prelen_size,
+    ObjectData->data = AllocVec(size + ObjectData->prelen_size,
 				  MEMF_PUBLIC | MEMF_CLEAR);
   }
 
-  if (AHIClassData->data == NULL) {
+  if (ObjectData->data == NULL) {
     return ERROR_NO_FREE_STORE;
   }
   
@@ -109,10 +109,10 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  FreeVec(AHIClassData->data);
+  FreeVec(ObjectData->data);
 }
 
 
@@ -123,10 +123,10 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  ULONG length = AHIClassData->length;
+  ULONG length = ObjectData->length;
   
   BOOL check_length = FALSE;
 
@@ -141,19 +141,19 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	break;
 
       case AHIA_Buffer_TimestampHigh:
-	AHIClassData->timestamp_hi = tag->ti_Data;
+	ObjectData->timestamp_hi = tag->ti_Data;
 	break;
 
       case AHIA_Buffer_TimestampLow:
-	AHIClassData->timestamp_lo = tag->ti_Data;
+	ObjectData->timestamp_lo = tag->ti_Data;
 	break;
 	
       case AHIA_Buffer_AgeHigh:
-	AHIClassData->age_hi = tag->ti_Data;
+	ObjectData->age_hi = tag->ti_Data;
 	break;
 
       case AHIA_Buffer_AgeLow:
-	AHIClassData->age_lo = tag->ti_Data;
+	ObjectData->age_lo = tag->ti_Data;
 	break;
 
       default:
@@ -162,11 +162,11 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   }
 
   if (check_length) {
-    if (length < AHIClassData->capacity) {
-      AHIClassData->length = length;
+    if (length < ObjectData->capacity) {
+      ObjectData->length = length;
 
-      AHIClassData->buffer_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
-					   AHIClassData->sample_type, length, NULL);
+      ObjectData->buffer_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
+					   ObjectData->sample_type, length, NULL);
       NotifySuper(class, object, msg, AHIA_Buffer_Length, length, TAG_DONE);
     }
     else {
@@ -186,8 +186,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -219,51 +219,51 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
       
     case AHIA_Buffer_SampleType:
-      *msg->opg_Storage = AHIClassData->sample_type;
+      *msg->opg_Storage = ObjectData->sample_type;
       break;
 
     case AHIA_Buffer_SampleFreqInt:
-      *msg->opg_Storage = AHIClassData->sample_freq_int;
+      *msg->opg_Storage = ObjectData->sample_freq_int;
       break;
 
     case AHIA_Buffer_SampleFreqFract:
-      *msg->opg_Storage = AHIClassData->sample_freq_fract;
+      *msg->opg_Storage = ObjectData->sample_freq_fract;
       break;
 	
     case AHIA_Buffer_Capacity:
-      *msg->opg_Storage = AHIClassData->capacity;
+      *msg->opg_Storage = ObjectData->capacity;
       break;
 
     case AHIA_Buffer_Length:
-      *msg->opg_Storage = AHIClassData->length;
+      *msg->opg_Storage = ObjectData->length;
       break;
 
     case AHIA_Buffer_Data:
-      *msg->opg_Storage = (ULONG) AHIClassData->data + AHIClassData->prelen_size;
+      *msg->opg_Storage = (ULONG) ObjectData->data + ObjectData->prelen_size;
       break;
       
     case AHIA_Buffer_RealData:
-      *msg->opg_Storage = (ULONG) AHIClassData->data;
+      *msg->opg_Storage = (ULONG) ObjectData->data;
       break;
       
     case AHIA_Buffer_PreLength:
-      *msg->opg_Storage = (ULONG) AHIClassData->pre_length;
+      *msg->opg_Storage = (ULONG) ObjectData->pre_length;
       break;
 
     case AHIA_Buffer_TimestampHigh:
-      *msg->opg_Storage = AHIClassData->timestamp_hi;
+      *msg->opg_Storage = ObjectData->timestamp_hi;
       break;
 
     case AHIA_Buffer_TimestampLow:
-      *msg->opg_Storage = AHIClassData->timestamp_lo;
+      *msg->opg_Storage = ObjectData->timestamp_lo;
       break;
 	
     case AHIA_Buffer_AgeHigh:
-      *msg->opg_Storage = AHIClassData->age_hi;
+      *msg->opg_Storage = ObjectData->age_hi;
       break;
 
     case AHIA_Buffer_AgeLow:
-      *msg->opg_Storage = AHIClassData->age_lo;
+      *msg->opg_Storage = ObjectData->age_lo;
       break;
 	
     default:
@@ -280,8 +280,8 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 ULONG
 MethodSampleFrameSize(Class* class, Object* object,
 		      struct AHIP_Buffer_SampleFrameSize* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   ULONG cnt = 0;
 
@@ -359,8 +359,8 @@ MethodSampleFrameSize(Class* class, Object* object,
 
 BOOL
 MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
 #warning TODO: Implement AHIM_Buffer_Load
   
@@ -374,23 +374,23 @@ MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg) {
 
 Object*
 MethodClone(Class* class, Object* object, struct AHIP_Buffer_Clone* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   Object*  r;
   
   SetIoErr(0); // Make sure OM_NEW calls SetIoErr().
 
-  r = NewObject(AHIClassBase->common.cl.cl_Class, NULL,
-		AHIA_Buffer_SampleType,      AHIClassData->sample_type,
-		AHIA_Buffer_SampleFreqInt,   AHIClassData->sample_freq_int,
-		AHIA_Buffer_SampleFreqFract, AHIClassData->sample_freq_fract,
-		AHIA_Buffer_Capacity,        AHIClassData->capacity,
-		AHIA_Buffer_Length,          AHIClassData->length,
+  r = NewObject(ClassData->common.cl.cl_Class, NULL,
+		AHIA_Buffer_SampleType,      ObjectData->sample_type,
+		AHIA_Buffer_SampleFreqInt,   ObjectData->sample_freq_int,
+		AHIA_Buffer_SampleFreqFract, ObjectData->sample_freq_fract,
+		AHIA_Buffer_Capacity,        ObjectData->capacity,
+		AHIA_Buffer_Length,          ObjectData->length,
 		AHIA_Buffer_PreLength,       msg->PreLength,
-		AHIA_Buffer_TimestampHigh,   AHIClassData->timestamp_hi,
-		AHIA_Buffer_TimestampLow,    AHIClassData->timestamp_lo,
-		AHIA_Buffer_AgeHigh,         AHIClassData->age_hi,
-		AHIA_Buffer_AgeLow,          AHIClassData->age_lo,
+		AHIA_Buffer_TimestampHigh,   ObjectData->timestamp_hi,
+		AHIA_Buffer_TimestampLow,    ObjectData->timestamp_lo,
+		AHIA_Buffer_AgeHigh,         ObjectData->age_hi,
+		AHIA_Buffer_AgeLow,          ObjectData->age_lo,
 		TAG_DONE);
 
   if (r == NULL) {
@@ -407,24 +407,24 @@ MethodClone(Class* class, Object* object, struct AHIP_Buffer_Clone* msg) {
 
 BOOL
 MethodShift(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-  char* addr = AHIClassData->data;
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
+  char* addr = ObjectData->data;
 
   if (addr == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, ERROR_NO_FREE_STORE, TAG_DONE);
     return FALSE;
   }
   
-  if (AHIClassData->prelen_size > AHIClassData->buffer_size) {
+  if (ObjectData->prelen_size > ObjectData->buffer_size) {
     // Old: ooooOOOOOOBBBB
     // New: OOOOOOBBBBxxxx
-    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->prelen_size);
+    bcopy(addr + ObjectData->buffer_size, addr, ObjectData->prelen_size);
   }
   else {
     // Old: oooobbbbbbBBBB
     // New: BBBBxxxxxxxxxx
-    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->prelen_size); // Deja vu!
+    bcopy(addr + ObjectData->buffer_size, addr, ObjectData->prelen_size); // Deja vu!
   }
 
   return TRUE;

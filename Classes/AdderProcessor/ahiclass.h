@@ -6,13 +6,13 @@
 
 #include "boopsi.h"
 
-struct AHIClassBase {
+struct ClassData {
     struct CommonBase common;
 };
 
 #define MAX_CHILDREN 64
 
-struct AHIClassData {
+struct ObjectData {
     ULONG   channels;
     Object* buffer;
     float*  data;

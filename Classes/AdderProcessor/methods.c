@@ -21,8 +21,8 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
@@ -37,8 +37,8 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 }
 
 
@@ -49,8 +49,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL check_ready = FALSE;
   
@@ -64,7 +64,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	int i;
 
 	for (i = 0; i < MAX_CHILDREN; ++i) {
-	  if (AHIClassData->children[i] != NULL) {
+	  if (ObjectData->children[i] != NULL) {
 	    Object* old_buffer = NULL;
 	    Object* new_buffer = NULL;
 	    
@@ -79,16 +79,16 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	      }
 	    }
 
-	    GetAttr(AHIA_Processor_Buffer, AHIClassData->children[i], (ULONG*) &old_buffer);
-	    SetAttrs(AHIClassData->children[i],
+	    GetAttr(AHIA_Processor_Buffer, ObjectData->children[i], (ULONG*) &old_buffer);
+	    SetAttrs(ObjectData->children[i],
 		     AHIA_Processor_Buffer, (ULONG) new_buffer,
 		     TAG_DONE);
-	    AHIClassData->buffers[i] = new_buffer;
+	    ObjectData->buffers[i] = new_buffer;
 	    if (new_buffer != NULL) {
-	      GetAttr(AHIA_Buffer_Data, new_buffer, (ULONG*) &AHIClassData->datas[i]);
+	      GetAttr(AHIA_Buffer_Data, new_buffer, (ULONG*) &ObjectData->datas[i]);
 	    }
 	    else {
-	      AHIClassData->datas[i] = NULL;
+	      ObjectData->datas[i] = NULL;
 	    }
 	    
 	    if (old_buffer != NULL) {
@@ -100,18 +100,18 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
       }
 	
       case AHIA_Buffer_Data:
-	AHIClassData->data = (float*) tag->ti_Data;
+	ObjectData->data = (float*) tag->ti_Data;
 	check_ready = TRUE;
 	break;
 
       case AHIA_Buffer_Length: {
 	int i;
 	
-	AHIClassData->length = tag->ti_Data;
+	ObjectData->length = tag->ti_Data;
 	
 	for (i = 0; i < MAX_CHILDREN; ++i) {
-	  if (AHIClassData->buffers[i] != NULL) {
-	    SetAttrs(AHIClassData->buffers[i], AHIA_Buffer_Length, AHIClassData->length, TAG_DONE);
+	  if (ObjectData->buffers[i] != NULL) {
+	    SetAttrs(ObjectData->buffers[i], AHIA_Buffer_Length, ObjectData->length, TAG_DONE);
 	  }
 	}
 	
@@ -124,7 +124,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	
 	if ((st & AHIST_TYPE_MASK) ==
 	    (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
-	  AHIClassData->channels = AHIST_C_DECODE(st);
+	  ObjectData->channels = AHIST_C_DECODE(st);
 	}
 	else {
 	  SetSuperAttrs(class, object,
@@ -143,9 +143,9 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->data != NULL &&
-					 AHIClassData->length > 0 &&
-					 AHIClassData->channels > 0),
+		  AHIA_Processor_Ready, (ObjectData->data != NULL &&
+					 ObjectData->length > 0 &&
+					 ObjectData->channels > 0),
 		  TAG_DONE);
   }
 
@@ -160,8 +160,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -210,8 +210,8 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
 BOOL
 MethodAddMember(Class* class, Object* object, struct opMember* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   BOOL rc;
   Object* buffer = NULL;
 
@@ -242,10 +242,10 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
       SetAttrs(msg->opam_Object, AHIA_Processor_Buffer, (ULONG) new_buffer, TAG_DONE);
 
       for (i = 0; i < MAX_CHILDREN; ++i) {
-	if (AHIClassData->children[i] == NULL) {
-	  AHIClassData->children[i] = msg->opam_Object;
-	  AHIClassData->buffers[i]  = new_buffer;
-	  GetAttr(AHIA_Buffer_Data, new_buffer, (ULONG*) &AHIClassData->datas[i]);
+	if (ObjectData->children[i] == NULL) {
+	  ObjectData->children[i] = msg->opam_Object;
+	  ObjectData->buffers[i]  = new_buffer;
+	  GetAttr(AHIA_Buffer_Data, new_buffer, (ULONG*) &ObjectData->datas[i]);
 	  break;
 	}
       }
@@ -262,8 +262,8 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
 
 BOOL
 MethodRemMember(Class* class, Object* object, struct opMember* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   int i;
   BOOL rc;
   Object* buffer = NULL;
@@ -274,10 +274,10 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
 
   if (rc) {
     for (i = 0; i < MAX_CHILDREN; ++i) {
-      if (AHIClassData->children[i] == msg->opam_Object) {
-	AHIClassData->children[i] = NULL;
-	AHIClassData->buffers[i]  = NULL;
-	AHIClassData->datas[i]    = NULL;
+      if (ObjectData->children[i] == msg->opam_Object) {
+	ObjectData->children[i] = NULL;
+	ObjectData->buffers[i]  = NULL;
+	ObjectData->datas[i]    = NULL;
 	break;
       }
     }
@@ -297,8 +297,8 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
 
 ULONG
 MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   ULONG result = DoSuperMethodA(class, object, (Msg) msg);
   
@@ -312,16 +312,16 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
       ULONG  c;
       ULONG  s;
       ULONG  i;
-      float* data = AHIClassData->data;
+      float* data = ObjectData->data;
 
-      bzero(data, sizeof (float) * AHIClassData->length * AHIClassData->channels);
+      bzero(data, sizeof (float) * ObjectData->length * ObjectData->channels);
 
       for (p = 0; p < MAX_CHILDREN; ++p) {
-	if (AHIClassData->datas[p] != NULL) {
-	  float* src = AHIClassData->datas[p];
+	if (ObjectData->datas[p] != NULL) {
+	  float* src = ObjectData->datas[p];
 	  
-	  for (s = 0, i = 0; s < AHIClassData->length; ++s) {
-	    for (c = 0; c < AHIClassData->channels; ++c, ++i) {
+	  for (s = 0, i = 0; s < ObjectData->length; ++s) {
+	    for (c = 0; c < ObjectData->channels; ++c, ++i) {
 	      data[i] += src[i];
 	    }
 	  }

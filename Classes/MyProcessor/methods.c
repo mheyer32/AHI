@@ -20,11 +20,11 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
-  // TODO: Initialize AHIClassData here!
+  // TODO: Initialize ObjectData here!
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
@@ -40,10 +40,10 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  // TODO: Clean up AHIClassData here
+  // TODO: Clean up ObjectData here
 }
 
 
@@ -54,8 +54,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL check_ready = FALSE;
   
@@ -65,12 +65,12 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Buffer_Data:
-	AHIClassData->data = (float*) tag->ti_Data;
+	ObjectData->data = (float*) tag->ti_Data;
 	check_ready = TRUE;
 	break;
 
       case AHIA_Buffer_Length:
-	AHIClassData->length = tag->ti_Data;
+	ObjectData->length = tag->ti_Data;
 	check_ready = TRUE;
 	break;
 
@@ -79,7 +79,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	
 	if ((st & AHIST_TYPE_MASK) ==
 	    (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
-	  AHIClassData->channels = AHIST_C_DECODE(st);
+	  ObjectData->channels = AHIST_C_DECODE(st);
 	}
 	else {
 	  SetSuperAttrs(class, object,
@@ -100,9 +100,9 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->data != NULL &&
-					 AHIClassData->length > 0 &&
-					 AHIClassData->channels > 0),
+		  AHIA_Processor_Ready, (ObjectData->data != NULL &&
+					 ObjectData->length > 0 &&
+					 ObjectData->channels > 0),
 		  TAG_DONE);
   }
 
@@ -117,8 +117,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -165,8 +165,8 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
 ULONG
 MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   ULONG result = DoSuperMethodA(class, object, (Msg) msg);
   
@@ -179,10 +179,10 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 	ULONG  c;
 	ULONG  s;
 	ULONG  i;
-	float* data = AHIClassData->data;
+	float* data = ObjectData->data;
 
-	for (s = 0, i = 0; s < AHIClassData->length; ++s) {
-	  for (c = 0; c < AHIClassData->channels; ++c, ++i) {
+	for (s = 0, i = 0; s < ObjectData->length; ++s) {
+	  for (c = 0; c < ObjectData->channels; ++c, ++i) {
 	    // No-op
 	  }
 	}

@@ -15,13 +15,13 @@
 #include "util.h"
 
 BOOL
-AHIClassInit(struct AHIClassBase* AHIClassBase) {
+AHIClassInit(struct ClassData* ClassData) {
   return TRUE;
 }
 
 
 VOID
-AHIClassCleanup(struct AHIClassBase* AHIClassBase) {
+AHIClassCleanup(struct ClassData* ClassData) {
 }
 
 
@@ -29,8 +29,8 @@ ULONG
 AHIClassDispatch(Class*  class,
 		 Object* object,
 		 Msg     msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
   switch (msg->MethodID) {

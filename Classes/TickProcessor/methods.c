@@ -20,8 +20,8 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
@@ -38,8 +38,8 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 }
 
 
@@ -50,8 +50,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL check_ready = FALSE;
   
@@ -61,7 +61,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Processor_Buffer:
-	AHIClassData->buffer = (Object*) tag->ti_Data;
+	ObjectData->buffer = (Object*) tag->ti_Data;
 	check_ready = TRUE;
 	break;
 	
@@ -72,7 +72,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->buffer != 0),
+		  AHIA_Processor_Ready, (ObjectData->buffer != 0),
 		  TAG_DONE);
   }
 
@@ -87,8 +87,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -133,11 +133,11 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
 ULONG
 MethodPrepare(Class* class, Object* object, struct AHIP_Processor_Process* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
  
   ULONG _tags[] = {
-    AHIA_TickProcessor_Tick, (ULONG) AHIClassData->buffer,
+    AHIA_TickProcessor_Tick, (ULONG) ObjectData->buffer,
     TAG_DONE
   };
  

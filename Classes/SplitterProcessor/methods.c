@@ -21,8 +21,8 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
@@ -37,11 +37,11 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  FreeVec(AHIClassData->cached_data);
-  AHIClassData->cached_data = NULL;
+  FreeVec(ObjectData->cached_data);
+  ObjectData->cached_data = NULL;
 }
 
 
@@ -52,8 +52,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL check_ready = FALSE;
   
@@ -63,29 +63,29 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Processor_Buffer: {
-	AHIClassData->buffer = (Object*) tag->ti_Data;
+	ObjectData->buffer = (Object*) tag->ti_Data;
 
-	if (AHIClassData->buffer == NULL) {
-	  AHIClassData->data = NULL;
-	  AHIClassData->length = 0;
-	  AHIClassData->sample_type = AHIST_NOTYPE;
-	  AHIClassData->size = 0;
+	if (ObjectData->buffer == NULL) {
+	  ObjectData->data = NULL;
+	  ObjectData->length = 0;
+	  ObjectData->sample_type = AHIST_NOTYPE;
+	  ObjectData->size = 0;
 
-	  FreeVec(AHIClassData->cached_data);
-	  AHIClassData->cached_data = NULL;
+	  FreeVec(ObjectData->cached_data);
+	  ObjectData->cached_data = NULL;
 	}
 	else {
 	  ULONG capacity   = 0;
 	  ULONG local_size = 0;
 
-	  GetAttr(AHIA_Buffer_SampleType, AHIClassData->buffer, &AHIClassData->sample_type);
-	  GetAttr(AHIA_Buffer_Capacity, AHIClassData->buffer, &capacity);
-	  local_size = DoMethod(AHIClassData->buffer, AHIM_Buffer_SampleFrameSize,
-				AHIClassData->sample_type, capacity, NULL);
+	  GetAttr(AHIA_Buffer_SampleType, ObjectData->buffer, &ObjectData->sample_type);
+	  GetAttr(AHIA_Buffer_Capacity, ObjectData->buffer, &capacity);
+	  local_size = DoMethod(ObjectData->buffer, AHIM_Buffer_SampleFrameSize,
+				ObjectData->sample_type, capacity, NULL);
 
-	  AHIClassData->cached_data = AllocVec(local_size, MEMF_PUBLIC);
+	  ObjectData->cached_data = AllocVec(local_size, MEMF_PUBLIC);
 
-	  if (AHIClassData->cached_data == NULL) {
+	  if (ObjectData->cached_data == NULL) {
 	    SetSuperAttrs(class, object, AHIA_Error, ERROR_NO_FREE_STORE, TAG_DONE);
 	  }
 	}
@@ -95,14 +95,14 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
       }
 
       case AHIA_Buffer_Data:
-	AHIClassData->data = (float*) tag->ti_Data;
+	ObjectData->data = (float*) tag->ti_Data;
 	break;
 	
       case AHIA_Buffer_Length: {
-	AHIClassData->length = tag->ti_Data;
-	if (AHIClassData->buffer != NULL) {
-	  AHIClassData->size = DoMethod(AHIClassData->buffer, AHIM_Buffer_SampleFrameSize,
-					AHIClassData->sample_type, AHIClassData->length, NULL);
+	ObjectData->length = tag->ti_Data;
+	if (ObjectData->buffer != NULL) {
+	  ObjectData->size = DoMethod(ObjectData->buffer, AHIM_Buffer_SampleFrameSize,
+					ObjectData->sample_type, ObjectData->length, NULL);
 	}
 	check_ready = TRUE;
 	break;
@@ -115,10 +115,10 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->buffer != NULL &&
-					 AHIClassData->cached_data != NULL &&
-					 AHIClassData->data != NULL &&
-					 AHIClassData->length > 0),
+		  AHIA_Processor_Ready, (ObjectData->buffer != NULL &&
+					 ObjectData->cached_data != NULL &&
+					 ObjectData->data != NULL &&
+					 ObjectData->length > 0),
 		  TAG_DONE);
   }
   
@@ -133,8 +133,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -166,7 +166,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
 
     case AHIA_Processor_MaxChildren:
-      *msg->opg_Storage = AHIClassData->master == NULL ? 1 : 0;
+      *msg->opg_Storage = ObjectData->master == NULL ? 1 : 0;
       break;
 
     default:
@@ -183,32 +183,32 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
 ULONG
 MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   ULONG result;
 
-  if (AHIClassData->master == NULL) {
+  if (ObjectData->master == NULL) {
     ULONG time_hi = 0;
     ULONG time_lo = 0;
     UQUAD time = 0;
 
-    GetAttr(AHIA_Buffer_TimestampHigh, AHIClassData->buffer, &time_hi);
-    GetAttr(AHIA_Buffer_TimestampLow, AHIClassData->buffer, &time_lo);
+    GetAttr(AHIA_Buffer_TimestampHigh, ObjectData->buffer, &time_hi);
+    GetAttr(AHIA_Buffer_TimestampLow, ObjectData->buffer, &time_lo);
     time = ((UQUAD) time_hi << 32) | time_lo;
 
-    if (time < AHIClassData->last_time) {
+    if (time < ObjectData->last_time) {
       SetSuperAttrs(class, object, AHIA_Error, AHIE_SplitterProcessor_InvalidBufferTime, TAG_DONE);
       result = AHIV_Processor_FailProc;
     }
-    else if (time == AHIClassData->last_time) {
+    else if (time == ObjectData->last_time) {
       // We have already processed this timestamp, so our local copy
       // of the buffer data is valid.
       result = AHIV_Processor_SkipProc;
     }
     else {
       // Remember timestamp and process the buffer
-      AHIClassData->last_time = time;
+      ObjectData->last_time = time;
       result = DoSuperMethodA(class, object, (Msg) msg);
     }
 
@@ -218,7 +218,7 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 	break;
 
       case AHIV_Processor_PerformProc: {
-	bcopy(AHIClassData->data, AHIClassData->cached_data, AHIClassData->size);
+	bcopy(ObjectData->data, ObjectData->cached_data, ObjectData->size);
 	break;
       }
     }
@@ -232,21 +232,21 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 	break;
 
       case AHIV_Processor_PerformProc: {
-	struct AHIClassData* md = (struct AHIClassData*) INST_DATA(class, AHIClassData->master);
+	struct ObjectData* md = (struct ObjectData*) INST_DATA(class, ObjectData->master);
 
-	if (DoMethodA(AHIClassData->master, (Msg) msg) == AHIV_Processor_FailProc) {
+	if (DoMethodA(ObjectData->master, (Msg) msg) == AHIV_Processor_FailProc) {
 	  ULONG error = 0;
 
-	  GetAttr(AHIA_Error, AHIClassData->master, &error);	
+	  GetAttr(AHIA_Error, ObjectData->master, &error);	
 	  SetSuperAttrs(class, object, AHIA_Error, error, TAG_DONE);
 	  result = AHIV_Processor_FailProc;
 	}
-	else if (md->size != AHIClassData->size || md->sample_type != AHIClassData->sample_type) {
+	else if (md->size != ObjectData->size || md->sample_type != ObjectData->sample_type) {
 	  SetSuperAttrs(class, object, AHIA_Error, AHIE_SplitterProcessor_InvalidBuffer, TAG_DONE);
 	  result = AHIV_Processor_FailProc;
 	}
 	else {
-	  bcopy(md->cached_data, AHIClassData->data, AHIClassData->size);
+	  bcopy(md->cached_data, ObjectData->data, ObjectData->size);
 	}
 	break;
       }
