@@ -173,7 +173,7 @@ _AHIsub_Start( ULONG                   flags,
       {
 	{ NP_Entry,     (ULONG) &slaveentry },
 	{ NP_Name,      (ULONG) LibName     },
-	{ NP_Priority,  -1                  },
+	{ NP_Priority,  127                 },
 	{ TAG_DONE,     0                   }
       };
     
