@@ -275,6 +275,7 @@ DevOpen ( ULONG              unit,
 
     if(AHI_NextAudioID(AHI_INVALID_ID) == (ULONG) AHI_INVALID_ID)
     {
+      AHI_LoadModeFile("DEVS:AudioModes");
 
 #ifdef __MORPHOS__
       // Be quiet here. - Piru
@@ -288,8 +289,6 @@ DevOpen ( ULONG              unit,
         Self->pr_WindowPtr = oldwindowptr;
       }
 #endif
-
-      AHI_LoadModeFile("DEVS:AudioModes");
     }
   }
 
