@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.2  2004/09/08 13:56:37  martin
+Added description of the default anti-click time
+
 Revision 5.9.2.1  2004/06/08 21:16:16  martin
 Added 7.1 multichannel support.
 
@@ -677,6 +680,18 @@ given percentage of the available CPU time in order to prevent lockups.  If
 your mouse pointer freezes when playing music, reduce the limit slightly.
 If on the other hand the sound becomes cut and distorted, you can try to
 increase the limit---but remember that you risk locking up the computer!
+
+@cindex Anti-click
+@cindex Default anti-click time
+
+@item Default anti-click time
+Starting with @sc{Ahi} V6, the software mixer can delay the sounds an
+application wants to play until the currently playing sound goes
+through a zero-crossing, in order to avoid nasty clicks. Normally,
+it's the applications job to specify the maximum time the sounds may
+be delayed, but not all applications provide this information. By
+setting this slider to the desired value, all applications not
+specifying their own limit will will default to this value instead.
 
 @end table
 
