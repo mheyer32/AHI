@@ -57,14 +57,19 @@ update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl )
   Fixed                  volume;
   int                    i;
 
-  if(audioctrl->ac.ahiac_Flags & AHIACF_CLIPPING)
-  {
-    volume = 0x10000;
-  }
-  else
-  {
-    volume = audioctrl->ahiac_SetMasterVolume;
-  }
+  /* In V5, clipping is always used:
+   *
+   * if(audioctrl->ac.ahiac_Flags & AHIACF_CLIPPING)
+   * {
+   *   volume = 0x10000;
+   * }
+   * else
+   * {
+   *  volume = audioctrl->ahiac_SetMasterVolume;
+   * }
+   */
+
+  volume = 0x10000;
 
   /* Scale to what the echo effect think is best... */
   volume = (volume * (audioctrl->ahiac_EchoMasterVolume >> 8)) >> 8;

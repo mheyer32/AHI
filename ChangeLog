@@ -1,3 +1,8 @@
+2002-07-06  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Removed checks for unused (since v5) speed-up flags
+	(surround, echo and clipping).
+
 2002-07-01  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 4.11.

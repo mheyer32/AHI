@@ -585,15 +585,19 @@ ReadConfig ( struct AHIDevUnit *iounit,
 
               AHIBase->ahib_Flags = 0;
 
-              if(globalprefs->ahigp_DisableSurround)
-                AHIBase->ahib_Flags |= AHIBF_NOSURROUND;
-
-              if(globalprefs->ahigp_DisableEcho)
-                AHIBase->ahib_Flags |= AHIBF_NOECHO;
-
-              if(globalprefs->ahigp_FastEcho)
-                AHIBase->ahib_Flags |= AHIBF_FASTECHO;
-                
+	      /* Not used in version 5:
+	       * 
+	       * if(globalprefs->ahigp_DisableSurround)
+	       *   AHIBase->ahib_Flags |= AHIBF_NOSURROUND;
+	       *
+	       * if(globalprefs->ahigp_DisableEcho)
+               *   AHIBase->ahib_Flags |= AHIBF_NOECHO;
+	       *
+	       * if(globalprefs->ahigp_FastEcho)
+               *   AHIBase->ahib_Flags |= AHIBF_FASTECHO;
+	       *
+	       */
+	      
               if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs,
                                                     ahigp_MaxCPU) )
               {
@@ -604,12 +608,15 @@ ReadConfig ( struct AHIDevUnit *iounit,
                 AHIBase->ahib_MaxCPU = 0x10000 * 90 / 100;
               }
 
-              if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
-                                                    ahigp_ClipMasterVolume) )
-              {
-                if(globalprefs->ahigp_ClipMasterVolume)
-                  AHIBase->ahib_Flags |= AHIBF_CLIPPING;
-              }
+	      /* In version 5: Clipping is always used
+	       *
+               * if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
+               *                                       ahigp_ClipMasterVolume) )
+               * {
+               *   if(globalprefs->ahigp_ClipMasterVolume)
+               *     AHIBase->ahib_Flags |= AHIBF_CLIPPING;
+               * }
+	       */
 
               if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
                                                     ahigp_AntiClickTime ) )
