@@ -29,6 +29,7 @@ DEVSDIR		= ${DISTDIR}/User/Devs
 CATDIR		= ${DISTDIR}/User/Catalogs
 
 build_os	= @build_os@
+host_cpu	= @host_cpu@
 
 CC		= @CC@
 AS		= @AS@
@@ -40,7 +41,8 @@ ASM		= @ASM@
 
 CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir} -DVERSION$(VER)
 CFLAGS		= @CFLAGS@ -O3 -m$(CPU)
-ASFLAGS		= @ASFLAGS@ -m$(CPU) --register-prefix-optional --bitwise-or
+ASFLAGS		= @ASFLAGS@ -m$(CPU) --register-prefix-optional --bitwise-or \
+		  --defsym CPU=$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
 ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
@@ -71,7 +73,14 @@ OBJECTS		= header.o device.o devcommands.o devsupp.o \
 ifeq ($(VER),68K)
 OBJECTS		+= dspecho_68k.o mixer_68k.o
 else
+endif
+
+ifeq ($(VER),GEN)
+ifeq ($(host_cpu),m68k)
+OBJECTS		+= dspecho.o mixer.o addroutines_68k.o
+else
 OBJECTS		+= dspecho.o mixer.o addroutines.o
+endif
 endif
 
 TARGET		= ahi.device.$(VER)-$(CPU)

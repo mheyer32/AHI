@@ -259,26 +259,45 @@ static void GetSliderAttrs(struct AHIAudioModeRequesterExt *req, LONG *levels, L
 
 static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
 {
-  LONG sliderlevels,sliderlevel,selected;
-  BOOL disabled = !sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID);
+  LONG  sliderlevels,sliderlevel,selected;
+  BOOL  disabled    = FALSE;
+  ULONG top         = GTLV_Top;
+  ULONG makevisible = GTLV_MakeVisible;
 
   if(all)
   {
     //Set listview
     selected=GetSelected(req);
-      GT_SetGadgetAttrs(req->listviewgadget, req->Window, NULL,
-          ((selected == ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
-          (selected == ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
-          GTLV_Selected,selected,
-          TAG_DONE);
+
+    if( selected == ~0 || GadToolsBase->lib_Version >= 39 )
+    {
+      top = TAG_IGNORE;
+    }
+
+    if( selected == ~0 )
+    {
+      makevisible = TAG_IGNORE;
+    }
+
+    GT_SetGadgetAttrs(req->listviewgadget, req->Window, NULL,
+        top,           selected,
+        makevisible,   selected,
+        GTLV_Selected, selected,
+        TAG_DONE);
   }
 
   //Set slider
   GetSliderAttrs(req,&sliderlevels,&sliderlevel);
+
+  if( sliderlevels == 0 || req->tempAudioID == AHI_DEFAULT_ID )
+  {
+    disabled = TRUE;
+  }
+
   GT_SetGadgetAttrs(req->slidergadget, req->Window, NULL,
-      GTSL_Max,sliderlevels-1,
-      GTSL_Level, sliderlevel,
-      GA_Disabled,disabled,
+      GTSL_Max,    sliderlevels-1,
+      GTSL_Level,  sliderlevel,
+      GA_Disabled, disabled,
       TAG_DONE);
 
   UpdateInfoWindow(req);
