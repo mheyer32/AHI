@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.2  1997/04/09 02:43:15  lcs
+* Bug in mixing routines fixed (playing stereo words on mono channel)
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -3559,7 +3562,7 @@ AddWordsMV:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)
-	move.w	1(a3,d3.l*4),d7
+	move.w	2(a3,d3.l*4),d7
 	muls.w	d2,d7
 	asr.l	#8,d7
 	asr.l	#7,d7
@@ -3572,7 +3575,7 @@ AddWordsMV:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)
-	move.w	1(a3,d3.l*4),d7
+	move.w	2(a3,d3.l*4),d7
 	muls.w	d2,d7
 	asr.l	#8,d7
 	asr.l	#7,d7
@@ -4903,7 +4906,7 @@ AddWordsMVB:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)
-	move.w	1(a3,d3.l*4),d7
+	move.w	2(a3,d3.l*4),d7
 	muls.w	d2,d7
 	asr.l	#8,d7
 	asr.l	#7,d7
@@ -4916,7 +4919,7 @@ AddWordsMVB:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)
-	move.w	1(a3,d3.l*4),d7
+	move.w	2(a3,d3.l*4),d7
 	muls.w	d2,d7
 	asr.l	#8,d7
 	asr.l	#7,d7
