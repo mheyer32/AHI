@@ -1,4 +1,11 @@
+2004-01-25  Martin Blom  <martin@blom.org>
+
+	* Drivers: Applied patches to make mode file generation work
+	without using (the now obsolete tool) gasp. [Fabio Alemagna]
+
 2004-01-18  Martin Blom  <martin@blom.org>
+
+	* Drivers: Removed faulty alignment at the end of the mode files.
 
 	* Device/audioctrl.c (_AHI_AllocAudioA): Changed 'case NULL' to
 	'case 0'.
