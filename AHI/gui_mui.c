@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.5  1997/07/11 14:25:49  lcs
+ * Small bug fix: Wrong order of set() calls in guinewmode()
+ *
  * Revision 4.4  1997/06/24 21:49:31  lcs
  * Fixed an enforcer hit, and a few more potential ones (problem caused by
  * having a 0-level slider (min 0, max -1...).
@@ -261,51 +264,51 @@ static void GUINewMode(void)
 
   Max = max(state.Frequencies -1, 0);
   Sel = min(Max, state.FreqSelected);
-  set(MUIFreq, MUIA_Numeric_Value, Sel);
-  set(MUIFreq, MUIA_Numeric_Max, Max);
   set(MUIFreq, MUIA_Disabled, Max==0);
+  set(MUIFreq, MUIA_Numeric_Max, Max);
+  set(MUIFreq, MUIA_Numeric_Value, Sel);
   set(MUILFreq, MUIA_Text_Contents, getFreq());
 
   Max = max(state.Channels, 0);
   Sel = min(Max, state.ChannelsSelected);
-  set(MUIChannels, MUIA_Numeric_Value, Sel);
-  set(MUIChannels, MUIA_Numeric_Max, Max);
   set(MUIChannels, MUIA_Disabled, (Max == 1) || state.ChannelsDisabled);
+  set(MUIChannels, MUIA_Numeric_Max, Max);
+  set(MUIChannels, MUIA_Numeric_Value, Sel);
   set(MUILChannels, MUIA_Text_Contents, getChannels());
 
   Max = max(state.OutVols -1, 0);
   Sel = min(Max, state.OutVolSelected);
-  set(MUIOutvol, MUIA_Numeric_Value, Sel);
-  set(MUIOutvol, MUIA_Numeric_Max, Max);
   set(MUIOutvol, MUIA_Disabled, Max==0);
+  set(MUIOutvol, MUIA_Numeric_Max, Max);
+  set(MUIOutvol, MUIA_Numeric_Value, Sel);
   set(MUILOutvol, MUIA_Text_Contents, getOutVol());
 
   Max = max(state.MonVols -1, 0);
   Sel = min(Max, state.MonVolSelected);
-  set(MUIMonvol, MUIA_Numeric_Value, Sel);
-  set(MUIMonvol, MUIA_Numeric_Max, Max);
   set(MUIMonvol, MUIA_Disabled, Max==0);
+  set(MUIMonvol, MUIA_Numeric_Max, Max);
+  set(MUIMonvol, MUIA_Numeric_Value, Sel);
   set(MUILMonvol, MUIA_Text_Contents, getMonVol());
 
   Max = max(state.Gains -1, 0);
   Sel = min(Max, state.GainSelected);
-  set(MUIGain, MUIA_Numeric_Value, Sel);
-  set(MUIGain, MUIA_Numeric_Max, Max);
   set(MUIGain, MUIA_Disabled, Max==0);
+  set(MUIGain, MUIA_Numeric_Max, Max);
+  set(MUIGain, MUIA_Numeric_Value, Sel);
   set(MUILGain, MUIA_Text_Contents, getGain());
 
   Max = max(state.Inputs -1, 0);
   Sel = min(Max, state.InputSelected);
-  set(MUIInput, MUIA_Numeric_Value, Sel);
-  set(MUIInput, MUIA_Numeric_Max, Max);
   set(MUIInput, MUIA_Disabled, Max==0);
+  set(MUIInput, MUIA_Numeric_Max, Max);
+  set(MUIInput, MUIA_Numeric_Value, Sel);
   set(MUILInput, MUIA_Text_Contents, getInput());
 
   Max = max(state.Outputs -1, 0);
   Sel = min(Max, state.OutputSelected);
-  set(MUIOutput, MUIA_Numeric_Value, Sel);
-  set(MUIOutput, MUIA_Numeric_Max, Max);
   set(MUIOutput, MUIA_Disabled, Max==0);
+  set(MUIOutput, MUIA_Numeric_Max, Max);
+  set(MUIOutput, MUIA_Numeric_Value, Sel);
   set(MUILOutput, MUIA_Text_Contents, getOutput());
 }
 
