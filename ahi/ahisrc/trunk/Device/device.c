@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.8  1997/02/01 19:44:18  lcs
+* Added stereo samples
+*
 * Revision 1.7  1997/01/29 23:34:38  lcs
 * *** empty log message ***
 *
@@ -442,6 +445,8 @@ BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
   BOOL rc = FALSE;
   struct AHISampleInfo snd8info   = {AHIST_M8S,0,0xffffffff};
   struct AHISampleInfo snd16info  = {AHIST_M16S,0,0xffffffff};
+  struct AHISampleInfo snd8Sinfo   = {AHIST_S8S,0,0xffffffff};
+  struct AHISampleInfo snd16Sinfo  = {AHIST_S16S,0,0xffffffff};
   ULONG fullduplex=FALSE;
 
   /* Allocate the hardware */
@@ -449,7 +454,7 @@ BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
       AHIA_AudioID,       iounit->AudioMode,
       AHIA_MixFreq,       iounit->Frequency,
       AHIA_Channels,      iounit->Channels,
-      AHIA_Sounds,        2,
+      AHIA_Sounds,        4,
       AHIA_PlayerFunc,    &iounit->PlayerHook,
       AHIA_RecordFunc,    &iounit->RecordHook,
       AHIA_SoundFunc,     &iounit->SoundHook,
@@ -465,7 +470,9 @@ BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 
     /* Load sounds */
     if((!AHI_LoadSound(SND8,AHIST_DYNAMICSAMPLE,&snd8info,iounit->AudioCtrl))
-    && (!AHI_LoadSound(SND16,AHIST_DYNAMICSAMPLE,&snd16info,iounit->AudioCtrl)))
+    && (!AHI_LoadSound(SND16,AHIST_DYNAMICSAMPLE,&snd16info,iounit->AudioCtrl))
+    && (!AHI_LoadSound(SND8S,AHIST_DYNAMICSAMPLE,&snd8Sinfo,iounit->AudioCtrl))
+    && (!AHI_LoadSound(SND16S,AHIST_DYNAMICSAMPLE,&snd16Sinfo,iounit->AudioCtrl)))
     {
       /* Set hardware properties */
       AHI_ControlAudio(iounit->AudioCtrl,
