@@ -161,6 +161,7 @@ Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
 
         case AHIAC_COM_SOUNDFUNC:
+          kprintf( "AHIAC_COM_SOUNDFUNC\n" );
           CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                        (struct AHIPrivAudioCtrl*) audioctrl,
                        (UWORD*) &audioctrl->ahiac_ChannelNo );
@@ -214,8 +215,6 @@ MixPowerUp ( REG(a0, struct Hook *Hook),
 
   CacheClearU();
 
-  kprintf( "Running kernel object... \n" );
-
   // NOTE: Not allowed in interrupts, must move!
 
   AddIntServer( INTB_PORTS, &is );
@@ -224,10 +223,6 @@ MixPowerUp ( REG(a0, struct Hook *Hook),
 
   RemIntServer( INTB_PORTS, &is );
 
-  kprintf( "Returned %ld, clearing caches\n", res );
-
-  kprintf( "Calling additional hooks... " );
-
   /*** AHIET_OUTPUTBUFFER ***/
 
   DoOutputBuffer(dst, audioctrl);
@@ -235,8 +230,6 @@ MixPowerUp ( REG(a0, struct Hook *Hook),
   /*** AHIET_CHANNELINFO ***/
 
   DoChannelInfo(audioctrl);
-
-  kprintf( "Done!\n" );
 }
 
 
