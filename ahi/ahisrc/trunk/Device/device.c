@@ -39,8 +39,9 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/iffparse.h>
-#include <clib/ahi_protos.h>
-#include <inline/ahi.h>
+#define __NOLIBBASE__
+#include <proto/ahi.h>
+#undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
 #include <stddef.h>
 
@@ -91,9 +92,6 @@ static void ASMCALL INTERRUPT
 ChannelInfoFunc ( REG(a0, struct Hook *hook),
                   REG(a2, struct AHIAudioCtrl *actrl),
                   REG(a1, struct AHIEffChannelInfo *cimsg) );
-
-BPTR ASMCALL
-DevExpunge( REG( a6, struct AHIBase* device ) );
 
 
 /***** ahi.device/--background-- *******************************************
@@ -230,11 +228,11 @@ DevExpunge( REG( a6, struct AHIBase* device ) );
 // This function is called by the system each time a unit is opened with
 // exec.library/OpenDevice().
 
-ULONG ASMCALL
-DevOpen ( REG(d0, ULONG unit),
-          REG(d1, ULONG flags),
-          REG(a1, struct AHIRequest *ioreq),
-          REG(a6, struct AHIBase *AHIBase) )
+ULONG
+DevOpen ( ULONG              unit,
+          ULONG              flags,
+          struct AHIRequest* ioreq,
+          struct AHIBase*    AHIBase )
 {
   ULONG rc = 0;
   BOOL  error = FALSE;
@@ -364,9 +362,9 @@ DevOpen ( REG(d0, ULONG unit),
 // This function is called by the system each time a unit is closed with
 // exec.library/CloseDevice().
 
-BPTR ASMCALL
-DevClose ( REG(a1, struct AHIRequest *ioreq),
-           REG(a6, struct AHIBase *AHIBase) )
+BPTR
+DevClose ( struct AHIRequest* ioreq,
+           struct AHIBase*    AHIBase )
 {
   struct AHIDevUnit *iounit;
   BPTR  seglist=0;

@@ -192,9 +192,9 @@ GetDBTagList ( struct AHI_AudioDatabase *audiodb,
 *
 */
 
-ULONG ASMCALL
-NextAudioID( REG(d0, ULONG id),
-             REG(a6, struct AHIBase *AHIBase) )
+ULONG
+NextAudioID( ULONG           id,
+             struct AHIBase* AHIBase )
 {
   struct AHI_AudioDatabase *audiodb;
   struct AHI_AudioMode *node;
@@ -281,9 +281,9 @@ NextAudioID( REG(d0, ULONG id),
 *
 */
 
-ULONG ASMCALL
-AddAudioMode( REG(a0, struct TagItem *DBtags),
-              REG(a6, struct AHIBase *AHIBase) )
+ULONG
+AddAudioMode( struct TagItem* DBtags,
+              struct AHIBase* AHIBase )
 {
   struct AHI_AudioDatabase *audiodb;
   struct AHI_AudioMode *node;
@@ -435,9 +435,9 @@ unlock:
 *
 */
 
-ULONG ASMCALL
-RemoveAudioMode( REG(d0, ULONG id),
-                 REG(a6, struct AHIBase *AHIBase) )
+ULONG
+RemoveAudioMode( ULONG           id,
+                 struct AHIBase* AHIBase )
 {
   struct AHI_AudioMode *node;
   struct AHI_AudioDatabase *audiodb;
@@ -552,9 +552,9 @@ RemoveAudioMode( REG(d0, ULONG id),
 *
 */
 
-ULONG ASMCALL
-LoadModeFile( REG(a0, UBYTE *name),
-              REG(a6, struct AHIBase *AHIBase) )
+ULONG
+LoadModeFile( UBYTE*          name,
+              struct AHIBase* AHIBase )
 {
   ULONG rc=FALSE;
   struct FileInfoBlock  *fib;

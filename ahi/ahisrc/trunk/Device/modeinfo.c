@@ -405,11 +405,11 @@ BOOL TestAudioID(ULONG id, struct TagItem *tags )
 *
 */
 
-ULONG ASMCALL 
-GetAudioAttrsA( REG(d0, ULONG id),
-                REG(a2, struct AHIAudioCtrlDrv *actrl),
-                REG(a1, struct TagItem *tags),
-                REG(a6, struct AHIBase *AHIBase) )
+ULONG
+GetAudioAttrsA( ULONG                   id,
+                struct AHIAudioCtrlDrv* actrl,
+                struct TagItem*         tags,
+                struct AHIBase*         AHIBase )
 {
   struct AHI_AudioDatabase *audiodb;
   struct TagItem *dbtags,*tag1,*tag2,*tstate=tags;
@@ -667,9 +667,9 @@ GetAudioAttrsA( REG(d0, ULONG id),
 *
 */
 
-ULONG ASMCALL 
-BestAudioIDA( REG(a1, struct TagItem *tags),
-              REG(a6, struct AHIBase *AHIBase) )
+ULONG
+BestAudioIDA( struct TagItem* tags,
+              struct AHIBase* AHIBase )
 {
   ULONG id = AHI_INVALID_ID, bestid = 0;
   Fixed score, bestscore = 0;

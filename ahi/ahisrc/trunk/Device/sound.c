@@ -110,13 +110,13 @@
 *
 */
 
-ULONG ASMCALL
-SetVol ( REG(d0, UWORD channel),
-         REG(d1, Fixed volume),
-         REG(d2, sposition pan),
-         REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-         REG(d3, ULONG flags),
-         REG(a6, struct AHIBase *AHIBase) )
+ULONG
+SetVol ( UWORD                    channel,
+         Fixed                    volume,
+         sposition                pan,
+         struct AHIPrivAudioCtrl* audioctrl,
+         ULONG                    flags,
+         struct AHIBase*          AHIBase )
 {
   struct AHIChannelData *cd;
   struct Library        *AHIsubBase;
@@ -256,12 +256,12 @@ SetVol ( REG(d0, UWORD channel),
 *
 */
 
-ULONG ASMCALL
-SetFreq ( REG( d0, UWORD channel ),
-          REG( d1, ULONG freq ),
-          REG( a2, struct AHIPrivAudioCtrl *audioctrl ),
-          REG( d2, ULONG flags ),
-          REG( a6, struct AHIBase *AHIBase ) )
+ULONG
+SetFreq ( UWORD                    channel,
+          ULONG                    freq,
+          struct AHIPrivAudioCtrl* audioctrl,
+          ULONG                    flags,
+          struct AHIBase*          AHIBase )
 {
   struct AHIChannelData *cd;
   struct Library        *AHIsubBase;
@@ -421,14 +421,14 @@ SetFreq ( REG( d0, UWORD channel ),
 *
 */
 
-ULONG ASMCALL
-SetSound ( REG(d0, UWORD channel),
-           REG(d1, UWORD sound),
-           REG(d2, ULONG offset),
-           REG(d3, LONG length),
-           REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-           REG(d4, ULONG flags),
-           REG(a6, struct AHIBase *AHIBase) )
+ULONG
+SetSound ( UWORD                    channel,
+           UWORD                    sound,
+           ULONG                    offset,
+           LONG                     length,
+           struct AHIPrivAudioCtrl* audioctrl,
+           ULONG                    flags,
+           struct AHIBase*          AHIBase )
 {
   struct AHIChannelData *cd;
   struct AHISoundData   *sd;
@@ -707,10 +707,10 @@ SetSound ( REG(d0, UWORD channel),
 */
 
 
-ULONG ASMCALL
-SetEffect ( REG(a0, ULONG *effect),
-            REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-            REG(a6, struct AHIBase *AHIBase) )
+ULONG
+SetEffect( ULONG*                   effect,
+           struct AHIPrivAudioCtrl* audioctrl,
+           struct AHIBase*          AHIBase )
 {
   struct Library        *AHIsubBase;
   ULONG                  rc;
@@ -900,12 +900,12 @@ SetEffect ( REG(a0, ULONG *effect),
 *
 */
 
-ULONG ASMCALL
-LoadSound ( REG(d0, UWORD sound),
-            REG(d1, ULONG type),
-            REG(a0, APTR info),
-            REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-            REG(a6, struct AHIBase *AHIBase) )
+ULONG
+LoadSound( UWORD                    sound,
+           ULONG                    type,
+           APTR                     info,
+           struct AHIPrivAudioCtrl* audioctrl,
+           struct AHIBase*          AHIBase )
 {
 
   struct Library *AHIsubBase;
@@ -1006,10 +1006,10 @@ LoadSound ( REG(d0, UWORD sound),
 *
 */
 
-ULONG ASMCALL
-UnloadSound ( REG(d0, UWORD sound),
-              REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-              REG(a6, struct AHIBase *AHIBase) )
+ULONG
+UnloadSound( UWORD                    sound,
+             struct AHIPrivAudioCtrl* audioctrl,
+             struct AHIBase*          AHIBase )
 {
   struct Library *AHIsubBase;
   ULONG rc;
@@ -1123,10 +1123,10 @@ UnloadSound ( REG(d0, UWORD sound),
 *
 */
 
-ULONG ASMCALL 
-PlayA( REG(a2, struct AHIAudioCtrl *audioctrl),
-       REG(a1, struct TagItem *tags),
-       REG(a6, struct AHIBase *AHIBase) )
+ULONG
+PlayA( struct AHIAudioCtrl* audioctrl,
+       struct TagItem*      tags,
+       struct AHIBase*      AHIBase )
 {
   struct TagItem *tag,*tstate=tags;
   struct Library *AHIsubBase;
@@ -1282,10 +1282,9 @@ static const UBYTE type2bytes[]=
   8     // AHIST_S32S (10)
 };
 
-ULONG ASMCALL
-SampleFrameSize( REG(d0, ULONG sampletype),
-                 REG(a6, struct AHIBase *AHIBase) )
-
+ULONG
+SampleFrameSize( ULONG           sampletype,
+                 struct AHIBase* AHIBase )
 {
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
