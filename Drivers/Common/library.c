@@ -27,10 +27,10 @@
 #define INTUITIONNAME "intuition.library"
 #endif
 
-#if !defined( __AROS__ )
+#if !defined( __AROS__ ) && !defined( __amithlon__ )
 extern void _etext;
 #else
-# define _etext RomTag // Fake it
+# define _etext RomTag+1 // Fake it
 #endif
 
 /******************************************************************************
