@@ -53,6 +53,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.16  1998/10/25 13:31:50  lcs
+Added info about the paula.audio AHIpaulaFakeMixFreq variable.
+
 Revision 4.15  1998/03/11 09:28:51  lcs
 Added info about how to make the Amiga video 31 kHz.
 
@@ -921,6 +924,20 @@ variable was added to let the user decide if the correct or incorrect
 behaviour should be used.  In not present or set to @samp{0}, the correct
 behaviour is used.  If set to @samp{1}, the left and right channels will be
 swapped.
+
+@cindex AHIpaulaFakeMixFreq variable
+
+By setting the @file{AHIpaulaFakeMixFreq} variable to @samp{1}, you can make
+@code{paula.audio} not report the actual mixing frequency used, but rather
+exactly the frequency that the program asked for. The default, @samp{0},
+will report the nearest possible mixing frequency that the Paula sound chip
+can use.
+
+Why would anyone want this, you may ask. Well, by setting the variable
+to @samp{1}, you will make @code{paula.audio} behave exactly like 
+@code{filesave.audio}, which can be important if you are making music that
+you will later render and put on a CD, for example. Be warned, however, that
+setting this variable to @samp{1} can make the sound produced sound false!
 
 @cindex AHIpaulaBufferLength variable
 @cindex MC68060 CPU
