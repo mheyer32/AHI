@@ -2,12 +2,12 @@
 DEVICES_AHI_I		SET	1
 
 **
-**	$VER: ahi.i 5.0 (30.8.99)
+**	$VER: ahi.i 5.1 (3.6.00)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi.device definitions
 **
-**	(C) Copyright 1994-1999 Martin Blom
+**	(C) Copyright 1994-200 Martin Blom
 **	All Rights Reserved.
 **
 **
@@ -157,7 +157,11 @@ CLOSEAHI MACRO
 	WORD	ahiam_InfoWidth;
 	WORD	ahiam_InfoHeight;
 
-	APTR	ahiam_UserData;			; You can store your own data here
+	UWORD	ahiam_ObsoleteUserData0;
+	UWORD	ahiam_ObsoleteUserData1;
+	UWORD	ahiam_Pad;
+	APTR	ahiam_UserData;			; You can store your own data here (V5)
+
 	; Lots of private data follows!
 	LABEL	AHIAudioModeRequester_SIZEOF
 
@@ -318,7 +322,8 @@ AHIR_PubScreenName	EQU AHI_TagBase+202	; Name of public screen
 AHIR_PrivateIDCMP	EQU AHI_TagBase+203	; Allocate private IDCMP?
 AHIR_IntuiMsgFunc	EQU AHI_TagBase+204	; Function to handle IntuiMessages
 AHIR_SleepWindow	EQU AHI_TagBase+205	; Block input in AHIR_Window?
-AHIR_UserData		EQU AHI_TagBase+206	; What to put in ahiam_UserData
+AHIR_ObsoleteUserData	EQU AHI_TagBase+206	; V4 UserData
+AHIR_UserData		EQU AHI_TagBase+207	; What to put in ahiam_UserData (V5)
    ; Text display
 AHIR_TextAttr		EQU AHI_TagBase+220	; Text font to use for gadget text
 AHIR_Locale		EQU AHI_TagBase+221	; Locale to use for text
@@ -433,7 +438,8 @@ ID_AHIG 		EQU "AHIG"
 	BOOL	ahigp_FastEcho
 	Fixed	ahigp_MaxCPU
 	BOOL	ahigp_ClipMasterVolume
-	Fixed	ahigp_AntiClickTime;			; (V5)
+	UWORD	ahigp_Pad;
+	Fixed	ahigp_AntiClickTime;			; In seconds (V5)
 	LABEL	AHIGlobalPrefs_SIZEOF
 
  ; Debug levels
