@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.13  1997/02/03 16:23:42  lcs
+* AHIR_Locale should work now
+*
 * Revision 1.12  1997/02/03 01:40:18  lcs
 * *** empty log message ***
 *
@@ -2122,7 +2125,6 @@ UnloadSound_nodebug
 *           window. This determines the language used for the requester's
 *           gadgets and menus. If this tag is not provided or its value is
 *           NULL, the system's current default locale will be used.
-*           This tag does not work yet.
 *
 *       AHIR_TitleText (STRPTR) - Title to use for the requesting window.
 *           Default is no title.
@@ -2203,7 +2205,7 @@ UnloadSound_nodebug
 *       may not be the only ones a driver supports, but just a selection.
 *
 *   BUGS
-*       AHIR_Locale and the information window is not inplemented.
+*       The information window is not inplemented.
 *
 *   SEE ALSO
 *      AHI_AllocAudioRequestA(), AHI_FreeAudioRequest()
