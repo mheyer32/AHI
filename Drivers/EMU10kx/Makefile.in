@@ -28,7 +28,7 @@ AR              = @AR@
 RANLIB          = @RANLIB@
 STRIP		= @STRIP@
 
-CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${srcdir}
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${srcdir} -DEMU10K1_DEBUG
 CFLAGS		= @CFLAGS@
 ASFLAGS		= @ASFLAGS@
 LDFLAGS		= @LDFLAGS@ #-nostartfiles
@@ -47,7 +47,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 # Files
 ########################################
 
-OBJECTS		= main.o
+OBJECTS		= main.o hwaccess.o emuadxmg.c
 
 
 #
