@@ -1,11 +1,15 @@
 * $Id$
 * $Log$
+* Revision 1.3  1997/01/04 20:25:02  lcs
+* ...I forgot: AHIET_CHANNELINFO effect added
+*
 * Revision 1.2  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
 *
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
+
 
  IFD	_PHXASS_
 
