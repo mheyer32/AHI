@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.15  1997/02/18 22:26:49  lcs
+* Added flag for OpenDevice(): AHIDF_NOMODESCAN
+*
 * Revision 1.14  1997/02/12 15:32:45  lcs
 * Moved each autodoc header to the file where the function is
 *
@@ -246,6 +249,7 @@ __asm ULONG DevOpen(
   }
 
 // Check if size includes the ahir_Version field
+
   if(ioreq->ahir_Std.io_Message.mn_Length < (sizeof(struct IOStdReq) + 2))
   {
     Alert(AT_Recovery|AG_BadParm);
@@ -254,6 +258,7 @@ __asm ULONG DevOpen(
   }
 
 // One more check...
+
   if(ioreq->ahir_Version >= Version)
   {
     if(ioreq->ahir_Std.io_Message.mn_Length < sizeof(struct AHIRequest))
@@ -267,10 +272,14 @@ __asm ULONG DevOpen(
   AHIBase->ahib_Library.lib_OpenCnt++;
   ObtainSemaphore(&AHIBase->ahib_Lock);
 
-// Load database if not already loaded
-  if(AHI_NextAudioID(AHI_INVALID_ID) == AHI_INVALID_ID)
+  if( ! (flags & AHIDF_NOMODESCAN))
   {
-    AHI_LoadModeFile("DEVS:AudioModes");
+    // Load database if not already loaded
+
+    if(AHI_NextAudioID(AHI_INVALID_ID) == AHI_INVALID_ID)
+    {
+      AHI_LoadModeFile("DEVS:AudioModes");
+    }
   }
 
   if( ioreq->ahir_Version > Version)
@@ -853,6 +862,9 @@ static __asm __interrupt BOOL RecordFunc(
     iounit = (struct AHIDevUnit *) hook->h_Data;
     iounit->RecordBuffer = recmsg->ahirm_Buffer;
     iounit->RecordSize = recmsg->ahirm_Length<<2;
+#ifdef DEBUG
+    KPrintF("Buffer Filled again...\n");
+#endif
     Signal((struct Task *) iounit->Master, (1L << iounit->RecordSignal));
   }
   return NULL;
