@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.10  1999/08/29 23:43:54  lcs
+ * Added support for ahigp_AntiClickTime.
+ *
  * Revision 4.9  1999/04/22 19:41:22  lcs
  * Removed SAS/C smakefile.
  * I had the copyright date screwed up: Changed to 1996-1999 (which is only
@@ -105,6 +108,7 @@ enum actionIDs {
 
   ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CLIPMV,
   ACTID_CPULIMIT, SHOWID_CPULIMIT,
+  ACTID_ACTIME, SHOWID_ACTIME,
   
 
   ACTID_COUNT
@@ -238,7 +242,7 @@ static void UpdateStrings(void) {
 static Object *MUIWindow,*MUIList,*MUIInfos,*MUIUnit;
 static Object *MUIFreq,*MUIChannels,*MUIOutvol,*MUIMonvol,*MUIGain,*MUIInput,*MUIOutput;
 static Object *MUILFreq,*MUILChannels,*MUILOutvol,*MUILMonvol,*MUILGain,*MUILInput,*MUILOutput;
-static Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu;
+static Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu,*MUIACTime;
 
 LONG xget(Object * obj, ULONG attribute)
 {
@@ -256,6 +260,7 @@ static void GUINewSettings(void)
   set(MUISurround, MUIA_Cycle_Active, globalprefs.ahigp_DisableSurround);
   set(MUIClipvol, MUIA_Cycle_Active, globalprefs.ahigp_ClipMasterVolume);
   set(MUICpu, MUIA_Cycle_Active, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16);
+  set(MUIACTime, MUIA_Cycle_Active, (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16);
   GUINewUnit();
 }
 
@@ -470,7 +475,7 @@ BOOL BuildGUI(char *screenname)
 {
   Object *MUISave, *MUIUse, *MUICancel;
   Object *page1,*page2;
-  Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu;
+  Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu,*MUITACTime;
 
   UpdateStrings();
 
@@ -580,6 +585,15 @@ BOOL BuildGUI(char *screenname)
           MUIA_Numeric_Value,(globalprefs.ahigp_MaxCPU * 100 + 32768) / 65536,
           MUIA_Numeric_Format,"%ld%%",
         End,
+        Child, MUITACTime = SpecialButton((STRPTR)msgGlobOptACTime),
+        Child, MUIACTime = SliderObject,
+          MUIA_CycleChain, 1,
+          MUIA_Slider_Horiz, TRUE,
+          MUIA_Numeric_Min, 0,
+          MUIA_Numeric_Max, 100,
+          MUIA_Numeric_Value,(globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
+          MUIA_Numeric_Format,"%ld% ms",
+        End,
       End,
       Child, HVSpace,
     End,
@@ -636,6 +650,7 @@ BOOL BuildGUI(char *screenname)
     DoMethod(MUITSurround, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUISurround);
     DoMethod(MUITClipvol, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIClipvol);
     DoMethod(MUITCpu, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUICpu);
+    DoMethod(MUITACTime, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIACTime);
 
     DoMethod(MUIWindow, MUIM_Notify, MUIA_Window_CloseRequest, TRUE, MUIApp, 2, MUIM_Application_ReturnID, MUIV_Application_ReturnID_Quit);
     DoMethod(MUISave, MUIM_Notify, MUIA_Pressed, FALSE, MUIApp, 2, MUIM_Application_ReturnID, ACTID_SAVE);
@@ -648,6 +663,7 @@ BOOL BuildGUI(char *screenname)
     DoMethod(MUIEcho, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_ECHO);
     DoMethod(MUICpu, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CPULIMIT);
     DoMethod(MUIClipvol, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CLIPMV);
+    DoMethod(MUIACTime, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_ACTIME);
     DoMethod(MUIFreq, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
     DoMethod(MUIChannels, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
     DoMethod(MUIOutvol, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
@@ -857,22 +873,25 @@ void EventLoop(void)
       case ACTID_ECHO:
       case ACTID_CPULIMIT:
       case ACTID_CLIPMV:
+      case ACTID_ACTIME:
       {
         ULONG debug = AHI_DEBUG_NONE, surround = FALSE, echo = 0, cpu = 90;
-        ULONG clip = FALSE;
+        ULONG clip = FALSE, actime = 0;
 
         get(MUIDebug, MUIA_Cycle_Active, &debug);
         get(MUISurround, MUIA_Cycle_Active, &surround);
         get(MUIEcho, MUIA_Cycle_Active, &echo);
         get(MUIClipvol, MUIA_Cycle_Active, &clip);
         get(MUICpu, MUIA_Numeric_Value, &cpu);
+        get(MUIACTime, MUIA_Numeric_Value, &actime);
 
-        globalprefs.ahigp_DebugLevel      = debug;
-        globalprefs.ahigp_DisableSurround = surround;
-        globalprefs.ahigp_DisableEcho     = (echo == 2);
-        globalprefs.ahigp_FastEcho        = (echo == 1);
-        globalprefs.ahigp_MaxCPU = (cpu << 16) / 100;
-        globalprefs.ahigp_ClipMasterVolume= clip;
+        globalprefs.ahigp_DebugLevel       = debug;
+        globalprefs.ahigp_DisableSurround  = surround;
+        globalprefs.ahigp_DisableEcho      = (echo == 2);
+        globalprefs.ahigp_FastEcho         = (echo == 1);
+        globalprefs.ahigp_MaxCPU           = ((cpu << 16) + 100) / 100;
+        globalprefs.ahigp_ClipMasterVolume = clip;
+        globalprefs.ahigp_AntiClickTime    = ((actime << 16) + 1000) / 1000;
 
         break;
       }

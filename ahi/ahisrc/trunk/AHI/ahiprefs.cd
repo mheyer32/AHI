@@ -3,6 +3,9 @@
 ;
 ; $Id$
 ; $Log$
+; Revision 4.6  1999/08/29 23:43:49  lcs
+; Added support for ahigp_AntiClickTime.
+;
 ; Revision 4.5  1997/04/27 16:16:06  lcs
 ; Added "Mastervolume with(out) clipping".
 ;
@@ -224,3 +227,7 @@ Without clipping
 ;
 msgMVClip (//)
 With clipping
+;
+msgGlobOptACTime (//)
+Default anti-click time
+;
