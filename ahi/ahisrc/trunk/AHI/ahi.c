@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.6  1997/05/09 14:02:17  lcs
+ * Program version 4.4
+ *
  * Revision 4.5  1997/05/04 22:13:29  lcs
  * Version label now public
  *
@@ -36,7 +39,7 @@
 
 #define DBSTEP      0.5
 
-const char *Version[] = {"$VER: AHI preferences 4.3 "__AMIGADATE__"\r\n"};
+const char *Version[] = {"$VER: AHI preferences 4.4 "__AMIGADATE__"\r\n"};
 
 struct List      *UnitList   = NULL;
 struct List      *ModeList   = NULL;
