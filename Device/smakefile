@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.2  1996/12/21 13:38:17  lcs
+# Added default rules
+#
 # Revision 1.1  1996/12/21 13:05:12  lcs
 # Initial revision
 #
@@ -59,35 +62,22 @@ ahi_rev.i: addroutines.a requester.c database.c footer.a
 ##
 ###############################################################################
 
-header.o: header.a ahi_def.i ahi_rev.i
-	$(ASM) $(AFLAGS) header.a
+.a.o:
+	$(ASM) $(AFLAGS) $*.a
 
-device.o: device.c ahi_def.h ahi_device.h
-	$(CCOMP) $(CFLAGS) device.c
+.c.o:
+	$(CCOMP) $(CFLAGS) $*.c
 
-devcommands.o: devcommands.c ahi_def.h ahi_device.h
-	$(CCOMP) $(CFLAGS) devcommands.c
-
-devsupp.o: devsupp.a
-	$(ASM) $(AFLAGS) devsupp.a
-
-asmfuncs.o: asmfuncs.a ahi_def.i
-	$(ASM) $(AFLAGS) asmfuncs.a
-
-cfuncs.o: cfuncs.c ahi_def.h
-	$(CCOMP) $(CFLAGS) cfuncs.c
-
-database.o: database.c ahi_def.h
-	$(CCOMP) $(CFLAGS) database.c
-
-addroutines.o: addroutines.a ahi_def.i
-	$(ASM) $(AFLAGS) addroutines.a
-
-requester.o: requester.c ahi_def.h
-	$(CCOMP) $(CFLAGS) requester.c
-
-footer.o: footer.a
-	$(ASM) $(AFLAGS) footer.a
+header.o:	header.a ahi_def.i ahi_rev.i
+device.o:	device.c ahi_def.h ahi_device.h
+devcommands.o:	devcommands.c ahi_def.h ahi_device.h
+devsupp.o:	devsupp.a
+asmfuncs.o:	asmfuncs.a ahi_def.i
+cfuncs.o:	cfuncs.c ahi_def.h
+database.o:	database.c ahi_def.h
+addroutines.o:	addroutines.a ahi_def.i
+requester.o:	requester.c ahi_def.h
+footer.o:	footer.a
 
 ##
 ## Prototypes
