@@ -71,7 +71,6 @@ struct Driver
     BPTR           seglist;
 };
 
-//#define dd ((struct DriverData*) AudioCtrl->ahiac_DriverData)
 
 /******************************************************************************
 ** Driver entry ***************************************************************
@@ -189,13 +188,26 @@ LibUnloadSound( REG( d0, UWORD sound ),
 
 
 static ULONG ASMCALL INTERRUPT 
-EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
+EMU10kxInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
 
 static void ASMCALL INTERRUPT 
-Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
+PlaybackInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
+
+static void ASMCALL INTERRUPT 
+RecordInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
+
+
+
+static Fixed
+Linear2MixerGain( Fixed  linear,
+		  UWORD* bits );
+
+static Fixed
+Linear2RecordGain( Fixed  linear,
+		   UWORD* bits );
 
 static ULONG
-samplerate_to_linearpitch( ULONG samplingrate );
+SamplerateToLinearPitch( ULONG samplingrate );
 
 
 /*** Stuff that should really have been in a link library ********************/
@@ -512,14 +524,20 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
     dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
     dd->interrupt.is_Node.ln_Pri  = 0;
     dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->interrupt.is_Code         = (void(*)(void)) EMU10kx_interrupt;
+    dd->interrupt.is_Code         = (void(*)(void)) EMU10kxInterrupt;
     dd->interrupt.is_Data         = (APTR) audioctrl;
     
-    dd->software_interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->software_interrupt.is_Node.ln_Pri  = 0;
-    dd->software_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->software_interrupt.is_Code         = (void(*)(void)) Mixer_interrupt;
-    dd->software_interrupt.is_Data         = (APTR) audioctrl;
+    dd->playback_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+    dd->playback_interrupt.is_Node.ln_Pri  = 0;
+    dd->playback_interrupt.is_Node.ln_Name = (STRPTR) LibName;
+    dd->playback_interrupt.is_Code         = (void(*)(void)) PlaybackInterrupt;
+    dd->playback_interrupt.is_Data         = (APTR) audioctrl;
+    
+    dd->record_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+    dd->record_interrupt.is_Node.ln_Pri  = 0;
+    dd->record_interrupt.is_Node.ln_Name = (STRPTR) LibName;
+    dd->record_interrupt.is_Code         = (void(*)(void)) RecordInterrupt;
+    dd->record_interrupt.is_Data         = (APTR) audioctrl;
     
     dd->card.pci_dev = 0;
 
@@ -548,7 +566,7 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
       return AHISF_ERROR;
     }
 
-    dd->requested = TRUE;
+    dd->pci_requested = TRUE;
     
     if( pci_enable( dd->card.pci_dev ) )
     {
@@ -556,7 +574,7 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
       return AHISF_ERROR;
     }
 
-    dd->enabled = TRUE;
+    dd->pci_enabled = TRUE;
 
     command_word = pci_read_conf_word( dd->card.pci_dev, PCI_COMMAND );
     command_word |= PCI_CMD_IO_MASK | PCI_CMD_MEMORY_MASK | PCI_CMD_MASTER_MASK;
@@ -564,7 +582,7 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
 
     // FIXME: How about latency/pcibios_set_master()??
 
-    dd->master_enabled = TRUE;
+    dd->pci_master_enabled = TRUE;
     
     dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 );	
     dd->card.length  = ( (ULONG) pci_get_base_end( dd->card.pci_dev, 0 ) -
@@ -684,7 +702,7 @@ LibFreeAudio( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 	emu10k1_cleanup( &dd->card );
       }
 
-      if( dd->master_enabled )
+      if( dd->pci_master_enabled )
       {
 	UWORD cmd;
 
@@ -693,12 +711,12 @@ LibFreeAudio( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 	pci_write_conf_word( dd->card.pci_dev, PCI_COMMAND, cmd );
       }
       
-      if( dd->enabled )
+      if( dd->pci_enabled )
       {
 	pci_disable( dd->card.pci_dev );
       }
 
-      if( dd->requested )
+      if( dd->pci_requested )
       {
 	pci_release( dd->card.pci_dev );
       }
@@ -784,10 +802,10 @@ LibStart( REG( d0, ULONG flags ),
        it might not be filled by the mixer software interrupt because of
        pretimer/posttimer! */
 
-    dd->mixbuffer = AllocVec( audioctrl->ahiac_BuffSize,
-			      MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR );
+    dd->mix_buffer = AllocVec( audioctrl->ahiac_BuffSize,
+			       MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR );
 
-    if( dd->mixbuffer == NULL )
+    if( dd->mix_buffer == NULL )
     {
       KPrintF( DRIVER_NAME ": Unable to allocate %ld bytes for mixing buffer.\n",
 	       audioctrl->ahiac_BuffSize );
@@ -843,7 +861,7 @@ LibStart( REG( d0, ULONG flags ),
     dd->voice_allocated = TRUE;
     
     dd->voice.initial_pitch = (u16) ( srToPitch( audioctrl->ahiac_MixFreq ) >> 8 );
-    dd->voice.pitch_target  = samplerate_to_linearpitch( audioctrl->ahiac_MixFreq );
+    dd->voice.pitch_target  = SamplerateToLinearPitch( audioctrl->ahiac_MixFreq );
 
     DPD(2, "Initial pitch --> %#x\n", dd->voice.initial_pitch);
 
@@ -907,18 +925,98 @@ LibStart( REG( d0, ULONG flags ),
 
     DPF(2, "emu10k1_waveout_start()\n");
 
-    dd->mixing_enabled = TRUE;
+    dd->playback_interrupt_enabled = TRUE;
     
-    /* Enable timer interrupts (1 kHz) */
-    emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / 1000 );
-    emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
+    /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
+    
+    if( ! dd->is_recording )
+    {
+      emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / TIMER_INTERRUPT_FREQUENCY );
+      emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
+    }
+    
+    dd->is_playing = TRUE;
     
     emu10k1_voices_start( &dd->voice, 1, 0 );    
   }
 
   if( flags & AHISF_RECORD )
   {
-    return AHIE_UNKNOWN;
+    int adcctl = 0;
+    
+    /* Stop current recording, free old buffer (if any) */
+    
+    AHIsub_Stop( AHISF_RECORD, audioctrl );
+
+    /* Find out the recording frequency */
+
+    switch( audioctrl->ahiac_MixFreq )
+    {
+      case 48000:
+	adcctl = ADCCR_SAMPLERATE_48;
+	break;
+
+      case 44100:
+	adcctl = ADCCR_SAMPLERATE_44;
+	break;
+	
+      case 32000:
+	adcctl = ADCCR_SAMPLERATE_32;
+	break;
+
+      case 24000:
+	adcctl = ADCCR_SAMPLERATE_24;
+	break;
+
+      case 22050:
+	adcctl = ADCCR_SAMPLERATE_22;
+	break;
+
+      case 16000:
+	adcctl = ADCCR_SAMPLERATE_16;
+	break;
+
+      case 11025:
+	adcctl = ADCCR_SAMPLERATE_11;
+	break;
+
+      case 8000:
+	adcctl = ADCCR_SAMPLERATE_8;
+	break;
+
+      default:
+	return AHIE_UNKNOWN;
+    }
+
+    adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;
+
+    /* Allocate a new recording buffer (page aligned!) */
+
+    dd->record_buffer = pci_alloc_consistent( &dd->card.pci_dev,
+					      RECORD_BUFFER_SAMPLES * 4,
+					      &dd->record_dma_handle );
+
+    if( dd->record_buffer == NULL )
+    {
+      KPrintF( DRIVER_NAME ": Unable to allocate %ld bytes for "
+	       "the recording buffer.\n",
+	       RECORD_BUFFER_SAMPLES * 4 );
+      return AHIE_NOMEM;
+    }
+    
+    sblive_writeptr( &dd->card, ADCBA, 0, dd->record_dma_handle );
+    sblive_writeptr( &dd->card, ADCBS, 0, RECORD_BUFFER_SIZE_VALUE );
+    sblive_writeptr( &dd->card, ADCCR, 0, adcctl );
+    
+    /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
+    
+    if( ! dd->is_playing )
+    {
+      emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / TIMER_INTERRUPT_FREQUENCY );
+      emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
+    }
+    
+    dd->is_recording = TRUE;
   }
 
   return AHIE_OK;
@@ -962,7 +1060,13 @@ LibStop( REG( d0, ULONG flags ),
   {
     if( dd->voice_started )
     {
-      emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
+      if( ! dd->is_recording )
+      {
+	emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
+      }
+
+      dd->is_playing = FALSE;
+      
       sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 0 );
       emu10k1_voices_stop( &dd->voice, 1 );
       dd->voice_started = FALSE;
@@ -987,13 +1091,28 @@ LibStop( REG( d0, ULONG flags ),
     dd->current_buffer   = NULL;
     dd->current_position = 0;
 
-    FreeVec( dd->mixbuffer );
-    dd->mixbuffer = NULL;
+    FreeVec( dd->mix_buffer );
+    dd->mix_buffer = NULL;
   }
 
   if( flags & AHISF_RECORD )
   {
-    // Do nothing
+    sblive_writeptr( &dd->card, ADCCR, 0, 0 );
+    sblive_writeptr( &dd->card, ADCBS, 0, ADCBS_BUFSIZE_NONE );
+    
+    if( ! dd->is_playing )
+    {
+      emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
+    }
+
+    dd->is_recording = FALSE;
+      
+    pci_free_consistent( dd->card.pci_dev,
+			 RECORD_BUFFER_SAMPLES * 4,
+			 dd->record_buffer,
+			 dd->record_dma_handle );
+    dd->record_buffer = NULL;
+    dd->record_dma_handle = NULL;
   }
 }
 
@@ -1115,112 +1234,6 @@ LibGetAttr( REG( d0, ULONG attribute ),
 /******************************************************************************
 ** AHIsub_HardwareControl *****************************************************
 ******************************************************************************/
-
-static Fixed
-Linear2MixerGain( Fixed  linear,
-		  UWORD* bits )
-{
-  static const Fixed gain[ 33 ] =
-  {
-    260904, // +12.0 dB
-    219523, // +10.5 dB
-    184706, //  +9.0 dB
-    155410, //  +7.5 dB
-    130762, //  +6.0 dB
-    110022, //  +4.5 dB
-    92572,  //  +3.0 dB
-    77890,  //  +1.5 dB
-    65536,  //  ±0.0 dB
-    55142,  //  -1.5 dB
-    46396,  //  -3.0 dB
-    39037,  //  -4.5 dB
-    32846,  //  -6.0 dB
-    27636,  //  -7.5 dB
-    23253,  //  -9.0 dB
-    19565,  // -10.5 dB
-    16462,  // -12.0 dB
-    13851,  // -13.5 dB
-    11654,  // -15.0 dB
-    9806,   // -16.5 dB
-    8250,   // -18.0 dB
-    6942,   // -19.5 dB
-    5841,   // -21.0 dB
-    4915,   // -22.5 dB
-    4135,   // -24.0 dB
-    3479,   // -25.5 dB
-    2927,   // -27.0 dB
-    2463,   // -28.5 dB
-    2072,   // -30.0 dB
-    1744,   // -31.5 dB
-    1467,   // -33.0 dB
-    1234,   // -34.5 dB
-    0       //   -oo dB
-  };
-
-  int v = 0;
-  
-  while( linear < gain[ v ] )
-  {
-    ++v;
-  }
-
-  if( v == 32 )
-  {
-    *bits = 0x8000; // Mute
-  }
-  else
-  {
-    *bits = ( v << 8 ) | v;
-  }
-
-//  KPrintF( "l2mg %08lx -> %08lx (%04lx)\n", linear, gain[ v ], *bits );
-  return gain[ v ];
-}
-
-static Fixed
-Linear2RecordGain( Fixed  linear,
-		   UWORD* bits )
-{
-  static const Fixed gain[ 17 ] =
-  {
-    873937, // +22.5 dB
-    735326, // +21.0 dB
-    618700, // +19.5 dB
-    520571, // +18.0 dB
-    438006, // +16.5 dB
-    368536, // +15.0 dB
-    310084, // +13.5 dB
-    260904, // +12.0 dB
-    219523, // +10.5 dB
-    184706, //  +9.0 dB
-    155410, //  +7.5 dB
-    130762, //  +6.0 dB
-    110022, //  +4.5 dB
-    92572,  //  +3.0 dB
-    77890,  //  +1.5 dB
-    65536,  //  ±0.0 dB
-    0       //  -oo dB
-  };
-
-  int v = 0;
-  
-  while( linear < gain[ v ] )
-  {
-    ++v;
-  }
-
-  if( v == 16 )
-  {
-    *bits = 0x8000; // Mute
-  }
-  else
-  {
-    *bits = ( ( 15 - v ) << 8 ) | ( 15 - v );
-  }
-
-  return gain[ v ];
-}
-
 
 ULONG ASMCALL
 LibHardwareControl( REG( d0, ULONG attribute ),
@@ -1377,7 +1390,7 @@ LibUnloadSound( REG( d0, UWORD sound ),
 ******************************************************************************/
 
 static ULONG ASMCALL INTERRUPT 
-EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
+EMU10kxInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
 
@@ -1396,17 +1409,19 @@ EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 	diff += audioctrl->ahiac_MaxBuffSamples * 2;
       }
 
+      KPrintF( "*** %ld\n", sblive_readptr( &dd->card, ADCIDX_IDX, 0 ) );
+      
 //      KPrintF( ">>> hw_pos = %08lx; current_pos = %08lx; diff=%ld <<<\n",
 //	       hw, dd->current_position, diff );
 
       if( (ULONG) diff < dd->current_length )
       {
-	if( dd->mixing_enabled )
+	if( dd->playback_interrupt_enabled )
 	{
 	  /* Invoke softint to fetch new sample data */
 
-	  dd->mixing_enabled = FALSE;
-	  Cause( &dd->software_interrupt );
+	  dd->playback_interrupt_enabled = FALSE;
+	  Cause( &dd->playback_interrupt );
 	}
       }
     }
@@ -1422,15 +1437,15 @@ EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 
 
 /******************************************************************************
-** Mixer interrupt handler ****************************************************
+** Playback interrupt handler *************************************************
 ******************************************************************************/
 
 static void ASMCALL INTERRUPT 
-Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
+PlaybackInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
   
-  if( dd->mixbuffer != NULL && dd->current_buffer != NULL )
+  if( dd->mix_buffer != NULL && dd->current_buffer != NULL )
   {
     PreTimer_proto*  pretimer  = (PreTimer_proto*)  audioctrl->ahiac_PreTimer;
     PostTimer_proto* posttimer = (PostTimer_proto*) audioctrl->ahiac_PostTimer;
@@ -1444,11 +1459,11 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 
     pretimer_rc = pretimer( audioctrl );
 	
-    CallHookPkt( audioctrl->ahiac_PlayerFunc, (Object*) audioctrl, NULL );
+    CallHookA( audioctrl->ahiac_PlayerFunc, (Object*) audioctrl, NULL );
 
     if( ! pretimer_rc )
     {
-      CallHookPkt( audioctrl->ahiac_MixerFunc, (Object*) audioctrl, dd->mixbuffer );
+      CallHookA( audioctrl->ahiac_MixerFunc, (Object*) audioctrl, dd->mix_buffer );
     }
 
     /* Now translate and transfer to the DMA buffer */
@@ -1456,7 +1471,7 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
     skip    = ( audioctrl->ahiac_Flags & AHIACF_HIFI ) ? 2 : 1;
     samples = dd->current_length;
 
-    src     = dd->mixbuffer;
+    src     = dd->mix_buffer;
     dst     = dd->current_buffer;
 
     i = min( samples,
@@ -1518,16 +1533,134 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
     posttimer( audioctrl );
   }
 
-  dd->mixing_enabled = TRUE;
+  dd->playback_interrupt_enabled = TRUE;
 }
 
+
+/******************************************************************************
+** Record interrupt handler ***************************************************
+******************************************************************************/
+
+static void ASMCALL INTERRUPT 
+RecordInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
+{
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
+
+  KPrintF( "R" );
+}
 
 /******************************************************************************
 ** Misc. **********************************************************************
 ******************************************************************************/
 
+static Fixed
+Linear2MixerGain( Fixed  linear,
+		  UWORD* bits )
+{
+  static const Fixed gain[ 33 ] =
+  {
+    260904, // +12.0 dB
+    219523, // +10.5 dB
+    184706, //  +9.0 dB
+    155410, //  +7.5 dB
+    130762, //  +6.0 dB
+    110022, //  +4.5 dB
+    92572,  //  +3.0 dB
+    77890,  //  +1.5 dB
+    65536,  //  ±0.0 dB
+    55142,  //  -1.5 dB
+    46396,  //  -3.0 dB
+    39037,  //  -4.5 dB
+    32846,  //  -6.0 dB
+    27636,  //  -7.5 dB
+    23253,  //  -9.0 dB
+    19565,  // -10.5 dB
+    16462,  // -12.0 dB
+    13851,  // -13.5 dB
+    11654,  // -15.0 dB
+    9806,   // -16.5 dB
+    8250,   // -18.0 dB
+    6942,   // -19.5 dB
+    5841,   // -21.0 dB
+    4915,   // -22.5 dB
+    4135,   // -24.0 dB
+    3479,   // -25.5 dB
+    2927,   // -27.0 dB
+    2463,   // -28.5 dB
+    2072,   // -30.0 dB
+    1744,   // -31.5 dB
+    1467,   // -33.0 dB
+    1234,   // -34.5 dB
+    0       //   -oo dB
+  };
+
+  int v = 0;
+  
+  while( linear < gain[ v ] )
+  {
+    ++v;
+  }
+
+  if( v == 32 )
+  {
+    *bits = 0x8000; // Mute
+  }
+  else
+  {
+    *bits = ( v << 8 ) | v;
+  }
+
+//  KPrintF( "l2mg %08lx -> %08lx (%04lx)\n", linear, gain[ v ], *bits );
+  return gain[ v ];
+}
+
+static Fixed
+Linear2RecordGain( Fixed  linear,
+		   UWORD* bits )
+{
+  static const Fixed gain[ 17 ] =
+  {
+    873937, // +22.5 dB
+    735326, // +21.0 dB
+    618700, // +19.5 dB
+    520571, // +18.0 dB
+    438006, // +16.5 dB
+    368536, // +15.0 dB
+    310084, // +13.5 dB
+    260904, // +12.0 dB
+    219523, // +10.5 dB
+    184706, //  +9.0 dB
+    155410, //  +7.5 dB
+    130762, //  +6.0 dB
+    110022, //  +4.5 dB
+    92572,  //  +3.0 dB
+    77890,  //  +1.5 dB
+    65536,  //  ±0.0 dB
+    0       //  -oo dB
+  };
+
+  int v = 0;
+  
+  while( linear < gain[ v ] )
+  {
+    ++v;
+  }
+
+  if( v == 16 )
+  {
+    *bits = 0x8000; // Mute
+  }
+  else
+  {
+    *bits = ( ( 15 - v ) << 8 ) | ( 15 - v );
+  }
+
+  return gain[ v ];
+}
+
+
 static ULONG
-samplerate_to_linearpitch( ULONG samplingrate )
+SamplerateToLinearPitch( ULONG samplingrate )
 {
   samplingrate = (samplingrate << 8) / 375;
   return (samplingrate >> 1) + (samplingrate & 1);
