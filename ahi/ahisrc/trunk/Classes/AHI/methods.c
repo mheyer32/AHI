@@ -118,10 +118,23 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
     
   AHIClassData->model_class = NewObjectA(NULL, MODELCLASS, model_tags);
 
+  tstate = msg->ops_AttrList;
+
+  while ((tag = NextTagItem(&tstate))) {
+    if (tag->ti_Tag == AHIA_AddNotify) {
+      if (AHIClassData->model_class == NULL) {
+	DoMethod((Object*) tag->ti_Data, OM_DISPOSE);
+      }
+      else {
+	DoMethod(AHIClassData->model_class, OM_ADDMEMBER, tag->ti_Data);
+      }
+    }
+  }
+
   if (AHIClassData->model_class == NULL) {
     return ERROR_NO_FREE_STORE;
   }
-
+  
   InitSemaphore(&AHIClassData->semaphore);
 
   return 0;
