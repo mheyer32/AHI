@@ -33,10 +33,7 @@ CATDIR		= ${DISTDIR}/User/Catalogs
 build_os	= @build_os@
 host_cpu	= @host_cpu@
 
-
-
-CPPFLAGS	= @CPPFLAGS@ -I..  -I../Include/gcc -I${srcdir} -I${top_srcdir} \
-		  -DVERSION$(VER)
+CPPFLAGS	= @CPPFLAGS@ -DVERSION$(VER)
 
 ifeq ($(VER),PPC)
 
