@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.3  1997/04/14 01:50:39  lcs
+* AHIST_INPUT still doesn't work...
+*
 * Revision 4.2  1997/04/02 22:48:03  lcs
 * One last V3 changed to V4
 *
@@ -184,12 +187,12 @@ stuffChar:
 *
 *   OVERVIEW
 *
-*       Please see the document "Programming guidelines" for more
+*       Please see the document "AHI Developer's Guide" for more
 *       information.
 *
 *
 *       * Driver based
-*  
+*
 *       Each supported sound card is controlled by a library-based audio
 *       driver. For a 'dumb' sound card, a new driver should be written in
 *       a few hours. For a 'smart' sound card, it is possible to utilize an
@@ -197,9 +200,10 @@ stuffChar:
 *       For sound cards with own DSP but little or no memory, it is possible
 *       to use the main CPU to mix channels and do the post-processing
 *       with the DSP. Available today are drivers for
-*  
+*
 *       · Aura (sampler only)
 *       · Delfina
+*       · DraCo Motion
 *       · Paula (8/14/14c bit)
 *       · Prelude
 *       · Toccata
@@ -235,7 +239,7 @@ stuffChar:
 *  
 *       By acting both like a device and a library, AHI gives the programmer
 *       a choice between full control and simplicity. The device API allows
-*       serveral programs to use the audio hardware at the same time, and
+*       several programs to use the audio hardware at the same time, and
 *       the AUDIO: dos-device driver makes playing and recording sound very
 *       simple for both the programmer and user.
 *  
@@ -297,7 +301,7 @@ stuffChar:
 *               immediately. If this bit is not set, the command will not
 *               take effect until the current sound is finished. MUST NOT
 *               be set if called from a SoundFunc. See the programming
-*               guidlines for more information about this flag.
+*               guidelines for more information about this flag.
 *
 *   RESULT
 *
@@ -467,7 +471,7 @@ SetVol_nodebug
 *               immediately. If this bit is not set, the command will not
 *               take effect until the current sound is finished. MUST NOT
 *               be set if called from a SoundFunc. See the programming
-*               guidlines for more information about this flag.
+*               guidelines for more information about this flag.
 *
 *   RESULT
 *
@@ -625,7 +629,7 @@ SetFreq_nodebug
 *               immediately. If this bit is not set, the command will not
 *               take effect until the current sound is finished. MUST NOT
 *               be set if called from a SoundFunc. See the programming
-*               guidlines for more information about this flag.
+*               guidelines for more information about this flag.
 *
 *   RESULT
 *
@@ -839,7 +843,7 @@ SetSound_nodebug
 *           ahieob_Buffer and ahieob_Length. Always check ahieob_Type!
 *           ahieob_Length is neither in bytes nor samples, but sample frames.
 *
-*       AHIET_DSPMASK - Effect is a struct AHIEffDSPMask, where ahiddm_Mask
+*       AHIET_DSPMASK - Effect is a struct AHIEffDSPMask, where ahiedm_Mask
 *           is an array with ahiedm_Channels elements. Each UBYTE in the
 *           array can either make the channel 'wet' (affected by the DSP
 *           effects), by using the AHIEDM_WET constant or 'dry' (not
@@ -870,7 +874,7 @@ SetSound_nodebug
 *           parameters to a power of two, or even to the extremes. 
 *
 *           If you set ahiede_Mix to 0x10000 and ahiede_Cross to 0x0, much
-*           faster mixing rotines will be used, and "Fast Echo" will improve
+*           faster mixing routines will be used, and "Fast Echo" will improve
 *           that even more.
 *
 *           Otherwise, even with "Fast Echo" turned on, this effect will 
@@ -884,7 +888,7 @@ SetSound_nodebug
 *               A1 - (struct AHIEffChannelInfo *)
 *           ahieci_Channels must equal the current number of channels used.
 *           ahieci_Offset is an array of ULONGs, which will be filled by
-*           AHI before the hook is called (the offset is specifed in sample
+*           AHI before the hook is called (the offset is specified in sample
 *           frames). The array must have at least ahieci_Channels elements.
 *
 *           This "effect" can be used to find out how far each channel has
@@ -1302,7 +1306,15 @@ _PreTimer:
 	neg.l	d1			; d1 = clocks spent mixing
 	neg.l	d2			; d2 = clocks since last entry
 	lsl.l	#8,d1
+ IFGE	__CPU-68020
 	divu.l	d2,d1
+ ELSE
+	move.l	d1,d0
+	move.l	d2,d1
+	move.l	_UtilityBase(pc),a1
+	jsr	_LVOUDivMod32(a1)
+	move.l	d0,d1
+ ENDC
 ;	bsr	printd1
 	cmp.b	ahiac_MaxCPU(a2),d1
 	bls	.ok
