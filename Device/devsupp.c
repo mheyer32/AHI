@@ -55,7 +55,7 @@ RecM8S( ULONG  size,
   BYTE*          to   = (BYTE*) dest;
   ULONG          i;
 
-  for( i = 0; i < size; ++size )
+  for( i = 0; i < size; ++i )
   {
     *to++ = from[ offs >> 32 ].left >> 8;
 
@@ -79,7 +79,7 @@ RecS8S( ULONG  size,
   BYTE*          to   = (BYTE*) dest;
   ULONG          i;
 
-  for( i = 0; i < size; ++size )
+  for( i = 0; i < size; ++i )
   {
     *to++ = from[ offs >> 32 ].left  >> 8;
     *to++ = from[ offs >> 32 ].right >> 8;
@@ -104,7 +104,7 @@ RecM16S( ULONG  size,
   WORD*          to   = (WORD*) dest;
   ULONG          i;
 
-  for( i = 0; i < size; ++size )
+  for( i = 0; i < size; ++i )
   {
     *to++ = from[ offs >> 32 ].left;
 
@@ -128,7 +128,7 @@ RecS16S( ULONG  size,
   WORD*          to   = (WORD*) dest;
   ULONG          i;
 
-  for( i = 0; i < size; ++size )
+  for( i = 0; i < size; ++i )
   {
     *to++ = from[ offs >> 32 ].left;
     *to++ = from[ offs >> 32 ].right;
@@ -153,7 +153,7 @@ RecM32S( ULONG  size,
   LONG*          to   = (LONG*) dest;
   ULONG          i;
 
-  for( i = 0; i < size; ++size )
+  for( i = 0; i < size; ++i )
   {
     *to++ = from[ offs >> 32 ].left << 16;
 
@@ -177,7 +177,7 @@ RecS32S( ULONG  size,
   LONG*          to   = (LONG*) dest;
   ULONG          i;
 
-  for( i = 0; i < size; ++size )
+  for( i = 0; i < size; ++i )
   {
     *to++ = from[ offs >> 32 ].left  << 16;
     *to++ = from[ offs >> 32 ].right << 16;
