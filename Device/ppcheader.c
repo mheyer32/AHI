@@ -28,6 +28,7 @@
 #include <powerup/ppclib/tasks.h>
 #include <powerup/gcclib/powerup_protos.h>
 
+#include "version.h"
 #include "ahi_def.h"
 #include "mixer.h"
 
@@ -49,6 +50,8 @@ InvalidateCache( void* address, unsigned long length );
 ULONG
 InternalSampleFrameSize( ULONG sampletype );
 
+
+// This must be the first code in the ELF object!
 
 asm( "
         .align  2
@@ -74,6 +77,18 @@ KernelObject:
         blr
 ");
 
+
+// Just some library stuff... All the stuff will have to be added 
+// in the final release.
+
+ULONG	__LIB_Version  = VERSION;
+ULONG	__LIB_Revision = REVISION;
+
+static const char VersTag[] = 
+ "$VER: ahi.elf " VERS " ©1994-1999 Martin Blom. " CPU " version.\r\n";
+
+
+// Function used to call the actual mixing routine.
 
 int
 CallMixroutine( struct Hook *Hook, 

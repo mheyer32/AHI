@@ -18,11 +18,13 @@ AC_CONFIG_HEADER( config.h )
 : ${CPPFLAGS='-I/gg/os-include'}
 dnl : ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}
+: ${ARFLAGS='-ru'}
 
 : ${DISTDIR='/tmp/ahi'}
 AC_PREFIX_DEFAULT( / )
 
 AC_SUBST(ASFLAGS)
+AC_SUBST(ARFLAGS)
 AC_SUBST(DISTDIR)
 
 dnl Checks for programs.
@@ -32,9 +34,12 @@ AC_CHECK_TOOL( AS, as, :)
 
 AC_PROG_INSTALL
 AC_PROG_CC
+AC_PROG_RANLIB
+AC_CHECK_PROG( AR, ar, ar )
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
 AC_CHECK_PROG( ASM, PhxAss, PhxAss )
+
 
 dnl Checks for libraries.
 
