@@ -36,7 +36,7 @@ SUBDIRS		= AHI AddAudioModes Device Docs Include
 
 all:
 	@cd Include && make gcc-include
-	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
 clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
