@@ -1,3 +1,13 @@
+2003-04-25  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.36.
+
+	* ahi.device: The dynamic volume code now assumes that each
+	application will play at least one sound. (It's just a test.)
+
+	* The m68k version is now compiled for 060 per default, but will
+	still run on 020+ of course.
+
 2003-04-24  Martin Blom  <martin@blom.org>
 
 	* Released filesave.audio version 5.1.

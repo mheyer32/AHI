@@ -1605,6 +1605,16 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
     ++c;
   }
 
+  // Always "reserve" one channel for each opener to avoid too much
+  // volume fluctuation
+
+  if( c < iounit->Unit.unit_OpenCnt )
+  {
+    c = iounit->Unit.unit_OpenCnt;
+  }
+
+  // Now check if we need to update the master volume
+
   if( c != iounit->ChannelsInUse )
   {
     struct AHIEffMasterVolume vol;

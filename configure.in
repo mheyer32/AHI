@@ -15,7 +15,7 @@ AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
 
 AC_MSG_CHECKING(CPU to build for)
-AC_ARG_WITH(CPU,
+AC_ARG_WITH(cpu,
 [  --with-cpu              The CPU to optimize for],
 CPU=${withval}, unset CPU)
 AC_MSG_RESULT(${CPU})
@@ -45,10 +45,11 @@ case $host in
   stripflag=""
  ;;
  m68k-unknown-amigaos)
-  : ${CPU="68020"}
+  : ${CPU="68020-60"}
   linkerflags="-noixemul"
   optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math"
-  asflags="-m${CPU} --register-prefix-optional --bitwise-or --defsym CPU=${CPU}"
+  asCPU=`echo ${CPU} | sed 's/-.*//'`
+  asflags="-m${asCPU} --register-prefix-optional --bitwise-or --defsym CPU=${asCPU}"
   resident="-resident"
   stripflag=""
  ;;
