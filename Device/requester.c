@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.8  1998/06/23 21:17:22  lcs
+* Now always sets IoErr().
+*
 * Revision 4.7  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -1153,8 +1156,13 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
     Debug_AudioRequestA(req_in,tags);
   }
 
+  SetIoErr( 0 );
+
   if(!req)
+  {
+    SetIoErr( ERROR_REQUIRED_ARG_MISSING );
     return FALSE;
+  }
 
 // Update requester structure
   FillReqStruct(req,tags);
