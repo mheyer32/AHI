@@ -1,0 +1,47 @@
+==id $Id$
+==base _AHIBase
+==basetype struct Library *
+==libname ahi.library
+==bias 42
+==public
+==include <exec/types.h>
+==include <utility/tagitem.h>
+==include <devices/ahi.h>
+struct AHIAudioCtrl * AHI_AllocAudioA(struct TagItem * tagList) (a1)
+==varargs
+struct AHIAudioCtrl * AHI_AllocAudio(Tag tagList, ...) (a1)
+void AHI_FreeAudio(struct AHIAudioCtrl * AudioCtrl) (a2)
+void AHI_KillAudio() ()
+ULONG AHI_ControlAudioA(struct AHIAudioCtrl * AudioCtrl, struct TagItem * tagList) (a2,a1)
+==varargs
+ULONG AHI_ControlAudio(struct AHIAudioCtrl * AudioCtrl, Tag tagList, ...) (a2,a1)
+void AHI_SetVol(UWORD Channel, Fixed Volume, sposition Pan,
+	struct AHIAudioCtrl * AudioCtrl, ULONG Flags) (d0,d1,d2,a2,d3)
+void AHI_SetFreq(UWORD Channel, ULONG Freq, struct AHIAudioCtrl * AudioCtrl, ULONG Flags) (d0,d1,a2,d2)
+void AHI_SetSound(UWORD Channel, UWORD Sound, ULONG Offset, LONG Length,
+	struct AHIAudioCtrl * AudioCtrl, ULONG Flags) (d0,d1,d2,d3,a2,d4)
+ULONG AHI_SetEffect(APTR Effect, struct AHIAudioCtrl * AudioCtrl) (a0,a2)
+ULONG AHI_LoadSound(UWORD Sound, ULONG Type, APTR Info, struct AHIAudioCtrl * AudioCtrl) (d0,d1,a0,a2)
+void AHI_UnloadSound(UWORD Sound, struct AHIAudioCtrl * Audioctrl) (d0,a2)
+ULONG AHI_NextAudioID(ULONG Last_ID) (d0)
+BOOL AHI_GetAudioAttrsA(ULONG ID, struct AHIAudioCtrl * Audioctrl, struct TagItem * tagList) (d0,a2,a1)
+==varargs
+BOOL AHI_GetAudioAttrs(ULONG ID, struct AHIAudioCtrl * Audioctrl, Tag tagList, ...) (d0,a2,a1)
+ULONG AHI_BestAudioIDA(struct TagItem * tagList) (a1)
+==varargs
+ULONG AHI_BestAudioID(Tag tagList, ...) (a1)
+struct AHIAudioModeRequester * AHI_AllocAudioRequestA(struct TagItem * tagList) (a0)
+==varargs
+struct AHIAudioModeRequester * AHI_AllocAudioRequest(Tag tagList, ...) (a0)
+BOOL AHI_AudioRequestA(struct AHIAudioModeRequester * Requester, struct TagItem * tagList) (a0,a1)
+==varargs
+BOOL AHI_AudioRequest(struct AHIAudioModeRequester * Requester, Tag tagList, ...) (a0,a1)
+void AHI_FreeAudioRequest(struct AHIAudioModeRequester * Requester) (a0)
+void AHI_PlayA(struct AHIAudioCtrl * Audioctrl, struct TagItem * tagList) (a2,a1)
+==varargs
+void AHI_Play(struct AHIAudioCtrl * Audioctrl, Tag tagList, ...) (a2,a1)
+ULONG AHI_SampleFrameSize(ULONG SampleType) (d0)
+ULONG AHI_AddAudioMode(struct TagItem * AHIPrivate) (a0)
+ULONG AHI_RemoveAudioMode(ULONG AHIPrivate) (d0)
+ULONG AHI_LoadModeFile(STRPTR AHIPrivate) (a0)
+==end
