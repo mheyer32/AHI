@@ -12,6 +12,9 @@
 
 	* Released emu10kx.audio 4.8.
 
+	* emu10kx.audio: Added code to handle recording and the selection
+	of input sources.
+
 2002-05-11  Martin Blom  <martin@blom.org>
 
 	* AHI-Handler: Imported into CVS.
@@ -25,12 +28,24 @@
 	* AHI: Disabled unused advanced options (anti-click time when
 	using AHI v4, echo, surround and master volume when using AHI v5).
 
+2002-02-27  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 4.6.
+
+	* emu10kx.audio: Playback works. AC97 analog mixer initialized to
+	reasonable defaults. I made it in time for AmiGBG 2002! :-)
+
 2002-02-24  Martin Blom  <martin@blom.org>
 
 	* Released AHI preferences 5.4.
 
 	* AHI: Increased driver info buffers from 32 to 64 characters.
 
+2002-02-15  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Initial check-in. A header file is a good start,
+	no?
+	
 2002-02-09  Martin Blom  <martin@blom.org>
 
 	* toccata.audio: The CPU load check now also includes the
