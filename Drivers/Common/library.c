@@ -44,8 +44,7 @@ BPTR
 _LibExpunge( struct DriverBase* AHIsubBase );
 
 struct DriverBase*
-_LibOpen( ULONG              version,
-	  struct DriverBase* AHIsubBase );
+_LibOpen( struct DriverBase* AHIsubBase );
 
 BPTR
 _LibClose( struct DriverBase* AHIsubBase );
@@ -145,6 +144,9 @@ static const struct Resident RomTag =
   (BYTE *) LibName,
   (BYTE *) LibIDString,
   (APTR) &InitTable
+#if defined( __MORPHOS__ )
+  , REVISION, NULL
+#endif
 };
 
 
@@ -327,8 +329,7 @@ _LibExpunge( struct DriverBase* AHIsubBase )
 ******************************************************************************/
 
 struct DriverBase*
-_LibOpen( ULONG              version,
-	  struct DriverBase* AHIsubBase )
+_LibOpen( struct DriverBase* AHIsubBase )
 {
   AHIsubBase->library.lib_Flags &= ~LIBF_DELEXP;
   AHIsubBase->library.lib_OpenCnt++;
