@@ -87,7 +87,10 @@ namespace AHI {
        _AHIM(_P, SampleFrameSize,	(_AHIM_Dummy+44)),
 
        /* Load buffer from memory */
-       _AHIM(_P, Load,			(_AHIM_Dummy+45))
+       _AHIM(_P, Load,			(_AHIM_Dummy+45)),
+
+       /* Create a clone of this buffer object */
+       _AHIM(_P, Clone,			(_AHIM_Dummy+46))
        
      };
 
