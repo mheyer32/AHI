@@ -1,41 +1,18 @@
-/* $Id$
-* $Log$
-* Revision 4.4  1998/01/29 23:09:47  lcs
-* Playing with anticlick
-*
-* Revision 4.3  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.2  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.1  1997/12/21 17:40:21  lcs
-* Rewrote the routines in C and gathered all sound files in one file.
-*
-*/
+/* $Id$ */
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
 
 #include <exec/memory.h>
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-
 #include <stdlib.h>
 
-
-#ifndef  noprotos
-
-#ifndef _GENPROTO
-#include "sound_protos.h"
-#endif
-
-#include "debug_protos.h"
-#include "effectinit_protos.h"
-#include "mixer_protos.h"
-
-#endif
+#include "ahi_def.h"
+#include "debug.h"
+#include "effectinit.h"
+#include "mixer.h"
 
 
 /******************************************************************************
@@ -166,11 +143,11 @@ SetVol ( REG(d0, UWORD channel),
     cd->cd_VolumeLeft  = cd->cd_NextVolumeLeft;
     cd->cd_VolumeRight = cd->cd_NextVolumeRight;
     SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
-                     &cd->cd_ScaleLeft, &cd->cd_ScaleRight, &cd->cd_AddRoutine);
+                     &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
   }
 
   SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
-                   &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, &cd->cd_NextAddRoutine);
+                   &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
 
   AHIsub_Enable(&audioctrl->ac);
 
@@ -455,7 +432,7 @@ SetSound ( REG(d0, UWORD channel),
       cd->cd_SoundOK       = cd->cd_NextSoundOK;
 
       SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
-                       &cd->cd_ScaleLeft, &cd->cd_ScaleRight, &cd->cd_AddRoutine);
+                       &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
 
       cd->cd_Samples = CalcSamples(cd->cd_Add.I, cd->cd_Add.F, cd->cd_Type,
                                    cd->cd_LastOffset.I, cd->cd_LastOffset.F,
@@ -465,11 +442,11 @@ SetSound ( REG(d0, UWORD channel),
 
       /* Enable anti-click routine */
       cd->cd_AntiClickCount = min(audioctrl->ac.ahiac_AntiClickSamples,
-                                  cd->cd_Samples);
+                                  (ULONG) cd->cd_Samples);
     }
 
     SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
-                     &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, &cd->cd_NextAddRoutine);
+                     &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
   }
 
   AHIsub_Enable(&audioctrl->ac);
@@ -911,8 +888,8 @@ LoadSound ( REG(d0, UWORD sound),
         ULONG playsamples = 0, recordsamples = 0;
 
         if(AHI_GetAudioAttrs( AHI_INVALID_ID, (struct AHIAudioCtrl *) audioctrl,
-            AHIDB_MaxPlaySamples,   &playsamples,
-            AHIDB_MaxRecordSamples, &recordsamples,
+            AHIDB_MaxPlaySamples,   (ULONG) &playsamples,
+            AHIDB_MaxRecordSamples, (ULONG) &recordsamples,
             TAG_DONE))
         {
           audioctrl->ahiac_InputBlockLength = recordsamples;
@@ -1149,9 +1126,12 @@ PlayA( REG(a2, struct AHIAudioCtrl *audioctrl),
 {
   struct TagItem *tag,*tstate=tags;
   struct Library *AHIsubBase;
-  BOOL  setfreq,setvol,setsound,loopsetfreq,loopsetvol,loopsetsound;
-  ULONG channel,freq,vol,pan,sound,offset,length;
-  ULONG loopfreq,loopvol,looppan,loopsound,loopoffset,looplength;
+  BOOL  setfreq = FALSE, setvol = FALSE, setsound = FALSE,
+        loopsetfreq = FALSE, loopsetvol = FALSE, loopsetsound = FALSE;
+  ULONG channel = 0,
+        freq = 0, vol = 0, pan = 0, sound = 0, offset = 0, length = 0;
+  ULONG loopfreq = 0, loopvol = 0, looppan = 0, loopsound = 0,
+        loopoffset = 0, looplength = 0;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_ALL)
   {
@@ -1162,7 +1142,9 @@ PlayA( REG(a2, struct AHIAudioCtrl *audioctrl),
 
   AHIsub_Disable((struct AHIAudioCtrlDrv *)audioctrl);
 
-  while(tag=NextTagItem(&tstate))
+  for( tag = NextTagItem( &tstate );
+       tag != NULL;
+       tag = NextTagItem( &tstate ) )
   {
     switch(tag->ti_Tag)
     {
@@ -1281,7 +1263,7 @@ PlayA( REG(a2, struct AHIAudioCtrl *audioctrl),
 *
 */
 
-const static UBYTE type2bytes[]=
+static const UBYTE type2bytes[]=
 {
   1,    // AHIST_M8S  (0)
   2,    // AHIST_M16S (1)

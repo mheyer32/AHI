@@ -1,18 +1,8 @@
-/* $Id$
-* $Log$
-* Revision 4.1  1999/01/12 02:22:06  lcs
-* Began the move to GNU make.
-*
-* Revision 4.3  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.2  1998/01/12 20:07:28  lcs
-* Generic echo code.
-*
-*/
+/* $Id$ */
 
-
+#include <config.h>
 #include <CompilerSpecific.h>
+
 #include "ahi_def.h"
 #include "dsp.h"
 
@@ -113,7 +103,8 @@ do_DSPEcho ( struct Echo *es,
              struct AHIPrivAudioCtrl *audioctrl,
              void (*echofunc)(LONG, struct Echo *, void **, void **, void **) )
 {
-  LONG  samples, offset, loops;
+  LONG  samples, loops;
+  ULONG offset;
   void *srcptr, *dstptr;
 
   samples = audioctrl->ac.ahiac_BuffSamples;

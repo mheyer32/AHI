@@ -1,27 +1,14 @@
-/* $Id$
-* $Log$
-* Revision 4.2  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.1  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 1.1  1997/10/23 01:10:03  lcs
-* Initial revision
-*
-*/
+/* $Id$ */
 
-#include "ahi_def.h"
+#include <config.h>
+#include <CompilerSpecific.h>
+
 #include <utility/tagitem.h>
 #include <proto/utility.h>
 
-#ifndef  noprotos
+#include "ahi_def.h"
+#include "debug.h"
 
-#ifndef _GENPROTO
-#include "debug_protos.h"
-#endif
-
-#endif
 
 /******************************************************************************
 ** Support code ***************************************************************

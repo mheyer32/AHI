@@ -1,59 +1,4 @@
 ;/* $Id$
-* $Log$
-* Revision 4.12  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.11  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.10  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.9  1997/10/14 17:58:53  lcs
-* Fixed some mistakes in the overview autodoc section
-*
-* Revision 4.8  1997/10/11 15:58:13  lcs
-* Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
-*
-
-	IF	0
-
-*******************************************************************************
-** C function prototypes ******************************************************
-*******************************************************************************
-
-*/
-
-#include <CompilerSpecific.h>
-#include "ahi_def.h"
-
-char STDARGS *Sprintf(char *dst, const char *fmt, ...) {}
-BOOL ASMCALL PreTimer ( void ) {}
-void ASMCALL PostTimer ( void ) {}
-BOOL ASMCALL DummyPreTimer ( void ) {}
-void ASMCALL DummyPostTimer ( void ) {}
-LONG ASMCALL Fixed2Shift ( REG(d0, Fixed val) ) {}
-
-void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
-
-void ASMCALL Add64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
-LONG ASMCALL Cmp64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
-// void ASMCALL Divs64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
-// void ASMCALL Divu64p( REG(a0, ULONGLONG *ValueAPtr), REG(a1, ULONGLONG *ValueBPtr) ) {}
-// void ASMCALL Muls64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
-// void ASMCALL Mulu64p( REG(a0, ULONGLONG *ValueAPtr), REG(a1, ULONGLONG *ValueBPtr) ) {}
-void ASMCALL Neg64p( REG(a0, LONGLONG *ValueAPtr) ) {}
-void ASMCALL Sub64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
-
-;/*     Comment terminated at the end of the file!
-
-	ENDC	* IF 0
-
-*******************************************************************************
-** Assembly code **************************************************************
-*******************************************************************************
-
-
 
 	include	exec/exec.i
 	include	lvo/exec_lib.i
@@ -83,6 +28,9 @@ void ASMCALL Sub64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) 
 ;	XDEF	_Mulu64p
 	XDEF	_Neg64p
 	XDEF	_Sub64p
+
+	section	.text,code
+
 
 ** Sprintf ********************************************************************
 
@@ -303,6 +251,7 @@ _Mix:
 	rts
  ENDC
 
+
 ** Math functions *************************************************************
 
 
@@ -411,4 +360,49 @@ _Sub64p:
 	rts
 
 
-;	C comment terminating here... */
+** Debug functions ************************************************************
+
+
+	XDEF	_KPrintF
+	XDEF	_kprintf
+	XDEF	_VKPrintF
+	XDEF	_vkprintf
+	XDEF	_KPutFmt
+	XDEF	KPrintF
+	XDEF	kprintf
+	XDEF	KPutFmt
+
+kprint_macro:
+	movem.l	d0-d1/a0-a1,-(sp)
+	bsr	KPrintF
+	movem.l	(sp)+,d0-d1/a0-a1
+	rts
+
+
+_KPrintF:
+_kprintf:
+	move.l	1*4(sp),a0
+	lea	2*4(sp),a1
+	bra	KPrintF
+
+_VKPrintF:
+_vkprintf:
+_KPutFmt:
+	move.l	1*4(sp),a0
+	move.l	2*4(sp),a1
+
+KPrintF:
+kprintf:
+KPutFmt:
+	movem.l	a2-a3/a6,-(sp)
+	move.l	4.w,a6
+	lea.l	RawPutChar(pc),a2
+	move.l	a6,a3
+	jsr	_LVORawDoFmt(a6)
+	movem.l	(sp)+,a2-a3/a6
+	rts
+
+RawPutChar:
+	move.l	a3,a6
+	jsr	-516(a6)	;_LVORawPutChar
+	rts

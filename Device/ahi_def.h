@@ -1,23 +1,4 @@
-/* :ts= 8 */
-
-/* $Id$
-* $Log$
-* Revision 4.8  1998/01/29 23:09:47  lcs
-* Playing with anticlick
-*
-* Revision 4.7  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.6  1998/01/12 20:07:28  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.5  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.4  1997/10/11 15:58:13  lcs
-* Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
-*
-*/
+/* $Id$ */
 
 #ifndef AHI_DEF_H
 #define AHI_DEF_H
@@ -30,41 +11,41 @@ extern void kprintf(char *fmt,...);
 
 /*** AHI include files ***/
 
+#include <config.h>
 #include <CompilerSpecific.h>
 
+#include <exec/semaphores.h>
+#include <exec/devices.h>
 #include <devices/ahi.h>
 #include <devices/timer.h>
 #include <libraries/ahi_sub.h>
 #include <utility/hooks.h>
-#include <pragmas/ahi_pragmas.h>
 #include <clib/ahi_protos.h>
+#include <pragmas/ahi_pragmas.h>
 #include <proto/ahi_sub.h>
 
-
-#include <exec/semaphores.h>
-#include <exec/devices.h>
-
-#include "ahi_device.h"
-#include "dsp.h"
+struct Echo;
+struct AHIDevUnit;
 
 
 /*** Globals ***/
 
+extern struct ExecBase		*SysBase;
 extern struct AHIBase		*AHIBase;
 extern struct DosLibrary	*DOSBase;
 extern struct Library		*GadToolsBase;
 extern struct GfxBase		*GfxBase;
 extern struct Library		*IFFParseBase;
 extern struct IntuitionBase	*IntuitionBase;
-extern struct Library		*LocaleBase;
-extern struct Library		*TimerBase;
-extern struct Library		*UtilityBase;
+extern struct LocaleBase	*LocaleBase;
+extern struct Device		*TimerBase;
+extern struct UtilityBase	*UtilityBase;
 
-extern ULONG			 DriverVersion;
-extern ULONG			 Version;
-extern ULONG			 Revision;
-extern UBYTE			*DevName;
-extern UBYTE			*IDString;
+extern const ULONG		 DriverVersion;
+extern const ULONG		 Version;
+extern const ULONG		 Revision;
+extern const char		*DevName;
+extern const char		*IDString;
 
 
 /*** Definitions ***/
@@ -114,7 +95,6 @@ struct AHIBase
 	APTR			 ahib_AudioCtrl;
 	struct AHIDevUnit	*ahib_DevUnits[AHI_UNITS];
 	struct SignalSemaphore	 ahib_Lock;
-	struct StartupMessage	 ahib_Startup;
 	ULONG			 ahib_AudioMode;
 	ULONG			 ahib_Frequency;
 	Fixed			 ahib_MonitorVolume;

@@ -59,13 +59,15 @@ SOURCES		= $(wildcard *.c)
 
 OBJECTS		= header.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
-		  asmfuncs.o audioctrl.o effectinit.o sound.o footer.o
+		  asmfuncs.o audioctrl.o effectinit.o sound.o
 
 ifeq ($(VER),VERSION68K)
 OBJECTS		+= dspecho_68k.o mixer_68k.o
 else
 OBJECTS		+= dspecho.o mixer.o
 endif
+
+OBJECTS		+= footer.o
 
 TARGET		= ahi.device.$(CPU)
 
@@ -102,7 +104,7 @@ bindist:
 	$(INSTALL_PROGRAM)  $(DEVSDIR)
 
 
-version.i:	version.rev version.date
+version.i:	version.rev
 	@echo Creating $@
 	@ver=`cat $(top_srcdir)/version.ver` \
 	 rev=`cat version.rev` && \
@@ -114,11 +116,13 @@ version.h:	version.rev version.date
 	@ver=`cat $(top_srcdir)/version.ver` \
 	 rev=`cat version.rev` \
 	 date=`cat version.date` && \
-	 echo "#define VERS \"$$ver.$$rev ($$date)\"" > $@
+	 echo "#define VERSION $$ver" > $@ && \
+	 echo "#define REVISION $$rev" >> $@ && \
+	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
 
 revup:
 	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
-	@date +%y.%m.%d > version.date
+	@date +%d.%m.%y > version.date
 	@echo -n "New revision: "
 	@cat version.rev
 
@@ -136,10 +140,13 @@ Makefile: Makefile.in ../config.status
 
 %.o:	%.s
 	$(ASM) $(ASMFLAGS) $<
+	objcopy $@ --output-target=a.out-amiga
 
 
 $(TARGET):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+#	SC:c/slink ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy\
+#          DEFINE @_CXBRK=@__dummy NOALVS TO Devs:ahi.device FROM $^
 
 localize.c:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) ahi.cd localize.c=C_c_AHI.sd 
@@ -159,10 +166,10 @@ localize.h:	ahi.cd C_c_AHI.sd
 ########################################
 
 Makefile.dep:	$(SOURCES) localize.c localize.h version.h
+	@echo Making $@
 ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 else
-	# This is much faster...
 	-@touch $@
 	-@makedepend -f $@ $(SOURCES)
 endif

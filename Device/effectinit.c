@@ -1,37 +1,17 @@
-/* $Id$
-* $Log$
-* Revision 4.8  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.7  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.6  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.5  1997/10/23 01:10:03  lcs
-* Better debug output.
-*
-*/
+/* $Id$ */
+
+#include <config.h>
+#include <CompilerSpecific.h>
 
 #include <exec/memory.h>
 #include <proto/exec.h>
 
-#include <CompilerSpecific.h>
 #include "ahi_def.h"
 #include "dsp.h"
-
-#ifndef  noprotos
-
-#ifndef _GENPROTO
-#include "effectinit_protos.h"
-#endif
-
-#include "asmfuncs_protos.h"
-#include "dspecho_protos.h"
-#include "mixer_protos.h"
-
-#endif
+#include "effectinit.h"
+#include "asmfuncs.h"
+#include "dspecho.h"
+#include "mixer.h"
 
 
 /***********************************************
@@ -44,9 +24,17 @@
 ** MASTERVOLUME ***************************************************************
 ******************************************************************************/
 
+#ifdef VERSION68K
+
 BOOL ASMCALL
 update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                       REG(a5, struct AHIBase *AHIBase) )
+#else
+
+BOOL 
+update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl,
+                      struct AHIBase *AHIBase )
+#endif
 {
   struct Library        *AHIsubBase;
   struct AHIChannelData *cd;
@@ -84,9 +72,9 @@ update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
       i--, cd++)
   {
     SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
-                     &cd->cd_ScaleLeft, &cd->cd_ScaleRight, &cd->cd_AddRoutine);
+                     &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
     SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
-                     &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, &cd->cd_NextAddRoutine);
+                     &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
   }
 
   AHIsub_Enable(&audioctrl->ac);
@@ -104,10 +92,19 @@ update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
 #define mode_ncnm   4       // No cross, no mix
 #define mode_fast   8
 
+#ifdef VERSION68K
+
 BOOL ASMCALL
 update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
                  REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                  REG(a5, struct AHIBase *AHIBase) )
+#else
+
+BOOL
+update_DSPEcho ( struct AHIEffDSPEcho *echo,
+                 struct AHIPrivAudioCtrl *audioctrl,
+                 struct AHIBase *AHIBase )
+#endif
 {
   ULONG size, samplesize;
   struct Echo *es;
@@ -178,7 +175,7 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
                              ((0x10000 - echo->ahiede_Cross) >> 8);
 
 
-#if defined(VERSIONGEN) || defined(VERSIONPPC)
+#ifndef VERSION68K
 
     audioctrl->ahiac_EchoMasterVolume = 0x10000;
 
@@ -198,11 +195,9 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
 
     update_MasterVolume(audioctrl,AHIBase);
 
-#if defined(VERSIONGEN) || defined(VERSIONPPC)
+#ifdef VERSION68K
 
     /* No fast echo in generic or PPC version*/
-
-#else
 
     // No fast echo in 32 bit (HiFi) modes!
     switch(audioctrl->ac.ahiac_BuffType)
@@ -227,7 +222,7 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
 
 #endif
 
-#if defined(VERSIONGEN) || defined(VERSIONPPC)
+#ifndef VERSION68K
 
     switch(mode)
     {
@@ -349,9 +344,17 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
 }
 
 
+#ifdef VERSION68K
+
 void ASMCALL
 free_DSPEcho ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                REG(a5, struct AHIBase *AHIBase) )
+#else
+
+void
+free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl,
+               struct AHIBase *AHIBase )
+#endif
 {
   void *p = audioctrl->ahiac_EffDSPEchoStruct;
 
@@ -392,10 +395,19 @@ addchannel ( struct AHIChannelData **list, struct AHIChannelData *cd )
   cd->cd_Succ = NULL;
 }
 
+#ifdef VERSION68K
+
 BOOL ASMCALL
 update_DSPMask ( REG(a0, struct AHIEffDSPMask *mask),
                  REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                  REG(a5, struct AHIBase *AHIBase) )
+#else
+
+BOOL 
+update_DSPMask ( struct AHIEffDSPMask *mask,
+                 struct AHIPrivAudioCtrl *audioctrl,
+                 struct AHIBase *AHIBase )
+#endif
 {
   struct AHIChannelData *cd, *wet = NULL, *dry = NULL;
   struct Library        *AHIsubBase;
@@ -439,9 +451,17 @@ update_DSPMask ( REG(a0, struct AHIEffDSPMask *mask),
 }
 
 
+#ifdef VERSION68K
+
 void ASMCALL
 clear_DSPMask ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                 REG(a5, struct AHIBase *AHIBase) )
+#else
+
+void
+clear_DSPMask ( struct AHIPrivAudioCtrl *audioctrl,
+                struct AHIBase *AHIBase )
+#endif
 {
   struct AHIChannelData *cd;
   struct Library        *AHIsubBase;
