@@ -245,7 +245,7 @@ static void UpdateStrings(void) {
 
 static Object *MUIWindow,*MUIList,*MUIInfos,*MUIUnit;
 static Object *MUIFreq,*MUIChannels,*MUIOutvol,*MUIMonvol,*MUIGain,*MUIInput,*MUIOutput;
-static Object *MUILFreq,*MUILChannels,*MUILOutvol,*MUILMonvol,*MUILGain,*MUILInput,*MUILOutput;
+static Object *MUILFreq,*MUILChannels,*MUILOutvol,*MUILMonvol,*MUILGain,*MUILInput,*MUILOutput,*MUIPlay;
 static Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu,*MUIACTime;
 
 LONG xget(Object * obj, ULONG attribute)
@@ -387,6 +387,9 @@ static void GUINewMode(void)
     set(MUIOutput, MUIA_Numeric_Value, Sel);
   }
   set(MUILOutput, MUIA_Text_Contents, (ULONG) getOutput());
+
+
+  set(MUIPlay, MUIA_Disabled, getAudioMode() == AHI_INVALID_ID);
 }
 
 static VOID
@@ -505,7 +508,7 @@ static Object* SpecialSlider(LONG min, LONG max, LONG value)
 
 BOOL BuildGUI(char *screenname)
 {
-  Object *MUISave, *MUIUse, *MUICancel, *MUIPlay;
+  Object *MUISave, *MUIUse, *MUICancel;
   Object *page1,*page2;
   Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu,*MUITACTime;
 
