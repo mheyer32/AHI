@@ -36,14 +36,14 @@ void	**Dst			r9     long		Dst
 LONG	  FirstOffsetI		r10    long		FirstOffsetI
 Fixed64	  Add			 8(r1) long long	Add
 Fixed64	 *Offset		16(r1) long		Offset
-BOOL	  StopAtZero		20(r1) word		StopAtZero
+BOOL	  StopAtZero		22(r1) word		StopAtZero
 
 */
 
 AddI		.equ	64 + 8
 AddF		.equ	64 + 12
 Offset		.equ	64 + 16
-StopAtZero	.equ	64 + 20
+StopAtZero	.equ	64 + 22
 
 	.text
 
@@ -80,6 +80,12 @@ StopAtZero	.equ	64 + 20
 	.type	AddWordStereoB,@function
 	.type	AddWordsMonoB,@function
 	.type	AddWordsStereoB,@function
+
+
+	.type	AddSilenceMono,@function
+	.type	AddSilenceStereo,@function
+	.type	AddSilenceMonoB,@function
+	.type	AddSilenceStereoB,@function
 
         .align  2
 
@@ -255,6 +261,7 @@ AddByteMono:
 	addc	r17,r19,r17		# Add fraction
 	adde	r16,r18,r16		# Add integer
 1:	# .first_sampleZ
+
 	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
 	add	r13,r8,r16		# (Calculate &src[ offset ])
 	bne+	3f
@@ -300,6 +307,7 @@ AddByteMono:
 	addc	r17,r19,r17		# Add fraction
 	adde	r16,r18,r16		# Add integer
 2:	# .first_sample
+
 	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
 	add	r13,r8,r16		# (Calculate &src[ offset ])
 	bne+	3f
