@@ -23,13 +23,18 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-#if !defined( VERSIONPPC )
+#if defined( VERSIONPPC )
+# include <hardware/intbits.h>
+#else
 # include <string.h>
 # include <stddef.h>
 
+# include <dos/dos.h>
+# include <dos/dostags.h>
 # include <exec/memory.h>
 # include <powerup/ppclib/memory.h>
 
+# include <proto/dos.h>
 # include <proto/exec.h>
 # include <proto/utility.h>
 # include <clib/ahi_protos.h>
@@ -43,6 +48,7 @@
 #include "misc.h"
 #include "header.h"
 #include "ppcheader.h"
+#include "ppchandler.h"
 
 
 /******************************************************************************
@@ -97,20 +103,20 @@ static inline void
 CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                void* arg )
 {
-  audioctrl->ahiac_PPCCommand  = AHIAC_COM_SOUNDFUNC;
-  audioctrl->ahiac_PPCArgument = arg;
+  audioctrl->ahiac_PowerPCContext->Command  = PPCC_COM_SOUNDFUNC;
+  audioctrl->ahiac_PowerPCContext->Argument = arg;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 }
 
 /*
 static inline void
 CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
-  audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
-  audioctrl->ahiac_PPCArgument = (void*) value;
+  audioctrl->ahiac_PowerPCContext->Command  = PPCC_COM_DEBUG;
+  audioctrl->ahiac_PowerPCContext->Argument = (void*) value;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 }
 */
 
@@ -155,14 +161,14 @@ MixPowerPC( REG(a0, struct Hook *Hook),
             REG(a1, void *dst), 
             REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 {
-  // TODO: Mix somehow.
+  FillBuffer( dst, audioctrl );
+
   /*** AHIET_MASTERVOLUME ***/
 
   DoMasterVolume( dst, audioctrl );
   // TODO: In PPC Code!! ^^^^
 
   // This is handled in m68k code, in order to minimize cache flushes.
-
 
   /*** AHIET_OUTPUTBUFFER ***/
 
@@ -226,17 +232,10 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
       audioctrl->ac.ahiac_Sounds * sizeof( struct AHISoundData ),
       MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
-  // Allocate structures specific to the PPC version
-
-  if( PPCObject != NULL )
-  {
-    // TODO: Create PPCHandler slave task.
-  }
-
   // Now link the list and fill in the channel number for each structure.
 
-  if( audioctrl->ahiac_ChannelDatas != NULL &&
-      audioctrl->ahiac_SoundDatas != NULL )
+  if( audioctrl->ahiac_ChannelDatas != NULL
+      && audioctrl->ahiac_SoundDatas != NULL )
   {
     struct AHIChannelData *cd;
     struct AHISoundData   *sd;
@@ -271,10 +270,61 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
       sd->sd_Type = AHIST_NOTYPE;
       sd++;
     }
+  }
 
-    // Sucess!
-    
+  // Allocate structures specific to the PPC version
+
+  if( PPCObject != NULL )
+  {
+    struct MsgPort* port;
+    struct Process* slave;
+
+    port = CreateMsgPort();
+      
+    if( port != NULL )
+    {
+      slave = CreateNewProcTags( NP_Entry,    (ULONG) PPCHandler,
+                                 NP_Name,     (ULONG) AHINAME " PPC Handler Process",
+                                 NP_Priority, 127,
+                                 TAG_DONE );
+
+      if( slave != NULL )
+      {
+        struct PPCHandlerMessage* msg = AllocVec( sizeof( struct PPCHandlerMessage ),
+                                                  MEMF_PUBLIC | MEMF_CLEAR );
+
+        if( msg != NULL )
+        {
+          msg->Message.mn_Length       = sizeof( struct PPCHandlerMessage );
+          msg->Message.mn_ReplyPort    = port;
+          msg->AudioCtrl               = audioctrl;
+
+          PutMsg( &slave->pr_MsgPort,
+                  (struct Message*) msg );
+
+          WaitPort( port );
+          GetMsg( port );
+          
+          if( audioctrl->ahiac_PowerPCContext != NULL )
+          {
+            // Not NULL means startup ok.
+
+            rc = TRUE;
+          }
+        }
+        
+        DeleteMsgPort( port );
+      }
+    }
+  }
+  else
+  {
     rc = TRUE;
+  }
+
+  if( !rc )
+  {
+    Req( "Failed to create PPC handler slave process." );
   }
 
   return rc;
@@ -290,9 +340,14 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
-  if( PPCObject != NULL )
+  if( audioctrl->ahiac_PowerPCContext != NULL )
   {
-    // TODO: Kill PPCHandler slave task.
+    audioctrl->ahiac_PowerPCContext->MainProcess = (struct Process*) FindTask( NULL );
+
+    SetSignal( 0, SIGF_SINGLE );
+    Signal( (struct Task*) audioctrl->ahiac_PowerPCContext->SlaveProcess, 
+            SIGBREAKF_CTRL_C );
+    Wait( SIGF_SINGLE );
   }
 
   AHIFreeVec( audioctrl->ahiac_SoundDatas );

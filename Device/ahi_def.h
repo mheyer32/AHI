@@ -211,29 +211,30 @@ struct PowerPCContext;
 
 struct AHIPrivAudioCtrl
 {
-  struct  AHIAudioCtrlDrv    ac;
-  struct  Library           *ahiac_SubLib;
+  struct AHIAudioCtrlDrv     ac;
+  struct Library*            ahiac_SubLib;
   ULONG                      ahiac_SubAllocRC;
-  struct AHIChannelData     *ahiac_ChannelDatas;
-  struct AHISoundData       *ahiac_SoundDatas;
+  struct AHIChannelData*     ahiac_ChannelDatas;
+  struct AHISoundData*       ahiac_SoundDatas;
   ULONG                      ahiac_BuffSizeNow;     /* How many bytes of the buffer are used? */
 
-  struct Hook               *ahiac_RecordFunc;      /* AHIA_RecordFunc */
+  struct Hook*               ahiac_RecordFunc;      /* AHIA_RecordFunc */
   ULONG                      ahiac_AudioID;
   Fixed                      ahiac_MasterVolume;    /* Real */
   Fixed                      ahiac_SetMasterVolume; /* Set by user */
   Fixed                      ahiac_EchoMasterVolume;/* Set by dspecho */
-  struct AHIEffOutputBuffer *ahiac_EffOutputBufferStruct;
-  struct Echo               *ahiac_EffDSPEchoStruct;
-  struct AHIEffChannelInfo  *ahiac_EffChannelInfoStruct;
-  struct AHIChannelData     *ahiac_WetList;
-  struct AHIChannelData     *ahiac_DryList;
+  struct AHIEffOutputBuffer* ahiac_EffOutputBufferStruct;
+  struct Echo*               ahiac_EffDSPEchoStruct;
+  struct AHIEffChannelInfo*  ahiac_EffChannelInfoStruct;
+  struct AHIChannelData*     ahiac_WetList;
+  struct AHIChannelData*     ahiac_DryList;
   UBYTE                      ahiac_WetOrDry;
   UBYTE                      ahiac_MaxCPU;
   UWORD                      ahiac_Channels2;       /* Max virtual channels/hw channel */
   struct Timer               ahiac_Timer;
   UWORD                      ahiac_UsedCPU;
-  struct PowerPCContext     *ahiac_PowerPCContext;
+  UWORD                      ahiac_Pad;
+  struct PowerPCContext*     ahiac_PowerPCContext;
   char                       ahiac_DriverName[ 256 ];
 };
 

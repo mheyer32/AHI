@@ -70,7 +70,11 @@ PPCHandler( void )
 
   BOOL                      rc;
 
-  port = &( (struct Process*) FindTask( NULL ) )->pr_MsgPort;
+  struct Process*           slave_proc   = NULL;
+  struct Process*           master_proc   = NULL;
+
+  slave_proc = (struct Process*) FindTask( NULL );
+  port = &slave_proc->pr_MsgPort;
 
   WaitPort( port );
 
@@ -89,11 +93,13 @@ PPCHandler( void )
   }
   else
   {
-    audioctrl->ahiac_PowerPCContext->Command     = PPCC_COM_NONE;
-    audioctrl->ahiac_PowerPCContext->Active      = FALSE;
+    audioctrl->ahiac_PowerPCContext->SlaveProcess = slave_proc;
 
-    audioctrl->ahiac_PowerPCContext->AudioCtrl   = audioctrl;
-    audioctrl->ahiac_PowerPCContext->PowerPCBase = PowerPCBase;
+    audioctrl->ahiac_PowerPCContext->Command      = PPCC_COM_NONE;
+    audioctrl->ahiac_PowerPCContext->Active       = FALSE;
+
+    audioctrl->ahiac_PowerPCContext->AudioCtrl    = audioctrl;
+    audioctrl->ahiac_PowerPCContext->PowerPCBase  = PowerPCBase;
 
     rc = TRUE;
 
@@ -105,9 +111,9 @@ PPCHandler( void )
     
       case MB_POWERUP:
         mixbuffer1 = AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                                  MEMF_PUBLIC | MEMF_NOCACHEM68K );
+                                  MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEM68K );
         mixbuffer2 = AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                                  MEMF_PUBLIC | MEMF_NOCACHEM68K );
+                                  MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEM68K );
                                   
         if( mixbuffer1 == NULL || mixbuffer2 == NULL )
         {
@@ -117,9 +123,9 @@ PPCHandler( void )
     
       case MB_WARPUP:
         mixbuffer1 = AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                                  MEMF_PUBLIC );
+                                  MEMF_PUBLIC | MEMF_CLEAR );
         mixbuffer2 = AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                                  MEMF_PUBLIC );
+                                  MEMF_PUBLIC | MEMF_CLEAR );
     
         if( mixbuffer1 == NULL || mixbuffer2 == NULL )
         {
@@ -162,6 +168,11 @@ PPCHandler( void )
 
     if( rc )
     {
+      // Set a default, empty buffer, which will be fed to the sound card
+      // driver the first time FillBuffer() is called.
+
+      audioctrl->ahiac_PowerPCContext->CurrentMixBuffer = mixbuffer1;
+
       mixinterrupt = AllocVec( sizeof( struct Interrupt ),
                                MEMF_PUBLIC | MEMF_CLEAR );
 
@@ -176,11 +187,15 @@ PPCHandler( void )
 
         mixinterrupt->is_Node.ln_Type = NT_INTERRUPT;
         mixinterrupt->is_Node.ln_Pri  = 127;
-        mixinterrupt->is_Node.ln_Name = (STRPTR) DevName;
+        mixinterrupt->is_Node.ln_Name = AHINAME " PPC Handler Interrupt";
         mixinterrupt->is_Data         = audioctrl;
         mixinterrupt->is_Code         = (void(*)(void)) Interrupt;
 
         AddIntServer( INTB_PORTS, mixinterrupt );
+
+        // Reply the startup message to signal that we're alive
+        ReplyMsg( (struct Message*) msg );
+        msg = NULL;
 
         loop = TRUE;
 
@@ -264,13 +279,26 @@ PPCHandler( void )
 
   AHIFreeVec( mixbuffer2 );
   mixbuffer2 = NULL;
-  
+
+  master_proc = audioctrl->ahiac_PowerPCContext->MainProcess;
   AHIFreeVec( audioctrl->ahiac_PowerPCContext );
   audioctrl->ahiac_PowerPCContext = NULL;
   
   Forbid();
-  ReplyMsg( (struct Message*) msg );
-  audioctrl->ahiac_PowerPCContext->SlaveProcess = NULL;
+
+  if( msg != NULL )
+  {
+    // Reply the startup message if not already done
+    ReplyMsg( (struct Message*) msg );
+  }
+  else
+  {
+    if( master_proc != NULL )
+    {
+      // Acknowledge kill signal
+      Signal( (struct Task*) master_proc, SIGF_SINGLE );
+    }
+  }
 }
 
 
@@ -283,18 +311,10 @@ FillBuffer( void*                     dst,
   // The PPC mix buffer is either not m68k-cachable or cleared;
   // just read from it.
 
-  memcpy( audioctrl->ahiac_PowerPCContext->Dst,
+  memcpy( dst,
           audioctrl->ahiac_PowerPCContext->CurrentMixBuffer,
           audioctrl->ahiac_BuffSizeNow );
 
-  /*** AHIET_OUTPUTBUFFER ***/
-
-  DoOutputBuffer( audioctrl->ahiac_PowerPCContext->Dst, audioctrl );
-
-  /*** AHIET_CHANNELINFO ***/
-
-  DoChannelInfo( audioctrl );
-  
   // Ask slave process to prepare next buffer
 
   Signal( (struct Task*) audioctrl->ahiac_PowerPCContext->SlaveProcess,
@@ -312,7 +332,7 @@ MixBuffer( void*                     mixbuffer,
   int                  i;
   BOOL                 flushed = FALSE;
 
-kprintf("M");
+//kprintf("M");
   // Flush all DYNAMICSAMPLE's
 
   sd = audioctrl->ahiac_SoundDatas;
@@ -323,7 +343,7 @@ kprintf("M");
     {
       if( sd->sd_Addr == NULL )
       {
-kprintf("a");
+//kprintf("a");
         // Flush all and exit
         CacheClearU();
         flushed = TRUE;
@@ -331,7 +351,7 @@ kprintf("a");
       }
       else
       {
-kprintf("b");
+//kprintf("b");
         switch( MixBackend )
         {
           case MB_POWERUP:
@@ -351,12 +371,12 @@ kprintf("b");
             break;
         }
       }
-kprintf("c");
+//kprintf("c");
     }
     sd++;
   }
 
-kprintf("d");
+//kprintf("d");
   if( ! flushed && MixBackend == MB_WARPUP )
   {
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
@@ -366,7 +386,7 @@ kprintf("d");
                  mixbuffer,
                  audioctrl->ahiac_BuffSizeNow );
   }
-kprintf("e");
+//kprintf("e");
 
   audioctrl->ahiac_PowerPCContext->Hook         = audioctrl->ac.ahiac_MixerFunc;
   audioctrl->ahiac_PowerPCContext->Dst          = mixbuffer;
@@ -388,16 +408,16 @@ kprintf("e");
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
       };
 
-      kprintf("K");
+//kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
-      kprintf("k");
+//kprintf("k");
       break;
     }
 
     case MB_WARPUP:
-      kprintf("C");
+//kprintf("C");
       CausePPCInterrupt();
-      kprintf("c");
+//kprintf("c");
       break;
 
     case MB_NATIVE:
@@ -405,9 +425,9 @@ kprintf("e");
       break;
   }
 
-kprintf("f");
+//kprintf("f");
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
-kprintf("g");
+//kprintf("g");
 }
 
 

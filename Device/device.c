@@ -426,7 +426,7 @@ InitUnit ( ULONG unit,
 
       iounit->Unit.unit_MsgPort.mp_Node.ln_Type = NT_MSGPORT;
       iounit->Unit.unit_MsgPort.mp_Flags = PA_IGNORE;
-      iounit->Unit.unit_MsgPort.mp_Node.ln_Name = (STRPTR) DevName;
+      iounit->Unit.unit_MsgPort.mp_Node.ln_Name = AHINAME " Unit";
       iounit->UnitNum = unit;
       InitSemaphore(&iounit->ListLock);
       NewList((struct List *)&iounit->ReadList);
@@ -434,6 +434,7 @@ InitUnit ( ULONG unit,
       NewList((struct List *)&iounit->SilentList);
       NewList((struct List *)&iounit->WaitingList);
       NewList((struct List *)&iounit->RequestQueue);
+
       if(ReadConfig(iounit,AHIBase))
       {
         if((iounit->Voices = AllocVec(
@@ -464,7 +465,7 @@ InitUnit ( ULONG unit,
             };
 
             iounit->Process = CreateNewProcTags( NP_Entry,    (ULONG) &DevProc,
-                                                 NP_Name,     (ULONG) DevName,
+                                                 NP_Name,     (ULONG) AHINAME " Unit Process",
                                                  NP_Priority, AHI_PRI,
                                                  TAG_DONE );
 

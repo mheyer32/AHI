@@ -32,7 +32,9 @@ struct PowerPCContext
   volatile int              Command;
   volatile void*            Argument;
 
-  struct Processs*          SlaveProcess;
+  struct Process*           SlaveProcess;
+  struct Process*           MainProcess;
+
   void*                     CurrentMixBuffer;
 
   int                       Active;
