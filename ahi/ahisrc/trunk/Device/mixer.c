@@ -106,8 +106,8 @@ static const UBYTE type2bytes[]=
   8     // AHIST_S32S (10)
 };
 
-inline static ULONG
-SampleFrameSize( ULONG sampletype )
+inline ULONG
+InternalSampleFrameSize( ULONG sampletype )
 {
   return type2bytes[sampletype];
 }
@@ -225,6 +225,10 @@ MixPowerUp( REG(a0, struct Hook *Hook),
             REG(a1, void *dst), 
             REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 {
+  struct AHISoundData *sd;
+  int                  i;
+  BOOL                 flushed = FALSE;
+
   struct ModuleArgs mod =
   {
     IF_CACHEFLUSHNO, 0, 0,
@@ -237,13 +241,43 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
 //kprintf( "MixPowerUp\n" );
 
-  // Flush all DYNAMICSAMPLE's 
-  // TODO: Only flush if there are DYNAMICSAMPLE's loaded!
+  // Flush all DYNAMICSAMPLE's
 
-  //CacheClearU();
+  sd = audioctrl->ahiac_SoundDatas;
 
-  if( PPCLibBase == NULL )
+  for( i = 0; i < audioctrl->ac.ahiac_Sounds; i++)
   {
+    if( sd->sd_Type == AHIST_DYNAMICSAMPLE )
+    {
+      if( sd->sd_Addr == NULL )
+      {
+        // Flush all and exit
+        CacheClearU();
+        flushed = TRUE;
+        break;
+      }
+      else
+      {
+        if( PPCLibBase != NULL )
+        {
+          PPCCacheClearE( sd->sd_Addr,
+                          sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ),
+                          CACRF_ClearD );
+        }
+        else
+        {
+          SetCache68K( CACHE_DCACHEFLUSH,
+                       sd->sd_Addr,
+                       sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+        }
+      }
+    }
+    sd++;
+  }
+
+  if( ! flushed && PPCLibBase == NULL )
+  {
+
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
        flush the cache before mixing starts. :( */
 
@@ -254,7 +288,6 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
-//kprintf( "1: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
 
   if( PPCLibBase != NULL )
   {
@@ -264,6 +297,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   {
     CausePPCInterrupt();
   }
+
 //kprintf( "Ran KernelObject\n" );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
@@ -370,6 +404,7 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
     for( i = 0; i < audioctrl->ac.ahiac_Sounds; i++)
     {
       sd->sd_Type = AHIST_NOTYPE;
+      sd++;
     }
 
 //kprintf( "InitMixroutine #4\n" );
@@ -810,7 +845,7 @@ MixGeneric ( struct Hook *Hook,
                                                          cd->cd_Add,
                                                         &cd->cd_Offset, 
                                                          TRUE );
-            CallDebug( audioctrl, processed );
+//            CallDebug( audioctrl, processed );
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
           }
@@ -1056,7 +1091,7 @@ MixGeneric ( struct Hook *Hook,
         */
 
         dst = (char *) dst + audioctrl->ac.ahiac_BuffSamples * 
-                             SampleFrameSize(audioctrl->ac.ahiac_BuffType);
+                             InternalSampleFrameSize(audioctrl->ac.ahiac_BuffType);
       }
 
       continue; /* while(TRUE) */

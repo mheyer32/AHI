@@ -40,10 +40,10 @@ BOOL	  StopAtZero		20(r1) word		StopAtZero
 
 */
 
-AddI		= 48 + 8
-AddF		= 48 + 12
-Offset		= 48 + 16
-StopAtZero	= 48 + 20
+AddI		= 56 + 8
+AddF		= 56 + 12
+Offset		= 56 + 16
+StopAtZero	= 56 + 20
 
 	.text
 
@@ -120,6 +120,55 @@ AddWordsStereoB:
 
 
 AddSilenceMono:
+	mullw   r14,r18,r3		# (add:high * samples) : low
+	mullw	r15,r19,r3		# (add:low * samples) : low 
+	add	r16,r16,r14
+	addc	r17,r17,r15
+	mulhw	r14,r19,r3		# (add:low * samples) : high 
+	adde	r16,r16,r14
+
+	slwi	r15,r3,2
+	add	r20,r20,r15
+	li	r3,0
+	blr
+
+AddSilenceStereo:
+	mullw   r14,r18,r3		# (add:high * samples) : low
+	mullw	r15,r19,r3		# (add:low * samples) : low 
+	add	r16,r16,r14
+	addc	r17,r17,r15
+	mulhw	r14,r19,r3		# (add:low * samples) : high 
+	adde	r16,r16,r14
+
+	slwi	r15,r3,3
+	add	r20,r20,r15
+	li	r3,0
+	blr
+
+AddSilenceMonoB:
+	mullw   r14,r18,r3		# (add:high * samples) : low
+	mullw	r15,r19,r3		# (add:low * samples) : low 
+	sub	r16,r16,r14
+	subc	r17,r17,r15
+	mulhw	r14,r19,r3		# (add:low * samples) : high 
+	subfe	r16,r14,r16
+
+	slwi	r15,r3,2
+	add	r20,r20,r15
+	li	r3,0
+	blr
+
+AddSilenceStereoB:
+	mullw   r14,r18,r3		# (add:high * samples) : low
+	mullw	r15,r19,r3		# (add:low * samples) : low 
+	sub	r16,r16,r14
+	subc	r17,r17,r15
+	mulhw	r14,r19,r3		# (add:low * samples) : high 
+	subfe	r16,r14,r16
+
+	slwi	r15,r3,3
+	add	r20,r20,r15
+	li	r3,0
 	blr
 
 /*
@@ -138,11 +187,13 @@ r20	dst
 r10	firstoffset
 r6	left lastpoint
 r7	right lastpoint
+r23	lastpoint left
+r24	lastpoint right
 
 */
 
 AddByteMono:
-	stwu	r1,-48(r1)
+	stwu	r1,-56(r1)
 	stw	r14,8(r1)
 	stw	r15,12(r1)
 	stw	r16,16(r1)
@@ -152,6 +203,8 @@ AddByteMono:
 	stw	r20,32(r1)
 	stw	r21,36(r1)
 	stw	r22,40(r1)
+	stw	r23,44(r1)
+	stw	r24,48(r1)
 
 	lwz	r14,Offset(r1)
 	lwz	r18,AddI(r1)
@@ -162,25 +215,80 @@ AddByteMono:
 	lwz	r20,0(r9)
 	subi	r20,r20,4
 
-	mtctr	r3			# Number of loop times to CTR
-	b	first_sample
+	li	r23,0
+#	li	r24,0
 
-next_sample:
+	mtctr	r3			# Number of loop times to CTR
+
+#	lhz	r15,20(r1)		# Test StopAtZero
+#	cmpwi	cr0,r15,0
+#	bne+	.L00first_sampleZ
+#	cmpwi	cr0,r4,0		# Test if volume == 0
+#	bne+	.L00first_sample
+#	bl	AddSilenceMono
+#	b	.L00abort
+	b	.L00first_sample
+
+.L00next_sampleZ:
 	addc	r17,r17,r19		# Add fraction
 	adde	r16,r16,r18		# Add integer
-first_sample:
+.L00first_sampleZ:
 	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
 	add	r14,r8,r16		# (Calculate &src[ offset ])
-	bne+	not_first
+	bne+	.L00not_firstZ
 	lwz	r15,0(r6)		# Fetch left lastpoint (normalized)
 	lbz	r22,0(r14)		# Fetch src[ offset ]
-	b	got_sample
-not_first:
+	b	.L00got_sampleZ
+.L00not_firstZ:
 	lbz	r15,-1(r14)		# Fetch src[ offset - 1 ]
 	lbz	r22,0(r14)		# Fetch src[ offset ]
 	slwi	r15,r15,8		# Normalize...
 	extsh	r15,r15			# ...src[ offset - 1 ]
-got_sample:
+.L00got_sampleZ:
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset ]
+	srwi	r14,r17,17		# Get linear high word / 2
+	sub	r22,r22,r15
+	mullw	r14,r14,r22		# Linear interpolation
+	lwz	r22,4(r20)		# Fetsh *dst
+	srawi	r14,r14,15
+	add	r14,r14,r15
+
+#	cmpwi	cr0,r23,0
+#	bgt	.L00lastpoint_gtZ
+#	beq	.L00lastpoint_checkedZ
+#	cmpwi	cr0,r14,0
+#	bge	.L00abort
+#	b	.L00lastpoint_checkedZ
+#.L00lastpoint_gtZ:
+#	cmpwi	cr0,r14,0
+#	ble	.L00abort
+#.L00lastpoint_checkedZ:
+#	mr	r23,r14			# Update lastsample
+
+	mullw	r14,r14,r4		# Volume scale
+	add	r14,r14,r22
+	stwu	r14,4(r20)		# Store to *dst, dst++
+
+	bdnz	.L00next_sampleZ
+	b	.L00exit
+
+.L00next_sample:
+	addc	r17,r17,r19		# Add fraction
+	adde	r16,r16,r18		# Add integer
+.L00first_sample:
+	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	bne+	.L00not_first
+	lwz	r15,0(r6)		# Fetch left lastpoint (normalized)
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	b	.L00got_sample
+.L00not_first:
+	lbz	r15,-1(r14)		# Fetch src[ offset - 1 ]
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	slwi	r15,r15,8		# Normalize...
+	extsh	r15,r15			# ...src[ offset - 1 ]
+.L00got_sample:
 	slwi	r22,r22,8		# Normalize...
 	extsh	r22,r22			# ...src[ offset ]
 	srwi	r14,r17,17		# Get linear high word / 2
@@ -193,13 +301,13 @@ got_sample:
 	add	r14,r14,r22
 	stwu	r14,4(r20)		# Store to *dst, dst++
 
-	bdnz	next_sample
-	b	exit
+	bdnz	.L00next_sample
+	b	.L00exit
 
-abort:
+.L00abort:
 	li	r18,0
 	li	r19,0
-exit:
+.L00exit:
 	add	r14,r8,r16		# (Calculate &src[ offset ])
 	lbz	r22,0(r14)		# Fetch src[ offset ]
 	slwi	r22,r22,8		# Normalize...
@@ -228,6 +336,8 @@ exit:
 	lwz	r20,32(r1)
 	lwz	r21,36(r1)
 	lwz	r22,40(r1)
+	lwz	r23,44(r1)
+	lwz	r24,48(r1)
 
-	addi	r1,r1,48
+	addi	r1,r1,56
 	blr
