@@ -30,16 +30,16 @@ do_DSPEchoStereo32 ( struct Echo *es,
              REG(a1, void *buf),\
              REG(a2, struct AHIPrivAudioCtrl *audioctrl)
 
-void ASMCALL do_DSPEchoMono16 ( REGS ) {}
-void ASMCALL do_DSPEchoMono16Fast ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16 ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16Fast ( REGS ) {}
-void ASMCALL do_DSPEchoMono32 ( REGS ) {}
-void ASMCALL do_DSPEchoStereo32 ( REGS ) {}
-void ASMCALL do_DSPEchoMono16NCFM ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16NCFM ( REGS ) {}
-void ASMCALL do_DSPEchoMono16NCFMFast ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16NCFMFast ( REGS ) {}
+void ASMCALL do_DSPEchoMono16 ( REGS );
+void ASMCALL do_DSPEchoMono16Fast ( REGS );
+void ASMCALL do_DSPEchoStereo16 ( REGS );
+void ASMCALL do_DSPEchoStereo16Fast ( REGS );
+void ASMCALL do_DSPEchoMono32 ( REGS );
+void ASMCALL do_DSPEchoStereo32 ( REGS );
+void ASMCALL do_DSPEchoMono16NCFM ( REGS );
+void ASMCALL do_DSPEchoStereo16NCFM ( REGS );
+void ASMCALL do_DSPEchoMono16NCFMFast ( REGS );
+void ASMCALL do_DSPEchoStereo16NCFMFast ( REGS );
 
 
 #endif /* VERSION68K */

@@ -8,9 +8,9 @@
 
 #include "ahi_def.h"
 #include "dsp.h"
+#include "dspecho.h"
 #include "effectinit.h"
 #include "asmfuncs.h"
-#include "dspecho.h"
 #include "mixer.h"
 
 

@@ -13,7 +13,7 @@
 #include "device.h"
 
 /******************************************************************************
-** Device startup strcuture ***************************************************
+** Device entry ***************************************************************
 ******************************************************************************/
 
 int Start( void )
@@ -21,17 +21,21 @@ int Start( void )
   return -1;
 }
 
-extern APTR  __FuncTable__[];
-extern void EndCode;
+
+/******************************************************************************
+** Device residend strcuture **************************************************
+******************************************************************************/
+
+extern void _etext;
 extern const char DevName[];
 extern const char IDString[];
-extern const APTR InitTable[4];
+static const APTR InitTable[4];
 
 static const struct Resident RomTag =
 {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
-  (APTR) &EndCode,
+  (APTR) &_etext,
   RTF_AUTOINIT,
   VERSION,
   NT_DEVICE,
@@ -40,6 +44,7 @@ static const struct Resident RomTag =
   (BYTE *) IDString,
   (APTR) &InitTable
 };
+
 
 /******************************************************************************
 ** Globals ********************************************************************
@@ -60,24 +65,24 @@ const ULONG			           DriverVersion  = 2;
 const ULONG			           Version        = VERSION;
 const ULONG			           Revision       = REVISION;
 
-const char DevName[]  = AHINAME;
-const char IDString[] = "ahi.device " VERS "\r\n";
-const char VersTag[]  = "$VER: ahi.device " VERS " "
-                        "©1994-1999 Martin Blom. "
+const char DevName[]   = AHINAME;
+const char IDString[]  = "ahi.device " VERS "\r\n";
+const char VersTag[]   = "$VER: ahi.device " VERS " "
+                         "©1994-1999 Martin Blom. "
 #ifdef mc68060
-                        "68060"
+                         "68060"
 #else
 # ifdef mc68040
-                        "68040"
+                         "68040"
 # else
 #  ifdef mc68030
-                        "68030"
+                         "68030"
 #  else
 #   ifdef mc68020
-                        "68020"
+                         "68020"
 #   else
 #    ifdef mc68000
-                        "68000"
+                         "68000"
 #    endif /* mc68000 */
 #   endif /* mc68020 */
 #  endif /* mc68030 */
@@ -85,12 +90,12 @@ const char VersTag[]  = "$VER: ahi.device " VERS " "
 #endif /* mc68060 */
 
 #ifdef VERSIONPOWERUP
-                        "/PowerUp"
+                         "/PowerUp"
 #endif
 #ifdef VERSIONWARPUP
-                        "/WarpUp"
+                         "/WarpUp"
 #endif
-                        " version.\r\n";
+                         " version.\r\n";
 
 
 /******************************************************************************
@@ -133,14 +138,6 @@ initRoutine( REG( d0, struct AHIBase* device ),
 }
 
 
-const APTR InitTab[4] =
-{
-  (APTR) sizeof( struct AHIBase ),
-  (APTR) &__FuncTable__[1],
-  0,
-  (APTR) initRoutine
-};
-
 BPTR ASMCALL
 DevExpunge( REG( a6, struct AHIBase* device ) )
 {
@@ -168,3 +165,76 @@ int Null( void )
 {
   return 0;
 }
+
+
+extern APTR DevOpen;
+extern APTR DevClose;
+
+extern APTR DevBeginIO;
+extern APTR DevAbortIO;
+
+extern APTR AllocAudioA;
+extern APTR FreeAudio;
+extern APTR KillAudio;
+extern APTR ControlAudioA;
+extern APTR SetVol;
+extern APTR SetFreq;
+extern APTR SetSound;
+extern APTR SetEffect;
+extern APTR LoadSound;
+extern APTR UnloadSound;
+extern APTR NextAudioID;
+extern APTR GetAudioAttrsA;
+extern APTR BestAudioIDA;
+extern APTR AllocAudioRequestA;
+extern APTR AudioRequestA;
+extern APTR FreeAudioRequest;
+extern APTR PlayA;
+extern APTR SampleFrameSize;
+extern APTR AddAudioMode;
+extern APTR RemoveAudioMode;
+extern APTR LoadModeFile;
+
+
+static const APTR funcTable[] =
+{
+  &DevOpen,
+  &DevClose,
+  &DevExpunge,
+  &Null,
+
+  &DevBeginIO,
+  &DevAbortIO,
+
+  &AllocAudioA,
+  &FreeAudio,
+  &KillAudio,
+  &ControlAudioA,
+  &SetVol,
+  &SetFreq,
+  &SetSound,
+  &SetEffect,
+  &LoadSound,
+  &UnloadSound,
+  &NextAudioID,
+  &GetAudioAttrsA,
+  &BestAudioIDA,
+  &AllocAudioRequestA,
+  &AudioRequestA,
+  &FreeAudioRequest,
+  &PlayA,
+  &SampleFrameSize,
+  &AddAudioMode,
+  &RemoveAudioMode,
+  &LoadModeFile,
+  (APTR) -1
+};
+
+
+static const APTR InitTable[4] =
+{
+  (APTR) sizeof( struct AHIBase ),
+  (APTR) &funcTable,
+  0,
+  (APTR) initRoutine
+};

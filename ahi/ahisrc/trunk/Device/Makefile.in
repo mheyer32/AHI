@@ -33,7 +33,7 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 FLEXCAT		= @FLEXCAT@
 ASM		= @ASM@
 
-CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -D$(VER)
 CFLAGS		= @CFLAGS@ -m$(CPU)
 ASFLAGS		= @ASFLAGS@ -m$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
@@ -57,8 +57,6 @@ endif
 # Files
 ########################################
 
-SOURCES		= $(wildcard *.c)
-
 OBJECTS		= header.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  asmfuncs.o audioctrl.o effectinit.o sound.o
@@ -68,8 +66,6 @@ OBJECTS		+= dspecho_68k.o mixer_68k.o
 else
 OBJECTS		+= dspecho.o mixer.o
 endif
-
-OBJECTS		+= footer.o
 
 TARGET		= ahi.device.$(CPU)
 
@@ -171,7 +167,10 @@ localize.h:	ahi.cd C_c_AHI.sd
 # Dependencies
 ########################################
 
-Makefile.dep:	$(SOURCES) localize.c localize.h version.h
+SOURCES		= $(wildcard *.c)
+HEADERS		= $(wildcard *.h)
+
+Makefile.dep:	$(SOURCES) $(HEADERS) localize.c localize.h version.h
 	@echo Making $@
 ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
@@ -185,8 +184,6 @@ include Makefile.dep
 asmfuncs.o:	asmfuncs.s ahi_def.i
 devsupp.o:	devsupp.s
 dspecho_68k.o:	dspecho_68k.s ahi_def.i dsp.i
-footer.o:	footer.s
-#header.o:	header.s ahi_def.i version.i
 mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
 
 $(wildcard translations/*.ct) ahi.ct:	ahi.cd
