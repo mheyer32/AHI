@@ -324,10 +324,10 @@ static void GUINewMode(void)
   set(MUILOutput, MUIA_Text_Contents, (ULONG) getOutput());
 }
 
-static VOID HOOKCALL
-SliderHookFunc( REG( a0, struct Hook *hook ),
-                REG( a2, Object *obj ),
-                REG( a1, ULONG** arg ) )
+static VOID
+SliderHookFunc( struct Hook *hook,
+                Object *obj,
+                ULONG** arg )
 {
   if(obj == MUIFreq)
   {
@@ -369,8 +369,8 @@ SliderHookFunc( REG( a0, struct Hook *hook ),
 static struct Hook hookSlider =
 {
   { NULL, NULL },
+  HookEntry,
   (HOOKFUNC) SliderHookFunc,
-  NULL,
   NULL
 };
 
