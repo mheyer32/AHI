@@ -37,13 +37,13 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 FLEXCAT		= @FLEXCAT@
 ASM		= @ASM@
 
-CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -D$(VER)
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -DVERSION$(VER)
 CFLAGS		= @CFLAGS@ -m$(CPU)
 ASFLAGS		= @ASFLAGS@ -m$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
 ASMFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD \
-		  MACHINE $(CPU) SET "$(VER)"
+		  MACHINE $(CPU) SET "VERSION$(VER)"
 
 VPATH		= @srcdir@
 
@@ -65,7 +65,7 @@ OBJECTS		= header.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o
 
-ifeq ($(VER),VERSION68K)
+ifeq ($(VER),68K)
 OBJECTS		+= dspecho_68k.o mixer_68k.o
 else
 OBJECTS		+= dspecho.o mixer.o
@@ -73,7 +73,7 @@ endif
 
 TARGET		= ahi.device.$(CPU)
 
-ifeq ($(VER),VERSIONPOWERUP)
+ifeq ($(VER),POWERUP)
 CC		= ppc-amigaos-gcc
 CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -mcpu=$(CPU)
 LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
@@ -111,7 +111,7 @@ maintainer-clean: distclean
 bindist:
 	$(INSTALL) --directory $(DEVSDIR)
 
-	make device VER=VERSION68K CPU=68000
+	make device VER=68K CPU=68000
 	$(INSTALL_PROGRAM)  $(DEVSDIR)
 
 ahidev:		$(TARGET)
@@ -119,14 +119,14 @@ ahidev:		$(TARGET)
 install:	$(TARGET)
 	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
 
-060:
-	make ahidev VER=VERSION68K CPU=68060
-
-060PPC:
-	make ahidev VER=VERSIONGEN CPU=68060
-
-604:
-	make ahidev VER=VERSIONPOWERUP CPU=604
+#060:
+#	make ahidev VER=68K CPU=68060
+#
+#060PPC:
+#	make ahidev VER=GEN CPU=68060
+#
+#604:
+#	make ahidev VER=POWERUP CPU=604
 
 
 version.i:	version.rev
