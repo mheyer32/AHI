@@ -26,4 +26,4 @@ BOOL BuildGUI(char * );
 void CloseGUI(void);
 void EventLoop(void);
 
-#endif _GUI_H_
+#endif /* _GUI_H_ */

@@ -39,4 +39,4 @@ BOOL WriteIcon(char * );
 void FreeList(struct List * );
 struct Node * GetNode(int , struct List * );
 
-#endif _SUPPORT_H_
+#endif /* _SUPPORT_H_ */
