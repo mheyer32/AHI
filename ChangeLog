@@ -1,3 +1,9 @@
+2002-05-11  Martin Blom  <martin@blom.org>
+
+	* AHI-Handler: Imported into CVS.
+
+	* Examples: Added all developer examples to the CVS repository.
+
 2002-03-17  Martin Blom  <martin@blom.org>
 
 	* Released AHI preferences 5.5.
