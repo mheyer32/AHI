@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.16  1997/03/25 22:27:49  lcs
+* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
+*
 * Revision 1.15  1997/03/08 18:12:56  lcs
 * The freqgadget wasn't ghosted if the requester was opened
 * with audioid set to AHI_DEFAULT_ID. Now it is
@@ -147,7 +150,7 @@ struct AHIAudioModeRequesterExt
   struct TagItem               *FilterTags;
   struct Hook                  *FilterFunc;
 
-  struct Screen                *PubScreen;
+//  struct Screen                *PubScreen;
   struct Window                *Window;
   struct Window                *InfoWindow;
   WORD                          gx,gy,gw,gh;
@@ -960,6 +963,8 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
     req->Req.ahiam_InfoWidth  = 280;
     req->Req.ahiam_InfoHeight = 112;
 
+    req->PubScreenName        = (char *) -1;
+
     FillReqStruct(req,tags);
   }
 
@@ -1257,7 +1262,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
   }
 
 // Find our sceeen
-  req->PubScreen=LockPubScreen(req->PubScreenName);
+//  req->PubScreen=LockPubScreen(req->PubScreenName);
 
 // Clear ownIDCMP flag
   req->Flags &= ~ownIDCMP;
@@ -1266,7 +1271,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
     screenTag=(ULONG)WA_CustomScreen;
     screenData=(ULONG)req->Screen;
   }
-  else if(req->PubScreenName)
+  else if(req->PubScreenName != (char *) -1)
   {
     screenTag=(ULONG)WA_PubScreenName;
     screenData=(ULONG)req->PubScreenName;
@@ -1306,7 +1311,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
     WA_NewLookMenus, TRUE,
     TAG_DONE);
 
-  UnlockPubScreen(NULL,req->PubScreen);
+//  UnlockPubScreen(NULL,req->PubScreen);
 
   if(req->Window)
   {

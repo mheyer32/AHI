@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.14  1997/03/25 22:27:49  lcs
+* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
+*
 * Revision 1.13  1997/03/24 18:03:10  lcs
 * First steps for AHIST_INPUT
 *
@@ -809,15 +812,38 @@ functionstable:
 	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	*	*
 
 
+
+*******************************************************************************
+***** This is a special mixing loop used for input sounds.                *****
+***** It guarantees that input sounds are played exactly at the same rate *****
+***** as data is sampled. The normal mixing loop doesn't seem to do that. *****
+***** That could be considered as a bug, yes.                             *****
+***** I don't care.                                                       *****
+*******************************************************************************
+
+handleinput:
+	move.w	cd_ChannelNo(a5),d1
+	mulu.w	#AHISoundData_SIZEOF,d1
+	move.l	ahiac_SoundDatas(a2),a3
+	add.l	d1,a3
+
+; Swap buffers
+;	move.l	sd_InputBuffer2(a3),d1
+;	move.l	sd_InputBuffer1(a3),sd_InputBuffer2(a3)
+;	move.l	sd_InputBuffer0(a3),sd_InputBuffer1(a3)
+;	move.l	d1,sd_InputBuffer0(a3)
+
+	move.l	ahiac_InputBuffer1(a2),cd_DataStart(a5)
+
+;	PRINTF	2,"Playing sound: 0x%08lx (%ld-%ld)", cd_NextDataStart(a5), cd_NextOffsetI(a5), cd_NextLastOffsetI(a5)
+	rts
+
 *
 * The mixing routine mixes ahiac_BuffSamples each pass, fitting in
 * ahiac_BuffSizeNow bytes. ahiac_BuffSizeNow must be an even multiplier
 * of 8.
 *
 
-printit:
-	PRINTF	2,"AHIST_INPUT on channel %ld",cd_ChannelNo(a5)
-	rts
 ;in:
 * a0	Hook
 * a1	Mixing buffer (size is 8 byte aligned)
@@ -844,16 +870,10 @@ _Mix:
 .nextchannel
 	move.l	ahiac_BuffSamples(a2),d0
 	move.l	a1,a4			;output buffer
+
 .contchannel
 	tst.w	cd_EOS(a5)
 	beq	.notEOS
-
-	move.l	cd_Type(a5),d1
-	and.l	#AHIST_INPUT,d1
-	beq	.notinput
-	bsr	printit
-	bra	.noSoundFunc
-.notinput
 
 * Call Sound Hook
 	move.l	ahiac_SoundFunc(a2),d1
@@ -885,6 +905,29 @@ _Mix:
 	jsr	(a0)
 	move.l	cd_TempLastSampleL(a5),cd_LastSampleL(a5) ;linear interpol. stuff
 	move.l	cd_TempLastSampleR(a5),cd_LastSampleR(a5) ;linear interpol. stuff
+
+*** Give AHIST_INPUT special treatment!
+
+	move.l	cd_Type(a5),d1
+	and.l	#AHIST_INPUT,d1
+	beq	.notinput2
+
+	clr.l	cd_OffsetI(a5)
+	clr.w	cd_OffsetF(a5)
+	clr.l	cd_FirstOffsetI(a5)
+
+	move.l	cd_NextFlags(a5),cd_Flags(a5)
+	movem.l	cd_NextAddI(a5),d0-d7/a0/a3/a6	; AddI,AddF,DataStart,LastOffsetI,LastOffsetF,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
+	movem.l	d0-d7/a0/a3/a6,cd_AddI(a5)
+
+	move.l	ahiac_InputLength(a2),cd_Samples(a5)
+
+	pop	d0
+	bsr	handleinput
+
+	bra.w	.contchannel		;same channel, new sound
+
+.notinput2
 
 ; d3:d4 always points OUTSIDE the sample after this call. Ie, if we read a
 ; sample at offset d3 now, it does not belong to the sample just played.
@@ -1025,18 +1068,25 @@ _Mix:
 CalcSamples:
 * Calc how many samples it will take when mixed (Samples=Length×Rate)
 
+;	and.l	#AHIST_BW|AHIST_INPUT,d2
+;	beq	.forwards
 	and.l	#AHIST_BW,d2
-	bne.b	.backwards
+	bne	.backwards
+;*** AHIST_INPUT here
+;	sub.l	d5,d3
+;	move.l	d3,d0
+;	rts
+;.forwards
 	sub.w	d6,d4
 	subx.l	d5,d3
-	bra.b	.1
+	bra	.1
 .backwards
 	sub.w	d4,d6
 	subx.l	d3,d5
 	move.w	d6,d4
 	move.l	d5,d3
 .1
-	bmi.b	.error
+	bmi	.error
 	swap.w	d4
 	move.w	d3,d4
 	swap.w	d4
@@ -1047,7 +1097,7 @@ CalcSamples:
 	swap	d0
 	move.w	d1,d0
 	tst.l	d0
-	beq.b	.error
+	beq	.error
 ; d0 is now rate<<16
 
  IFGE	__CPU-68020
@@ -3526,6 +3576,7 @@ AddWordsMV:
 	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
+	dbf	d0,.nextsample
 .exit
 	rts
 
@@ -4869,6 +4920,7 @@ AddWordsMVB:
 	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
+	dbf	d0,.nextsample
 .exit
 	rts
 
