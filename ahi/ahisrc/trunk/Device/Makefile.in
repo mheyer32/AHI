@@ -68,6 +68,12 @@ else
 OBJECTS		+= dspecho.o mixer.o
 endif
 
+ifeq ($(VER),VERSIONPOWERUP)
+CC		= ppc-amigaos-gcc
+CFLAGS		= @CFLAGS@ -mcpu=$(CPU)
+OBJECTS		= dspecho.o mixer.o
+endif
+
 TARGET		= ahi.device.$(CPU)
 
 LANGUAGES	= $(notdir $(basename $(wildcard translations/*.ct)))
@@ -143,16 +149,11 @@ Makefile: Makefile.in ../config.status
 %.o:	%.s
 	$(AS) $(ASFLAGS) $< -o $@
 
-
 asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
 	$(ASM) $(ASMFLAGS) $<
-#	objcopy $@ --output-target=a.out-amiga
-
 
 $(TARGET):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
-#	SC:c/slink ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy\
-#          DEFINE @_CXBRK=@__dummy NOALVS TO Devs:ahi.device FROM $^
 
 localize.c:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) ahi.cd localize.c=C_c_AHI.sd 

@@ -5,6 +5,9 @@
 
 #include <exec/memory.h>
 #include <proto/exec.h>
+#include <clib/ahi_protos.h>
+#include <pragmas/ahi_pragmas.h>
+#include <proto/ahi_sub.h>
 
 #include "ahi_def.h"
 #include "dsp.h"

@@ -13,6 +13,9 @@
 #include <exec/memory.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
+#include <clib/ahi_protos.h>
+#include <pragmas/ahi_pragmas.h>
+#include <proto/ahi_sub.h>
 #include <math.h>
 
 #include "ahi_def.h"

@@ -48,10 +48,17 @@ SelectAddRoutine ( Fixed     VolumeLeft,
                    LONG     *ScaleRight,
                    ADDFUNC **AddRoutine );
 
+#if !defined( VERSIONPOWERUP )
 void ASMCALL
 MixGeneric ( REG(a0, struct Hook *Hook), 
              REG(a1, void *dst), 
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
+#else
+void
+MixPowerUp ( struct Hook *Hook, 
+             void *dst, 
+             struct AHIPrivAudioCtrl *audioctrl );
+#endif
 
 LONG
 CalcSamples ( Fixed64 Add,

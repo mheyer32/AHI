@@ -49,9 +49,6 @@ extern void kprintf(char *fmt,...);
 #include <devices/timer.h>
 #include <libraries/ahi_sub.h>
 #include <utility/hooks.h>
-#include <clib/ahi_protos.h>
-#include <pragmas/ahi_pragmas.h>
-#include <proto/ahi_sub.h>
 
 struct Echo;
 struct AHIDevUnit;
