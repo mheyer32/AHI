@@ -61,6 +61,9 @@ struct EMU10kxBase
 
     /** The public AC97 interface */
     struct EMU10kxAC97     ac97;
+
+    /** TRUE if the DMA buffers have to be flushed before played etc. */
+    BOOL                   flush_caches;
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
