@@ -162,10 +162,11 @@ AC_CONFIG_FILES([AHI/Makefile
                  Classes/Common/Makefile.common
                  Classes/AHI/Makefile
                  Classes/Buffer/Makefile
-                 Classes/GainProcessor/Makefile
                  Classes/LFO/Makefile
-                 Classes/TickProcessor/Makefile
                  Classes/Processor/Makefile
+                 Classes/AdderProcessor/Makefile
+                 Classes/GainProcessor/Makefile
+                 Classes/TickProcessor/Makefile
                  Device/Makefile
                  Docs/Makefile
                  Drivers/Makefile
