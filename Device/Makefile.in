@@ -39,7 +39,7 @@ ASM		= @ASM@
 ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
 		  QUIET NOEXE OPT NRQBPSMD
 
-TARGET		= ahi.device.$(CPU)
+TARGET		= ahi.device
 
 ifeq ($(strip $(ASM)),)
 ASM		= @echo 'No suitable assembler found; cannot make $@!'; false \#
@@ -56,6 +56,7 @@ ifeq ($(strip $(FLEXCAT)),)
 FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
 endif
 
+ENABLE_WARPUP	= @ENABLE_WARPUP@
 
 #
 # Files
@@ -67,7 +68,11 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 OBJECTS		= header.o gateway.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o\
-		  mixer.o elfloader.o warpup.o
+		  mixer.o 
+
+ifeq ($(ENABLE_WARPUP),yes)
+OBJECTS		+= elfloader.o warpup.o
+endif
 
 ifeq ($(host_cpu),m68k)
 OBJECTS		+= addroutines_68k.o
@@ -89,11 +94,10 @@ endif
 all:		$(TARGET) $(srcdir)/ahi.ct $(CATALOGS)
 
 mostlyclean:
-	$(RM) $(TARGETS) *.o *.a *.bak *~ \#*\# core Makefile.dep
+	$(RM) $(TARGET) *.o *.a *.bak *~ \#*\# core Makefile.dep
 
 clean:		mostlyclean
 	$(RM) $(CATALOGS) localize.c localize.h version.h \
-	      ahi.device.* ahi.elf.*
 
 distclean:	clean
 	$(RM) Makefile
@@ -101,7 +105,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
-	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
+	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(TARGET)
 
 revup:
 	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
@@ -173,9 +177,6 @@ localize.h:		ahi.cd C_c_AHI.sd
 # Just some test code...
 
 elftest:		elftest.o elfloader.o asmfuncs.o
-	$(CC) $^ $(LIBS) -o $@
-
-warpup-test:		warpup-test.o elfloader.o asmfuncs.o
 	$(CC) $^ $(LIBS) -o $@
 
 

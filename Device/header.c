@@ -55,7 +55,7 @@ int Start( void )
   return -1;
 }
 
-#ifdef morphos
+#if defined( ENABLE_MORPHOS )
 ULONG   __amigappc__=1;
 #endif
 
@@ -72,7 +72,7 @@ static const struct Resident RomTag =
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &RomTag + 1,
-#ifdef morphos
+#if defined( ENABLE_MORPHOS )
   RTF_PPC | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
@@ -101,8 +101,11 @@ struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 struct Resident           *MorphOSRes     = NULL;
+
+#if defined( ENABLE_WARPUP )
 struct Library            *PowerPCBase    = NULL;
 void                      *PPCObject      = NULL;
+#endif
 
 ADDFUNC* AddByteMonoPtr                   = NULL;
 ADDFUNC* AddByteStereoPtr                 = NULL;
@@ -151,7 +154,6 @@ const char IDString[]  = AHINAME " " VERS "\r\n";
 static const char VersTag[] =
  "$VER: " AHINAME " " VERS " ©1994-2000 Martin Blom. "
  CPU 
- "/PPC"
  " version.\r\n";
 
 enum MixBackend_t          MixBackend     = MB_NATIVE;
@@ -182,13 +184,13 @@ initRoutine( struct AHIBase*  device,
   AHIBase->ahib_SysLib  = sysbase;
   AHIBase->ahib_SegList = (ULONG) seglist;
 
-#ifdef MC68020_PLUS
+  // Make sure we're running on a M68020 or better
+  
   if( ( SysBase->AttnFlags & AFF_68020 ) == 0 )
   {
     Alert( ( AN_Unknown | ACPU_InstErr ) & (~AT_DeadEnd) );
     return NULL;
   }
-#endif
 
   InitSemaphore( &AHIBase->ahib_Lock );
 
@@ -235,7 +237,7 @@ Null( void )
 static const APTR funcTable[] =
 {
 
-#if defined( morphos )
+#if defined( ENABLE_MORPHOS )
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
 
@@ -438,31 +440,40 @@ OpenLibs ( void )
 
   // Check if MorpOS/PowerUp/WarpUp is running.
   {
+#if defined( ENABLE_WARPUP )
     struct Library* ppclib     = NULL;
     struct Library* powerpclib = NULL;
+#endif
 
     Forbid();
     MorphOSRes  = FindResident( "MorphOS" );
     
+#if defined( ENABLE_WARPUP )
     powerpclib = (struct Library *) FindName( &SysBase->LibList,
                                               "powerpc.library" );
     ppclib     = (struct Library *) FindName( &SysBase->LibList,
                                               "ppc.library" );
+#endif
 
     Permit();
 
+#if defined( ENABLE_WARPUP )
     if( MorphOSRes == NULL && ! ( ppclib != NULL && powerpclib == NULL ) )
     {
       // Open WarpUp (but not if MorphOS or PowerUp is active)
 
       PowerPCBase = OpenLibrary( "powerpc.library", 15 );
     }
+#endif
   }
 
   if( MorphOSRes != NULL )
   {
-    MixBackend  = MB_MORPHOS;
+    MixBackend  = MB_NATIVE;
   }
+
+#if defined( ENABLE_WARPUP )
+
   else if( PowerPCBase != NULL )
   {
     MixBackend = MB_WARPUP;
@@ -572,6 +583,9 @@ OpenLibs ( void )
       MixBackend = MB_NATIVE;
     }
   }
+
+#endif
+
   else 
   {
     MixBackend = MB_NATIVE;
@@ -589,16 +603,18 @@ OpenLibs ( void )
       switch( MixBackend )
       {
         case MB_NATIVE:
+#if defined( ENABLE_MORPHOS )
+          backend = "MorphOS/" CPU;
+#else
           backend = "AmigaOS/" CPU;
+#endif
           break;
 
+#if defined( ENABLE_WARPUP )
         case MB_WARPUP:
           backend = "WarpUp";
           break;
-          
-        case MB_MORPHOS:
-          backend = "MorphOS/" CPU;
-          break;
+#endif
       }
 
       Req( "This is a beta release of AHI. The latest supported \n"
@@ -609,7 +625,7 @@ OpenLibs ( void )
            "Sound kernel in use: %s.\n"
            "\n"
            "/Martin Blom <martin@blom.org>\n",
-           backend );
+           (ULONG) backend );
     }
   }
 
@@ -629,12 +645,14 @@ CloseLibs ( void )
 {
   CloseahiCatalog();
 
+#if defined( ENABLE_WARPUP )
   if( PPCObject != NULL )
   {
     AHIUnloadObject( PPCObject );
   }
 
   CloseLibrary( PowerPCBase );
+#endif
 
   CloseLibrary( (struct Library *) UtilityBase );
   if( TimerIO  != NULL )

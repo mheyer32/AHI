@@ -23,9 +23,11 @@
 #ifndef ahi_ahi_def_h
 #define ahi_ahi_def_h
 
+#include <config.h>
+
 /*** Debug stuff ***/
 
-#if defined( morphos )
+#if defined( ENABLE_MORPHOS )
 
 # include <public/proto/quark/syscall_protos.h>
 # define KPrintF dprintf
@@ -34,30 +36,6 @@
 
 extern void KPrintF(char *fmt,...);
 
-#endif
-
-/*** Processor identification ****/
-
-#ifdef mc68020
-# define MC68020_PLUS
-#endif
-
-#ifdef mc68030
-# define MC68020_PLUS
-# define MC68030_PLUS
-#endif
-
-#ifdef mc68040
-# define MC68020_PLUS
-# define MC68030_PLUS
-# define MC68040_PLUS
-#endif
-
-#ifdef mc68060
-# define MC68020_PLUS
-# define MC68030_PLUS
-# define MC68040_PLUS
-# define MC68060_PLUS
 #endif
 
 /*** AHI include files ***/

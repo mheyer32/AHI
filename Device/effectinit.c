@@ -115,14 +115,15 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       data_flags = MEMF_PUBLIC | MEMF_CLEAR;
       break;
       
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       // Non-cached from both the PPC and m68k side
       data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
       break;
+#endif
   }
 
   /* Set up the delay buffer format */
