@@ -302,7 +302,7 @@ _DevOpen ( struct AHIRequest* ioreq,
     }
   }
 
-  if( ioreq->ahir_Version > Version)
+  if( ioreq->ahir_Version > AHIBase->ahib_Library.lib_Version)
     error=TRUE;
   else
   {

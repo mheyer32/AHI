@@ -510,7 +510,7 @@ _AHI_AllocAudioA( struct TagItem* tags,
 #endif
 
   // Never allow drivers that are newer than ahi.device.
-  if(AHIsubBase->lib_Version > Version)
+  if(AHIsubBase->lib_Version > AHIBase->ahib_Library.lib_Version)
     goto error;
 
   audiodb=LockDatabase();
