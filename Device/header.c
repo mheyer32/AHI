@@ -77,7 +77,7 @@ struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 #ifndef VERSION68K
 struct Library            *PPCLibBase     = NULL;
-void                      *AHIPPCObject   = NULL;
+void                      *PPCObject      = NULL;
 #endif
 
 /* linker can use symbol b for symbol a if a is not defined */
@@ -383,15 +383,15 @@ OpenLibs ( void )
 
     /* Load our code to PPC..  */
 
-    AHIPPCObject = PPCLoadObject( "DEVS:ahi.elf" );
+    PPCObject = PPCLoadObject( "DEVS:ahi.elf" );
 
-    if( AHIPPCObject == NULL )
+    if( PPCObject == NULL )
     {
       /* This, however, is a problem. */
 
       Req( "Unable to load PPC module." );
       return FALSE;
-    }
+    }    
   }
 #endif 
 
@@ -414,7 +414,7 @@ CloseLibs ( void )
   CloseahiCatalog();
 
 #ifndef VERSION68K
-  if(AHIPPCObject != NULL ) PPCUnLoadObject( AHIPPCObject );
+  if( PPCObject != NULL ) PPCUnLoadObject( PPCObject );
   CloseLibrary( PPCLibBase );
 #endif
   CloseLibrary( (struct Library *) UtilityBase );

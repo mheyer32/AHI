@@ -14,7 +14,7 @@ AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
 
-: ${CFLAGS='-g -I. -O0 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
+: ${CFLAGS='-g -I. -O2 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
 : ${CPPFLAGS='-I/gg/os-include'}
 : ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}

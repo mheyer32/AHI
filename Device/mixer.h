@@ -25,6 +25,9 @@ BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
 
 void
+CleanUpMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
+
+void
 calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl );
 
 BOOL

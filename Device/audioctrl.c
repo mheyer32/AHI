@@ -693,6 +693,11 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
       CloseLibrary(AHIsubBase);
     }
 
+    if(!(audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING))
+    {
+      CleanUpMixroutine( audioctrl );
+    }
+
     FreeVec( audioctrl->ahiac_InputBuffer[0] );
     FreeVec( audioctrl->ahiac_InputBuffer[1] );
     FreeVec( audioctrl->ahiac_InputBuffer[2] );
@@ -701,9 +706,6 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
     FreeVec( audioctrl->ahiac_MultTableU );
     FreeVec( audioctrl->ac.ahiac_SamplerFunc );
     FreeVec( audioctrl->ac.ahiac_MixerFunc );
-    AHIFreeVec( audioctrl->ahiac_PPCMixBuffer );
-    AHIFreeVec( audioctrl->ahiac_SoundDatas );
-    AHIFreeVec( audioctrl->ahiac_ChannelDatas );
 
     AHIFreeVec( audioctrl );
   }
