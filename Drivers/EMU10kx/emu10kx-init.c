@@ -100,6 +100,7 @@ DriverInit( struct DriverBase* ahisubbase )
   if( EMU10kxBase->cards_found == 0 )
   {
 //    Req( "No SoundBlaster Live! or Audigy card present.\n" );
+    KPrintF( DRIVER ":No SoundBlaster Live! or Audigy card present.\n" );
     return FALSE;
   }
 
@@ -152,7 +153,7 @@ DriverInit( struct DriverBase* ahisubbase )
   EMU10kxBase->driverdatas = AllocVec( sizeof( *EMU10kxBase->driverdatas ) *
 				       EMU10kxBase->cards_found,
 				       MEMF_PUBLIC );
-
+  
   if( EMU10kxBase->driverdatas == NULL )
   {
     Req( "Out of memory." );
@@ -172,7 +173,7 @@ DriverInit( struct DriverBase* ahisubbase )
 
   // Audigy cards ...
   while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				  PCI_DEVICE_ID_CREATIVE_AUDIGY,
 				  dev ) ) != NULL )
   {
     EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
@@ -209,10 +210,9 @@ DriverCleanup( struct DriverBase* AHIsubBase )
   
   for( i = 0; i < EMU10kxBase->cards_found; ++i )
   {
-    emu10k1_irq_disable( &EMU10kxBase->driverdatas[ i ]->card,
-			 INTE_MIDIRXENABLE );
-    emu10k1_irq_disable( &EMU10kxBase->driverdatas[ i ]->card,
-			 INTE_MIDITXENABLE );
+    // Kill'em all
+    emu10k1_irq_disable( &EMU10kxBase->driverdatas[ i ]->card, ~0UL );
+//			 INTE_MIDIRXENABLE | INTE_MIDITXENABLE);
     
     FreeDriverData( EMU10kxBase->driverdatas[ i ], AHIsubBase );
   }

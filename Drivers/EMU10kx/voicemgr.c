@@ -32,32 +32,6 @@
 #ifdef AHI
 # include <proto/openpci.h>
 # include "linuxsupport.h"
-
-void
-MyKPrintFArgs2( const char*           fmt,
-	       APTR                  args );
-
-#define KPrintF( fmt, ... )        \
-({                                 \
-  ULONG _args[] = { __VA_ARGS__ }; \
-  MyKPrintFArgs2( (fmt), _args );   \
-})
-
-static UWORD rawputchar_m68k[] = 
-{
-  0x2C4B,             // MOVEA.L A3,A6
-  0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
-  0x4E75              // RTS
-};
-
-void
-MyKPrintFArgs2( const char*           fmt,
-	       APTR                  args )
-{
-  RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
-}
-
-
 #endif
 
 #include "voicemgr.h"
@@ -120,7 +94,7 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 	  DPF(1, "couldn't allocate dma memory\n");
 	  return -1;
 	}
-	KPrintF("Got addr %08lx, dma handler %08lx\n", mem->addr, mem->dma_handle);
+//	KPrintF("Got addr %08lx, dma handler %08lx\n", mem->addr, mem->dma_handle);
 #endif
 	
 	/* Fill in virtual memory table */
@@ -143,7 +117,7 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 #else
 			busaddx = (u32) mem->dma_handle[pagecount] + i * EMUPAGESIZE;
 #endif
-	                KPrintF("Got bus addr %08lx for address %08lx\n", busaddx, mem->addr + pagecount * PAGE_SIZE);
+//	                KPrintF("Got bus addr %08lx for address %08lx\n", busaddx, mem->addr + pagecount * PAGE_SIZE);
 
 			DPD(3, "Bus Addx: %#x\n", busaddx);
 
