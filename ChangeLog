@@ -1,5 +1,7 @@
 2004-08-02  Martin Blom  <martin@blom.org>
 
+	* Added Russion translations by Michael Malyshev. Thanks!
+
 	* emu10kx.audio: Don't print debug info if no cards found. [Harry
 	Sintonen]
 
