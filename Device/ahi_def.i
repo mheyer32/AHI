@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.2  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -54,6 +57,7 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	BITDEF	AHIB,NOSURROUND,0
 	BITDEF	AHIB,NOECHO,1
 	BITDEF	AHIB,FASTECHO,2
+	BITDEF	AHIB,CLIPPING,3
 
 * AHIBase
 	STRUCTURE AHIBase,LIB_SIZE
@@ -94,6 +98,7 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
 	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
 	BITDEF	AHIAC,POSTPROC,29		;private ahiac_Flags flag
+	BITDEF	AHIAC,CLIPPING,28		;private ahiac_Flags flag
 
 * Private AudioCtrl structure
 	STRUCTURE AHIPrivAudioCtrl,AHIAudioCtrlDrv_SIZEOF
@@ -113,6 +118,7 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	ULONG	ahiac_InputRecordCnt
 
 
+	APTR	ahiac_MasterVolumeTable
 	APTR	ahiac_MultTableS
 	APTR	ahiac_MultTableU
 	APTR	ahiac_RecordFunc		* AHIA_RecordFunc

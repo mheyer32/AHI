@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -94,6 +97,8 @@ extern __stdargs char *Sprintf(char *, const char *, ...);
 #define AHIBF_NOECHO		(1L<<1)
 #define AHIBB_FASTECHO		(2)
 #define AHIBF_FASTECHO		(1L<<2)
+#define AHIBB_CLIPPING		(3)
+#define AHIBF_CLIPPING		(1L<<3)
 
 /* AHIBase */
 struct AHIBase
@@ -140,6 +145,8 @@ struct AHISoundData
 #define AHIACF_NOTIMING	(1L<<30)	/* private ahiac_Flags flag */
 #define AHIACB_POSTPROC 29		/* private ahiac_Flags flag */
 #define AHIACF_POSTPROC	(1L<<29)	/* private ahiac_Flags flag */
+#define AHIACB_CLIPPING 28		/* private ahiac_Flags flag */
+#define AHIACF_CLIPPING (1L<<28)	/* private ahiac_Flags flag */
 
 /* Private AudioCtrl structure */
 struct AHIPrivAudioCtrl
@@ -158,6 +165,7 @@ struct AHIPrivAudioCtrl
 	APTR			 ahiac_InputRecordPtr;
 	ULONG			 ahiac_InputRecordCnt;
 
+	APTR			 ahiac_MasterVolumeTable;
 	APTR			 ahiac_MultTableS;
 	APTR			 ahiac_MultTableU;
 	struct Hook		*ahiac_RecordFunc;	/* AHIA_RecordFunc */

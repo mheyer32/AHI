@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.3  1997/04/14 01:50:39  lcs
 * AHIST_INPUT still doesn't work...
 *
@@ -173,6 +176,12 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
       if(dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID))
       {
         audioctrl->ac.ahiac_Flags=PackBoolTags(GetTagData(AHIDB_Flags,NULL,dbtags),dbtags,boolmap);
+#ifdef _M68020
+        if(AHIBase->ahib_Flags & AHIBF_CLIPPING)
+        {
+          audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
+        }
+#endif
         stpcpy(stpcpy(stpcpy(audioctrl->ahiac_DriverName,"DEVS:ahi/"),
             (char *)GetTagData(AHIDB_Driver,(ULONG)"",dbtags)),".audio");
         error=FALSE;
@@ -590,17 +599,17 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
     audioctrl->ac.ahiac_Flags &= ~AHIACF_STEREO;
 
 // HiFi
-  // If plain 68k, unconditionally clear the HIFI bit
 #ifdef _M68020
-  // If plain 68k, unconditionally clear the HIFI bit
   if(!(audioctrl->ahiac_SubAllocRC & AHISF_KNOWHIFI))
-#endif
     audioctrl->ac.ahiac_Flags &= ~AHIACF_HIFI;
+#else
+  // If plain 68k, unconditionally clear the HIFI bit
+    audioctrl->ac.ahiac_Flags &= ~AHIACF_HIFI;
+#endif
 
 // Post-processing
   if(audioctrl->ahiac_SubAllocRC & AHISF_CANPOSTPROCESS)
     audioctrl->ac.ahiac_Flags |= AHIACF_POSTPROC;
-
 
   if(!(audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING))
   {
@@ -613,9 +622,11 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
         audioctrl->ac.ahiac_BuffType=AHIST_S16S;
         break;
       case AHIACF_HIFI:
+        audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
         audioctrl->ac.ahiac_BuffType=AHIST_M32S;
         break;
       case (AHIACF_STEREO | AHIACF_HIFI):
+        audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
         audioctrl->ac.ahiac_BuffType=AHIST_S32S;
         break;
       default:
@@ -773,6 +784,7 @@ __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
     FreeVec(audioctrl->ahiac_InputBuffer[0]);
     FreeVec(audioctrl->ahiac_InputBuffer[1]);
     FreeVec(audioctrl->ahiac_InputBuffer[2]);
+    FreeVec(audioctrl->ahiac_MasterVolumeTable);
     FreeVec(audioctrl->ahiac_MultTableS);
     FreeVec(audioctrl->ahiac_MultTableU);
     FreeVec(audioctrl->ac.ahiac_SamplerFunc);
@@ -1508,23 +1520,38 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
   ULONG id = AHI_INVALID_ID, bestid = 0;
   Fixed score, bestscore = 0;
   struct TagItem *dizzytags;
+  const static struct TagItem defdizzy[] =
+  {
+    // Default is off for performance reasons..
+    AHIDB_Volume,     FALSE,
+    AHIDB_Stereo,     FALSE,
+    AHIDB_Panning,    FALSE,
+    AHIDB_HiFi,       FALSE,
+    AHIDB_PingPong,   FALSE,
+    // Default is on, 'cause they won't hurt performance (?)
+    AHIDB_Record,     TRUE,
+    AHIDB_Realtime,   TRUE,
+    AHIDB_FullDuplex, TRUE,
+    // And we don't care about the rest...
+    TAG_DONE
+  };
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
     KPrintF("AHI_BestAudioIDA(0x%08lx)",tags);
   }
 
-  dizzytags = (struct TagItem *) GetTagData(AHIB_Dizzy,NULL,tags);
+  dizzytags = (struct TagItem *) GetTagData(AHIB_Dizzy, (ULONG) defdizzy,tags);
 
   while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
   {
-    if(!TestAudioID(id,tags))
+    if(!TestAudioID(id, tags))
     {
       continue;
     }
 
     // Check if this id the better than the last one
-    score = DizzyTestAudioID(id,tags);
+    score = DizzyTestAudioID(id, dizzytags);
     if(score > bestscore)
     {
       bestscore = score;

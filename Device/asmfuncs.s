@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.5  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.4  1997/04/22 01:35:21  lcs
 * This is release 4! Finally.
 *
@@ -127,8 +130,7 @@
 	XREF	_GetDBTagList
 
 	XREF	SelectAddRoutine
-;	XREF	initUnsignedTable
-;	XREF	initSignedTable
+	XREF	calcMasterVolumeTable
 	XREF	calcSignedTable
 	XREF	calcUnsignedTable
 	XREF	CalcSamples
@@ -1065,10 +1067,16 @@ SetEffect_nodebug
 ***
 ;in:
 * a2	audioctrl
+* a5	AHIBase
 
 _update_MasterVolume:
 	pushm	d0-a6
 	move.l	ahiac_SetMasterVolume(a2),d0
+	btst.b	#AHIACB_CLIPPING-24,ahiac_Flags(a2)
+	beq	.noclipping
+	move.l	#$10000,d0
+.noclipping
+
  IFGE	__CPU-68020
 	move.l	ahiac_EchoMasterVolume(a2),d1
 	cmp.l	#$10000,d1
@@ -1079,7 +1087,11 @@ _update_MasterVolume:
 .no_dspecho_hack
  ENDC
 	move.l	d0,ahiac_MasterVolume(a2)
-; Update tables
+
+; Update mastervolume table
+	bsr	calcMasterVolumeTable
+
+; Update volume tables
 	bsr	calcUnsignedTable
 	bsr	calcSignedTable
 
@@ -1326,7 +1338,6 @@ _PreTimer:
 .ok
 	moveq	#FALSE,d0
 .exit
-	tst.l	d0
 	popm	d1-d2/a0-a1/a6
 	rts
 
