@@ -1,9 +1,13 @@
 /* $Id$
 * $Log$
+* Revision 4.9  1997/07/27 02:03:23  lcs
+* AHI_LoadSound() now returns an error if the user tries to
+* play unsigned samples in HiFi modes (i.e., removed the
+* AHI-Noteplayer kludge).
+*
 * Revision 4.8  1997/07/27 02:02:14  lcs
 * AHI_LoadSound() always returned 0 if the driver overloaded the
 * function. Now it returns the correct value.
-* AHI_LoadSound()
 *
 * Revision 4.7  1997/07/27 00:15:21  lcs
 * Removed a reference to AHI_KillAudio() in the audiodocs.
