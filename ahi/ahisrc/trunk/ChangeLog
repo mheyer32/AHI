@@ -1,3 +1,9 @@
+2003-12-22  Martin Blom  <martin@blom.org>
+
+	* Released aros.audio 5.0.
+
+	* Added an AROS driver based on oss.library.
+
 2003-11-28  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.15.
