@@ -395,26 +395,27 @@ OpenLibs ( void )
 #ifndef VERSION68K
   /* PPC/PowerPC library */
 
-  Forbid();
+//  Forbid();
   
-  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
-                                             "powerpc.library" );
-  
-  Permit();
+//  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
+//                                             "powerpc.library" );
 
-  if( PowerPCBase != NULL )
-  {
-    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-  }
-  else
-  {
-    PPCLibBase = OpenLibrary( "ppc.library", 46 );
-  }
+//  Permit();
 
-  if( PPCLibBase == NULL )
-  {
+
+//  if( PowerPCBase != NULL )
+//  {
     PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-  }
+//  }
+//  else
+//  {
+//    PPCLibBase = OpenLibrary( "ppc.library", 46 );
+//  }
+
+//  if( PPCLibBase == NULL )
+//  {
+//    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
+//  }
 
   if( PPCLibBase != NULL || PowerPCBase != NULL )
   {
@@ -422,8 +423,8 @@ OpenLibs ( void )
 
     PPCObject = AHILoadObject( "DEVS:ahi.elf" );
   }
-  
-#endif 
+
+#endif
 
   OpenahiCatalog(NULL, NULL);
 
@@ -449,6 +450,7 @@ CloseLibs ( void )
     AHIUnLoadObject( PPCObject );
   }
 
+  CloseLibrary( PPCLibBase );
   CloseLibrary( PowerPCBase );
 #endif
 

@@ -207,8 +207,6 @@ CreateAudioCtrl(struct TagItem *tags)
       audioctrl->ac.ahiac_AntiClickSamples = 
           ( AHIBase->ahib_AntiClickTime * audioctrl->ac.ahiac_MixFreq ) >> 16;
 
-kprintf( "Using %ld anti-click samples", audioctrl->ac.ahiac_AntiClickSamples );
-
     if((audiodb=LockDatabase()))
     {
       if((dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID)))

@@ -10,7 +10,7 @@ CPU	= 68060
 
 #Can be 68K, GEN, PPC:
 
-VER	= 68K
+VER	= GEN
 
 include Makefile.opt
 
