@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.3  1997/01/04 13:26:41  lcs
+# *** empty log message ***
+#
 # Revision 1.2  1996/12/21 13:38:17  lcs
 # Added default rules
 #
@@ -36,7 +39,7 @@ AFLAGS	= SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
 #AFLAGS	= -OD6+ -sa+ -s1+ -sf+ -x+ -q+ -uo+ -dMC020=1
 
 LINKER	= SC:c/slink
-LFLAGS	= NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
+LFLAGS	= ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
 DEBUG	= LIB:debug.lib LIB:amiga.lib
 
 ##
