@@ -15,6 +15,9 @@
 
 @c $Id$
 @c $Log$
+@c Revision 4.5  1997/07/27 19:04:10  lcs
+@c Added description of the AHIpaulaSwapChannels env. variable.
+@c
 @c Revision 4.4  1997/07/15 00:50:40  lcs
 @c This is the second bugfix release of AHI 4.
 @c
@@ -649,7 +652,7 @@ The default options for reading are @samp{BITS=8} @samp{CHANNELS=1}
 @cindex IFF-AIFF
 @cindex IFF-AIFC
 
-If @samp{TYPE} is not specified, the default behavior is to identify the
+If @samp{TYPE} is not specified, the default behaviour is to identify the
 data stream as @dfn{IFF-AIFF} or @dfn{IFF-AIFC}. If so, the default values of
 @samp{BITS}, @samp{CHANNELS}, @samp{FREQUENCY} and @samp{LENGTH} will
 taken from the file. You can still override them if you wish.
@@ -808,6 +811,17 @@ Delete ENVARC:AHIpaulaSampleLimit
 @end example
 
 This will turn on the screen mode checking again.
+
+@cindex AHIpaulaSwapChannels variable
+
+Because of incorrect hardware documentation, there is great confusion about
+which hardware channels are sent to the left speaker, and which are sent to
+the right.  @code{paula.audio} uses the correct order (right, left, left,
+right) but many other programs don't.  The @file{AHIpaulaSwapChannels}
+variable was added to let the user decide if the correct or incorrect
+behaviour should be used.  In not present or set to @samp{0}, the correct
+behaviour is used.  If set to @samp{1}, the left and right channels will be
+swapped.
 
 @cindex AHIpaulaBufferLength variable
 @cindex MC68060 CPU
