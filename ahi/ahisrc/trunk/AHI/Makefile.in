@@ -66,7 +66,7 @@ maintainer-clean: distclean
 install:	$(TARGETS)
 	$(INSTALL) --directory $(bindir)
 	for i in $(TARGETS); do\
-	  $(INSTALL_PROGRAM) --strip $$i $(bindir)/$$i;
+	  $(INSTALL_PROGRAM) --strip $$i $(bindir)/$$i;\
 	done
 	$(INSTALL_DATA) AHI.info $(bindir)
 	$(INSTALL_DATA) AHI.MWB.info $(bindir)
@@ -140,7 +140,7 @@ catalogs:
 ########################################
 
 Makefile.dep:	$(SOURCES) ahiprefs_Cat.h version.h
-ifneq ($(build_os),"amigaos")
+ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 else
 	# This is much faster...
