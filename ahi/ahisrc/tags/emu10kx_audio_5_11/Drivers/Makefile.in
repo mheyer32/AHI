@@ -1,0 +1,76 @@
+#  $Id$
+#
+#  Makefile.in for the drivers
+#
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+top_srcdir	= @top_srcdir@
+srcdir		= @srcdir@
+DISTDIR		= @DISTDIR@
+
+DEVDIR		= ${DISTDIR}/Developer
+DRIVERDIR	= ${DEVDIR}/Drivers
+
+build_os	= @build_os@
+
+INSTALL		= @INSTALL@
+INSTALL_DATA	= @INSTALL_DATA@
+
+VPATH		= @srcdir@
+
+HAVE_OPENPCI	= @HAVE_OPENPCI@
+
+#
+# Targets
+########################################
+
+.PHONY:		all clean distclean maintainer-clean bindist
+
+SUBDIRS		= Filesave #Void
+
+ifneq ($(strip $(HAVE_OPENPCI)),)
+SUBDIRS		+= EMU10kx
+endif
+
+all:
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
+
+install:
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
+
+clean:
+	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	$(RM) *.bak *~ \#*\# core
+
+distclean:	clean
+	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	$(RM) Makefile
+
+maintainer-clean: distclean
+	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+
+bindist:
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
+	$(INSTALL) --directory $(DRIVERDIR) 
+	for d in $(SUBDIRS) Paula Toccata Wavetools; do \
+	  cd $(srcdir) && find $${d} -type f -and -not -path '*CVS*' \
+	    -exec $(INSTALL_DATA) -D {} $(DRIVERDIR)/{} \; ; \
+	done
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in ../config.status
+	(cd .. && ./config.status)
+
+
+#
+# Rules
+########################################
+
