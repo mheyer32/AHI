@@ -148,7 +148,7 @@ _ActivateXmit( APTR  userdata,
 {
   // In the original CAMD, there is no port number :-(
 
-  KPrintF( "ActiavteXmit( %08lx, %ld )\n", userdata, portnum & 255 );
+//  KPrintF( "ActiavteXmit( %08lx, %ld )\n", userdata, portnum & 255 );
 
   if( !CAMDv40 )
   {
