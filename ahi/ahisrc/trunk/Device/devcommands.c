@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.9  1997/10/16 10:20:56  lcs
+* Removed a KPrintF("Oops!");.... SIGH!
+*
 * Revision 4.8  1997/08/02 11:24:29  lcs
 * CMD_START was never executed, the distpatched didn't understand that
 * command!
@@ -1265,7 +1268,6 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
           {
             AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
-            KPrintF("Oops!\n");
             // OOPS! It's finished! Undo...
             Remove((struct Node *) ioreq);
             
