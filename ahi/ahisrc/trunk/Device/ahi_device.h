@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.6  1997/01/29 23:34:38  lcs
+* *** empty log message ***
+*
 * Revision 1.5  1997/01/15 14:59:50  lcs
 * Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
 *
@@ -115,6 +118,7 @@ struct AHIDevUnit
 	
 	struct AHIEffChannelInfo *ChannelInfoStruct;
 
+	WORD			 RecordOffDelay;
 	WORD			*RecordBuffer;
 	ULONG			 RecordSize;
 

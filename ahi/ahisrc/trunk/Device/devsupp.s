@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 1.2  1997/01/29 23:34:38  lcs
+* *** empty log message ***
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -402,8 +405,8 @@ _MultFixed:
 	divu.l	d0,d1:d2
 	move.l	d2,d0
  ELSE
-	move.l	d3,d1
-	move.l	d4,d2
+;	move.l	d3,d1
+;	move.l	d4,d2
 	XREF	UDivMod64
 	bsr	UDivMod64		;d0 = (d1:d2)/d0
  ENDC
