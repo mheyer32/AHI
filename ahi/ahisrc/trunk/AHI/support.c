@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.4  1999/01/09 23:14:16  lcs
+ * Switched from SAS/C to gcc
+ *
  * Revision 4.3  1997/06/24 21:49:49  lcs
  * Increased version number to match the catalogs (4.5).
  *
@@ -7,6 +10,9 @@
  * Localized it, bug fixes
  *
  */
+
+#include <config.h>
+#include <CompilerSpecific.h>
 
 #include <devices/ahi.h>
 #include <exec/memory.h>
@@ -24,16 +30,12 @@
 
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
-
-#ifndef _GENPROTO
-#include "support_protos.h"
-#endif
+#include "support.h"
 
 static BOOL AddUnit(struct List *, int);
 static void FillUnitName(struct UnitNode *);
 
-
-struct AHIGlobalPrefs   globalprefs;
+struct AHIGlobalPrefs     globalprefs;
 
 struct Library           *LocaleBase= NULL;
 struct Library           *AHIBase   = NULL;
@@ -44,7 +46,7 @@ static BYTE               AHIDevice = -1;
 
 static char deftoolname[] = {"AHI"};
 
-static UWORD chip DiskI1Data[] =
+static UWORD DiskI1Data[] =
 {
 /* Plane */
   0x0000,0x0000,0x0004,0x0000,0x0000,0x0000,0x0001,0x0000,
@@ -124,9 +126,13 @@ BOOL Initialize(void) {
 
   OpenahiprefsCatalog();
 
-  if(AHImp=CreateMsgPort()) {
-    if(AHIio = (struct AHIRequest *)CreateIORequest(
-        AHImp,sizeof(struct AHIRequest))) {
+  AHImp=CreateMsgPort();
+
+  if( AHImp != NULL ) {
+    AHIio = (struct AHIRequest *)CreateIORequest(
+        AHImp,sizeof(struct AHIRequest));
+
+    if( AHIio != NULL ) {
       AHIio->ahir_Version = 4;
       AHIDevice = OpenDevice(AHINAME,AHI_NO_UNIT,(struct IORequest *)AHIio,NULL);
       if(AHIDevice == 0) {
@@ -136,7 +142,7 @@ BOOL Initialize(void) {
     }
   }
 
-  Printf((char *) msgTextNoOpen, "ahi.device", 4);
+  Printf((char *) msgTextNoOpen, (ULONG) "ahi.device", 4);
   Printf("\n");
   return FALSE;
 }
@@ -304,7 +310,9 @@ struct List *GetModes(struct AHIUnitPrefs *prefs) {
       struct ModeNode *t;
       struct Node     *node;
       
-      if(t = AllocVec( sizeof(struct ModeNode), MEMF_CLEAR)) {
+      t = AllocVec( sizeof(struct ModeNode), MEMF_CLEAR);
+
+      if( t != NULL ) {
         LONG realtime;
 
         t->node.ln_Name = t->name;
@@ -313,9 +321,9 @@ struct List *GetModes(struct AHIUnitPrefs *prefs) {
         realtime = FALSE;
         
         AHI_GetAudioAttrs(id, NULL,
-            AHIDB_BufferLen,80,
-            AHIDB_Name, t->node.ln_Name,
-            AHIDB_Realtime, &realtime,
+            AHIDB_BufferLen,  80,
+            AHIDB_Name,       (ULONG) t->node.ln_Name,
+            AHIDB_Realtime,   (ULONG) &realtime,
             TAG_DONE);
 
         if((prefs->ahiup_Unit == AHI_NO_UNIT) || realtime ) {
@@ -373,7 +381,7 @@ char **GetInputs(ULONG id) {
 
 
   AHI_GetAudioAttrs(id, NULL,
-      AHIDB_Inputs, &inputs,
+      AHIDB_Inputs, (ULONG) &inputs,
       TAG_DONE);
 
   strings = AllocVec(sizeof(char *) * (inputs + 1) + (32 * inputs), MEMF_CLEAR);
@@ -386,7 +394,7 @@ char **GetInputs(ULONG id) {
       if(AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen, 32,
           AHIDB_InputArg,  i,
-          AHIDB_Input,     string,
+          AHIDB_Input,     (ULONG) string,
           TAG_DONE)) {
         *strings++ = string;
         while(*string++);
@@ -407,7 +415,7 @@ char **GetOutputs(ULONG id) {
 
 
   AHI_GetAudioAttrs(id, NULL,
-      AHIDB_Outputs, &outputs,
+      AHIDB_Outputs, (ULONG) &outputs,
       TAG_DONE);
 
   strings = AllocVec(sizeof(char *) * (outputs + 1) + (32 * outputs), MEMF_CLEAR);
@@ -420,7 +428,7 @@ char **GetOutputs(ULONG id) {
       if(AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen, 32,
           AHIDB_OutputArg,  i,
-          AHIDB_Output,     string,
+          AHIDB_Output,     (ULONG) string,
           TAG_DONE)) {
         *strings++ = string;
         while(*string++);
@@ -497,7 +505,10 @@ BOOL WriteIcon(char *name) {
   BOOL success = FALSE;
 
   /* Use the already present icon */
-  if(dobj=GetDiskObject(name)) {
+  
+  dobj=GetDiskObject(name);
+  
+  if( dobj != NULL ) {
     oldtooltypes = dobj->do_ToolTypes;
     olddeftool = dobj->do_DefaultTool;
 
@@ -547,9 +558,13 @@ void FreeList(struct List *list) {
   if(list == NULL)
     return;
 
-  while(n = RemHead(list)) {
+  for( n = RemHead(list);
+       n != NULL;
+       n = RemHead(list) )
+  {
     FreeVec(n);
   }
+
   FreeVec(list);
 }
 

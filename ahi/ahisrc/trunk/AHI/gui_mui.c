@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.7  1999/01/09 23:14:12  lcs
+ * Switched from SAS/C to gcc
+ *
  * Revision 4.6  1997/07/15 00:51:28  lcs
  * Fixed some bugs.
  *
@@ -23,6 +26,9 @@
  *
  */
 
+#include <config.h>
+#include <CompilerSpecific.h>
+
 #include <exec/memory.h>
 #include <libraries/asl.h>
 #include <libraries/gadtools.h>
@@ -33,21 +39,13 @@
 #include <proto/muimaster.h>
 #include <proto/utility.h>
 #include <math.h>
+#include <stdio.h>
 #include <string.h>
-
-extern void kprintf(char *, ...);
 
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
-
-#include "ahi_protos.h"
-#include "support_protos.h"
-
-#ifndef _GENPROTO
-#include "gui_protos.h"
-#endif
-
-extern APTR __asm SPrintfA(register __a3 STRPTR, register __a0 STRPTR, register __a1 LONG*);
+#include "support.h"
+#include "gui.h"
 
 static void GUINewSettings(void);
 static void GUINewUnit(void);
@@ -154,21 +152,21 @@ static char * ClipMVLabels[] = {
 static void UpdateStrings(void) {
   char ** strings[] =
   {
-    &msgMenuProject,
-    &msgItemOpen,
-    &msgItemSaveAs,
-    &msgItemAbout,
-    &msgItemQuit,
-    &msgMenuEdit,
-    &msgItemDefaults,
-    &msgItemLastSaved,
-    &msgItemRestore,
-    &msgMenuSettings,
-    &msgItemCreateIcons,
-    &msgMenuHelp,
-    &msgItemHelp,
-    &msgItemUsersGuide,
-    &msgItemConceptIndex
+    (char**) &msgMenuProject,
+    (char**) &msgItemOpen,
+    (char**) &msgItemSaveAs,
+    (char**) &msgItemAbout,
+    (char**) &msgItemQuit,
+    (char**) &msgMenuEdit,
+    (char**) &msgItemDefaults,
+    (char**) &msgItemLastSaved,
+    (char**) &msgItemRestore,
+    (char**) &msgMenuSettings,
+    (char**) &msgItemCreateIcons,
+    (char**) &msgMenuHelp,
+    (char**) &msgItemHelp,
+    (char**) &msgItemUsersGuide,
+    (char**) &msgItemConceptIndex
   };
 
   struct NewMenu   *menuptr;
@@ -242,26 +240,36 @@ static void GUINewUnit(void)
   GUINewMode();
 }
 
-static char *infoargs[6];
-
 static void GUINewMode(void)
 {
   int Max, Sel;
-  STRPTR buffer;
+  char* buffer;
+  char* arg1 = getRecord();
+  char* arg2 = getAuthor();
+  char* arg3 = getCopyright();
+  char* arg4 = getDriver();
+  char* arg5 = getVersion();
 
-  infoargs[0] = (char *) getAudioMode();
-  infoargs[1] = getRecord();
-  infoargs[2] = getAuthor();
-  infoargs[3] = getCopyright();
-  infoargs[4] = getDriver();
-  infoargs[5] = getVersion();
+  buffer = AllocVec( strlen( arg1 ) +
+                     strlen( arg2 ) +
+                     strlen( arg3 ) +
+                     strlen( arg4 ) +
+                     strlen( arg5 ) +
+                     128,
+                     MEMF_ANY);
 
-  if(buffer = AllocVec(strlen(infoargs[1]) + strlen(infoargs[2]) +
-                       strlen(infoargs[3]) + strlen(infoargs[4]) +
-                       strlen(infoargs[5]) + 128, MEMF_ANY))
+  if( buffer != NULL )
   {
-    SPrintfA(buffer,"0x%08lx\n%s\n%s\n%s\nDevs:AHI/%s.audio\n%s", (APTR)infoargs);
-    set(MUIInfos, MUIA_Text_Contents, buffer);
+    sprintf( buffer,"0x%08lx\n%s\n%s\n%s\nDevs:AHI/%s.audio\n%s",
+      getAudioMode(),
+      arg1,
+      arg2,
+      arg3,
+      arg4,
+      arg5 );
+
+    set(MUIInfos, MUIA_Text_Contents, (ULONG) buffer);
+
     FreeVec(buffer);
   }
 
@@ -270,91 +278,100 @@ static void GUINewMode(void)
   set(MUIFreq, MUIA_Disabled, Max==0);
   set(MUIFreq, MUIA_Numeric_Max, Max);
   set(MUIFreq, MUIA_Numeric_Value, Sel);
-  set(MUILFreq, MUIA_Text_Contents, getFreq());
+  set(MUILFreq, MUIA_Text_Contents, (ULONG) getFreq());
 
   Max = max(state.Channels, 0);
   Sel = min(Max, state.ChannelsSelected);
   set(MUIChannels, MUIA_Disabled, (Max == 1) || state.ChannelsDisabled);
   set(MUIChannels, MUIA_Numeric_Max, Max);
   set(MUIChannels, MUIA_Numeric_Value, Sel);
-  set(MUILChannels, MUIA_Text_Contents, getChannels());
+  set(MUILChannels, MUIA_Text_Contents, (ULONG) getChannels());
 
   Max = max(state.OutVols -1, 0);
   Sel = min(Max, state.OutVolSelected);
   set(MUIOutvol, MUIA_Disabled, Max==0);
   set(MUIOutvol, MUIA_Numeric_Max, Max);
   set(MUIOutvol, MUIA_Numeric_Value, Sel);
-  set(MUILOutvol, MUIA_Text_Contents, getOutVol());
+  set(MUILOutvol, MUIA_Text_Contents, (ULONG) getOutVol());
 
   Max = max(state.MonVols -1, 0);
   Sel = min(Max, state.MonVolSelected);
   set(MUIMonvol, MUIA_Disabled, Max==0);
   set(MUIMonvol, MUIA_Numeric_Max, Max);
   set(MUIMonvol, MUIA_Numeric_Value, Sel);
-  set(MUILMonvol, MUIA_Text_Contents, getMonVol());
+  set(MUILMonvol, MUIA_Text_Contents, (ULONG) getMonVol());
 
   Max = max(state.Gains -1, 0);
   Sel = min(Max, state.GainSelected);
   set(MUIGain, MUIA_Disabled, Max==0);
   set(MUIGain, MUIA_Numeric_Max, Max);
   set(MUIGain, MUIA_Numeric_Value, Sel);
-  set(MUILGain, MUIA_Text_Contents, getGain());
+  set(MUILGain, MUIA_Text_Contents, (ULONG) getGain());
 
   Max = max(state.Inputs -1, 0);
   Sel = min(Max, state.InputSelected);
   set(MUIInput, MUIA_Disabled, Max==0);
   set(MUIInput, MUIA_Numeric_Max, Max);
   set(MUIInput, MUIA_Numeric_Value, Sel);
-  set(MUILInput, MUIA_Text_Contents, getInput());
+  set(MUILInput, MUIA_Text_Contents, (ULONG) getInput());
 
   Max = max(state.Outputs -1, 0);
   Sel = min(Max, state.OutputSelected);
   set(MUIOutput, MUIA_Disabled, Max==0);
   set(MUIOutput, MUIA_Numeric_Max, Max);
   set(MUIOutput, MUIA_Numeric_Value, Sel);
-  set(MUILOutput, MUIA_Text_Contents, getOutput());
+  set(MUILOutput, MUIA_Text_Contents, (ULONG) getOutput());
 }
 
-static __saveds __asm VOID SliderHookFunc(register __a2 Object *obj, register __a1 ULONG** arg )
+static VOID HOOKCALL
+SliderHookFunc( REG( a0, struct Hook *hook ),
+                REG( a2, Object *obj ),
+                REG( a1, ULONG** arg ) )
 {
   if(obj == MUIFreq)
   {
     state.FreqSelected = (LONG) (*arg);
-    set(MUILFreq,MUIA_Text_Contents,getFreq());
+    set(MUILFreq,MUIA_Text_Contents, (ULONG) getFreq());
   }
   else if(obj == MUIChannels )
   {
     state.ChannelsSelected = (LONG) (*arg);
-    set(MUILChannels,MUIA_Text_Contents,getChannels());
+    set(MUILChannels,MUIA_Text_Contents, (ULONG) getChannels());
   }
   else if(obj == MUIOutvol )
   {
     state.OutVolSelected = (LONG) (*arg);
-    set(MUILOutvol,MUIA_Text_Contents,getOutVol());
+    set(MUILOutvol,MUIA_Text_Contents, (ULONG) getOutVol());
   }
   else if(obj == MUIMonvol )
   {
     state.MonVolSelected = (LONG) (*arg);
-    set(MUILMonvol,MUIA_Text_Contents,getMonVol());
+    set(MUILMonvol,MUIA_Text_Contents, (ULONG) getMonVol());
   }
   else if(obj == MUIGain )
   {
     state.GainSelected = (LONG) (*arg);
-    set(MUILGain,MUIA_Text_Contents,getGain());
+    set(MUILGain,MUIA_Text_Contents, (ULONG) getGain());
   }
   else if(obj == MUIInput )
   {
     state.InputSelected = (LONG) (*arg);
-    set(MUILInput,MUIA_Text_Contents,getInput());
+    set(MUILInput,MUIA_Text_Contents, (ULONG) getInput());
   }
   else if(obj == MUIOutput )
   {
   state.OutputSelected = (ULONG) (*arg);
-  set(MUILOutput,MUIA_Text_Contents,getOutput());
+  set(MUILOutput,MUIA_Text_Contents, (ULONG) getOutput());
   }
 }
 
-static struct Hook hookSlider = { NULL,NULL,(HOOKFUNC) SliderHookFunc,NULL,NULL };
+static struct Hook hookSlider =
+{
+  { NULL, NULL },
+  (HOOKFUNC) SliderHookFunc,
+  NULL,
+  NULL
+};
 
 /******************************************************************************
 **** Call to open the window **************************************************
@@ -376,7 +393,9 @@ static Object* SpecialButton(STRPTR label)
   Object *button = NULL;
   STRPTR lab;
   
-  if(lab = AllocVec(strlen(label)+1,0))
+  lab = AllocVec(strlen(label)+1,0);
+
+  if( lab != NULL )
   {
     char ctrlchar = 0;
     STRPTR l = lab;
@@ -429,7 +448,7 @@ BOOL BuildGUI(char *screenname)
   MUIMasterBase = (void *)OpenLibrary("muimaster.library", MUIMASTER_VLATEST);
   if(MUIMasterBase == NULL)
   {
-    Printf((char *) msgTextNoOpen, "muimaster.library", MUIMASTER_VLATEST);
+    Printf((char *) msgTextNoOpen, (ULONG) "muimaster.library", MUIMASTER_VLATEST);
     Printf("\n");
     return FALSE;
   }
@@ -538,10 +557,10 @@ BOOL BuildGUI(char *screenname)
     Child, HVSpace,
   End;
 
-  if(MUIApp = ApplicationObject,
+  MUIApp = ApplicationObject,
     MUIA_Application_Title, (char *) msgTextProgramName,
     MUIA_Application_Version, Version,
-    MUIA_Application_Copyright, "©1997 Martin Blom",
+    MUIA_Application_Copyright, "©1997-1999 Martin Blom",
     MUIA_Application_Author, "Stéphane Barbaray/Martin Blom",
     MUIA_Application_Base, "AHI",
     MUIA_Application_HelpFile, HELPFILE,
@@ -564,7 +583,9 @@ BOOL BuildGUI(char *screenname)
         End,
       End,
     End,
-  End)
+  End;
+  
+  if( MUIApp != NULL )
   {
     APTR item = (APTR)DoMethod(MUIMenu,MUIM_FindUData,ACTID_ICONS);
     if(item)
@@ -645,7 +666,13 @@ void EventLoop(void)
       {
         struct FileRequester *request;
 
-        if (request = MUI_AllocAslRequestTags(ASL_FileRequest, ASLFR_Window, xget(MUIWindow, MUIA_Window_Window), ASLFR_TitleText, msgTextProgramName, ASLFR_RejectIcons, TRUE, ASLFR_InitialDrawer, "SYS:Prefs/Presets", TAG_DONE))
+        request = MUI_AllocAslRequestTags(ASL_FileRequest, 
+            ASLFR_Window, xget(MUIWindow, MUIA_Window_Window),
+            ASLFR_TitleText, msgTextProgramName, 
+            ASLFR_RejectIcons, TRUE, 
+            ASLFR_InitialDrawer, "SYS:Prefs/Presets",
+            TAG_DONE );
+        if( request != NULL )
         {
           DoMethod(MUIApp, MUIA_Application_Sleep, TRUE);
           if (MUI_AslRequest(request, NULL))
@@ -653,7 +680,10 @@ void EventLoop(void)
             char *file;
 
             DoMethod(MUIApp, MUIA_Application_Sleep, FALSE);
-            if(file = AllocVec(strlen(request->fr_Drawer)+128,0))
+            
+            file = AllocVec(strlen(request->fr_Drawer)+128,0);
+            
+            if( file != NULL )
             {
               CopyMem(request->fr_Drawer, file, strlen(request->fr_Drawer)+1);
               AddPart(file, request->fr_File, 128);
@@ -675,7 +705,15 @@ void EventLoop(void)
       {
         struct FileRequester *request;
 
-        if (request = MUI_AllocAslRequestTags(ASL_FileRequest, ASLFR_Window, xget(MUIWindow, MUIA_Window_Window), ASLFR_TitleText, msgTextProgramName, ASLFR_RejectIcons, TRUE, ASLFR_DoSaveMode, TRUE,ASLFR_InitialDrawer, "SYS:Prefs/Presets", TAG_DONE))
+        request = MUI_AllocAslRequestTags(ASL_FileRequest,
+            ASLFR_Window, xget(MUIWindow, MUIA_Window_Window),
+            ASLFR_TitleText, msgTextProgramName,
+            ASLFR_RejectIcons, TRUE,
+            ASLFR_DoSaveMode, TRUE,
+            ASLFR_InitialDrawer, "SYS:Prefs/Presets",
+            TAG_DONE);
+            
+        if(request != NULL )
         {
           DoMethod(MUIApp, MUIA_Application_Sleep, TRUE);
           FillUnit();
@@ -684,7 +722,10 @@ void EventLoop(void)
             char *file;
 
             DoMethod(MUIApp, MUIA_Application_Sleep, FALSE);
-            if(file = AllocVec(strlen(request->fr_Drawer)+128,0))
+            
+            file = AllocVec(strlen(request->fr_Drawer)+128,0);
+            
+            if( file != NULL )
             {
               CopyMem(request->fr_Drawer, file, strlen(request->fr_Drawer)+1);
               AddPart(file, request->fr_File, 128);
@@ -708,7 +749,7 @@ void EventLoop(void)
       case ACTID_ABOUT:
         MUI_Request(MUIApp, MUIWindow, 0, (char *) msgTextProgramName,
             (char*)msgButtonOK, (char*)msgTextCopyright, "\033c",
-            (char*)msgTextProgramName, "1997 Stéphane Barbaray/Martin Blom");
+            (char*)msgTextProgramName, "1997-1999 Stéphane Barbaray/Martin Blom");
         break;
 
       case ACTID_SAVE:

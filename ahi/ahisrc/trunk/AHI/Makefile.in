@@ -1,0 +1,145 @@
+#  $Id$
+#
+#  Makefile.in for the AHI preferences program
+#
+
+FLEXCAT		= FlexCat
+
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+top_srcdir	= @top_srcdir@
+srcdir		= @srcdir@
+prefix		= @prefix@
+exec_prefix	= @exec_prefix@
+bindir		= @bindir@
+
+CC		= @CC@
+INSTALL		= @INSTALL@
+INSTALL_DATA	= @INSTALL_DATA@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
+CFLAGS		= @CFLAGS@
+LDFLAGS		= @LDFLAGS@
+LIBS		= @LIBS@
+
+VPATH		= @srcdir@
+
+
+#
+# Files
+########################################
+
+SOURCES		= ahi.c gui_bgui.c gui_ca.c gui_mui.c support.c
+
+OBJECTS		= ahi.o support.o ahiprefs_Cat.o
+OBJECTS_BGUI	= gui_bgui.o
+OBJECTS_CA	= gui_ca.o
+OBJECTS_MUI	= gui_mui.o
+
+TARGETS		= AHI_BGUI AHI_MUI # AHI_CA 
+
+
+#
+# Targets
+########################################
+
+.PHONY:		all clean distclean maintainer-clean install revup
+
+all:		$(TARGETS)
+
+clean:
+	$(RM) $(TARGETS) version.h *.o *.bak *~ \#*\# core Makefile.dep
+
+distclean:	clean
+	$(RM) Makefile
+
+maintainer-clean: distclean
+
+install:	$(TARGETS)
+	$(INSTALL) --directory $(bindir)
+	for i in $(TARGETS); do\
+	  $(INSTALL_PROGRAM) --strip $$i $(bindir)/$$i;
+	done
+	$(INSTALL_DATA) AHI.info $(bindir)
+	$(INSTALL_DATA) AHI.MWB.info $(bindir)
+
+
+version.h:	version.rev version.date
+	@echo "#define VERS \"4.`cat version.rev` (`cat version.date`)\"" >> $@
+	@echo Creating $@
+
+revup:
+	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
+	@date +%y.%m.%d > version.date
+	@echo -n "New revision: "
+	@cat version.rev
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in ../config.status
+	(cd .. && ./config.status)
+
+
+#
+# Rules
+########################################
+
+AHI_BGUI:	$(OBJECTS) $(OBJECTS_BGUI) $(LIBS)
+	$(CC) $(LDFLAGS) $^ -o $@
+
+AHI_CA:		$(OBJECTS) $(OBJECTS_CA) $(LIBS)
+	$(CC) $(LDFLAGS) $^ -o $@
+
+AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI) $(LIBS)
+	$(CC) $(LDFLAGS) $^ -o $@
+
+ahiprefs_Cat.c:	ahiprefs.cd
+	$(FLEXCAT) ahiprefs.cd ahiprefs_Cat.c=C_c_noauto.sd
+
+ahiprefs_Cat.h:	ahiprefs.cd
+	$(FLEXCAT) ahiprefs.cd ahiprefs_Cat.h=C_h_noauto.sd
+
+
+##
+## The catalogs
+##
+########################################
+
+catalogs:
+	# Update the translations
+	list > T:catscript translations lformat\
+	  "FlexCat ahiprefs.cd %p%n NEWCTFILE %p%n"
+
+	# Make sure the directories exist
+	echo >> T:catscript "FailAt 11"
+	list >> T:catscript translations lformat\
+	  "MakeDir >NIL: AHI:User/Catalogs/%m"
+	echo >> T:catscript "FailAt 10"
+
+	# Make catalogs
+	list >> T:catscript translations lformat\
+	  "FlexCat ahiprefs.cd %p%n CATALOG AHI:User/Catalogs/%m/ahiprefs.catalog"
+
+	FlexCat ahiprefs.cd ahiprefs.ct NEWCTFILE ahiprefs.ct
+	copy ahiprefs.(cd|ct) AHI:User/Catalogs/
+	--execute T:catscript
+	delete T:catscript
+
+#
+# Dependencies
+########################################
+
+Makefile.dep:	$(SOURCES)
+#	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+	touch $@
+	makedepend -f $@ $(SOURCES)
+
+include Makefile.dep

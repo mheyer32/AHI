@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.8  1999/01/09 23:14:06  lcs
+ * Switched from SAS/C to gcc
+ *
  * Revision 4.7  1997/06/24 21:49:49  lcs
  * Increased version number to match the catalogs (4.5).
  *
@@ -20,6 +23,9 @@
  *
  */
 
+#include <config.h>
+#include <CompilerSpecific.h>
+
 #include <devices/ahi.h>
 #include <workbench/startup.h>
 #include <proto/ahi.h>
@@ -32,17 +38,15 @@
 
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
-
-#include "support_protos.h"
-#include "gui_protos.h"
-
-#ifndef _GENPROTO
-#include "ahi_protos.h"
-#endif
+#include "support.h"
+#include "gui.h"
+#include "version.h"
 
 #define DBSTEP      0.5
 
-const char *Version[] = {"$VER: AHI preferences 4.5 "__AMIGADATE__"\r\n"};
+const char *Version = "$VER: AHI preferences " VERS "\r\n";
+
+#define TEMPLATE "FROM,EDIT/S,USE/S,SAVE/S,PUBSCREEN/K"
 
 struct List      *UnitList   = NULL;
 struct List      *ModeList   = NULL;
@@ -51,34 +55,8 @@ char            **Modes      = NULL;
 char            **Inputs     = NULL;
 char            **Outputs    = NULL;
 
-struct {
-  LONG UnitSelected;
-  LONG ModeSelected;
-  LONG FreqSelected;
-  LONG ChannelsSelected;
-  LONG InputSelected;
-  LONG OutputSelected;
-  LONG OutVolSelected;
-  LONG MonVolSelected;
-  LONG GainSelected;
-
-  LONG Frequencies;
-  LONG Channels;
-  LONG Inputs;
-  LONG Outputs;
-  LONG OutVols;
-  LONG MonVols;
-  LONG Gains;
-
-  BOOL ChannelsDisabled;
-  BOOL OutVolMute;
-  BOOL MonVolMute;
-  BOOL GainMute;
-
-  float OutVolOffset;
-  float MonVolOffset;
-  float GainOffset;
-} state = {0};
+struct state state = { 0 };
+struct args  args =  {NULL, FALSE, FALSE, FALSE, NULL };
 
 BOOL SaveIcons;
 
@@ -93,15 +71,6 @@ static char copyrightBuffer[32];
 static char driverBuffer[32];
 static char versionBuffer[32];
 
-#define TEMPLATE "FROM,EDIT/S,USE/S,SAVE/S,PUBSCREEN/K"
-
-struct {
-  STRPTR  from;
-  ULONG   edit;
-  ULONG   use;
-  ULONG   save;
-  STRPTR  pubscreen;
-} args = {NULL, FALSE, FALSE, FALSE, NULL};
 
 /******************************************************************************
 **** main() function **********************************************************
@@ -138,19 +107,25 @@ int main(int argc, char **argv) {
       if((*wbarg->wa_Name) && (dobj=GetDiskObject(wbarg->wa_Name))) {
         toolarray = (char **)dobj->do_ToolTypes;
 
-        if(s = (char *) FindToolType(toolarray,"CREATEICONS")) {
+        s = (char *) FindToolType(toolarray,"CREATEICONS");
+
+        if( s != NULL ) {
           if( MatchToolValue(s,"NO") ||
               MatchToolValue(s,"FALSE")) {
             SaveIcons = FALSE;
           }
         }
 
-        if(s = (char *) FindToolType(toolarray,"PUBSCREEN")) {
+        s = (char *) FindToolType(toolarray,"PUBSCREEN");
+
+        if( s != NULL ) {
           strncpy(pubscreen, s, sizeof pubscreen);
           args.pubscreen = pubscreen;
         }
 
-        if(s = (char *) FindToolType(toolarray,"ACTION")) {
+        s = (char *) FindToolType(toolarray,"ACTION");
+
+        if( s != NULL ) {
           if(MatchToolValue(s,"EDIT")) {
             args.edit = TRUE;
           }
@@ -301,23 +276,23 @@ void NewMode(int selectedmode) {
 
   AHI_GetAudioAttrs(id, NULL,
       AHIDB_IndexArg,         unit->prefs.ahiup_Frequency,
-      AHIDB_Index,            &state.FreqSelected,
-      AHIDB_Frequencies,      &state.Frequencies,
-      AHIDB_MaxChannels,      &state.Channels,
-      AHIDB_Inputs,           &state.Inputs,
-      AHIDB_Outputs,          &state.Outputs,
-      AHIDB_MinOutputVolume,  &MinOutVol,
-      AHIDB_MaxOutputVolume,  &MaxOutVol,
-      AHIDB_MinMonitorVolume, &MinMonVol,
-      AHIDB_MaxMonitorVolume, &MaxMonVol,
-      AHIDB_MinInputGain,     &MinGain,
-      AHIDB_MaxInputGain,     &MaxGain,
+      AHIDB_Index,            (ULONG) &state.FreqSelected,
+      AHIDB_Frequencies,      (ULONG) &state.Frequencies,
+      AHIDB_MaxChannels,      (ULONG) &state.Channels,
+      AHIDB_Inputs,           (ULONG) &state.Inputs,
+      AHIDB_Outputs,          (ULONG) &state.Outputs,
+      AHIDB_MinOutputVolume,  (ULONG) &MinOutVol,
+      AHIDB_MaxOutputVolume,  (ULONG) &MaxOutVol,
+      AHIDB_MinMonitorVolume, (ULONG) &MinMonVol,
+      AHIDB_MaxMonitorVolume, (ULONG) &MaxMonVol,
+      AHIDB_MinInputGain,     (ULONG) &MinGain,
+      AHIDB_MaxInputGain,     (ULONG) &MaxGain,
 
-      AHIDB_BufferLen, 32,
-      AHIDB_Author, authorBuffer,
-      AHIDB_Copyright, copyrightBuffer,
-      AHIDB_Driver, driverBuffer,
-      AHIDB_Version, versionBuffer,
+      AHIDB_BufferLen,        32,
+      AHIDB_Author,           (ULONG) authorBuffer,
+      AHIDB_Copyright,        (ULONG) copyrightBuffer,
+      AHIDB_Driver,           (ULONG) driverBuffer,
+      AHIDB_Version,          (ULONG) versionBuffer,
       TAG_DONE);
 
   state.ChannelsSelected = unit->prefs.ahiup_Channels;
@@ -382,7 +357,7 @@ void NewMode(int selectedmode) {
     state.MonVolSelected = 0;
     state.MonVolOffset   = 0;
   }
-  else {
+  else {
     Current = 20 * log10( unit->prefs.ahiup_MonitorVolume / 65536.0 );
     Min = floor(20 * log10( MinMonVol / 65536.0 ) / DBSTEP + 0.5) * DBSTEP;
     Max = floor(20 * log10( MaxMonVol / 65536.0 ) / DBSTEP + 0.5) * DBSTEP;
@@ -467,8 +442,8 @@ void FillUnit() {
   unit->prefs.ahiup_AudioMode     = id;
 
   AHI_GetAudioAttrs(id, NULL,
-      AHIDB_FrequencyArg,  state.FreqSelected,
-      AHIDB_Frequency,    &unit->prefs.ahiup_Frequency,
+      AHIDB_FrequencyArg, state.FreqSelected,
+      AHIDB_Frequency,    (ULONG) &unit->prefs.ahiup_Frequency,
       TAG_DONE);
 
   db = state.OutVolOffset + DBSTEP * 
@@ -503,11 +478,11 @@ char *getFreq(void) {
 
   AHI_GetAudioAttrs(
       ((struct ModeNode *) GetNode(state.ModeSelected, ModeList))->ID, NULL,
-      AHIDB_FrequencyArg,  state.FreqSelected,
-      AHIDB_Frequency,    &freq,
+      AHIDB_FrequencyArg, state.FreqSelected,
+      AHIDB_Frequency,    (ULONG) &freq,
       TAG_DONE);
 
-  sprintf(freqBuffer, "%d Hz", freq);
+  sprintf(freqBuffer, "%ld Hz", freq);
   return freqBuffer;
 }
 
@@ -517,7 +492,7 @@ char *getChannels(void) {
     sprintf(chanBuffer, (char *) msgOptNoChannels);
   }
   else {
-    sprintf(chanBuffer, "%d", state.ChannelsSelected);
+    sprintf(chanBuffer, "%ld", state.ChannelsSelected);
   }
   return chanBuffer;
 }
@@ -589,8 +564,8 @@ char *getRecord(void) {
 
   AHI_GetAudioAttrs(
       ((struct ModeNode *) GetNode(state.ModeSelected, ModeList))->ID, NULL,
-      AHIDB_Record,     &record,
-      AHIDB_FullDuplex, &fullduplex,
+      AHIDB_Record,     (ULONG) &record,
+      AHIDB_FullDuplex, (ULONG) &fullduplex,
       TAG_DONE);
   
   return (char *) (record ? (fullduplex ? msgPropRecordFull : msgPropRecordHalf )
