@@ -71,8 +71,6 @@ _start( void )
 ** Globals ********************************************************************
 ******************************************************************************/
 
-struct ExecBase* SysBase = NULL;
-
 const char  LibName[]     = DRIVER;
 const char  LibIDString[] = DRIVER " " VERS "\r\n";
 const UWORD LibVersion    = VERSION;
