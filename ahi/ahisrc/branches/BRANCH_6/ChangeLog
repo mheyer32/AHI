@@ -1,3 +1,9 @@
+2004-09-20  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Minor bugfixes from Davy.
+
+	* emu10kx.audio: Added an OS4 reset handler patch from Davy.
+
 2004-09-08  Martin Blom  <martin@blom.org>
 
 	* Docs/ahiusr.texinfo: Added description of the default anti-click
