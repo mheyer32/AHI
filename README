@@ -65,7 +65,21 @@ cd build060
 sh ../ahisrc/configure --host=m68k-unknown-amigaos
 
 
-The following targets are available:
+There are also a few configure options to set:
+
+  --with-os-includedir    Path to AmigaOS include directory [/gg/os-include]
+  --enable-warpup         Enable WarpUp support
+  --enable-morphos        Enable MorphOS support
+
+--with-os-includedir specifies where the AmigaOS include files are located.
+If unspecified, /gg/os-include is assumed.
+
+--enable-warpup adds code (that doesn't work, by the way) to support WarpUp.
+
+--enable-morphos must be set when building the MorphOS version.
+
+
+The following make targets are available:
 
 all:
 	Makes all binaries, but only one version of the device.
