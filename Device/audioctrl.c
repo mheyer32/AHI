@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.13  1997/02/15 14:02:02  lcs
+* All functions that take an audio mode id as input can now use
+* AHI_DEFAULT_ID as well.
+*
 * Revision 1.12  1997/02/12 15:32:45  lcs
 * Moved each autodoc header to the file where the function is
 *
@@ -96,17 +100,28 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
 
   if(audioctrl=AllocVec(sizeof(struct AHIPrivAudioCtrl),MEMF_PUBLIC|MEMF_CLEAR))
   {
-    audioctrl->ac.ahiac_AudioCtrl.ahiac_UserData=(APTR)GetTagData(AHIA_UserData,NULL,tags);
-    audioctrl->ac.ahiac_MixFreq=GetTagData(AHIA_MixFreq,AHI_DEFAULT_FREQ,tags);
-    audioctrl->ac.ahiac_Channels=GetTagData(AHIA_Channels,0,tags);
-    audioctrl->ac.ahiac_Sounds=GetTagData(AHIA_Sounds,0,tags);
-    audioctrl->ac.ahiac_SoundFunc=(struct Hook *)GetTagData(AHIA_SoundFunc,NULL,tags);
-    audioctrl->ahiac_RecordFunc=(struct Hook *)GetTagData(AHIA_RecordFunc,NULL,tags);
-    audioctrl->ac.ahiac_PlayerFunc=(struct Hook *)GetTagData(AHIA_PlayerFunc,NULL,tags);
-    audioctrl->ac.ahiac_PlayerFreq=GetTagData(AHIA_PlayerFreq,0,tags);
-    audioctrl->ac.ahiac_MinPlayerFreq=GetTagData(AHIA_MinPlayerFreq,0,tags);
-    audioctrl->ac.ahiac_MaxPlayerFreq=GetTagData(AHIA_MaxPlayerFreq,0,tags);
-    audioctrl->ahiac_AudioID=GetTagData(AHIA_AudioID,AHI_DEFAULT_ID,tags);
+    audioctrl->ac.ahiac_AudioCtrl.ahiac_UserData =
+      (APTR)GetTagData(AHIA_UserData,NULL,tags);
+    audioctrl->ahiac_AudioID =
+      GetTagData(AHIA_AudioID,AHI_DEFAULT_ID,tags);
+    audioctrl->ac.ahiac_MixFreq =
+      GetTagData(AHIA_MixFreq,AHI_DEFAULT_FREQ,tags);
+    audioctrl->ac.ahiac_Channels =
+      GetTagData(AHIA_Channels,0,tags);
+    audioctrl->ac.ahiac_Sounds =
+      GetTagData(AHIA_Sounds,0,tags);
+    audioctrl->ac.ahiac_SoundFunc =
+      (struct Hook *)GetTagData(AHIA_SoundFunc,NULL,tags);
+    audioctrl->ahiac_RecordFunc =
+      (struct Hook *)GetTagData(AHIA_RecordFunc,NULL,tags);
+    audioctrl->ac.ahiac_PlayerFunc =
+      (struct Hook *)GetTagData(AHIA_PlayerFunc,NULL,tags);
+    audioctrl->ac.ahiac_PlayerFreq =
+      GetTagData(AHIA_PlayerFreq,0,tags);
+    audioctrl->ac.ahiac_MinPlayerFreq =
+      GetTagData(AHIA_MinPlayerFreq,0,tags);
+    audioctrl->ac.ahiac_MaxPlayerFreq =
+      GetTagData(AHIA_MaxPlayerFreq,0,tags);
 
     audioctrl->ahiac_MasterVolume=0x00010000;
 
@@ -204,6 +219,8 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   if(tag=FindTagItem(AHIDB_AudioID,tags))
   {
     total++;
+    if(id == AHI_DEFAULT_ID)
+      id = AHIBase->ahib_AudioMode;
     if( ((tag->ti_Data)&0xffff0000) == (id & 0xffff0000) )
       hits++;
   }
@@ -989,7 +1006,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *       stored.
 *
 *   INPUTS
-*       ID - An audio mode identifier or AHI_INVALID_ID.
+*       ID - An audio mode identifier, AHI_DEFAULT_ID (V3) or AHI_INVALID_ID.
 *       audioctrl - A pointer to an AHIAudioCtrl structure, only used if
 *           ID equals AHI_INVALID_ID. Set to NULL if not used. If set to
 *           NULL when used, this function returns immediately. Always set
@@ -1135,6 +1152,8 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *           NOTE: ti_Data is a pointer to an UBYTE array where the name
 *           will be stored. See AHIDB_BufferLen. (V2)
 *
+*       AHIDB_AudioID (ULONG *) - The ID for this mode. (V3)
+*
 *       If the requested information cannot be found, the variable will be not
 *       be touched.
 *
@@ -1185,9 +1204,10 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
     }
     else
     {
-      idtag[0].ti_Data=id;
+      idtag[0].ti_Data = (id == AHI_DEFAULT_ID ? AHIBase->ahib_AudioMode : id);
       audioctrl=(struct AHIAudioCtrlDrv *)CreateAudioCtrl(idtag);
     }
+
     if(audioctrl && rc )
     {
       if(dbtags=GetDBTagList(audiodb, idtag[0].ti_Data))

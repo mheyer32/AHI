@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.14  1997/02/15 14:02:02  lcs
+* All functions that take an audio mode id as input can now use
+* AHI_DEFAULT_ID as well.
+*
 * Revision 1.13  1997/02/14 18:43:31  lcs
 * AHIR_DoDefaultMode added
 *
@@ -252,15 +256,18 @@ static void GetSliderAttrs(struct AHIAudioModeRequesterExt *req, LONG *levels, L
   *level=0;
   
   AHI_GetAudioAttrs(req->tempAudioID, NULL,
-      AHIDB_Frequencies,levels,
-      AHIDB_IndexArg,req->tempFrequency,
-      AHIDB_Index,level,
+      AHIDB_Frequencies,  levels,
+      AHIDB_IndexArg,     (req->tempAudioID == AHI_DEFAULT_ID ? 
+                              AHIBase->ahib_Frequency : req->tempFrequency),
+      AHIDB_Index,        level,
       TAG_DONE);
+
   if(*level >= *levels)
     *level = *levels-1;
+
   AHI_GetAudioAttrs(req->tempAudioID, NULL,
-      AHIDB_FrequencyArg,*level,
-      AHIDB_Frequency,&req->tempFrequency,
+      AHIDB_FrequencyArg, *level,
+      AHIDB_Frequency,    &req->tempFrequency,
       TAG_DONE);
 }
 
@@ -287,8 +294,8 @@ static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
   GetSliderAttrs(req,&sliderlevels,&sliderlevel);
   GT_SetGadgetAttrs(req->slidergadget, req->Window, NULL,
       GTSL_Max,sliderlevels-1,
-      GTSL_Level,sliderlevel,
-      GA_Disabled,!sliderlevels,
+      GTSL_Level, sliderlevel,
+      GA_Disabled,!sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID),
       TAG_DONE);
 
   UpdateInfoWindow(req);
