@@ -10,11 +10,14 @@
 @c %***end of header
 
 
-@c $VER: ahidev.texinfo 4.2 (11.5.97)
-@set ahiver 4.2
+@c $VER: ahidev.texinfo 4.3 (14.7.97)
+@set ahiver 4.3
 
 @c $Id$
 @c $Log$
+@c Revision 4.3  1997/07/15 00:50:40  lcs
+@c This is the second bugfix release of AHI 4.
+@c
 @c Revision 4.2  1997/05/11 12:38:39  lcs
 @c Added note about unrolling short sounds.
 @c
@@ -197,7 +200,8 @@ donations are welcome (see @cite{@sc{Ahi} User's Guide}).
 If you use this software in a commercial or shareware product, please
 consider giving the author (@pxref{The Author})---and preferably each one
 of the contributors too (see @cite{@sc{Ahi} User's Guide})---an original or
-registered version of your work.
+registered version of your work.  Should you want to distribute the @sc{Ahi}
+software with your own product, there is really nothing to consider, is it?
 
 If you wish to distribute this software with a hardware product, contact
 the author (@pxref{The Author}).  Distribution of @sc{AHI} with hardware
@@ -454,28 +458,28 @@ struct MsgPort    *AHImp=NULL;
 struct AHIRequest *AHIio=NULL;
 BYTE               AHIDevice=-1;
 
-if(AHImp=CreateMsgPort())
+if(AHImp = CreateMsgPort())
 @{
-  if(AHIio=(struct AHIRequest *)CreateIORequest(
-      AHImp,sizeof(struct AHIRequest)))
+  if(AHIio = (struct AHIRequest *) CreateIORequest(
+      AHImp, sizeof(struct AHIRequest)))
   @{
-    AHIio->ahir_Version=4;  // Open at least version 4.
-    if(!(AHIDevice=OpenDevice(AHINAME,AHI_NO_UNIT,
-        (struct IORequest *)AHIio,NULL)))
+    AHIio->ahir_Version = 4;  /* Open at least version 4. */
+    if(!(AHIDevice = OpenDevice(AHINAME, AHI_NO_UNIT,
+        (struct IORequest *) AHIio, NULL)))
     @{
-      AHIBase=(struct Library *)AHIio->ahir_Std.io_Device;
+      AHIBase = (struct Library *) AHIio->ahir_Std.io_Device;
 
 // AHI's functions can now be called as normal library functions:
       AHI_NextAudioID(AHI_INVALID_ID);
 
-      CloseDevice((struct IORequest *)AHIio);
-      AHIDevice=-1; // Good habit, IMHO.
+      CloseDevice((struct IORequest *) AHIio);
+      AHIDevice = -1;
     @}
-    DeleteIORequest((struct IORequest *)AHIio);
-    AHIio=NULL;
+    DeleteIORequest((struct IORequest *) AHIio);
+    AHIio = NULL;
   @}
   DeleteMsgPort(AHImp);
-  AHImp=NULL;
+  AHImp = NULL;
 @}
 @end example
 
@@ -815,13 +819,13 @@ __asm __saveds ULONG SoundFunc(register __a0 struct Hook *hook,
     register __a1 struct AHISoundMessage *chan)
 @{
   if(ChannelDatas[chan->ahism_Channel].Length)
-    AHI_SetSound(chan->ahism_Channel,0,
+    AHI_SetSound(chan->ahism_Channel, 0,
         (ULONG) ChannelDatas[chan->ahism_Channel].Address,
         ChannelDatas[chan->ahism_Channel].Length,
-        actrl,NULL);
+        actrl, NULL);
   else
-    AHI_SetSound(chan->ahism_Channel,AHI_NOSOUND,
-        NULL,NULL,actrl,NULL);
+    AHI_SetSound(chan->ahism_Channel, AHI_NOSOUND,
+        NULL, NULL, actrl, NULL);
   return NULL;
 @}
 @end example
@@ -947,24 +951,24 @@ if(AHImp = CreateMsgPort())
   @{
     AHIio->ahir_Version = 4;
     if(!(AHIDevice = OpenDevice(AHINAME, unit, 
-        (struct IORequest *)AHIio, NULL)))
+        (struct IORequest *) AHIio, NULL)))
     @{
 
 
       /* Send commands to the device here... */
 
 
-      if(! CheckIO((struct IORequest *)AHIio))
+      if(! CheckIO((struct IORequest *) AHIio))
       @{
-        AbortIO((struct IORequest *)AHIio);
+        AbortIO((struct IORequest *) AHIio);
       @}
 
-      WaitIO((struct IORequest *)AHIio);
+      WaitIO((struct IORequest *) AHIio);
 
-      CloseDevice((struct IORequest *)AHIio);
+      CloseDevice((struct IORequest *) AHIio);
       AHIDevice = -1;
     @}
-    DeleteIORequest((struct IORequest *)AHIio);
+    DeleteIORequest((struct IORequest *) AHIio);
     AHIio = NULL;
   @}
   DeleteMsgPort(AHImp);

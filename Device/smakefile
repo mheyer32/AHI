@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.10  1997/07/15 00:52:05  lcs
+# This is the second bugfix release of AHI 4.
+#
 # Revision 4.9  1997/06/02 18:15:02  lcs
 # Added optional clipping when using master volume > 100%.
 #
@@ -115,6 +118,9 @@ cpu:
 	smake clean
 	smake CPU=68000
 	move $(TARGET) $(TARGET).000
+	smake clean
+	smake CPU=68060
+	move $(TARGET) $(TARGET).060
 	smake clean
 	smake
 
@@ -307,3 +313,7 @@ ci:
 
 clean:
 	--delete \#?.o localize.c localize.h QUIET
+
+allclean:
+	smake clean
+	--delete $(TARGET) $(TARGET).000

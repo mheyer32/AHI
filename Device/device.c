@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.8  1997/07/15 00:52:05  lcs
+* This is the second bugfix release of AHI 4.
+*
 * Revision 4.7  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -406,6 +409,7 @@ __asm ULONG DevOpen(
   {
     KPrintF("=>%ld\n",rc);
   }
+
   return rc;
 }
 
@@ -641,7 +645,6 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
       InitIFFasDOS(iff);
       if(!OpenIFF(iff,IFFF_READ))
       {
-
         if(!(PropChunk(iff,ID_PREF,ID_PRHD)
           || PropChunk(iff,ID_PREF,ID_AHIG)
           || CollectionChunk(iff,ID_PREF,ID_AHIU)

@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.2  1997/07/15 00:50:40  lcs
+# This is the second bugfix release of AHI 4.
+#
 # Revision 4.1  1997/05/04 15:53:37  lcs
 # Initial revision.
 #
@@ -29,10 +32,10 @@ dist:	hyperdoc printeddoc readme
 readme:
 	type readme.dev readme.main > Projekt:AHI/AHI/ahidev.readme
 	type readme.usr readme.main > Projekt:AHI/AHI/ahiusr.readme
-	type readme.man readme.main > Projekt:AHI/AHI-Manual/ahiusr.readme
+	type readme.man readme.main > Projekt:AHI/AHI-Manual/ahiman.readme
 	rep Projekt:AHI/AHI/ahidev.readme REVISION `type Projekt:AHI/rev`
 	rep Projekt:AHI/AHI/ahiusr.readme REVISION `type Projekt:AHI/rev`
-	rep Projekt:AHI/AHI-Manual/ahiusr.readme REVISION `type Projekt:AHI/rev`
+	rep Projekt:AHI/AHI-Manual/ahiman.readme REVISION `type Projekt:AHI/rev`
 
 ##
 ## Build hypertext documentation
@@ -68,3 +71,7 @@ ci:
 ###############################################################################
 
 clean:
+	@echo "Nothing to do!"
+
+allclean:
+	smake clean
