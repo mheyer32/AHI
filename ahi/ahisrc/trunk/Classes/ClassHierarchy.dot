@@ -1,0 +1,45 @@
+digraph ClassHierarchy {
+//	size="4,4";
+//	ratio=compress;
+
+	subgraph baseclasses {
+		node [style=filled fillcolor=aliceblue];
+		"ahi.class";
+		"ahi.class" -> "ahi-board.class";
+		"ahi.class" -> "ahi-buffer.class";
+		"ahi.class" -> "ahi-lfo.class";
+		"ahi.class" -> "ahi-output.class";
+	}
+	subgraph drivers {
+		node [style=filled fillcolor=palegreen];
+		"ahi.class" -> "ahi-driver.class";
+		"ahi-driver.class" -> "emu10kx.ahi-driver";
+		"ahi-driver.class" -> "envy24.ahi-driver";
+		"ahi-driver.class" -> "legacy.ahi-driver";
+	}
+	subgraph mixers {
+		node [style=filled fillcolor=rosybrown];
+		"ahi.class" -> "ahi-mixer.class";
+		"ahi-mixer.class" -> "ac97.ahi-mixer";
+		"ac97.ahi-mixer" -> "vt1616.ahi-mixer";
+	}
+	subgraph processors {
+		node [style=filled fillcolor=lightyellow];
+		"ahi.class" -> "ahi-processor.class";
+		"ahi-processor.class" -> "adder.ahi-processor";
+		"ahi-processor.class" -> "gain.ahi-processor";
+		"ahi-processor.class" -> "splitter.ahi-processor";
+		"ahi-processor.class" -> "tick.ahi-processor";
+	}
+
+	// Use relations
+	edge [color=grey arrowhead=none];
+	"ahi-driver.class" -> "ahi-board.class";
+	"ahi-driver.class" -> "ahi-mixer.class";
+	"ahi-driver.class" -> "ahi-output.class";
+
+	"ahi-output.class" -> "ahi-buffer.class";
+	"ahi-processor.class" -> "ahi-buffer.class";
+
+	"ahi-lfo.class" -> "tick.ahi-processor";
+}
