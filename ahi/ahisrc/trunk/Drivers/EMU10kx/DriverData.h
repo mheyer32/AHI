@@ -52,6 +52,8 @@ struct DriverData
     ULONG               current_length;
     ULONG               current_size;
     APTR                current_buffer;
+    ULONG               current_position;
+    BOOL                mixing_enabled;
 };
 
 #endif /* EMU10kx_DriverData_h */
