@@ -139,6 +139,24 @@ struct DriverData
 
     /** The hardware register value corresponding to output_volume */
     UWORD               output_volume_bits;
+
+    /** Saved state for AC97 mike */
+    UWORD               ac97_mic;
+
+    /** Saved state for AC97 cd */
+    UWORD               ac97_cd;
+    
+    /** Saved state for AC97 vide */
+    UWORD               ac97_video;
+    
+    /** Saved state for AC97 aux */
+    UWORD               ac97_aux;
+    
+    /** Saved state for AC97 line in */
+    UWORD               ac97_linein;
+    
+    /** Saved state for AC97 phone */
+    UWORD               ac97_phone;
 };
 
 #endif /* EMU10kx_DriverData_h */
