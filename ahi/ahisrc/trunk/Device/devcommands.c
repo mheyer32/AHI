@@ -452,8 +452,6 @@ Devicequery ( struct AHIRequest *ioreq,
 *   IO REQUEST RESULT
 *       io_Error        0 for success, or an error code as defined in
 *                       <ahi/devices.h> and <exec/errors.h>.
-*       io_Actual       If io_Error is 0, number of requests actually
-*                       flushed.
 *
 *       The other fields, except io_Device, io_Unit and io_Command, are
 *       trashed.
@@ -910,8 +908,6 @@ WriteCmd ( struct AHIRequest *ioreq,
 *   IO REQUEST RESULT
 *       io_Error        0 for success, or an error code as defined in
 *                       <ahi/devices.h> and <exec/errors.h>.
-*       io_Actual       If io_Error is 0, number of requests actually
-*                       flushed.
 *
 *       The other fields, except io_Device, io_Unit and io_Command, are
 *       trashed.
