@@ -150,7 +150,7 @@ CallMixroutine( unsigned int magic,
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
-  //MixGeneric( Hook, dst, audioctrl );
+  MixGeneric( Hook, dst, audioctrl );
 
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
 
@@ -364,7 +364,7 @@ WarpUpInt:
         blrl
 
 # Test and clear
-        lwz     3,wc_Active(14)
+        addi    3,14,wc_Active
         li      4,0
 1:
         lwarx   5,0,3

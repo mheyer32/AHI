@@ -423,7 +423,7 @@ OpenLibs ( void )
 
   if( PPCLibBase != NULL 
       && PPCLibBase->lib_Version == 46 
-      && PPCLibBase->lib_Revision < 26 )
+      && PPCLibBase->lib_Revision < 24 )
   {
     Req( "Need at least version 46.26 of 'ppc.library'." );
     return FALSE;
