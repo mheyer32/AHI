@@ -51,9 +51,15 @@ maintainer-clean:
 	      stamp-h stamp-h.in Makefile configure config.h.in
 
 bindist:
+	$(INSTALL) --directory $(DISTDIR)
+	rm -rf $(DISTDIR)/*
+	$(INSTALL_DATA) ${srcdir}/COPYING $(DISTDIR)
+	$(INSTALL_DATA) ${srcdir}/COPYING.LIB $(DISTDIR)
+
 	$(INSTALL) --directory $(CATDIR)
-	$(INSTALL_DATA) README.ATO $(CATDIR)
-	$(INSTALL_DATA) README.TRANSLATIONS $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/README.ATO $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/README.TRANSLATIONS $(CATDIR)
+
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 revup:

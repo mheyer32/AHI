@@ -1,12 +1,32 @@
 /* $Id$ */
 
+/*
+     AHI - Hardware independent audio subsystem
+     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Library General Public
+     License as published by the Free Software Foundation; either
+     version 2 of the License, or (at your option) any later version.
+     
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Library General Public License for more details.
+     
+     You should have received a copy of the GNU Library General Public
+     License along with this library; if not, write to the
+     Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
+     MA 02139, USA.
+*/
+
 #include <config.h>
 #include <CompilerSpecific.h>
 
 # include <exec/interrupts.h>
 # include <hardware/intbits.h>
 
-#if !defined( VERSIONPOWERUP )
+#if !defined( VERSIONPPC )
 # include <exec/memory.h>
 # include <exec/execbase.h>
 # include <powerup/ppclib/memory.h>
@@ -39,7 +59,7 @@ static void
 DoMasterVolume ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl );
 
-#if !defined( VERSIONPOWERUP )
+#if !defined( VERSIONPPC )
 
 static void
 DoOutputBuffer ( void *buffer,
@@ -48,7 +68,7 @@ DoOutputBuffer ( void *buffer,
 static void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
-#endif /* !defined( VERSIONPOWERUP ) */
+#endif /* !defined( VERSIONPPC ) */
 
 static void
 CallAddRoutine ( LONG samples,
@@ -101,7 +121,7 @@ ADDFUNC* AddWordsSVPHBPtr = NULL;
 ** PowerUp Support code *******************************************************
 ******************************************************************************/
 
-#if defined( VERSIONPOWERUP )
+#if defined( VERSIONPPC )
 
 /* PPC code ******************************************************************/
 
@@ -266,10 +286,10 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   DoChannelInfo(audioctrl);
 }
 
-#endif /* defined( VERSIONPOWERUP ) */
+#endif /* defined( VERSIONPPC ) */
 
 
-#if !defined( VERSIONPOWERUP )
+#if !defined( VERSIONPPC )
 
 /******************************************************************************
 ** InitMixroutine *************************************************************
@@ -772,7 +792,7 @@ SelectAddRoutine ( Fixed     VolumeLeft,
   }
 }
 
-#endif /* !defined( VERSIONPOWERUP ) */
+#endif /* !defined( VERSIONPPC ) */
 
 
 /******************************************************************************
@@ -785,7 +805,7 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 // There is a stub function in asmfuncs.a called Mix() that saves d0-d1/a0-a1
 // and calls MixGeneric. This stub is only assembled if VERSIONGEN is set.
 
-#if !defined( VERSIONPOWERUP )
+#if !defined( VERSIONPPC )
 void ASMCALL
 MixGeneric ( REG(a0, struct Hook *Hook), 
              REG(a1, void *dst), 
@@ -827,7 +847,7 @@ MixGeneric ( struct Hook *Hook,
           cd->cd_EOS = FALSE;
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
-#if defined( VERSIONPOWERUP )
+#if defined( VERSIONPPC )
             audioctrl->ahiac_PPCArgument = &cd->cd_ChannelNo;
             CallSoundHook( audioctrl );
 #else
@@ -992,7 +1012,7 @@ MixGeneric ( struct Hook *Hook,
 
   DoMasterVolume(dst, audioctrl);
 
-#if !defined( VERSIONPOWERUP )
+#if !defined( VERSIONPPC )
 
   // This is handled in m68k code, in order to minimize cache flushes.
 
@@ -1004,7 +1024,7 @@ MixGeneric ( struct Hook *Hook,
 
   DoChannelInfo(audioctrl);
 
-#endif /* !defined( VERSIONPOWERUP ) */
+#endif /* !defined( VERSIONPPC ) */
 
   return;
 }
@@ -1058,7 +1078,7 @@ DoMasterVolume ( void *buffer,
 }
 
 
-#if !defined( VERSIONPOWERUP )
+#if !defined( VERSIONPPC )
 
 static void
 DoOutputBuffer ( void *buffer,
@@ -1108,7 +1128,7 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl )
   }
 }
 
-#endif /* !defined( VERSIONPOWERUP ) */
+#endif /* !defined( VERSIONPPC ) */
 
 static void
 CallAddRoutine ( LONG samples,
@@ -1116,7 +1136,7 @@ CallAddRoutine ( LONG samples,
                  struct AHIChannelData *cd,
                  struct AHIPrivAudioCtrl *audioctrl )
 {
-#if defined( POWERUP )
+#if defined( VERSIONPPC )
   if( ( (ULONG) *dstptr < (ULONG) audioctrl->ahiac_PPCMixBuffer ) ||
       ( (ULONG) *dstptr > (ULONG) audioctrl->ahiac_PPCMixBuffer + audioctrl->ac.ahiac_BuffSize ) )
   {
@@ -1134,7 +1154,7 @@ CallAddRoutine ( LONG samples,
       samples, cd->cd_ScaleLeft, cd->cd_ScaleRight,
       &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, dstptr, cd);
 
-#if defined( POWERUP )
+#if defined( VERSIONPPC )
   if( ( (ULONG) *dstptr < (ULONG) audioctrl->ahiac_PPCMixBuffer ) ||
       ( (ULONG) *dstptr > (ULONG) audioctrl->ahiac_PPCMixBuffer + audioctrl->ac.ahiac_BuffSize ) )
   {

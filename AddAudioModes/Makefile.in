@@ -21,7 +21,7 @@ CC		= @CC@
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 
-CPPFLAGS	= @CPPFLAGS@ -I.. -I${top_srcdir}
+CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir}
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
 
@@ -32,8 +32,7 @@ VPATH		= @srcdir@
 # Files
 ########################################
 
-SOURCES		= AddAudioModes.c
-OBJECTS		= $(SOURCES:%.c=%.o)
+OBJECTS		= AddAudioModes.o
 TARGET		= AddAudioModes
 
 
@@ -59,7 +58,7 @@ bindist:	$(TARGET)
 
 version.h:	AddAudioModes.c
 	@echo Creating $@
-	@grep '$$Id' AddAudioModes.c | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
+	@grep '$$Id' $< | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
 
 
 #
@@ -74,13 +73,16 @@ Makefile: Makefile.in ../config.status
 # Dependencies
 ########################################
 
-Makefile.dep:	$(SOURCES) version.h
-ifneq ($(build_os),"amigaos")
+SOURCES		= $(notdir $(wildcard $(srcdir)/*.c))
+HEADERS		= $(notdir $(wildcard $(srcdir)/*.h))
+
+Makefile.dep:	$(SOURCES) $(HEADERS) version.h
+	@echo Making $@
+ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 else
-	# This is much faster...
 	-@touch $@
-	-@makedepend -f $@ $(SOURCES)
+	-@makedepend -f $@ -I $(srcdir) $(SOURCES)
 endif
 
 include Makefile.dep

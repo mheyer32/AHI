@@ -29,7 +29,7 @@ INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 INSTALL_DATA	= @INSTALL_DATA@
 
-CPPFLAGS	= @CPPFLAGS@ -I.. -I${top_srcdir}
+CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir}
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
 LIBS		= @LIBS@
@@ -41,8 +41,6 @@ VPATH		= @srcdir@
 # Files
 ########################################
 
-SOURCES		= ahi.c gui_bgui.c gui_ca.c gui_mui.c support.c
-
 OBJECTS		= ahi.o support.o ahiprefs_Cat.o
 OBJECTS_BGUI	= gui_bgui.o
 OBJECTS_CA	= gui_ca.o
@@ -50,7 +48,7 @@ OBJECTS_MUI	= gui_mui.o
 
 TARGETS		= AHI_BGUI AHI_MUI
 
-LANGUAGES	= $(notdir $(basename $(wildcard translations/*.ct)))
+LANGUAGES	= $(notdir $(basename $(wildcard ${srcdir}/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
 
@@ -76,14 +74,14 @@ bindist:	all
 	for i in $(TARGETS); do \
 	  $(INSTALL_PROGRAM) --strip $$i $(PREFSDIR)/$$i; \
 	done
-	$(INSTALL_DATA) AHI.info $(PREFSDIR)
-	$(INSTALL_DATA) AHI.MWB.info $(PREFSDIR)
+	$(INSTALL_DATA) ${srcdir}/AHI.info $(PREFSDIR)
+	$(INSTALL_DATA) ${srcdir}/AHI.MWB.info $(PREFSDIR)
 	for i in $(LANGUAGES); do \
 	  $(INSTALL) --directory $(CATDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
 	done
-	$(INSTALL_DATA) ahiprefs.cd $(CATDIR)
-	$(INSTALL_DATA) ahiprefs.ct $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/ahiprefs.cd $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/ahiprefs.ct $(CATDIR)
 
 version.h:	version.rev version.date
 	@echo Creating $@
@@ -120,32 +118,34 @@ AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 
-ahiprefs_Cat.c:	ahiprefs.cd
-	$(FLEXCAT) ahiprefs.cd ahiprefs_Cat.c=C_c_noauto.sd
+ahiprefs_Cat.c:	ahiprefs.cd C_c_noauto.sd
+	$(FLEXCAT) $(srcdir)/ahiprefs.cd ahiprefs_Cat.c=$(srcdir)/C_c_noauto.sd
 
-ahiprefs_Cat.h:	ahiprefs.cd
-	$(FLEXCAT) ahiprefs.cd ahiprefs_Cat.h=C_h_noauto.sd
+ahiprefs_Cat.h:	ahiprefs.cd C_h_noauto.sd
+	$(FLEXCAT) $(srcdir)/ahiprefs.cd ahiprefs_Cat.h=$(srcdir)/C_h_noauto.sd
 
 %.catalog:	translations/%.ct
-	$(FLEXCAT) ahiprefs.cd $< CATALOG $@
+	$(FLEXCAT) $(srcdir)/ahiprefs.cd $< CATALOG $@
 
 %.ct:
-	$(FLEXCAT) ahiprefs.cd $@ NEWCTFILE $@
-
+	$(FLEXCAT) $(srcdir)/ahiprefs.cd $@ NEWCTFILE $@
 
 #
 # Dependencies
 ########################################
 
-Makefile.dep:	$(SOURCES) ahiprefs_Cat.h version.h
+SOURCES		= $(notdir $(wildcard $(srcdir)/*.c))
+HEADERS		= $(notdir $(wildcard $(srcdir)/*.h))
+
+Makefile.dep:	$(SOURCES) $(HEADERS) version.h
+	@echo Making $@
 ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 else
-	# This is much faster...
 	-@touch $@
-	-@makedepend -f $@ $(SOURCES)
+	-@makedepend -f $@ -I $(srcdir) $(SOURCES)
 endif
 
 include Makefile.dep
 
-$(wildcard translations/*.ct) ahiprefs.ct:	ahiprefs.cd
+$(wildcard $(srcdir)/translations/*.ct) $(srcdir)/ahiprefs.ct:	ahiprefs.cd

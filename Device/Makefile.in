@@ -8,7 +8,7 @@
 
 CPU	= 68060
 
-#Can be 68K, GEN, POWERUP or WARPUP:
+#Can be 68K, GEN, PPC:
 
 VER	= 68K
 
@@ -34,11 +34,12 @@ CC		= @CC@
 AS		= @AS@
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
 FLEXCAT		= @FLEXCAT@
 ASM		= @ASM@
 
-CPPFLAGS	= @CPPFLAGS@ -I.. -I${top_srcdir} -DVERSION$(VER)
-CFLAGS		= @CFLAGS@ -O3 -m$(CPU)
+CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir} -DVERSION$(VER)
+CFLAGS		= @CFLAGS@ -O0 -m$(CPU)
 ASFLAGS		= @ASFLAGS@ -m$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
@@ -72,9 +73,9 @@ else
 OBJECTS		+= dspecho.o mixer.o
 endif
 
-TARGET		= ahi.device.$(CPU)
+TARGET		= ahi.device.$(VER)-$(CPU)
 
-ifeq ($(VER),POWERUP)
+ifeq ($(VER),PPC)
 CC		= ppc-amigaos-gcc
 CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -mcpu=$(CPU)
 LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
@@ -93,10 +94,10 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 ########################################
 
 .PHONY:		all mostlyclean clean distclean maintainer-clean\
-		bindist ahidev install revup
+		bindist bindist-install install revup
 
 
-all:		$(TARGET) ahi.ct $(CATALOGS)
+all:		$(TARGET) $(srcdir)/ahi.ct $(CATALOGS)
 
 mostlyclean:
 	$(RM) $(TARGETS) *.o *.bak *~ \#*\# core Makefile.dep Makefile.opt
@@ -109,25 +110,60 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-bindist:
+bindist:	$(srcdir)/ahi.ct $(CATALOGS)
+	$(INSTALL) --directory $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/ahi.cd $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/ahi.ct $(CATDIR)
+	for i in $(LANGUAGES); do \
+	  $(INSTALL) --directory $(CATDIR)/$$i; \
+	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahi.catalog; \
+	done
+
 	$(INSTALL) --directory $(DEVSDIR)
 
-	make device VER=68K CPU=68000
-	$(INSTALL_PROGRAM)  $(DEVSDIR)
+	make clean
+	make bindist-install VER=68K CPU=68000
 
-ahidev:		$(TARGET)
+	make clean
+	make bindist-install VER=68K CPU=68020
+
+	make clean
+	make bindist-install VER=68K CPU=68030
+
+	make clean
+	make bindist-install VER=68K CPU=68040
+
+	make clean
+	make bindist-install VER=68K CPU=68060
+
+	make clean
+	make bindist-install VER=GEN CPU=68000
+
+	make clean
+	make bindist-install VER=GEN CPU=68020
+
+	make clean
+	make bindist-install VER=GEN CPU=68030
+
+	make clean
+	make bindist-install VER=GEN CPU=68040
+
+	make clean
+	make bindist-install VER=GEN CPU=68060
+
+	make clean
+	make bindist-install VER=PPC CPU=603e
+
+	make clean
+	make bindist-install VER=PPC CPU=604e
+
+
+bindist-install: $(TARGET)
+	$(INSTALL_PROGRAM) $(TARGET) $(DEVSDIR)/$(TARGET)
+
 
 install:	$(TARGET)
 	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
-
-#060:
-#	make ahidev VER=68K CPU=68060
-#
-#060PPC:
-#	make ahidev VER=GEN CPU=68060
-#
-#604:
-#	make ahidev VER=POWERUP CPU=604
 
 
 version.i:	version.rev
@@ -209,7 +245,7 @@ devsupp.o:	devsupp.s
 dspecho_68k.o:	dspecho_68k.s ahi_def.i dsp.i
 mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
 
-$(wildcard $(srcdir)/translations/*.ct) ahi.ct:	ahi.cd
+$(wildcard $(srcdir)/translations/*.ct) $(srcdir)/ahi.ct:	ahi.cd
 
 #
 # Options
