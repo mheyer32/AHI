@@ -343,14 +343,12 @@ AddAudioMode( struct TagItem* DBtags,
       tagitems++;
     }
 
-#ifdef VERSIONGEN
     if( fast )
     {
       // Silently filter away all fast modes!
       rc = TRUE;
       goto unlock;
     }
-#endif
 
     nodesize += sizeof(struct TagItem);  // The last TAG_END
     tagitems++;
