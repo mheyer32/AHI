@@ -242,11 +242,9 @@ SetVol ( REG(d0, UWORD channel),
 *   INPUTS
 *       channel - The channel to set playback frequency for.
 *       freq - The playback frequency in Hertz. Can also be AHI_MIXFREQ,
-*           is the current mixing frequency (only usable with AHIST_INPUT
-*           sounds), or 0 to temporary stop the sound (it will restart at
-*           the same point when its frequency changed). Setting the frequency
-*           of an AHIST_INPUT sound is not supported, and the result is
-*           undefined.
+*           which is the current mixing frequency, or 0 to temporary stop
+*           the sound (it will restart at the same point when its frequency
+*           changed).
 *       audioctrl - A pointer to an AHIAudioCtrl structure.
 *       flags - Only one flag is defined
 *           AHISF_IMM - Set this flag if this command should take effect
@@ -492,13 +490,6 @@ SetSound ( REG(d0, UWORD channel),
   }
   else if(sd->sd_Type != AHIST_NOTYPE) /* This is a user error, shouldn't happen! */
   {
-    if(sd->sd_Type == AHIST_INPUT)
-    {
-      sd->sd_Addr   = audioctrl->ahiac_InputBuffer[1];
-      sd->sd_Length = audioctrl->ahiac_InputLength;
-      offset = length = 0;
-    }
-
     if(length == 0) length = sd->sd_Length;
 
     cd->cd_NextDataStart = sd->sd_Addr;
@@ -924,9 +915,6 @@ SetEffect ( REG(a0, ULONG *effect),
 *               use much more CPU power than AHIST_SAMPLE on a DMA/DSP
 *               sound card.
 *
-*           AHIST_INPUT - The input from your sampler (not fully functional
-*               yet).
-*
 *       info - Depends on type:
 *           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
 *               ahisi_Type - Format of samples (four formats are supported).
@@ -948,10 +936,6 @@ SetEffect ( REG(a0, ULONG *effect),
 *               to be played as offset argument. Unfortunately, this does not
 *               work for 16 bit samples.
 *
-*           AHIST_INPUT - Always set info to NULL.
-*               Note that AHI_SetFreq() may only be called with AHI_MIXFREQ
-*               for this sample type.
-*
 *       audioctrl - A pointer to an AHIAudioCtrl structure.
 *
 *   RESULT
@@ -965,7 +949,6 @@ SetEffect ( REG(a0, ULONG *effect),
 *       MEMF_PUBLIC flag set. 
 *
 *   BUGS
-*       AHIST_INPUT does not fully work yet.
 *
 *   SEE ALSO
 *       AHI_UnloadSound(), AHI_SetEffect(), AHI_SetFreq(), AHI_SetSound(),
@@ -1053,72 +1036,6 @@ LoadSound ( REG(d0, UWORD sound),
       break;
     }
  
-    case AHIST_INPUT:
-    {
-      if(audioctrl->ahiac_InputBuffer[0] == NULL)
-      {
-        ULONG playsamples = 0, recordsamples = 0;
-
-        if(AHI_GetAudioAttrs( AHI_INVALID_ID, (struct AHIAudioCtrl *) audioctrl,
-            AHIDB_MaxPlaySamples,   (ULONG) &playsamples,
-            AHIDB_MaxRecordSamples, (ULONG) &recordsamples,
-            TAG_DONE))
-        {
-          audioctrl->ahiac_InputBlockLength = recordsamples;
-          audioctrl->ahiac_InputLength      = recordsamples;
-          while(audioctrl->ahiac_InputLength < playsamples)
-          {
-            audioctrl->ahiac_InputLength += recordsamples;
-          }
-
-          /* AHI_FreeAudio() will deallocate...  */
-
-          audioctrl->ahiac_InputBuffer[0] = AllocVec(
-              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
-              MEMF_PUBLIC|MEMF_CLEAR);
-
-          audioctrl->ahiac_InputBuffer[1] = AllocVec(
-              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
-              MEMF_PUBLIC|MEMF_CLEAR);
-
-          audioctrl->ahiac_InputBuffer[2] = AllocVec(
-              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
-              MEMF_PUBLIC|MEMF_CLEAR);
-
-          if((audioctrl->ahiac_InputBuffer[0] != NULL) &&
-             (audioctrl->ahiac_InputBuffer[1] != NULL) &&
-             (audioctrl->ahiac_InputBuffer[2] != NULL))
-          {
-            audioctrl->ahiac_InputRecordPtr = audioctrl->ahiac_InputBuffer[0];
-            audioctrl->ahiac_InputRecordCnt = audioctrl->ahiac_InputLength;
-
-            audioctrl->ahiac_SoundDatas[sound].sd_Type = AHIST_INPUT|AHIST_S16S;
-            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[0] =
-                audioctrl->ahiac_InputBuffer[0];
-            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[1] =
-                audioctrl->ahiac_InputBuffer[1];
-            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[2] =
-                audioctrl->ahiac_InputBuffer[2];
-
-            /* See also: AHI_SetSound() */
-
-          }
-          else
-          {
-            FreeVec(audioctrl->ahiac_InputBuffer[0]);
-            FreeVec(audioctrl->ahiac_InputBuffer[1]);
-            FreeVec(audioctrl->ahiac_InputBuffer[2]);
-            audioctrl->ahiac_InputBuffer[0] = NULL;
-            audioctrl->ahiac_InputBuffer[1] = NULL;
-            audioctrl->ahiac_InputBuffer[2] = NULL;
-            rc = AHIE_NOMEM;
-          }
-        }
-        else rc = AHIE_UNKNOWN;
-      }
-      break;
-    }
-
     default:
       rc = AHIE_BADSOUNDTYPE;
       break;

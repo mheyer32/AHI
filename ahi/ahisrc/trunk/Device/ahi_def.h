@@ -298,13 +298,6 @@ struct AHIPrivAudioCtrl
   struct AHISoundData       *ahiac_SoundDatas;
   ULONG                      ahiac_BuffSizeNow;     /* How many bytes of the buffer are used? */
 
-  /* For AHIST_INPUT */
-  APTR                       ahiac_InputBuffer[3];  /* Filling, filled, old filled */
-  ULONG                      ahiac_InputLength;
-  ULONG                      ahiac_InputBlockLength;
-  APTR                       ahiac_InputRecordPtr;
-  ULONG                      ahiac_InputRecordCnt;
-  
   APTR                       ahiac_MasterVolumeTable;
   APTR                       ahiac_MultTableS;
   APTR                       ahiac_MultTableU;

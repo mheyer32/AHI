@@ -218,7 +218,7 @@ asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
 	$(ASM) $(ASMFLAGS) $< TO $@
 
 addroutines_ppc.o:	addroutines_ppc.s
-	ppc-amigaos-as -mregnames -m$(CPU) $< -o $@
+	gasp $< | ppc-amigaos-as -mregnames -m$(CPU) -o $@
 
 $(TARGET):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
