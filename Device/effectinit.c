@@ -1,19 +1,16 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/08/02 16:32:39  lcs
+* Fixed a memory trashing error. Will change it yet again now...
+*
 * Revision 4.2  1997/06/02 18:15:02  lcs
 * Renamed it from dspinit.c to effectinit.c
 *
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
-* Revision 1.4  1997/03/27 12:16:27  lcs
-* Major bug in the device interface code fixed.
-*
 * Revision 1.3  1997/03/26 00:14:32  lcs
 * Echo is finally working!
-*
-* Revision 1.2  1997/03/25 22:27:49  lcs
-* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
 *
 * Revision 1.1  1997/03/24 12:41:51  lcs
 * Initial revision
@@ -50,6 +47,11 @@ __asm extern void update_MasterVolume(register __a2 struct AHIPrivAudioCtrl *,
 *** DSPECHO
 **/
 
+#define mode_stereo 1
+#define mode_32bit  2
+#define mode_ncnm   4       // No cross, no mix
+#define mode_fast   8
+
 // NOTE: The mixing routine might execute while we are inside these
 // functions!
 
@@ -66,21 +68,16 @@ __asm BOOL update_DSPEcho(
   length = AHI_SampleFrameSize(actrl->ac.ahiac_BuffType) *
            (echo->ahiede_Delay + actrl->ac.ahiac_MaxBuffSamples);
 
-  es = AllocVec(sizeof(struct Echo)+ length, MEMF_PUBLIC|MEMF_CLEAR);
+  es = AllocVec(sizeof(struct Echo) + length + 10000, MEMF_PUBLIC|MEMF_CLEAR);
   
   if(es)
   {
     ULONG mode = 0;
-#define mode_stereo 1
-#define mode_32bit  2
-#define mode_ncnm   4       // No cross, no mix
-#define mode_fast   8
 
-    es->ahiecho_BufferSize = length;
-    es->ahiecho_EndPtr     = es->ahiecho_Buffer + length;
+    es->ahiecho_SampleSize = AHI_SampleFrameSize(actrl->ac.ahiac_BuffType);
     es->ahiecho_SrcPtr     = es->ahiecho_Buffer;
     es->ahiecho_DstPtr     = es->ahiecho_Buffer +
-        (AHI_SampleFrameSize(actrl->ac.ahiac_BuffType) * echo->ahiede_Delay);
+                             (es->ahiecho_SampleSize * echo->ahiede_Delay);
 
     switch(actrl->ac.ahiac_BuffType)
     {
@@ -124,15 +121,25 @@ __asm BOOL update_DSPEcho(
 
     update_MasterVolume(actrl,AHIBase);
 
-    if(AHIBase->ahib_Flags & AHIBF_FASTECHO)
+    // No fast echo in 32 bit (HiFi) modes!
+    switch(actrl->ac.ahiac_BuffType)
     {
-      es->ahiecho_MixD = Fixed2Shift(es->ahiecho_MixD);
-      es->ahiecho_MixN = Fixed2Shift(es->ahiecho_MixN);
-      es->ahiecho_FeedbackDO = Fixed2Shift(es->ahiecho_FeedbackDO);
-      es->ahiecho_FeedbackDS = Fixed2Shift(es->ahiecho_FeedbackDS);
-      es->ahiecho_FeedbackNO = Fixed2Shift(es->ahiecho_FeedbackNO);
-      es->ahiecho_FeedbackNS = Fixed2Shift(es->ahiecho_FeedbackNS);
-      mode |= mode_fast;
+      case AHIST_M16S:
+      case AHIST_S16S:
+        if((AHIBase->ahib_Flags & AHIBF_FASTECHO))
+        {
+          es->ahiecho_MixD = Fixed2Shift(es->ahiecho_MixD);
+          es->ahiecho_MixN = Fixed2Shift(es->ahiecho_MixN);
+          es->ahiecho_FeedbackDO = Fixed2Shift(es->ahiecho_FeedbackDO);
+          es->ahiecho_FeedbackDS = Fixed2Shift(es->ahiecho_FeedbackDS);
+          es->ahiecho_FeedbackNO = Fixed2Shift(es->ahiecho_FeedbackNO);
+          es->ahiecho_FeedbackNS = Fixed2Shift(es->ahiecho_FeedbackNS);
+          mode |= mode_fast;
+        }
+        break;
+
+      default:
+        break;
     }
 
     switch(mode)
@@ -140,44 +147,80 @@ __asm BOOL update_DSPEcho(
       case 0:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16;
         break;
+
+      // stereo
       case 1:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16;
         break;
+
+      // 32bit
       case 2:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
         break;
+
+      // stereo 32bit
       case 3:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
+
+      // ncnm
       case 4:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16NCFM;
         break;
+
+      // stereo ncnm
       case 5:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16NCFM;
         break;
+
+      // 32bit ncnm
       case 6:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
         break;
+
+      // stereo 32bit ncnm
       case 7:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
+
+      // fast
       case 8:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16Fast;
         break;
+
+      // stereo fast
       case 9:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16Fast;
         break;
+
+      // 32bit fast
       case 10:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
         break;
+
+      // stereo 32bit fast
       case 11:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
+
+      // ncnm fast
       case 12:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16NCFMFast;
         break;
+
+      // stereo ncnm fast
       case 13:
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16NCFMFast;
+        break;
+
+      // 32bit ncnm fast
+      case 14:
+        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
+        break;
+
+      // stereo 32bit ncnm fast
+      case 15:
+        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
     }
 

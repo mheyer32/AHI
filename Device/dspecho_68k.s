@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.4  1997/08/02 16:32:39  lcs
+* Fixed a memory trashing error. Will change it yet again now...
+*
 * Revision 4.3  1997/04/22 01:35:21  lcs
 * This is release 4! Finally.
 *
@@ -197,6 +200,15 @@ LOCALSIZE	SET	4
 
 	move.l	ahiac_EffDSPEchoStruct(a2),a0
 
+	move.l	ahiac_BuffSamples(a2),d0
+	add.l	ahiecho_Delay(a0),d0
+	move.l	ahiecho_SampleSize(a0),d1
+	mulu.w	d1,d0
+	move.l	d0,ahiecho_BufferSize(a0)
+	lea	ahiecho_Buffer(a0),a3
+	add.l	d0,a3
+	move.l	a3,ahiecho_EndPtr(a0)
+
 	move.l	ahiac_BuffSamples(a2),(sp)	;Looped
 	move.l	ahiecho_Offset(a0),d6
 	move.l	ahiecho_SrcPtr(a0),a3
@@ -204,6 +216,8 @@ LOCALSIZE	SET	4
 .loop
 	tst.l	(sp)
 	ble	.exit
+
+* Circular buffer stuff
 	cmp.l	ahiecho_EndPtr(a0),a3
 	blo	.src_ok
 	sub.l	ahiecho_BufferSize(a0),a3
@@ -218,6 +232,8 @@ LOCALSIZE	SET	4
 	blo	.offs_ok
 	sub.l	d0,d6
 .offs_ok
+
+
 	cmp.l	ahiac_BuffSamples(a2),d6
 	bhs	.hi_buffsamples
 	move.l	ahiac_BuffSamples(a2),d7
@@ -242,10 +258,45 @@ LOCALSIZE	SET	4
 	add.l	d7,d6
 	subq.l	#1,d7
 	bmi	.exit				;This is an error (should not happen)
+
+
+	movem.l	d0-d7/a0-a6,$100000
 	ENDM
 
 
 DSPECHO_POST	MACRO
+
+
+	cmp.l	ahiecho_EndPtr(a0),a3
+	bhi	.error
+	cmp.l	ahiecho_EndPtr(a0),a6
+	bhi	.error
+	move.l	ahiac_BuffSamples(a2),d0
+	add.l	ahiecho_Delay(a0),d0
+	cmp.l	d0,d6
+	bhi	.error
+	bra	.loop
+.error
+	pushm	a0/a1
+	move.w	#$fff,$dff180
+	lea	$100000,a0
+	lea	$110000,a1
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	move.l	(a0)+,(a1)+
+	popm	a0/a1
 	bra	.loop
 .exit
 	move.l	d6,ahiecho_Offset(a0)
