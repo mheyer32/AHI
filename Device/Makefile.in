@@ -140,7 +140,8 @@ Makefile: Makefile.in ../config.status
 $(TARGET):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
-libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o dspecho.o
+libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o \
+			addroutines_32bit.o dspecho.o
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 

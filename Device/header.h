@@ -60,6 +60,10 @@ extern ADDFUNC*                 AddWordMonoPtr;
 extern ADDFUNC*                 AddWordStereoPtr;
 extern ADDFUNC*                 AddWordsMonoPtr;
 extern ADDFUNC*                 AddWordsStereoPtr;
+extern ADDFUNC*                 AddLongMonoPtr;
+extern ADDFUNC*                 AddLongStereoPtr;
+extern ADDFUNC*                 AddLongsMonoPtr;
+extern ADDFUNC*                 AddLongsStereoPtr;
 extern ADDFUNC*                 AddByteMonoBPtr;
 extern ADDFUNC*                 AddByteStereoBPtr;
 extern ADDFUNC*                 AddBytesMonoBPtr;
@@ -68,6 +72,10 @@ extern ADDFUNC*                 AddWordMonoBPtr;
 extern ADDFUNC*                 AddWordStereoBPtr;
 extern ADDFUNC*                 AddWordsMonoBPtr;
 extern ADDFUNC*                 AddWordsStereoBPtr;
+extern ADDFUNC*                 AddLongMonoBPtr;
+extern ADDFUNC*                 AddLongStereoBPtr;
+extern ADDFUNC*                 AddLongsMonoBPtr;
+extern ADDFUNC*                 AddLongsStereoBPtr;
 
 extern ADDFUNC*                 AddLofiByteMonoPtr;
 extern ADDFUNC*                 AddLofiByteStereoPtr;
@@ -77,6 +85,10 @@ extern ADDFUNC*                 AddLofiWordMonoPtr;
 extern ADDFUNC*                 AddLofiWordStereoPtr;
 extern ADDFUNC*                 AddLofiWordsMonoPtr;
 extern ADDFUNC*                 AddLofiWordsStereoPtr;
+extern ADDFUNC*                 AddLofiLongMonoPtr;
+extern ADDFUNC*                 AddLofiLongStereoPtr;
+extern ADDFUNC*                 AddLofiLongsMonoPtr;
+extern ADDFUNC*                 AddLofiLongsStereoPtr;
 extern ADDFUNC*                 AddLofiByteMonoBPtr;
 extern ADDFUNC*                 AddLofiByteStereoBPtr;
 extern ADDFUNC*                 AddLofiBytesMonoBPtr;
@@ -85,6 +97,10 @@ extern ADDFUNC*                 AddLofiWordMonoBPtr;
 extern ADDFUNC*                 AddLofiWordStereoBPtr;
 extern ADDFUNC*                 AddLofiWordsMonoBPtr;
 extern ADDFUNC*                 AddLofiWordsStereoBPtr;
+extern ADDFUNC*                 AddLofiLongMonoBPtr;
+extern ADDFUNC*                 AddLofiLongStereoBPtr;
+extern ADDFUNC*                 AddLofiLongsMonoBPtr;
+extern ADDFUNC*                 AddLofiLongsStereoBPtr;
 
 struct AHIBase*
 initRoutine( struct AHIBase*  device,

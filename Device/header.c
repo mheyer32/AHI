@@ -126,6 +126,10 @@ ADDFUNC* AddWordMonoPtr                   = NULL;
 ADDFUNC* AddWordStereoPtr                 = NULL;
 ADDFUNC* AddWordsMonoPtr                  = NULL;
 ADDFUNC* AddWordsStereoPtr                = NULL;
+ADDFUNC* AddLongMonoPtr                   = NULL;
+ADDFUNC* AddLongStereoPtr                 = NULL;
+ADDFUNC* AddLongsMonoPtr                  = NULL;
+ADDFUNC* AddLongsStereoPtr                = NULL;
 ADDFUNC* AddByteMonoBPtr                  = NULL;
 ADDFUNC* AddByteStereoBPtr                = NULL;
 ADDFUNC* AddBytesMonoBPtr                 = NULL;
@@ -134,6 +138,10 @@ ADDFUNC* AddWordMonoBPtr                  = NULL;
 ADDFUNC* AddWordStereoBPtr                = NULL;
 ADDFUNC* AddWordsMonoBPtr                 = NULL;
 ADDFUNC* AddWordsStereoBPtr               = NULL;
+ADDFUNC* AddLongMonoBPtr                  = NULL;
+ADDFUNC* AddLongStereoBPtr                = NULL;
+ADDFUNC* AddLongsMonoBPtr                 = NULL;
+ADDFUNC* AddLongsStereoBPtr               = NULL;
 
 ADDFUNC* AddLofiByteMonoPtr               = NULL;
 ADDFUNC* AddLofiByteStereoPtr             = NULL;
@@ -143,6 +151,10 @@ ADDFUNC* AddLofiWordMonoPtr               = NULL;
 ADDFUNC* AddLofiWordStereoPtr             = NULL;
 ADDFUNC* AddLofiWordsMonoPtr              = NULL;
 ADDFUNC* AddLofiWordsStereoPtr            = NULL;
+ADDFUNC* AddLofiLongMonoPtr               = NULL;
+ADDFUNC* AddLofiLongStereoPtr             = NULL;
+ADDFUNC* AddLofiLongsMonoPtr              = NULL;
+ADDFUNC* AddLofiLongsStereoPtr            = NULL;
 ADDFUNC* AddLofiByteMonoBPtr              = NULL;
 ADDFUNC* AddLofiByteStereoBPtr            = NULL;
 ADDFUNC* AddLofiBytesMonoBPtr             = NULL;
@@ -151,6 +163,10 @@ ADDFUNC* AddLofiWordMonoBPtr              = NULL;
 ADDFUNC* AddLofiWordStereoBPtr            = NULL;
 ADDFUNC* AddLofiWordsMonoBPtr             = NULL;
 ADDFUNC* AddLofiWordsStereoBPtr           = NULL;
+ADDFUNC* AddLofiLongMonoBPtr              = NULL;
+ADDFUNC* AddLofiLongStereoBPtr            = NULL;
+ADDFUNC* AddLofiLongsMonoBPtr             = NULL;
+ADDFUNC* AddLofiLongsStereoBPtr           = NULL;
 
 const ULONG  DriverVersion  = 2;
 const ULONG  Version        = VERSION;
@@ -419,6 +435,10 @@ OpenLibs ( void )
   AddWordStereoPtr       = AddWordStereo;
   AddWordsMonoPtr        = AddWordsMono;
   AddWordsStereoPtr      = AddWordsStereo;
+  AddLongMonoPtr         = AddLongMono;
+  AddLongStereoPtr       = AddLongStereo;
+  AddLongsMonoPtr        = AddLongsMono;
+  AddLongsStereoPtr      = AddLongsStereo;
   AddByteMonoBPtr        = AddByteMonoB;
   AddByteStereoBPtr      = AddByteStereoB;
   AddBytesMonoBPtr       = AddBytesMonoB;
@@ -427,6 +447,10 @@ OpenLibs ( void )
   AddWordStereoBPtr      = AddWordStereoB;
   AddWordsMonoBPtr       = AddWordsMonoB;
   AddWordsStereoBPtr     = AddWordsStereoB;
+  AddLongMonoBPtr        = AddLongMonoB;
+  AddLongStereoBPtr      = AddLongStereoB;
+  AddLongsMonoBPtr       = AddLongsMonoB;
+  AddLongsStereoBPtr     = AddLongsStereoB;
 
   AddLofiByteMonoPtr     = AddLofiByteMono;
   AddLofiByteStereoPtr   = AddLofiByteStereo;
@@ -436,6 +460,10 @@ OpenLibs ( void )
   AddLofiWordStereoPtr   = AddLofiWordStereo;
   AddLofiWordsMonoPtr    = AddLofiWordsMono;
   AddLofiWordsStereoPtr  = AddLofiWordsStereo;
+  AddLofiLongMonoPtr     = AddLofiLongMono;
+  AddLofiLongStereoPtr   = AddLofiLongStereo;
+  AddLofiLongsMonoPtr    = AddLofiLongsMono;
+  AddLofiLongsStereoPtr  = AddLofiLongsStereo;
   AddLofiByteMonoBPtr    = AddLofiByteMonoB;
   AddLofiByteStereoBPtr  = AddLofiByteStereoB;
   AddLofiBytesMonoBPtr   = AddLofiBytesMonoB;
@@ -444,6 +472,10 @@ OpenLibs ( void )
   AddLofiWordStereoBPtr  = AddLofiWordStereoB;
   AddLofiWordsMonoBPtr   = AddLofiWordsMonoB;
   AddLofiWordsStereoBPtr = AddLofiWordsStereoB;
+  AddLofiLongMonoBPtr    = AddLofiLongMonoB;
+  AddLofiLongStereoBPtr  = AddLofiLongStereoB;
+  AddLofiLongsMonoBPtr   = AddLofiLongsMonoB;
+  AddLofiLongsStereoBPtr = AddLofiLongsStereoB;
 
   /* MorphOS/PowerUp/WarpOS loading
 
@@ -521,6 +553,10 @@ OpenLibs ( void )
           r &= GetSymbol( AddWordStereo   );
           r &= GetSymbol( AddWordsMono    );
           r &= GetSymbol( AddWordsStereo  );
+          r &= GetSymbol( AddLongMono     );
+          r &= GetSymbol( AddLongStereo   );
+          r &= GetSymbol( AddLongsMono    );
+          r &= GetSymbol( AddLongsStereo  );
           r &= GetSymbol( AddByteMonoB    );
           r &= GetSymbol( AddByteStereoB  );
           r &= GetSymbol( AddBytesMonoB   );
@@ -529,6 +565,10 @@ OpenLibs ( void )
           r &= GetSymbol( AddWordStereoB  );
           r &= GetSymbol( AddWordsMonoB   );
           r &= GetSymbol( AddWordsStereoB );
+          r &= GetSymbol( AddLongMonoB    );
+          r &= GetSymbol( AddLongStereoB  );
+          r &= GetSymbol( AddLongsMonoB   );
+          r &= GetSymbol( AddLongsStereoB );
 
           r &= GetSymbol( AddLofiByteMono     );
           r &= GetSymbol( AddLofiByteStereo   );
@@ -538,6 +578,10 @@ OpenLibs ( void )
           r &= GetSymbol( AddLofiWordStereo   );
           r &= GetSymbol( AddLofiWordsMono    );
           r &= GetSymbol( AddLofiWordsStereo  );
+          r &= GetSymbol( AddLofiLongMono     );
+          r &= GetSymbol( AddLofiLongStereo   );
+          r &= GetSymbol( AddLofiLongsMono    );
+          r &= GetSymbol( AddLofiLongsStereo  );
           r &= GetSymbol( AddLofiByteMonoB    );
           r &= GetSymbol( AddLofiByteStereoB  );
           r &= GetSymbol( AddLofiBytesMonoB   );
@@ -546,6 +590,10 @@ OpenLibs ( void )
           r &= GetSymbol( AddLofiWordStereoB  );
           r &= GetSymbol( AddLofiWordsMonoB   );
           r &= GetSymbol( AddLofiWordsStereoB );
+          r &= GetSymbol( AddLofiLongMonoB    );
+          r &= GetSymbol( AddLofiLongStereoB  );
+          r &= GetSymbol( AddLofiLongsMonoB   );
+          r &= GetSymbol( AddLofiLongsStereoB );
 
           if( r != 0 )
           {

@@ -320,6 +320,26 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddWordsMonoPtr;
             break;
 
+          case AHIST_M32S:
+          case AHIST_BW|AHIST_M32S:
+            *ScaleLeft  = VolumeLeft + VolumeRight;
+            *ScaleRight = 0;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLongMonoBPtr;
+            else
+              *AddRoutine = AddLongMonoPtr;
+            break;
+
+          case AHIST_S32S:
+          case AHIST_BW|AHIST_S32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLongsMonoBPtr;
+            else
+              *AddRoutine = AddLongsMonoPtr;
+            break;
+
           default:
             *ScaleLeft  = 0;
             *ScaleRight = 0;
@@ -372,6 +392,26 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddWordsStereoBPtr;
             else
               *AddRoutine = AddWordsStereoPtr;
+            break;
+
+          case AHIST_M32S:
+          case AHIST_BW|AHIST_M32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLongStereoBPtr;
+            else
+              *AddRoutine = AddLongStereoPtr;
+            break;
+
+          case AHIST_S32S:
+          case AHIST_BW|AHIST_S32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLongsStereoBPtr;
+            else
+              *AddRoutine = AddLongsStereoPtr;
             break;
 
           default:
@@ -443,6 +483,26 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddLofiWordsMonoPtr;
             break;
 
+          case AHIST_M32S:
+          case AHIST_BW|AHIST_M32S:
+            *ScaleLeft  = VolumeLeft + VolumeRight;
+            *ScaleRight = 0;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiLongMonoBPtr;
+            else
+              *AddRoutine = AddLofiLongMonoPtr;
+            break;
+
+          case AHIST_S32S:
+          case AHIST_BW|AHIST_S32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiLongsMonoBPtr;
+            else
+              *AddRoutine = AddLofiLongsMonoPtr;
+            break;
+
           default:
             *ScaleLeft  = 0;
             *ScaleRight = 0;
@@ -495,6 +555,26 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddLofiWordsStereoBPtr;
             else
               *AddRoutine = AddLofiWordsStereoPtr;
+            break;
+
+          case AHIST_M32S:
+          case AHIST_BW|AHIST_M32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiLongStereoBPtr;
+            else
+              *AddRoutine = AddLofiLongStereoPtr;
+            break;
+
+          case AHIST_S32S:
+          case AHIST_BW|AHIST_S32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiLongsStereoBPtr;
+            else
+              *AddRoutine = AddLofiLongsStereoPtr;
             break;
 
           default:

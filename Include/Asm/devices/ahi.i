@@ -2,7 +2,7 @@
 DEVICES_AHI_I		SET	1
 
 **
-**	$VER: ahi.i 5.2 (4.3.01)
+**	$VER: ahi.i 5.2 (19.1.2003)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi.device definitions
@@ -385,6 +385,7 @@ AHIST_BW		EQU 1<<30		; Private
 
  ; Sample types
 ; Note that only AHIST_M8S, AHIST_S8S, AHIST_M16S and AHIST_S16S
+; (plus AHIST_M32S and AHIST_S32S in V6)
 ; are supported by AHI_LoadSound().
 AHIST_M8S		EQU 0			; Mono, 8 bit signed (BYTE)
 AHIST_M16S		EQU 1			; Mono, 16 bit signed (WORD)

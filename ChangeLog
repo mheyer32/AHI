@@ -1,3 +1,14 @@
+2003-01-19  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.31.
+
+	* ahi.device: Added support for playing 32 bit samples in both
+	low-level and device mode. Note that 32 bit samples are truncated
+	to 16 bit in non-HiFi modes and there are no assembly mixing
+	routines for this sample format (yet?). [Aaf]
+ 
+	* Updated copyright year in all files.
+
 2002-12-14  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.30.
