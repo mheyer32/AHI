@@ -11,6 +11,7 @@
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
+PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 
 DEVDIR		= ${DISTDIR}/Developer

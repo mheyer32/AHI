@@ -18,6 +18,7 @@ endif
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
+PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 PREFSDIR	= ${DISTDIR}/User/Prefs
 CATDIR		= ${DISTDIR}/User/Catalogs

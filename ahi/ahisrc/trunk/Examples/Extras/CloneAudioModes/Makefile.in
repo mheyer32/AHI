@@ -12,6 +12,7 @@
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
+PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 CDIR		= ${DISTDIR}/User/C
 

@@ -12,6 +12,7 @@
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
+PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 DOSDRVDIR	= ${DISTDIR}/User/Devs/DOSDrivers
 LDIR		= ${DISTDIR}/User/L
