@@ -7,6 +7,6 @@ AHI_CLASS_NAME	= ahi.class
 AHI_SUPER_NAME	= 
 AHI_SUPER_VERS	= 0
 
-OBJECTS		= main.o methods.o
+OBJECTS		= main.o methods.o errors.o
 
 include ../Common/Makefile.common

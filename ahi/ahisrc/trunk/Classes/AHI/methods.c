@@ -2,9 +2,6 @@
 #include <config.h>
 
 #include <classes/ahi.h>
-#include <classes/ahi/buffer.h>
-#include <classes/ahi/processor.h>
-#include <classes/ahi/processor/gain.h>
 #include <intuition/icclass.h>
 
 #include <clib/alib_protos.h>
@@ -12,50 +9,9 @@
 #include <proto/intuition.h>
 
 #include "ahiclass.h"
+#include "errors.h"
 #include "util.h"
 #include "version.h"
-
-static char*
-get_error_message(struct AHIClassData* AHIClassData) {
-  switch (AHIClassData->error) {
-    case AHIE_OK:
-      return "No error";
-
-    case AHIE_Buffer_InvalidSampleType:
-      return "Invalid sample type";
-
-    case AHIE_Buffer_InvalidSampleFreq:
-      return "Invalid sample frequency";
-
-    case AHIE_Buffer_InvalidCapacity:
-      return "Invalid buffer capacity";
-
-    case AHIE_Buffer_InvalidLength:
-      return "Invalid buffer length";
-
-    case AHIE_Processor_ObjectNotReady:
-      return "Object is not ready";
-
-    case AHIE_Processor_ObjectBusy:
-      return "Object is busy";
-
-    case AHIE_Processor_InvalidSampleType:
-      return "Invalid buffer sample type";
-      
-    case AHIE_GainProcessor_TooManyChannels:
-      return "Too many channels";
-
-    default:
-      if (Fault(AHIClassData->error,
-		NULL,
-		AHIClassData->error_message,
-		sizeof (AHIClassData->error_message)) > 0) {
-	return  AHIClassData->error_message;
-      }
-  }
-
-  return "Unknown error";
-}
 
 
 /******************************************************************************
