@@ -54,5 +54,12 @@ EchoStereo32 ( LONG          loops,
                void        **srcptr,
                void        **dstptr);
 
+void
+EchoMulti32 ( LONG          loops,
+	      struct Echo  *es,
+	      void        **buffer,
+	      void        **srcptr,
+	      void        **dstptr);
+
 
 #endif /* ahi_dspechofuncs_h */

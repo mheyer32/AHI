@@ -246,3 +246,58 @@ EchoStereo32 ( LONG          loops,
   *srcptr = src;
   *dstptr = dst;
 }
+
+
+void
+EchoMulti32 ( LONG          loops,
+	      struct Echo  *es,
+	      void        **buffer,
+	      void        **srcptr,
+	      void        **dstptr)
+{
+  LONG *buf;
+  WORD *src, *dst;
+  LONG sample, sampleL, sampleR, delaysampleL, delaysampleR;
+  
+  buf = *buffer;
+  src = *srcptr;
+  dst = *dstptr;
+
+  while(loops > 0)
+  {
+    sampleL      = *buf >> 16;
+    delaysampleL = *src++;
+
+    *buf++ = es->ahiecho_MixN * sampleL + es->ahiecho_MixD * delaysampleL;
+
+    sampleR      = *buf >> 16;
+    delaysampleR = *src++;
+
+    *buf++ = es->ahiecho_MixN * sampleR + es->ahiecho_MixD * delaysampleR;
+
+    sample = es->ahiecho_FeedbackDS * (delaysampleL + 1) +
+             es->ahiecho_FeedbackDO * (delaysampleR + 1) +
+             es->ahiecho_FeedbackNS * sampleL +
+             es->ahiecho_FeedbackNO * sampleR;
+
+    *dst++ = sample >> 16;
+
+    sample = es->ahiecho_FeedbackDO * (delaysampleL + 1) +
+             es->ahiecho_FeedbackDS * (delaysampleR + 1) +
+             es->ahiecho_FeedbackNO * sampleL +
+             es->ahiecho_FeedbackNS * sampleR;
+
+    *dst++ = sample >> 16;
+
+    // Skip unused channels
+    buf += 6;
+    src += 6;
+    dst += 6;
+    
+    loops--;
+  }
+
+  *buffer = buf;
+  *srcptr = src;
+  *dstptr = dst;
+}

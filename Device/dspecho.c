@@ -279,3 +279,12 @@ do_DSPEchoStereo32( struct Echo *es,
   do_DSPEcho( es, buf, audioctrl, EchoStereo32 );
 }
 
+
+void
+do_DSPEchoMulti32( struct Echo *es,
+		   void *buf,
+		   struct AHIPrivAudioCtrl *audioctrl )
+{ 
+  do_DSPEcho( es, buf, audioctrl, EchoMulti32 );
+}
+
