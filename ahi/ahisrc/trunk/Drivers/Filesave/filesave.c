@@ -572,5 +572,5 @@ ULONG _AHIsub_HardwareControl(
 {
   struct FilesaveBase* FilesaveBase = (struct FilesaveBase*) AHIsubBase;
 
-  return NULL;
+  return 0;
 }
