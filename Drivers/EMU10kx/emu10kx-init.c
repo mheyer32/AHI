@@ -99,7 +99,6 @@ DriverInit( struct DriverBase* ahisubbase )
   InitSemaphore( &EMU10kxBase->camd.Semaphore );
   EMU10kxBase->camd.Semaphore.ss_Link.ln_Pri  = 0;
   EMU10kxBase->camd.Semaphore.ss_Link.ln_Name = EMU10KX_CAMD_SEMAPHORE;
-  AddSemaphore( &EMU10kxBase->camd.Semaphore );
   
   EMU10kxBase->camd.Cards    = EMU10kxBase->cards_found;
   EMU10kxBase->camd.Version  = VERSION;
@@ -117,6 +116,27 @@ DriverInit( struct DriverBase* ahisubbase )
   EMU10kxBase->camd.ActivateXmitFunc.h_SubEntry = (HOOKFUNC) ActivateCAMDXmit;
   EMU10kxBase->camd.ActivateXmitFunc.h_Data     = NULL;
 
+  AddSemaphore( &EMU10kxBase->camd.Semaphore );
+  
+  /*** AC97 Mixer ************************************************************/
+  
+  InitSemaphore( &EMU10kxBase->ac97.Semaphore );
+  EMU10kxBase->ac97.Semaphore.ss_Link.ln_Pri  = 0;
+  EMU10kxBase->ac97.Semaphore.ss_Link.ln_Name = EMU10KX_AC97_SEMAPHORE;
+  
+  EMU10kxBase->ac97.Cards    = EMU10kxBase->cards_found;
+  EMU10kxBase->ac97.Version  = VERSION;
+  EMU10kxBase->ac97.Revision = REVISION;
+
+  EMU10kxBase->ac97.GetFunc.h_Entry    = HookEntry;
+  EMU10kxBase->ac97.GetFunc.h_SubEntry = AC97GetFunc;
+  EMU10kxBase->ac97.GetFunc.h_Data     = NULL;
+
+  EMU10kxBase->ac97.SetFunc.h_Entry    = HookEntry;
+  EMU10kxBase->ac97.SetFunc.h_SubEntry = AC97SetFunc;
+  EMU10kxBase->ac97.SetFunc.h_Data     = NULL;
+
+  AddSemaphore( &EMU10kxBase->ac97.Semaphore );
   
   /*** Allocate and init all cards *******************************************/
 
@@ -161,6 +181,13 @@ DriverCleanup( struct DriverBase* AHIsubBase )
     ReleaseSemaphore( &EMU10kxBase->camd.Semaphore );
   }
 
+  if( EMU10kxBase->ac97.Semaphore.ss_Link.ln_Name != NULL )
+  {
+    ObtainSemaphore( &EMU10kxBase->ac97.Semaphore );
+    RemSemaphore( &EMU10kxBase->ac97.Semaphore );
+    ReleaseSemaphore( &EMU10kxBase->ac97.Semaphore );
+  }
+  
   for( i = 0; i < EMU10kxBase->cards_found; ++i )
   {
     emu10k1_irq_disable( &EMU10kxBase->driverdatas[ i ]->card,
