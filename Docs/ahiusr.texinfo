@@ -2,7 +2,7 @@
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename ahi.guide
-@settitle @ahi User's Guide, version @value{ahiver}
+@settitle @sc{Ahi}{} User's Guide, version @value{ahiver}
 @setchapternewpage odd
 @iftex
 @afourpaper
@@ -23,6 +23,9 @@
 
 @c $Id$
 @c $Log$
+@c Revision 4.8  1997/09/18 00:51:00  lcs
+@c Added Maestro Pro stuff.
+@c
 @c Revision 4.7  1997/08/10 15:38:57  lcs
 @c Minor changes. added @ahi macro!
 @c
@@ -113,11 +116,11 @@ publication, even if advised of the possibility of such damage.}
 
 @ifinfo
 
-@majorheading @ahi User's Guide, version @value{ahiver}
+@majorheading @sc{Ahi} User's Guide, version @value{ahiver}
 
 Copyright @copyright{} 1994-1997 Martin Blom
 
-The latest release of @ahi can always be found at
+The latest release of @sc{Ahi} can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
 
 @menu
@@ -169,11 +172,11 @@ sound card instead of Paula, but so far nobody has succeeded.  It is
 definitely possible, but the question is if it is worth the trouble---too
 many of the programs bang the hardware.
 
-Entering @ahi @footnote{The name @ahi was chosen because the
+Entering @sc{Ahi} @footnote{The name @sc{Ahi} was chosen because the
 functions in the system had to have a prefix, and the author couldn't come
 up with anything better than @dfn{Audio Hardware Interface}, something that
 he has regretted ever since.  The suggested pronunciation is ``atchii'', as
-in ``God bless!''.}.  @ahi is a new audio subsystem, designed to be
+in ``God bless!''.}.  @sc{Ahi} is a new audio subsystem, designed to be
 flexible, hardware independent, expandable and future safe.  It is designed
 with real-time applications in mind.  It is designed to play @dfn{modules}
 @footnote{Originally designed in 1986 by Karsten Obarski, modules have
@@ -183,14 +186,14 @@ less---been derived from it, including the popular @dfn{S3M} and @dfn{XM}
 formats.} and sound effects as efficient as possible, taking advantage of
 modern DSP-based sound cards.
 
-Yet @ahi allows applications that don't need full control over the
+Yet @sc{Ahi} allows applications that don't need full control over the
 audio hardware to share the resource, so that many different programs can
 play and record sound at the same time, without conflicts.
 
-As a user you will hopefully not see much of @ahi{}, other than the audio
+As a user you will hopefully not see much of @sc{Ahi}, other than the audio
 mode requesters.  They works almost exactly like screen mode requesters.
 
-@ahi was never supposed to be @emph{the} standard for hardware
+@sc{Ahi} was never supposed to be @emph{the} standard for hardware
 independent audio.  It was meant as a temporary solution until @dfn{Amiga
 Technologies} delivered an official standard.  However, the situation looks
 worse and worse for every day that passes by, and this may be all you will
@@ -214,7 +217,7 @@ ever get.
 
 Copyright @copyright{} 1994-1997 Martin Blom
 
-@ahi is available as @dfn{freeware}.  That is, it may be freely
+@sc{Ahi} is available as @dfn{freeware}.  That is, it may be freely
 distributed in unmodified form with no changes what so ever, but you may
 not charge more than a nominal fee covering distribution costs.  However,
 donations are welcome (@pxref{Donations}).
@@ -223,11 +226,11 @@ If you use this software in a commercial or shareware software product,
 please consider giving the author (@pxref{The Author})---and preferably
 each one of the contributors (@pxref{Contributors}) too---an original or
 registered version of your work.  Should you want to distribute the
-@ahi software with your own product, there is really nothing to
+@sc{Ahi} software with your own product, there is really nothing to
 consider, is it?
 
 If you wish to distribute this software with a hardware product, contact
-the author (@pxref{The Author}).  Distribution of @ahi with hardware
+the author (@pxref{The Author}).  Distribution of @sc{Ahi} with hardware
 products is @emph{not} free.
 
 @sc{This software is provided by the author and contributors ``as is'' and
@@ -253,7 +256,7 @@ damage.}
 @cindex Donations
 @cindex Starvation
 
---@ahi is available for personal use without any charges.  I strongly
+--@sc{Ahi} is available for personal use without any charges.  I strongly
 believe in free software, and I use free high-quality software tools daily.
 But I live, like all of us, in a real world.  As a student, my income
 doesn't even suffice for the rent, and much less food, course literature
@@ -301,14 +304,14 @@ Author} for my address).
 FILES/M,QUIET/S,REFRESH/S,REMOVE/S,DBLSCAN/S
 
 @item Purpose
-To build and remove a list of audio modes that @ahi can understand.
+To build and remove a list of audio modes that @sc{Ahi} can understand.
 
 @item Path
 C:ADDAUDIOMODES
 
 @item Specification
 @code{AddAudioModes} is used to build and remove a list of audio modes that
-@ahi can understand.  The definitions of the audio modes are stored in
+@sc{Ahi} can understand.  The definitions of the audio modes are stored in
 @file{DEVS:Audiomodes} (@pxref{The Mode Descriptors}).  Normally you don't
 have to run this program, since @code{ahi.device} automatically reads all
 mode descriptors when it is used for the first time.  It can, however, be
@@ -362,9 +365,9 @@ SYS:Prefs/AHI
 
 @item Specification
 @code{AHI} without any arguments or with the @samp{EDIT} argument opens the
-@ahi preferences editor.  The @samp{FROM} argument lets you specify a
+@sc{Ahi} preferences editor.  The @samp{FROM} argument lets you specify a
 file to open.  This must be a file that was previously saved with the
-@samp{Save As@dots{}} menu item of the @ahi preferences editor.  For
+@samp{Save As@dots{}} menu item of the @sc{Ahi} preferences editor.  For
 example, if you have saved a special configuration of the @ahi
 preferences editor to a file in the @file{Presets} drawer, you can use the
 @samp{FROM} argument to open that file.  If the @samp{USE} switch is also
@@ -469,7 +472,7 @@ settings.
 @comment  node-name,  next,  previous,  up
 @subsubsection @samp{Help} Menu
 
-The @samp{Help} menu's items let you view the on-line ``@ahi User's
+The @samp{Help} menu's items let you view the on-line ``@sc{Ahi} User's
 Guide'' using AmigaGuide.
 
 @table @samp
@@ -478,10 +481,10 @@ Guide'' using AmigaGuide.
 Brings up the chapter about the preferences program (this chapter).
 
 @item AHI User's Guide@dots{}
-Brings up the first page of ``@ahi User's Guide''.
+Brings up the first page of ``@sc{Ahi} User's Guide''.
 
 @item Concept Index@dots{}
-Brings up the index of ``@ahi User's Guide''.
+Brings up the index of ``@sc{Ahi} User's Guide''.
 
 @end table
 
@@ -546,7 +549,7 @@ understand them.
 @cindex Debug level
 
 @item Debug level
-Sets the debug level for @ahi{}.  If not @samp{None}, @ahi will print
+Sets the debug level for @sc{Ahi}.  If not @samp{None}, @sc{Ahi} will print
 debug information to the serial port.
 
 @cindex Echo, enable/disable/fast
@@ -725,13 +728,14 @@ uncompressed @dfn{IFF-AIFC}, 16 bit stereo at 44.1 kHz.
 @cindex Delfina DSP
 @cindex Delfina Lite
 @cindex DraCo Motion
+@cindex Maestro Pro
 @cindex Melody MPEG
 @cindex Paula
 @cindex Prelude
 @cindex Toccata
 @cindex Wavetools
 
-@ahi uses a set of hardware drivers for each sound card.  This means
+@sc{Ahi} uses a set of hardware drivers for each sound card.  This means
 that it's easy to add support for new sound cards as they appear.  At the
 time of writing, the following sound cards are supported:
 
@@ -746,6 +750,8 @@ Concierto
 Delfina DSP and Delfina Lite
 @item
 DraCo Motion
+@item
+Maestro Pro
 @item
 Melody MPEG
 @item
@@ -775,7 +781,7 @@ and are named as @file{<name>.audio}.  They are actually libraries, in
 spite of being located under the @file{DEVS:} assign, and will be flushed
 out from memory when not in use and the system needs more RAM.  Many of the
 drivers require additional files; see below.  These extra files are not
-delivered with @ahi{}.
+delivered with @sc{Ahi}.
 
 @table @code
 
@@ -905,7 +911,7 @@ Requires @code{dad_audio.device}.
 
 The files in @file{DEVS:AudioModes} describes the available audio modes
 that you can chose from in the audio mode requester.  All files located in
-this drawer will be scanned the first time @ahi is used, and added to
+this drawer will be scanned the first time @sc{Ahi} is used, and added to
 the internal mode database.
 
 @cindex Audio modes, overview
@@ -1142,7 +1148,7 @@ For the catalog translations.
 
 @item Daniel Arthursson and Johan Nyblom
 For making it possible to write the first driver for a sound card, the
-@dfn{Wavetools} card.  I'm sure @ahi would not have been accepted as
+@dfn{Wavetools} card.  I'm sure @sc{Ahi} would not have been accepted as
 quick as it was without this driver.  Funny that it didn't even
 work@enddots{}
 
@@ -1153,11 +1159,11 @@ For the calibrated 14 bit routines for Paula.
 For the compiler and all the updates.
 
 @item Jyrki Petsalo and Teemu Suikki
-For the Delfina driver, and for supporting @ahi in the early days.  And
+For the Delfina driver, and for supporting @sc{Ahi} in the early days.  And
 of course, for the sound card!
 
 @item Pauli Porkka
-For active support and promotion of @ahi from the beginning.
+For active support and promotion of @sc{Ahi} from the beginning.
 
 @item All the rest
 Many, many other have helped me, sent suggestions etc.  I owe you a lot.
@@ -1187,7 +1193,7 @@ Ondrej Zima,
 me, myself and I@enddots{}
 
 @menu
-* Contributors::                Who has contributed to the @ahi project?
+* Contributors::                Who has contributed to the @sc{Ahi} project?
 @end menu
 
 
@@ -1201,12 +1207,15 @@ me, myself and I@enddots{}
 
 @cindex Contributors
 
-The following people has contributed to the @ahi project with code:
+The following people has contributed to the @sc{Ahi} project with code:
 
 @table @asis
 
 @item Stéphane Barbaray @email{opty@@club-internet.fr}
 The MUI version of the preferences program.
+
+@item Richard Körber @email{shred@@chessy.aworld.de}
+The Maestro Pro driver.
 
 @item Johan Nyblom @email{nyblom@@ludd.luth.se}
 The latest Wavetools driver.
