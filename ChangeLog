@@ -1,3 +1,10 @@
+2004-06-09  Martin Blom  <martin@blom.org>
+
+	* Released device.audio 5.1.
+
+	* device.audio: Clear audio buffers before playing the first time
+	(removes the noise in the beginning). 
+
 2004-06-08  Martin Blom  <martin@blom.org>
 
 	* Added 7.1 multichannel support. And there was much rejoicing.
