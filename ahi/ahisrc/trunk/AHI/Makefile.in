@@ -91,10 +91,10 @@ version.h:	version.rev version.date
 	 echo "#define VERS \"$$ver.$$rev ($$date)\"" > $@
 
 revup:
-	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
-	@date +%d.%m.%y > version.date
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%d.%m.%y > $(srcdir)/version.date
 	@echo -n "New revision: "
-	@cat version.rev
+	@cat $(srcdir)/version.rev
 
 #
 # Auto-remake autoconf stuff

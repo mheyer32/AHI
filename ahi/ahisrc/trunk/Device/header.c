@@ -593,6 +593,7 @@ OpenLibs ( void )
 
   OpenahiCatalog(NULL, NULL);
 
+#if 0
   {
     char buf[2];
     
@@ -628,6 +629,7 @@ OpenLibs ( void )
            (ULONG) backend );
     }
   }
+#endif
 
   return TRUE;
 }
