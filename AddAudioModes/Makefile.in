@@ -74,7 +74,7 @@ Makefile: Makefile.in ../config.status
 # Dependencies
 ########################################
 
-Makefile.dep:	$(SOURCES)
+Makefile.dep:	$(SOURCES) version.h
 #	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 	touch $@
 	makedepend -f $@ $(SOURCES)
