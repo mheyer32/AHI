@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for the user and developer documentation
 #
@@ -60,11 +59,11 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
-	$(INSTALL) --directory $(PREFIX)/Help
+	$(INSTALL) -d $(PREFIX)/Help
 	$(INSTALL_DATA) ahiusr.guide $(PREFIX)/Help/ahi.guide
 
 bindist:	$(TARGETS)
-	$(INSTALL) --directory $(USRDOCDIR) $(DEVDOCDIR)
+	$(INSTALL) -d $(USRDOCDIR) $(DEVDOCDIR)
 	$(INSTALL_DATA) ahidev.readme $(DISTDIR)
 	$(INSTALL_DATA) $(srcdir)/ahidev.readme.info $(DISTDIR)
 	$(INSTALL_DATA) ahiusr.readme $(DISTDIR)
@@ -136,10 +135,10 @@ ahiusr.ps:	ahiusr.dvi
 # HTML files
 
 ahidev.html:	ahidev.texinfo ahidev.ver
-	texi2html -glossary -monolithic -verbose $<
+	texi2html -monolithic -verbose $<
 
 ahiusr.html:	ahiusr.texinfo ahiusr.ver
-	texi2html -glossary -monolithic -verbose $<
+	texi2html -monolithic -verbose $<
 
 
 # Macro-expanded files

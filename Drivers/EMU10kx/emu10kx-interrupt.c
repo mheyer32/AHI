@@ -1,6 +1,6 @@
 /*
      emu10kx.audio - AHI driver for SoundBlaster Live! series
-     Copyright (C) 2002-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2002-2005 Martin Blom <martin@blom.org>
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -19,26 +19,28 @@
 
 #include <config.h>
 
-#ifdef __AMIGAOS4__
-#include <proto/expansion.h>
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
-#include <clib/alib_protos.h>
-#endif
-
 #include <libraries/ahi_sub.h>
 #include <exec/execbase.h>
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 
 #include "library.h"
 #include "8010.h"
+#include "pci_wrapper.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
 #ifdef __AMIGAOS4__
 # define CallHookA CallHookPkt
 #endif
+
+
+static WORD*
+copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches );
+
+static WORD*
+copy_stereo( WORD* lsrc, WORD* rsrc, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches );
+
 
 /******************************************************************************
 ** Hardware interrupt handler *************************************************
@@ -59,18 +61,14 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
   ULONG intreq;
   BOOL  handled = FALSE;
   
-  #ifdef __AMIGAOS4__
-  while ( ( intreq = SWAPLONG( ((struct PCIDevice * ) dd->card.pci_dev)->InLong(dd->card.iobase + IPR ) ) ) != 0 )
-  #else
-   while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
-  #endif
+  while( ( intreq = ahi_pci_inl( dd->card.iobase + IPR, dd->card.pci_dev ) ) != 0 )
   {
 //    KPrintF("IRQ: %08lx\n", intreq );
     if( intreq & IPR_INTERVALTIMER &&
 	AudioCtrl != NULL )
     {
-      int hw   = sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voice.num );
-      int diff = dd->current_position - ( hw - dd->voice.start );
+      int hw   = sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voices[0].num );
+      int diff = dd->current_position - ( hw - dd->voices[0].start );
 
       if( diff < 0 )
       {
@@ -88,6 +86,11 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
             dd->playback_interrupt_enabled = FALSE;
             Cause( &dd->playback_interrupt );
+/* 	    KPrintF("hw[0]=%08lx, hw[1]=%08lx, hw[2]=%08lx, hw[3]=%08lx\n", */
+/* 		    sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voices[0].num ), */
+/* 		    sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voices[1].num ), */
+/* 		    sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voices[2].num ), */
+/* 		    sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voices[3].num ) ); */
          }
       }
     }
@@ -161,11 +164,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
     }
 
     /* Clear interrupt pending bit(s) */
-    #ifdef __AMIGAOS4__
-    ((struct PCIDevice * ) dd->card.pci_dev)->OutLong( dd->card.iobase + IPR, SWAPLONG( intreq ) );
-    #else
-    pci_outl( SWAPLONG( intreq ), dd->card.iobase + IPR );
-    #endif
+    ahi_pci_outl( intreq, dd->card.iobase + IPR, dd->card.pci_dev );
 
     handled = TRUE;
   }
@@ -189,16 +188,15 @@ PlaybackInterrupt( struct EMU10kxData* dd )
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
-    
-  if( dd->mix_buffer != NULL && dd->current_buffer != NULL )
+
+  if( dd->mix_buffer != NULL && dd->current_buffers[0] != NULL )
   {
     BOOL   skip_mix;
 
     WORD*  src;
-    WORD*  dst;
     size_t skip;
     size_t samples;
-    int    i;
+    int    i, s;
     
     skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc, (Object*) AudioCtrl, 0 );
 
@@ -210,94 +208,194 @@ PlaybackInterrupt( struct EMU10kxData* dd )
     }
     
     /* Now translate and transfer to the DMA buffer */
+    samples    = dd->current_length;
 
-    skip    = ( AudioCtrl->ahiac_Flags & AHIACF_HIFI ) ? 2 : 1;
-    samples = dd->current_length;
-
-    src     = dd->mix_buffer;
-    dst     = dd->current_buffer;
-
-    i = min( samples,
+    s = min( samples,
 	     AudioCtrl->ahiac_MaxBuffSamples * 2 - dd->current_position );
 
-    /* Update 'current_position' and 'samples' before destroying 'i' */
-
-    dd->current_position += i;
-
-    samples -= i;
-
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+    src = dd->mix_buffer;
+    
+    switch( AudioCtrl->ahiac_BuffType)
     {
-      i *= 2;
+      case AHIST_M16S:
+	dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
+					    s, 1, FALSE,
+					    EMU10kxBase->flush_caches );
+	src += s;
+	break;
+	
+      case AHIST_S16S:
+	dd->current_buffers[0] = copy_stereo( src, src + 1, dd->current_buffers[0],
+					      s, 2, FALSE,
+					      EMU10kxBase->flush_caches );
+	src += s * 2;
+	break;
+	
+      case AHIST_M32S:
+	dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
+					    s, 2, TRUE,
+					    EMU10kxBase->flush_caches );
+	src += s * 2;
+	break;
+	
+      case AHIST_S32S:
+	dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
+					      s, 4, TRUE,
+					      EMU10kxBase->flush_caches );
+	src += s * 4;
+	break;
+	
+      case AHIST_L7_1:
+	dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
+	dd->current_buffers[1] = copy_stereo( src + 4, src + 6, dd->current_buffers[1],
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
+	dd->current_buffers[2] = copy_stereo( src + 8, src + 10, dd->current_buffers[2],
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
+	dd->current_buffers[3] = copy_stereo( src + 12, src + 14, dd->current_buffers[3],
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
+	src += s * 16;
+	break;
     }
-
-    while( i > 0 )
-    {
-      *dst = ( ( *src & 0xff ) << 8 ) | ( ( *src & 0xff00 ) >> 8 );
-
-      src += skip;
-      dst += 1;
-
-      --i;
-    }
+    
+    dd->current_position += s;
+    samples -= s;
 
     if( dd->current_position == AudioCtrl->ahiac_MaxBuffSamples * 2 )
     {
-      if( EMU10kxBase->flush_caches )
-      {
-	CacheClearE( dd->current_buffer,
-		     (ULONG) dst - (ULONG) dd->current_buffer,
-		     CACRF_ClearD );
-      }
-
-      dst = dd->voice.mem.addr;
+      dd->current_buffers[0] = dd->voices[0].mem.addr;
+      dd->current_buffers[1] = dd->voices[1].mem.addr;
+      dd->current_buffers[2] = dd->voices[2].mem.addr;
+      dd->current_buffers[3] = dd->voices[3].mem.addr;
       dd->current_position = 0;
-
-      if( EMU10kxBase->flush_caches )
-      {
-	// Adjust for cache-clearing below
-	dd->current_buffer = dst;
-      }
     }
 
     if( samples > 0 )
     {
-      /* Update 'current_position' before destroying 'samples' */
+      s = samples;
 
-      dd->current_position += samples;
-
-      if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+      switch( AudioCtrl->ahiac_BuffType)
       {
-	      samples *= 2;
+	case AHIST_M16S:
+	  dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
+					      s, 1, FALSE,
+					      EMU10kxBase->flush_caches );
+	  break;
+	
+	case AHIST_S16S:
+	  dd->current_buffers[0] = copy_stereo( src, src + 1, dd->current_buffers[0],
+						s, 2, FALSE,
+						EMU10kxBase->flush_caches );
+	  break;
+	
+	case AHIST_M32S:
+	  dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
+					      s, 2, TRUE,
+					      EMU10kxBase->flush_caches );
+	  break;
+	
+	case AHIST_S32S:
+	  dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
+						s, 4, TRUE,
+						EMU10kxBase->flush_caches );
+	  break;
+	
+	case AHIST_L7_1:
+	  dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
+	  dd->current_buffers[1] = copy_stereo( src + 4, src + 6, dd->current_buffers[1],
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
+	  dd->current_buffers[2] = copy_stereo( src + 8, src + 10, dd->current_buffers[2],
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
+	  dd->current_buffers[3] = copy_stereo( src + 12, src + 14, dd->current_buffers[3],
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
+	  break;
       }
-
-      while( samples > 0 )
-      {
-         *dst = ( ( *src & 0xff ) << 8 ) | ( ( *src & 0xff00 ) >> 8 );
-         
-         src += skip;
-         dst += 1;
-
-         --samples;
-      }
-    }
-
-
-    if( EMU10kxBase->flush_caches )
-    {
-      CacheClearE( dd->current_buffer,
-		   (ULONG) dst - (ULONG) dd->current_buffer,
-		   CACRF_ClearD );
-    }
     
-    /* Update 'current_buffer' */
-
-    dd->current_buffer = dst;
+      dd->current_position += s;
+    }
 
     CallHookA( AudioCtrl->ahiac_PostTimerFunc, (Object*) AudioCtrl, 0 );
   }
 
   dd->playback_interrupt_enabled = TRUE;
+}
+
+
+static WORD*
+copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches )
+{
+  WORD* first = dst;
+  WORD* last  = dst + count;
+  int x, y;
+
+#ifndef WORDS_BIGENDIAN
+  if( src32 )
+  {
+    // Move to high 16 bits
+    ++src;
+  }
+#endif
+
+  for( x = 0, y = 0; y < count; x += stride, ++y )
+  {
+#ifndef WORDS_BIGENDIAN
+    dst[y] = src[x];
+#else
+    dst[y] = ( ( src[x] & 0xff ) << 8 ) | ( ( src[x] & 0xff00 ) >> 8 );
+#endif
+  }
+
+  if( flush_caches )
+  {
+    CacheClearE( first, (ULONG) last - (ULONG) first, CACRF_ClearD );
+  }
+
+  return last;
+}
+
+
+static WORD*
+copy_stereo( WORD* lsrc, WORD* rsrc, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches )
+{
+  WORD* first = dst;
+  WORD* last  = dst + count * 2;
+  int x, y;
+
+#ifndef WORDS_BIGENDIAN
+  if( src32 )
+  {
+    // Move to high 16 bits
+    ++lsrc;
+    ++rsrc;
+  }
+#endif
+
+  for( x = 0, y = 0; y < count * 2; x += stride, y += 2 )
+  {
+#ifndef WORDS_BIGENDIAN
+    dst[y+0] = lsrc[x];
+    dst[y+1] = rsrc[x];
+#else
+    dst[y+0] = ( ( lsrc[x] & 0xff ) << 8 ) | ( ( lsrc[x] & 0xff00 ) >> 8 );
+    dst[y+1] = ( ( rsrc[x] & 0xff ) << 8 ) | ( ( rsrc[x] & 0xff00 ) >> 8 );
+#endif
+  }
+
+  if( flush_caches )
+  {
+    CacheClearE( first, (ULONG) last - (ULONG) first, CACRF_ClearD );
+  }
+
+  return last;
 }
 
 
@@ -316,6 +414,12 @@ RecordInterrupt( struct EMU10kxData* dd )
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
+#ifdef __AMIGAOS4__
+  ULONG  CacheCommand = CACRF_InvalidateD;
+#else
+  ULONG  CacheCommand = CACRF_ClearD;
+#endif
+
 
   struct AHIRecordMessage rm =
   {
@@ -327,37 +431,44 @@ RecordInterrupt( struct EMU10kxData* dd )
   int   i   = 0;
   WORD* ptr = dd->current_record_buffer;
 
+#ifndef __AMIGAOS4__
+  // As OS4 can do invalidate only, we don't need to do flushing here.
+  // Between the invalidate at the end, DMA and entering this interrupt code,
+  // nobody should have touched this half of the record buffer.
+ 
   if( EMU10kxBase->flush_caches )
   {
     // This is used to invalidate the cache
 
     CacheClearE( dd->current_record_buffer,
 		 RECORD_BUFFER_SAMPLES / 2 * 4,
-		 CACRF_ClearD );
+		 CacheCommand );
   }
+#endif
 
+#ifdef WORDS_BIGENDIAN
   while( i < RECORD_BUFFER_SAMPLES / 2 * 2 )
   {
     *ptr = ( ( *ptr & 0xff ) << 8 ) | ( ( *ptr & 0xff00 ) >> 8 );
-
+    
     ++i;
     ++ptr;
   }
+#endif
+
+  CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
 
   if( EMU10kxBase->flush_caches )
   {
-    // This is used to make sure the call above doesn't pushes dirty data
+    // This is used to make sure the call above doesn't push dirty data
     // the next time it's called. God help us if dd->current_record_buffer
     // is not a the beginning of a cache line and there are dirty data
-    // in the DMA buffer before or after the current buffer. Ok I will stop
-    // talking now. Thanks for listening.
+    // in the DMA buffer before or after the current buffer.
     
     CacheClearE( dd->current_record_buffer,
 		 RECORD_BUFFER_SAMPLES / 2 * 4,
-		 CACRF_ClearD );
+		 CacheCommand );
   }
-
-  CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
 
   dd->record_interrupt_enabled = TRUE;
 }

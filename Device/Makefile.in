@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for ahi.device.
 #
@@ -18,6 +17,7 @@ PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 DEVSDIR		= ${DISTDIR}/User/Devs
 CATDIR		= ${DISTDIR}/User/Catalogs
+CATSRCDIR	= ${DISTDIR}/Developer/Translations
 
 build_os	= @build_os@
 host		= @host@
@@ -52,6 +52,8 @@ ifeq ($(strip $(FLEXCAT)),)
 FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
 endif
 
+ENABLE_WARPUP	= @ENABLE_WARPUP@
+
 #
 # Files
 ########################################
@@ -64,6 +66,10 @@ OBJECTS		= header.o gateway.o gatestubs.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  audioctrl.o effectinit.o sound.o misc.o dspecho.o \
 		  mixer.o 
+
+ifeq ($(ENABLE_WARPUP),yes)
+OBJECTS		+= elfloader.o warpup.o
+endif
 
 ifeq ($(host_cpu),m68k)
 OBJECTS		+= addroutines_68k.o dspechofuncs_68k.o
@@ -107,15 +113,18 @@ revup:
 	@cat $(srcdir)/version.rev
 
 bindist:	all
-	$(INSTALL) --directory $(CATDIR)
-	$(INSTALL_DATA) ${srcdir}/ahi.cd $(CATDIR)
-	$(INSTALL_DATA) ${srcdir}/ahi.ct $(CATDIR)
+	$(INSTALL) -d $(CATDIR) $(CATSRCDIR) $(CATSRCDIR)/ahi
+	$(INSTALL_DATA) ${srcdir}/ahi.cd $(CATSRCDIR)
+	$(INSTALL_DATA) ${srcdir}/ahi.ct $(CATSRCDIR)
 	for i in $(LANGUAGES); do \
-	  $(INSTALL) --directory $(CATDIR)/$$i; \
+	  $(INSTALL) -d $(CATDIR)/$$i; \
+	  $(INSTALL) -d $(CATSRCDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahi.catalog; \
+	  $(INSTALL_DATA) ${srcdir}/translations/$$i.ct \
+			  $(CATSRCDIR)/ahi/$$i.ct; \
 	done
 
-	$(INSTALL) --directory $(DEVSDIR)
+	$(INSTALL) -d $(DEVSDIR)
 
 	$(INSTALL_PROGRAM) $(EXECUTABLE) $(DEVSDIR)/$(EXECUTABLE)
 	$(STRIP) $(DEVSDIR)/$(EXECUTABLE)
@@ -140,7 +149,7 @@ $(EXECUTABLE):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o \
-			addroutines_32bit.o dspechofuncs.o
+			addroutines_32bit.o addroutines_71.o dspechofuncs.o
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
@@ -168,7 +177,8 @@ $(srcdir)/localize.h:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd $(srcdir)/localize.h=$(srcdir)/C_h_AHI.sd
 
 %.catalog:		translations/%.ct
-	$(FLEXCAT) $(srcdir)/ahi.cd $< CATALOG=$@
+	$(FLEXCAT) WARNCTGAPS NOOPTIM FILL NOAUTODATE \
+		   $(srcdir)/ahi.cd $< CATALOG=$@
 
 %.ct:
 	$(FLEXCAT) $(srcdir)/ahi.cd $@ NEWCTFILE=$@

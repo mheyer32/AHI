@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -112,6 +112,7 @@ enum actionIDs {
   ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CLIPMV,
   ACTID_CPULIMIT, SHOWID_CPULIMIT,
   ACTID_ACTIME, SHOWID_ACTIME,
+  ACTID_SCALEMODE,
   
 
   ACTID_COUNT
@@ -153,6 +154,15 @@ static char *PageNames[] =
 {
   NULL,  /* Mode settings */
   NULL,  /* Advanced settings */
+  NULL
+};
+
+static char * ScaleLabels[] = {
+  NULL,  /* Safe */
+  NULL,  /* Safe, dynamic */
+  NULL,  /* Full volume */
+  NULL,  /* -3 dB */
+  NULL,  /* -6 dB */
   NULL
 };
 
@@ -238,14 +248,18 @@ static void UpdateStrings(void) {
   SurroundLabels[1] = (char *) msgSurroundDisabled;
   ClipMVLabels[0] = (char *) msgMVNoClip;
   ClipMVLabels[1] = (char *) msgMVClip;
-
+  ScaleLabels[0] = (char *) msgSMFixedSafe;
+  ScaleLabels[1] = (char *) msgSMDynSafe;
+  ScaleLabels[2] = (char *) msgSM0dB;
+  ScaleLabels[3] = (char *) msgSM3dB;
+  ScaleLabels[4] = (char *) msgSM6dB;
 }
 
 
 static Object *MUIWindow,*MUIList,*MUIInfos,*MUIUnit;
 static Object *MUIFreq,*MUIChannels,*MUIOutvol,*MUIMonvol,*MUIGain,*MUIInput,*MUIOutput;
 static Object *MUILFreq,*MUILChannels,*MUILOutvol,*MUILMonvol,*MUILGain,*MUILInput,*MUILOutput,*MUIPlay;
-static Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu,*MUIACTime;
+static Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu,*MUIACTime,*MUIScalemode;
 
 LONG xget(Object * obj, ULONG attribute)
 {
@@ -257,6 +271,7 @@ LONG xget(Object * obj, ULONG attribute)
 
 static void GUINewSettings(void)
 {
+  set(MUIUnit,MUIA_Cycle_Entries,Units);
   set(MUIUnit,MUIA_Cycle_Active,state.UnitSelected);
   set(MUIDebug, MUIA_Cycle_Active, globalprefs.ahigp_DebugLevel);
   set(MUIEcho, MUIA_Cycle_Active, (globalprefs.ahigp_DisableEcho ? 2 : 0)|(globalprefs.ahigp_FastEcho    ? 1 : 0));
@@ -264,6 +279,8 @@ static void GUINewSettings(void)
   set(MUIClipvol, MUIA_Cycle_Active, globalprefs.ahigp_ClipMasterVolume);
   set(MUICpu, MUIA_Cycle_Active, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16);
   set(MUIACTime, MUIA_Cycle_Active, (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16);
+  set(MUIScalemode, MUIA_Cycle_Active, globalprefs.ahigp_ScaleMode);
+  
   GUINewUnit();
 }
 
@@ -512,7 +529,7 @@ BOOL BuildGUI(char *screenname)
 {
   Object *MUISave, *MUIUse, *MUICancel;
   Object *page1,*page2;
-  Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu,*MUITACTime;
+  Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu,*MUITACTime,*MUITScalemode;
 
   UpdateStrings();
 
@@ -624,7 +641,7 @@ BOOL BuildGUI(char *screenname)
           MUIA_Numeric_Min, 0,
           MUIA_Numeric_Max, 100,
           MUIA_Numeric_Value,(globalprefs.ahigp_MaxCPU * 100 + 32768) / 65536,
-          MUIA_Numeric_Format,"%ld%%",
+          MUIA_Numeric_Format,msgPercentFmt,
         End,
         Child, MUITACTime = SpecialButton((STRPTR)msgGlobOptACTime),
         Child, MUIACTime = SliderObject,
@@ -633,7 +650,14 @@ BOOL BuildGUI(char *screenname)
           MUIA_Numeric_Min, 0,
           MUIA_Numeric_Max, 100,
           MUIA_Numeric_Value,(globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
-          MUIA_Numeric_Format,"%ld ms",
+          MUIA_Numeric_Format,msgACTimeFmt,
+          MUIA_Disabled, AHIBase->lib_Version <= 4,
+        End,
+        Child, MUITScalemode = SpecialButton((STRPTR)msgOptScalemode),
+        Child, MUIScalemode = CycleObject,
+          MUIA_CycleChain, 1,
+          MUIA_Cycle_Entries, ScaleLabels,
+          MUIA_Cycle_Active, globalprefs.ahigp_ScaleMode,
           MUIA_Disabled, AHIBase->lib_Version <= 4,
         End,
       End,
@@ -645,7 +669,7 @@ BOOL BuildGUI(char *screenname)
   MUIApp = ApplicationObject,
     MUIA_Application_Title, (char *) msgTextProgramName,
     MUIA_Application_Version, Version,
-    MUIA_Application_Copyright, "©1996-2003 Martin Blom",
+    MUIA_Application_Copyright, "©1996-2005 Martin Blom",
     MUIA_Application_Author, "Stéphane Barbaray/Martin Blom",
     MUIA_Application_Base, "AHI",
     MUIA_Application_HelpFile, HELPFILE,
@@ -694,6 +718,7 @@ BOOL BuildGUI(char *screenname)
     DoMethod(MUITClipvol, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIClipvol);
     DoMethod(MUITCpu, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUICpu);
     DoMethod(MUITACTime, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIACTime);
+    DoMethod(MUITScalemode, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIScalemode);
 
     DoMethod(MUIWindow, MUIM_Notify, MUIA_Window_CloseRequest, TRUE, MUIApp, 2, MUIM_Application_ReturnID, MUIV_Application_ReturnID_Quit);
     DoMethod(MUISave, MUIM_Notify, MUIA_Pressed, FALSE, MUIApp, 2, MUIM_Application_ReturnID, ACTID_SAVE);
@@ -707,6 +732,7 @@ BOOL BuildGUI(char *screenname)
     DoMethod(MUICpu, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CPULIMIT);
     DoMethod(MUIClipvol, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CLIPMV);
     DoMethod(MUIACTime, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_ACTIME);
+    DoMethod(MUIScalemode, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_SCALEMODE);
     DoMethod(MUIFreq, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
     DoMethod(MUIChannels, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
     DoMethod(MUIOutvol, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
@@ -839,7 +865,7 @@ void EventLoop(void)
       {
         char* args[] = { "\033c", 
                          (char*)msgTextProgramName,
-                         "1996-2003 Stéphane Barbaray/Martin Blom"
+                         "1996-2005 Stéphane Barbaray/Martin Blom"
                        };
 
         MUI_RequestA(MUIApp, MUIWindow, 0, (char *) msgTextProgramName,
@@ -937,9 +963,10 @@ void EventLoop(void)
       case ACTID_CPULIMIT:
       case ACTID_CLIPMV:
       case ACTID_ACTIME:
+      case ACTID_SCALEMODE:
       {
         ULONG debug = AHI_DEBUG_NONE, surround = FALSE, echo = 0, cpu = 90;
-        ULONG clip = FALSE, actime = 0;
+        ULONG clip = FALSE, actime = 0, scalemode = AHI_SCALE_FIXED_0_DB;
 
         get(MUIDebug, MUIA_Cycle_Active, &debug);
         get(MUISurround, MUIA_Cycle_Active, &surround);
@@ -947,6 +974,7 @@ void EventLoop(void)
         get(MUIClipvol, MUIA_Cycle_Active, &clip);
         get(MUICpu, MUIA_Numeric_Value, &cpu);
         get(MUIACTime, MUIA_Numeric_Value, &actime);
+        get(MUIScalemode, MUIA_Cycle_Active, &scalemode);
 
         globalprefs.ahigp_DebugLevel       = debug;
         globalprefs.ahigp_DisableSurround  = surround;
@@ -955,6 +983,7 @@ void EventLoop(void)
         globalprefs.ahigp_MaxCPU           = ((cpu << 16) + 50) / 100;
         globalprefs.ahigp_ClipMasterVolume = clip;
         globalprefs.ahigp_AntiClickTime    = ((actime << 16) + 500) / 1000;
+	globalprefs.ahigp_ScaleMode        = scalemode;
 
         break;
       }
