@@ -42,28 +42,39 @@
 #define spin_unlock_irqrestore(lock,flags) Enable();
 
 u32
-inl( u32 reg )
+inl( u32 port )
 {
-  return *(u32*) reg;
+  u32 res = *(u32*) port;
+
+  DPD(2, "my_inl(%08x) ->%08x\n", port, res );
+
+  return res;
 }
 
 void
-outl( u32 reg, u32 val )
+outl( u32 port, u32 value )
 {
-  *(u32*) reg = val;
+  *(u32*) port = value;
+  DPD(2, "my_outl(%08x,%08x)\n", port, value );  
 }
 
 
 u16
-inw( u32 reg )
+inw( u32 port )
 {
-  return *(u16*) reg;
+  u16 res = *(u16*) port;
+  
+  DPD(2, "my_inw(%08x) ->%04x\n", port, res );
+
+  return res;
 }
 
 void
-outw( u32 reg, u16 val )
+outw( u32 port, u16 value )
 {
-  *(u16*) reg = val;
+  *(u16*) port = value;
+
+  DPD(2, "my_outw(%08x,%04x)\n", port, value );  
 }
 
 
