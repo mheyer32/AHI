@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for the AHI-Handler DOS device.
 #
@@ -68,7 +67,7 @@ revup:
 	@cat $(srcdir)/version.rev
 
 bindist:	all
-	$(INSTALL) --directory $(LDIR) $(DOSDRVDIR)
+	$(INSTALL) -d $(LDIR) $(DOSDRVDIR)
 	$(INSTALL_PROGRAM) $(EXECUTABLE) $(LDIR)/$(EXECUTABLE)
 	$(STRIP) $(LDIR)/$(EXECUTABLE)
 	$(INSTALL_DATA) ${srcdir}/AUDIO $(DOSDRVDIR)

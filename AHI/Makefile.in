@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for the AHI preferences program
 #
@@ -45,9 +44,11 @@ VPATH		= @srcdir@
 ########################################
 
 OBJECTS		= ahi.o support.o ahiprefs_Cat.o
+OBJECTS_BGUI	= gui_bgui.o
+OBJECTS_CA	= gui_ca.o
 OBJECTS_MUI	= gui_mui.o
 
-EXECUTABLES	= AHI_MUI
+EXECUTABLES	= AHI_MUI # AHI_BGUI AHI_CA
 
 LANGUAGES	= $(notdir $(basename $(wildcard ${srcdir}/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
@@ -74,7 +75,7 @@ install:	all
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFIX)/Prefs/AHI
 
 bindist:	all
-	$(INSTALL) --directory $(PREFSDIR)
+	$(INSTALL) -d $(PREFSDIR)
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFSDIR)/AHI
 	$(STRIP) $(PREFSDIR)/AHI
 #	for i in $(EXECUTABLES); do \
@@ -84,7 +85,7 @@ bindist:	all
 	$(INSTALL_DATA) ${srcdir}/AHI.info $(PREFSDIR)
 	$(INSTALL_DATA) ${srcdir}/AHI.MWB.info $(PREFSDIR)
 	for i in $(LANGUAGES); do \
-	  $(INSTALL) --directory $(CATDIR)/$$i; \
+	  $(INSTALL) -d $(CATDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
 	done
 	$(INSTALL_DATA) ${srcdir}/ahiprefs.cd $(CATDIR)
@@ -115,6 +116,12 @@ Makefile: Makefile.in ../config.status
 # Rules
 ########################################
 
+AHI_BGUI:	$(OBJECTS) $(OBJECTS_BGUI)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+AHI_CA:		$(OBJECTS) $(OBJECTS_CA)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
 AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
@@ -126,7 +133,7 @@ $(srcdir)/ahiprefs_Cat.h:	$(srcdir)/ahiprefs.cd $(srcdir)/C_h_noauto.sd
 	$(FLEXCAT) $(srcdir)/ahiprefs.cd $(srcdir)/ahiprefs_Cat.h=$(srcdir)/C_h_noauto.sd
 
 %.catalog:	translations/%.ct
-	$(FLEXCAT) $(srcdir)/ahiprefs.cd $< CATALOG=$@
+	$(FLEXCAT) FILL $(srcdir)/ahiprefs.cd $< CATALOG=$@ 
 
 %.ct:
 	$(FLEXCAT) $(srcdir)/ahiprefs.cd $@ NEWCTFILE=$@
