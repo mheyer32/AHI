@@ -1,3 +1,9 @@
+/* $Id$
+ * $Log$
+ * Revision 4.2  1997/04/07 01:36:51  lcs
+ * Localized it, bug fixes
+ *
+ */
 
 #include <libraries/asl.h>
 #include <libraries/bgui.h>

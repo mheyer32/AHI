@@ -1,3 +1,9 @@
+/* $Id$
+ * $Log$
+ * Revision 4.2  1997/04/07 01:36:51  lcs
+ * Localized it, bug fixes
+ *
+ */
 
 #include <devices/ahi.h>
 #include <workbench/startup.h>
@@ -21,7 +27,7 @@
 
 #define DBSTEP      0.5
 
-static const char *Version[] = {"$VER: AHI Preferences 4.1 "__AMIGADATE__"\r\n"};
+static const char *Version[] = {"$VER: AHI preferences 4.1 "__AMIGADATE__"\r\n"};
 
 struct List      *UnitList   = NULL;
 struct List      *ModeList   = NULL;
@@ -211,6 +217,12 @@ void NewSettings(char *name) {
   FreeList(UnitList);
   UnitList = GetUnits(name);
   Units = List2Array((struct List *) UnitList);
+
+  globalprefs.ahigp_DebugLevel      = AHI_DEBUG_NONE;
+  globalprefs.ahigp_DisableSurround = FALSE;
+  globalprefs.ahigp_DisableEcho     = FALSE;
+  globalprefs.ahigp_FastEcho        = FALSE;
+  globalprefs.ahigp_MaxCPU = (90 << 16) / 100;
 
   NewUnit(0);
 }
