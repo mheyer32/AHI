@@ -88,7 +88,7 @@ void SlaveEntry(void)
   struct DriverBase*      AHIsubBase;
   struct FilesaveBase*    FilesaveBase;
 
-  struct EIGHTSVXheader EIGHTSVXheader = // All NULLs will be filled later.
+  struct EIGHTSVXheader EIGHTSVXheader = // All 0s will be filled later.
   { 
     __htobe_long(ID_FORM), 0, __htobe_long(ID_8SVX),
     __htobe_long(ID_VHDR), __htobe_long(sizeof(Voice8Header)),
@@ -104,7 +104,7 @@ void SlaveEntry(void)
     __htobe_long(ID_BODY), 0
   };
 
-  struct AIFFheader AIFFheader = // All NULLs will be filled later.
+  struct AIFFheader AIFFheader = // All 0s will be filled later.
   { 
     __htobe_long(ID_FORM), 0, __htobe_long(ID_AIFF),
     __htobe_long(ID_COMM), __htobe_long(sizeof(CommonChunk)),
@@ -116,14 +116,14 @@ void SlaveEntry(void)
         0, { 0, 0 }
       }
     },
-    ID_SSND, 0,
+    __htobe_long(ID_SSND), 0,
     {
       0,
       0
     }
   };
 
-  struct AIFCheader AIFCheader = // All NULLs will be filled later.
+  struct AIFCheader AIFCheader = // All 0s will be filled later.
   { 
     __htobe_long(ID_FORM), 0, __htobe_long(ID_AIFC),
     __htobe_long(ID_FVER), __htobe_long(sizeof(FormatVersionHeader)),
@@ -149,7 +149,7 @@ void SlaveEntry(void)
     }
   };
 
-  struct STUDIO16FILE S16header = // All NULLs will be filled later.
+  struct STUDIO16FILE S16header = // All 0s will be filled later.
   {
     __htobe_long(S16FID),
     0,
@@ -170,7 +170,7 @@ void SlaveEntry(void)
     }
   };
 
-  struct WAVEheader WAVEheader = // All NULLs will be filled later.
+  struct WAVEheader WAVEheader = // All 0s will be filled later.
   {
     __htobe_long(ID_RIFF), 0, __htobe_long(ID_WAVE),
     __htobe_long(ID_fmt), __htole_long( sizeof(FormatChunk) ),
@@ -611,7 +611,7 @@ void ulong2extended (ULONG in, extended *ex)
   }
   ex->mantissa[0] = in;
 
-  ex->exponent    = htobe_long( ex->exponent );
+  ex->exponent    = htobe_short( ex->exponent );
   ex->mantissa[0] = htobe_long( ex->mantissa[0] );
   ex->mantissa[1] = htobe_long( ex->mantissa[1] );
 }
