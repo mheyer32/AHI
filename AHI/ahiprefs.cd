@@ -2,8 +2,8 @@
 #version 4
 ; $Id$
 ; $Log$
-; Revision 4.1  1997/04/07 00:53:54  lcs
-; *** empty log message ***
+; Revision 4.2  1997/04/07 01:36:51  lcs
+; Localized it, bug fixes
 ;
 ;
 ; *** Menus ***
@@ -191,7 +191,7 @@ OK
 msgTextProgramName (//)
 AHI preferences
 ;
-;You can use something like "%s%s\nCopyright ©%s\nEnglish translation by Your Name." here...
+;You can use something like "%s%s\nCopyright ©%s\nEnglish translation by Your Name" here...
 msgTextCopyright (//)
 %s%s\nCopyright ©%s
 ;
