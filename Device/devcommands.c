@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:28:11  lcs
+* Bumped to version 4
+*
 * Revision 1.17  1997/03/27 12:16:27  lcs
 * Major bug in the device interface code fixed.
 *
@@ -359,7 +362,7 @@ struct Node *FindNode(struct List *list, struct Node *node)
 /****** ahi.device/NSCMD_DEVICEQUERY  ***************************************
 *
 *   NAME
-*       NSCMD_DEVICEQUERY -- Query the device for its capabilities (V3)
+*       NSCMD_DEVICEQUERY -- Query the device for its capabilities (V4)
 *
 *   FUNCTION
 *       Fills an initialized NSDeviceQueryResult structure with
@@ -441,7 +444,7 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /****** ahi.device/CMD_STOP ************************************************
 *
 *   NAME
-*       CMD_STOP -- stop device processing (like ^S) (V3)
+*       CMD_STOP -- stop device processing (like ^S) (V4)
 *
 *   FUNCTION
 *       Stops all CMD_WRITE processing. All writes will be queued, and
@@ -496,7 +499,7 @@ static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /****** ahi.device/CMD_FLUSH ************************************************
 *
 *   NAME
-*       CMD_FLUSH -- Cancel all I/O requests (V3)
+*       CMD_FLUSH -- Cancel all I/O requests (V4)
 *
 *   FUNCTION
 *       Aborts ALL current requestes, both active and waiting, even
@@ -576,7 +579,7 @@ static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /****** ahi.device/CMD_RESET ************************************************
 *
 *   NAME
-*       CMD_RESET -- Restore device to a known state (V3)
+*       CMD_RESET -- Restore device to a known state (V4)
 *
 *   FUNCTION
 *       Aborts all current requestes, even other programs requests
@@ -635,7 +638,7 @@ static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /****** ahi.device/CMD_READ *************************************************
 *
 *   NAME
-*       CMD_READ -- Read raw samples from audio input (V3)
+*       CMD_READ -- Read raw samples from audio input (V4)
 *
 *   FUNCTION
 *       Reads samples from the users prefered input to memory. The sample
@@ -750,7 +753,7 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /****** ahi.device/CMD_WRITE ************************************************
 *
 *   NAME
-*       CMD_WRITE -- Write raw samples to audio output (V3)
+*       CMD_WRITE -- Write raw samples to audio output (V4)
 *
 *   FUNCTION
 *       Plays the samples to the users prefered audio output.
@@ -886,7 +889,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /****** ahi.device/CMD_START ************************************************
 *
 *   NAME
-*       CMD_START -- start device processing (like ^Q) (V3)
+*       CMD_START -- start device processing (like ^Q) (V4)
 *
 *   FUNCTION
 *       All CMD_WRITE's that has been sent to the device since CMD_STOP

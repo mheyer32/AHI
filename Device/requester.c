@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:28:11  lcs
+* Bumped to version 4
+*
 * Revision 1.16  1997/03/25 22:27:49  lcs
 * Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
 *
@@ -1110,7 +1113,7 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 *           the mode list (see below), you must also check the mode (with
 *           AHI_BestAudioIDA()) before you use it since the user may change 
 *           the meaning of AHI_DEFAULT_MODE anytime, without your knowledge.
-*           Default is FALSE. (V3)
+*           Default is FALSE. (V4)
 *
 *       AHIR_FilterFunc (struct Hook *) - A function to call for each mode
 *           encountered. If the function returns TRUE, the mode is included

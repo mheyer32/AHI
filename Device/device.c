@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:29:53  lcs
+* Bumped to version 4
+*
 * Revision 1.20  1997/03/27 12:16:27  lcs
 * Major bug in the device interface code fixed.
 *

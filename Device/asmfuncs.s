@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:28:11  lcs
+* Bumped to version 4
+*
 * Revision 1.24  1997/03/27 12:16:27  lcs
 * Major bug in the device interface code fixed.
 *
@@ -82,6 +85,7 @@
 	include	lvo/timer_lib.i
 	include	lvo/utility_lib.i
 	include	lvo/ahi_lib.i
+	include	lvo/ahi_sub_lib.i
 
 	include	ahi_def.i
 	include dsp.i
@@ -268,7 +272,7 @@ stuffChar:
 *           Maximum volume is 1.0 (0x10000L) and 0.0 (0x0L) will turn off
 *           this channel. Note: The sound will continue to play, but you
 *           wont hear it. To stop a sound completely, use AHI_SetSound().
-*           Starting with V3 volume can also be negative, which tells AHI
+*           Starting with V4 volume can also be negative, which tells AHI
 *           to invert the samples before playing. Note that all drivers
 *           may not be able to handle negative volume. In that case the
 *           absolute volume will be used.
@@ -280,7 +284,7 @@ stuffChar:
 *           Try to set Pan to the 'correct' value even if you know it has no
 *           effect. For example, if you know you use a mono mode, set pan to
 *           0.5 even if it does not matter.
-*           Starting with V3 pan can also be negative, which tells AHI to
+*           Starting with V4 pan can also be negative, which tells AHI to
 *           use the surround speaker for this channel. Note that all drivers
 *           may not be able to handle negative pan. In that case the absolute
 *           pan will be used.
@@ -805,9 +809,10 @@ SetSound_nodebug
 *           AHIET_OUTPUTBUFFER - Gives READ-ONLY access to the mixed output.
 *               Can be used to show nice scopes and VU-meters.
 *           AHIET_DSPMASK - Select which channels will be affected by the
-*               DSP effects. (V3)
+*               DSP effects. (V4)
 *           AHIET_DSPECHO - A DSP effects that adds (cross-)echo and delay.
-*               (V3)
+*               (V4)
+*           AHIET_CHANNELINFO - Get info about all channels. (V4)
 *       audioctrl - A pointer to an AHIAudioCtrl structure.
 *
 *   EFFECTS
@@ -838,7 +843,7 @@ SetSound_nodebug
 *           affected by the DSP effects) by using the AHIEDM_DRY constant.
 *           The default is all channels wet. If ahiedm_Channels does not
 *           equal the current number of channels allocated, the result of
-*           this call is undefined (crash warning!). (V3)
+*           this call is undefined (crash warning!). (V4)
 *
 *       AHIET_DSPECHO - Effect is a struct AHIEffDSPEcho.
 *           ahiede_Delay is the delay in samples (and thus depends on the
@@ -866,7 +871,7 @@ SetSound_nodebug
 *           that even more.
 *
 *           Otherwise, even with "Fast Echo" turned on, this effect will 
-*           probably suck some major CPU cycles on most sound hardware. (V3)
+*           probably suck some major CPU cycles on most sound hardware. (V4)
 *
 *       AHIET_CHANNELINFO - Effect is a struct AHIEffChannelInfo, where
 *           ahieci_Func is pointing to a hook that will be called with the
@@ -883,7 +888,7 @@ SetSound_nodebug
 *           played. You must probably keep track of the other parameters
 *           yourself (like which sound is playing, it's volume, balance and
 *           frequency etc) in order have meaningful usage of the information.
-*           (V3)
+*           (V4)
 *
 *
 *       NOTE! To turn off an effect, call again with ahie_Effect OR:ed

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:29:53  lcs
+* Bumped to version 4
+*
 * Revision 1.9  1997/03/25 22:27:49  lcs
 * Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
 *
