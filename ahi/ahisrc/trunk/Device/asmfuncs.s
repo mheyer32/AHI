@@ -12,7 +12,6 @@
 	XDEF	_DummyPreTimer
 	XDEF	_DummyPostTimer
 
-	XDEF	_Fixed2Shift
 	XDEF	_UDivMod64
 
 	XREF	_TimerBase
@@ -118,71 +117,6 @@ _DummyPreTimer:
 _DummyPostTimer:
 	rts
 
-
-** Fixed2Shift ****************************************************************
-
-;in:
-* d0	Fixed
-;out:
-* d0	Shift value
-_Fixed2Shift:
-	push	d1
-	moveq	#0,d1
-	cmp.l	#$10000,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$8000,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$4000,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$2000,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$1000,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$800,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$400,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$200,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$100,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$80,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$40,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$20,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$10,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$8,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$4,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$2,d0
-	bge	.exit
-	addq.l	#1,d1
-	cmp.l	#$1,d0
-	bge	.exit
-	addq.l	#1,d1
-.exit
-	move.l	d1,d0
-	pop	d1
-	rts
 
 ** UDivMod64 ******************************************************************
 

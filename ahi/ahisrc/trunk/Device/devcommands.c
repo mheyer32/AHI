@@ -16,6 +16,7 @@
 #include <math.h>
 
 #include "ahi_def.h"
+#include "misc.h"
 #include "devcommands.h"
 #include "device.h"
 #include "devsupp.h"
@@ -265,31 +266,6 @@ PerformIO ( struct AHIRequest *ioreq,
       TermIO(ioreq, AHIBase);
       break;
   }
-}
-
-
-/******************************************************************************
-** Findnode *******************************************************************
-******************************************************************************/
-
-// Find a node in a list
-
-struct Node *
-FindNode ( struct List *list,
-           struct Node *node )
-{
-  struct Node *currentnode;
-
-  for(currentnode = list->lh_Head;
-      currentnode->ln_Succ;
-      currentnode = currentnode->ln_Succ)
-  {
-    if(currentnode == node)
-    {
-      return currentnode;
-    }
-  }
-  return NULL;
 }
 
 

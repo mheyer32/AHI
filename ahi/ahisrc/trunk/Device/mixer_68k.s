@@ -22,8 +22,8 @@
 
 	XREF	_SysBase
 	XREF	_UtilityBase
-	XREF	_Fixed2Shift
 	XREF	_UDivMod64
+	XREF	_Fixed2Shift
 
 TABLEMAXVOL	EQU	32
 TABLESHIFT	EQU	11	(TABLEMAXVOL<<TABLESHIFT == 0x10000)
@@ -1303,7 +1303,9 @@ FixVolWordSVTr:
 	rts
 
 FixVolWordSVPT:
+	push	d1
 	jsr	_Fixed2Shift
+	pop	d1
 	push	d0
 	move.l	d1,d0
 	jsr	_Fixed2Shift
@@ -1338,7 +1340,9 @@ FixVolWordsMV:
 	rts
 
 FixVolWordsMVT:
+	push	d1
 	jsr	_Fixed2Shift
+	pop	d1
 	push	d0
 	move.l	d1,d0
 	jsr	_Fixed2Shift
@@ -1392,7 +1396,9 @@ FixVolWordsSVTr:
 	rts
 
 FixVolWordsSVPT:
+	push	d1
 	jsr	_Fixed2Shift
+	pop	d1
 	push	d0
 	move.l	d1,d0
 	jsr	_Fixed2Shift
