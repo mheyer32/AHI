@@ -85,7 +85,6 @@ AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
 AC_CHECK_PROG( ASM, PhxAss, PhxAss )
-AC_CHECK_PROG( MAKEDEPEND, makedepend, makedepend )
 
 
 dnl Checks for libraries.

@@ -134,17 +134,20 @@ $(srcdir)/ahiprefs_Cat.h:	$(srcdir)/ahiprefs.cd $(srcdir)/C_h_noauto.sd
 # Dependencies
 ########################################
 
-SOURCES		= $(notdir $(wildcard $(srcdir)/*.c))
-HEADERS		= $(notdir $(wildcard $(srcdir)/*.h))
+SOURCES		= $(wildcard $(srcdir)/*.c)
+HEADERS		= $(wildcard $(srcdir)/*.h)
 
-Makefile.dep:	$(SOURCES) $(HEADERS) version.h
+#DEPENDENCIES	= $(SOURCES) $(HEADERS) version.h
+
+.PHONY:	depend
+
+depend:
+	$(RM) Makefile.dep
+	$(MAKE) Makefile.dep
+
+Makefile.dep:	$(DEPENDENCIES)
 	@echo Making $@
-ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
-else
-	-@touch $@
-	-@makedepend -f $@ -I $(srcdir) $(SOURCES)
-endif
 
 include Makefile.dep
 
