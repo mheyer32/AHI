@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.17  1998/01/13 20:24:04  lcs
+# Generic c version of the mixer finished.
+#
 # Revision 4.16  1998/01/12 20:07:28  lcs
 # More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 #
@@ -96,7 +99,7 @@ CFLAGS = CPU=$(CPU) MATH=$(MATH) DEFINE $(VER) NOLINK DEBUG=FULL\
 PARAMETERS=REGISTERS CODE=FAR DATA=FARONLY STRINGSECTION=CODE ABSFUNCPOINTER\
 NOSTACKCHECK UNSIGNEDCHARS UTILITYLIBRARY\
 NOVERSION NOICONS MEMORYSIZE=HUGE GST=gst\
-#OPTIMIZE OPTTIME OPTSCHED
+OPTIMIZE OPTTIME OPTSCHED
 
 #CCOMP	= gcc
 #CFLAGS	= -m$(CPU) -m$(MATH) -D$(VER) -c -g \
@@ -137,16 +140,21 @@ mc000:
 
 mc030:
 	smake $(TARGET) CPU=68030
+	move $(TARGET) $(TARGET).030
+
+mc040:
+	smake $(TARGET) CPU=68040 MATH=68881
+	move $(TARGET) $(TARGET).040
 
 mc060:
-	smake $(TARGET) CPU=68060
+	smake $(TARGET) CPU=68060 MATH=68881
 	move $(TARGET) $(TARGET).060
 
 ppc040:
-	smake $(TARGET).ppc CPU=68040 MATH=68881 VER=VERSIONPPC
+	smake $(TARGET).ppc040 CPU=68040 MATH=68881 VER=VERSIONPPC
 
 ppc060:
-	smake $(TARGET).ppc CPU=68060 MATH=68881 VER=VERSIONPPC
+	smake $(TARGET).ppc060 CPU=68060 MATH=68881 VER=VERSIONPPC
 
 gen:
 	smake $(TARGET).gen CPU=68030 MATH=68881 VER=VERSIONGEN
@@ -223,7 +231,7 @@ clean:
 
 allclean:
 	smake clean
-	--delete $(TARGET) $(TARGET).\#? \#?protos.h
+	--delete $(TARGET) $(TARGET).\#? \#?protos.h QUIET
 
 
 ##
@@ -232,7 +240,7 @@ allclean:
 ###############################################################################
 
 protos:	localize.h
-	$(CCOMP) GPROTO $(CFLAGS) $(PROTOS)
+	$(CCOMP) GPROTO NOGENPROTOTYPEDEFS $(CFLAGS) $(PROTOS)
 
 	copy TO mixer_protos.h <<
 	\#ifdef VERSION68K
@@ -299,7 +307,8 @@ devsupp.o:	devsupp.a
 dspecho_68k.o:	dspecho_68k.a ahi_def.i dsp.i
 footer.o:	footer.a
 header.o:	header.a ahi_def.i ahi.device_rev.i
-	$(ASM) $(AFLAGS) header.a
+
+#	$(ASM) $(AFLAGS) header.a
 
 mixer_68k.o:	mixer_68k.a ahi_def.i dsp.i
 	
@@ -400,9 +409,7 @@ catalogs:
 asmfuncs.o: asmfuncs.a ahi_def.h ahi_device.h dsp.h
 
 audioctrl.o: audioctrl.c ahi_def.h ahi_device.h dsp.h\
-	 audioctrl_protos.h mixer_protos.h mixer_68k_protos.h\
-	 mixer_ppc_protos.h mixer_generic_protos.h asmfuncs_protos.h\
-	 debug_protos.h
+	 audioctrl_protos.h mixer_protos.h asmfuncs_protos.h debug_protos.h
 
 database.o: database.c ahi_def.h ahi_device.h dsp.h database_protos.h\
 	 debug_protos.h
@@ -418,7 +425,7 @@ device.o: device.c ahi_def.h ahi_device.h dsp.h localize.h\
 devsupp.o: devsupp.a
 
 effectinit.o: effectinit.c ahi_def.h ahi_device.h dsp.h\
-	 effectinit_protos.h asmfuncs_protos.h
+	 effectinit_protos.h asmfuncs_protos.h mixer_protos.h
 
 footer.o: footer.a
 
@@ -433,7 +440,7 @@ requester.o: requester.c ahi_def.h ahi_device.h dsp.h localize.h\
 sound.o: sound.c ahi_def.h ahi_device.h dsp.h sound_protos.h\
 	 debug_protos.h effectinit_protos.h
 
-dspecho_68k.o: dspecho_68k.a
+dspecho_68k.o: dspecho_68k.a ahi_def.h ahi_device.h dsp.h
 
 mixer_68k.o: mixer_68k.a ahi_def.h ahi_device.h dsp.h
 
@@ -441,8 +448,8 @@ dspecho_ppc.o: dspecho_ppc.c
 
 mixer_ppc.o: mixer_ppc.c
 
-dspecho_generic.o: dspecho_generic.c
+dspecho_generic.o: dspecho_generic.c ahi_def.h ahi_device.h dsp.h
 
 mixer_generic.o: mixer_generic.c ahi_def.h ahi_device.h dsp.h\
-	 mixer_generic_protos.h
+	 mixer_generic_protos.h asmfuncs_protos.h
 

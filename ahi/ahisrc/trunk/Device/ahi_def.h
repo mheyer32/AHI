@@ -2,6 +2,9 @@
 
 /* $Id$
 * $Log$
+* Revision 4.7  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.6  1998/01/12 20:07:28  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -63,13 +66,27 @@ extern UBYTE			*IDString;
 
 /*** Definitions ***/
 
-struct longlong
+struct LONGLONG
 {
-	long high;
-	long low;
+	LONG 	high;
+	ULONG	low;
 };
 
-typedef struct longlong *	longlong;
+struct ULONGLONG
+{
+	ULONG	high;
+	ULONG	low;
+};
+
+struct Fixed64
+{
+	LONG	I;
+	ULONG	F;
+};
+
+typedef struct LONGLONG 	LONGLONG;
+typedef struct ULONGLONG 	ULONGLONG;
+typedef struct Fixed64		Fixed64;
 
 
 #define AHI_UNITS	4	/* Normal units, excluding AHI_NO_UNIT */
@@ -129,18 +146,12 @@ struct AHIChannelData
 	UWORD	cd_EOS;			/* $FFFF: Sample has reached end */
 	UBYTE	cd_FreqOK;		/* $00: Freq=0 ; $FF: Freq<>0 */
 	UBYTE	cd_SoundOK;		/* $00: No sound set ; $FF: S. OK. */
-	ULONG	cd_OffsetI;
-	UWORD	cd_Pad1;
-	UWORD	cd_OffsetF;
-	ULONG	cd_AddI;
-	UWORD	cd_Pad2;
-	UWORD	cd_AddF;
+	Fixed64	cd_Offset;
+	Fixed64	cd_Add;
 	APTR	cd_DataStart;
-	ULONG	cd_LastOffsetI;
-	UWORD	cd_Pad3;
-	UWORD	cd_LastOffsetF;
-	ULONG	cd_ScaleLeft;
-	ULONG	cd_ScaleRight;
+	Fixed64	cd_LastOffset;
+	Fixed	cd_ScaleLeft;
+	Fixed	cd_ScaleRight;
 	APTR	cd_AddRoutine;
 	Fixed	cd_VolumeLeft;
 	Fixed	cd_VolumeRight;
@@ -149,25 +160,19 @@ struct AHIChannelData
 	UWORD	cd_NextEOS;		/* Not in use */
 	UBYTE	cd_NextFreqOK;
 	UBYTE	cd_NextSoundOK;
-	ULONG	cd_NextOffsetI;
-	UWORD	cd_NextPad1;
-	UWORD	cd_NextOffsetF;
-	ULONG	cd_NextAddI;
-	UWORD	cd_NextPad2;
-	UWORD	cd_NextAddF;
+	Fixed64	cd_NextOffset;
+	Fixed64	cd_NextAdd;
 	APTR	cd_NextDataStart;
-	ULONG	cd_NextLastOffsetI;
-	UWORD	cd_NextPad3;
-	UWORD	cd_NextLastOffsetF;
-	ULONG	cd_NextScaleLeft;
-	ULONG	cd_NextScaleRight;
+	Fixed64	cd_NextLastOffset;
+	Fixed	cd_NextScaleLeft;
+	Fixed	cd_NextScaleRight;
 	APTR	cd_NextAddRoutine;
 	Fixed	cd_NextVolumeLeft;
 	Fixed	cd_NextVolumeRight;
 	ULONG	cd_NextType;
 
-	ULONG	cd_Samples;		/* Samples left to store (down-counter) */
-	ULONG	cd_FirstOffsetI;	/* for linear interpolation routines */
+	LONG	cd_Samples;		/* Samples left to store (down-counter) */
+        LONG	cd_FirstOffsetI;	/* for linear interpolation routines */
 	LONG	cd_LastSampleL;		/* for linear interpolation routines */
 	LONG	cd_TempLastSampleL;	/* for linear interpolation routines */
 	LONG	cd_LastSampleR;		/* for linear interpolation routines */

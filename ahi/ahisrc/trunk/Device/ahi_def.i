@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.6  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.5  1998/01/12 20:07:28  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -24,10 +27,38 @@ DEBUG_DETAIL	SET	2
 
 *** Definitions ***
 
-	STRUCTURE longlong,0
-	LONG	ll_high
-	LONG	ll_low
-	LABEL	ll_SIZEOF
+	STRUCTURE LONGLONG_STRUCT,0
+	LONG	LL_high
+	ULONG	LL_low
+	LABEL	LL_SIZEOF
+
+	STRUCTURE ULONGLONG_STRUCT,0
+	ULONG	ULL_high
+	ULONG	ULL_low
+	LABEL	ULL_SIZEOF
+
+	STRUCTURE Fixed64_STRUCT,0
+	LONG	F64_I
+	ULONG	F64_F
+	LABEL	F64_SIZEOF
+
+
+LONGLONG    MACRO
+\1          EQU     SOFFSET
+SOFFSET     SET     SOFFSET+LL_SIZEOF
+            ENDM
+
+ULONGLONG   MACRO
+\1          EQU     SOFFSET
+SOFFSET     SET     SOFFSET+ULL_SIZEOF
+            ENDM
+
+Fixed64     MACRO
+\1          EQU     SOFFSET
+SOFFSET     SET     SOFFSET+F64_SIZEOF
+            ENDM
+
+
 
 AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 
@@ -128,49 +159,37 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 * AHIChannelData (private)
 	STRUCTURE AHIChannelData,0
 	LABEL	cd_Flags
-	UWORD	cd_EOS			;$FFFF: Sample has reached end
-	UBYTE	cd_FreqOK		;$00: Freq=0 ; $FF: Freq<>0
-	UBYTE	cd_SoundOK		;$00: No sound set ; $FF: S. OK.
-	ULONG	cd_OffsetI
-	UWORD	cd_Pad1
-	UWORD	cd_OffsetF
-	ULONG	cd_AddI
-	UWORD	cd_Pad2
-	UWORD	cd_AddF
+	UWORD	cd_EOS			;TRUE: Sample has reached end
+	UBYTE	cd_FreqOK		;FALSE: Freq=0       ; TRUE: Freq<>0
+	UBYTE	cd_SoundOK		;FALSE: No sound set ; TRUE: S. OK.
+	Fixed64	cd_Offset
+	Fixed64	cd_Add
 	APTR	cd_DataStart
-	ULONG	cd_LastOffsetI
-	UWORD	cd_Pad3
-	UWORD	cd_LastOffsetF
-	ULONG	cd_ScaleLeft
-	ULONG	cd_ScaleRight
+	Fixed64	cd_LastOffset
+	LONG	cd_ScaleLeft
+	LONG	cd_ScaleRight
 	FPTR	cd_AddRoutine
-	LONG	cd_VolumeLeft		;Fixed
-	LONG	cd_VolumeRight		;Fixed
+	Fixed	cd_VolumeLeft
+	Fixed	cd_VolumeRight
 	ULONG	cd_Type
 
 	LABEL	cd_NextFlags
 	UWORD	cd_NextEOS		;Not in use
 	UBYTE	cd_NextFreqOK
 	UBYTE	cd_NextSoundOK
-	ULONG	cd_NextOffsetI
-	UWORD	cd_NextPad1
-	UWORD	cd_NextOffsetF
-	ULONG	cd_NextAddI
-	UWORD	cd_NextPad2
-	UWORD	cd_NextAddF
+	Fixed64	cd_NextOffset
+	Fixed64	cd_NextAdd
 	APTR	cd_NextDataStart
-	ULONG	cd_NextLastOffsetI
-	UWORD	cd_NextPad3
-	UWORD	cd_NextLastOffsetF
-	ULONG	cd_NextScaleLeft
-	ULONG	cd_NextScaleRight
+	Fixed64	cd_NextLastOffset
+	LONG	cd_NextScaleLeft
+	LONG	cd_NextScaleRight
 	FPTR	cd_NextAddRoutine
-	LONG	cd_NextVolumeLeft	;Fixed
-	LONG	cd_NextVolumeRight	;Fixed
+	Fixed	cd_NextVolumeLeft
+	Fixed	cd_NextVolumeRight
 	ULONG	cd_NextType
 
-	ULONG	cd_Samples		;Samples left to store (down-counter)
-	ULONG	cd_FirstOffsetI		;for linear interpolation routines
+	LONG	cd_Samples		;Samples left to store (down-counter)
+	LONG	cd_FirstOffsetI		;for linear interpolation routines
 	LONG	cd_LastSampleL		;for linear interpolation routines
 	LONG	cd_TempLastSampleL	;for linear interpolation routines
 	LONG	cd_LastSampleR		;for linear interpolation routines
