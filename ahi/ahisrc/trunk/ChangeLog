@@ -1,3 +1,10 @@
+2002-11-20  Martin Blom  <martin@blom.org>
+
+	* Released toccata.audio 4.6.
+
+	* Drivers/Toccata/toccata.c: intAHIsub_GetAttr() could generate
+	an enforcer hit if no card is present. [Sensei]
+
 2002-10-16  Martin Blom  <martin@blom.org>
 
 	* ahi.device/paula.audio: The distorsion bug reported by Sensei
