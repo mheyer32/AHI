@@ -3,6 +3,9 @@
 
 #include <exec/types.h>
 
+#if !defined( __mc68000__)
+#pragma pack(2)
+#endif
 
 /******************************************************************************
 ** 8SVX defs ******************************************************************
@@ -179,5 +182,8 @@ struct WAVEheader {
 
 #include "Studio16file.h"
 
+#if !defined( __mc68000__)
+#pragma pack()
+#endif
 
 #endif /* AHI_Drivers_Filesave_FileFormats_h */
