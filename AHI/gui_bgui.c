@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.7  1997/05/11 16:16:45  lcs
+ * Removed leftover rtgbase variable
+ *
  * Revision 4.6  1997/05/09 14:02:17  lcs
  * Now uses FindTask("Picasso96") instead of OpenLibrary("rtg.library").
  *
@@ -603,7 +606,6 @@ static ULONG Req( UBYTE *gadgets, UBYTE *body, ... ) {
 BOOL BuildGUI(char *screenname) {
 	Object **ar = Window_Objs;
   struct Screen *screen;
-  struct Library *rtgbase;
   BOOL OptionFrame = FALSE;
   LONG indicatorwidth = 100;
 
