@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.21  1998/10/25 13:13:48  lcs
-* Added the AHIpaulaFakeMixFreq variable.
+* Revision 4.22  1998/11/12 22:38:53  lcs
+* Much improved timing! No more make-buffer-size-divisible-by-4 anymore...
 *
+*
+* Revision 4.19  1998/02/16 02:38:15  lcs
+* Recording didn't work in all modes!
 *
 * Revision 4.18  1998/02/09 00:41:36  lcs
 * Fixed a interrupt problem (playback could touch record's enable bits!).
@@ -92,6 +95,8 @@ call MACRO
 push MACRO
 	include	macros.i
 _ciaa		EQU	$bfe001
+_ciab		EQU	$bfd000
+
 AUD0		EQU	$0A0
 AUD1		EQU	$0B0
 AUD2		EQU	$0C0
@@ -117,6 +122,8 @@ EXTRABUFFSIZE	EQU	EXTRASAMPLES*8	; 4 samples of max size ( 2×32 bit: hifi stereo
 
 * paula.audio extra tags
 AHIDB_Paula14Bit	EQU	AHIDB_UserBase+0	* Boolean
+AHIDB_PaulaTable	EQU	AHIDB_UserBase+1	* Boolean
+AHIDB_PaulaDMA		EQU	AHIDB_UserBase+2	* Boolean
 
  * paulaBase (private)
 	STRUCTURE paulaBase,LIB_SIZE
@@ -244,7 +251,12 @@ AHIDB_Paula14Bit	EQU	AHIDB_UserBase+0	* Boolean
 	ULONG	p_SampleFrameShift		;Size of sample fram is 2^x (mixing only)
  ELSE
 	ULONG	p_LoopTimes			;(mixing only)
+ ENDC
+
+	LABEL	p_PlayerHookRegs		;PlayerHook
+	APTR	p_PlayerHook
 	ULONG	p_Reserved
+	FPTR	p_PlayerEntry			;p_PlayerHook->h_Entry
 
 	LABEL	p_MixHookRegs			;MixingHook (mixing only)
 	APTR	p_MixHook
@@ -1632,7 +1644,7 @@ AHIsub_Disable:
 	move.l	ahiac_DriverData(a2),a3
 	move.l	p_PaulaBase(a3),a6
 	move.l	pb_SysLib(a6),a6
-	PRINTF	4,"AHIsub_Disable()"
+	call	Disable
 	push	a3
 	addq.w	#1,p_DisableCount(a3)
 	rts
@@ -1672,7 +1684,7 @@ AHIsub_Enable:
 	move.l	ahiac_DriverData(a2),a3
 	move.l	p_PaulaBase(a3),a6
 	move.l	pb_SysLib(a6),a6
-	PRINTF	4,"AHIsub_Enable()"
+	call	Disable
 	push	a3
 	bne	.exit
 ;	PRINTF	0,"Count: %d",p_DisableCount(a3)
@@ -1757,7 +1769,8 @@ AHIsub_Enable:
 *
 *       5) [Call the ahiac_PostTimer function. A2 is assumed to point to
 *          struct AHIAudioCtrlDrv. All registers are preserved.  (V4)]
-*          cachable RAM.
+*
+*       6) Wait until the whole buffer has been played, then repeat.
 *
 *       Use double buffering if possible!
 *
@@ -1889,6 +1902,7 @@ AHIsub_Start:
 	call	AllocVec
 	move.l	d0,p_Mixbuffer(a3)
 	beq	.error_nomem
+
 	move.l	ahiac_MixFreq(a2),d0
 	bsr.w	calcperiod
 	move.w	d1,p_AudPer(a3)
@@ -2058,14 +2072,21 @@ init8bitM:
  ENDC
 	move.b	p_Flags(a3),d0
 	btst	#PB_HIFI,d0
+	beq	.nohifi
+	move.l	#SoftInt_8bitMH,IS_CODE+p_PlaySoftInt(a3)
+ IFEQ BETTERTIMING-1
 	move.l	#2,p_SampleFrameShift(a3)	;log2( sizeof( AHIST_M32S ) )
  ENDC
 .nohifi
 
+	move.l	p_MinBufferLength(a3),d0
+	add.l	ahiac_MaxBuffSamples(a2),d0	;Max. # of 8 bit samples
+	addq.l	#EXTRASAMPLES,d0
 	addq.l	#3,d0
 	and.b	#~3,d0				;make it a multiple of 4
 	move.l	d0,d2				;d2 = channel size
 
+	lsl.l	#1,d0				;Double buffer
 	move.l	#MEMF_CHIP|MEMF_PUBLIC|MEMF_CLEAR,d1
 	call	AllocVec
 	move.l	d0,p_DMAbuffer(a3)
@@ -2100,14 +2121,21 @@ init8bitS:
  ENDC
 	move.b	p_Flags(a3),d0
 	btst	#PB_HIFI,d0
+	beq	.nohifi
+	move.l	#SoftInt_8bitSH,IS_CODE+p_PlaySoftInt(a3)
+ IFEQ BETTERTIMING-1
 	move.l	#3,p_SampleFrameShift(a3)	;log2( sizeof( AHIST_S32S ) )
  ENDC
 .nohifi
 
+	move.l	p_MinBufferLength(a3),d0
+	add.l	ahiac_MaxBuffSamples(a2),d0	;Max. # of 8 bit samples
+	addq.l	#EXTRASAMPLES,d0
 	addq.l	#3,d0
 	and.b	#~3,d0				;make it a multiple of 4
 	move.l	d0,d2				;d2 = channel size
 
+	lsl.l	#2,d0				;Double buffer + Stereo
 	move.l	#MEMF_CHIP|MEMF_PUBLIC|MEMF_CLEAR,d1
 	call	AllocVec
 	move.l	d0,p_DMAbuffer(a3)
@@ -2144,10 +2172,16 @@ init14bitM:
  ENDC
 	move.b	p_Flags(a3),d0
 	btst	#PB_HIFI,d0
+	beq	.nohifi1
+	lea	SoftInt_14bitMH(pc),a0
+ IFEQ BETTERTIMING-1
 	move.l	#2,p_SampleFrameShift(a3)	;log2( sizeof( AHIST_M32S ) )
  ENDC
 .nohifi1
 	tst.l	p_CalibrationTable(a3)
+	beq.b	.nocalib
+	lea	SoftInt_14CbitM(pc),a0
+	move.b	p_Flags(a3),d0
 	btst	#PB_HIFI,d0
 	beq	.nohifi2
 	lea	SoftInt_14CbitMH(pc),a0
@@ -2162,6 +2196,7 @@ init14bitM:
 	and.b	#~3,d0				;make it a multiple of 4
 	move.l	d0,d2				;d2 = channel size
 
+	lsl.l	#2,d0				;Double buffer + 2×8 bit
 	move.l	#MEMF_CHIP|MEMF_PUBLIC|MEMF_CLEAR,d1
 	call	AllocVec
 	move.l	d0,p_DMAbuffer(a3)
@@ -2204,10 +2239,16 @@ init14bitS:
  ENDC
 	move.b	p_Flags(a3),d0
 	btst	#PB_HIFI,d0
+	beq	.nohifi1
+	lea	SoftInt_14bitSH(pc),a0
+ IFEQ BETTERTIMING-1
 	move.l	#3,p_SampleFrameShift(a3)	;log2( sizeof( AHIST_S32S ) )
  ENDC
 .nohifi1
 	tst.l	p_CalibrationTable(a3)
+	beq.b	.nocalib
+	lea	SoftInt_14CbitS(pc),a0
+	move.b	p_Flags(a3),d0
 	btst	#PB_HIFI,d0
 	beq	.nohifi2
 	lea	SoftInt_14CbitSH(pc),a0
@@ -2222,6 +2263,7 @@ init14bitS:
 	and.b	#~3,d0				;make it a multiple of 4
 	move.l	d0,d2				;d2 = channel size
 
+	lsl.l	#3,d0				;Double buffer + 2×8 bit + Stereo
 	move.l	#MEMF_CHIP|MEMF_PUBLIC|MEMF_CLEAR,d1
 	call	AllocVec
 	move.l	d0,p_DMAbuffer(a3)
@@ -2272,7 +2314,7 @@ init14bitS:
 *     * Mixing & timing: ahiac_PlayerFunc, ahiac_MixerFunc, ahiac_SamplerFunc,
 *       ahiac_BuffSamples (and perhaps ahiac_PlayerFreq if you use it).
 *
-*       All you have to do is to update some variables:
+*     * Mixing only: ahiac_PlayerFunc, ahiac_MixerFunc, ahiac_SamplerFunc and
 *           ahiac_PlayerFreq.
 *
 *     * Nothing: ahiac_PlayerFunc, ahiac_SamplerFunc and ahiac_PlayerFreq.
@@ -2317,6 +2359,7 @@ AHIsub_Update:
 	and.b	#~3,d1			;make it a multiple of 4
 	move.l	d1,ahiac_BuffSamples(a2)
 	move.l	d1,d0
+	lsr.l	#2,d0
 	subq.l	#1,d0
 	move.l	d0,p_LoopTimes(a3)	;See softints. (Unrolled)
  ENDC
@@ -2324,6 +2367,9 @@ AHIsub_Update:
 	PRINTF	4, "ahiac_BuffSamples is %ld", ahiac_BuffSamples(a2)
 
 	move.l	ahiac_MixerFunc(a2),a0
+	move.l	a0,p_MixHook(a3)
+	move.l	h_Entry(a0),p_MixEntry(a3)
+
 .exit
 	call	AHIsub_Enable
 	;moveq	#0,d0			; void function, no returncode needed
@@ -3272,15 +3318,47 @@ CONVERT_PRE	MACRO
  ENDC
 
 	moveq	#0,d6
+.repeat
+	movem.l	p_PlayerHookRegs(a6),a0/a1/a3
+	PRINTF	8,"Calling PlayerHook: %08lx, %08lx, %08lx", a0, a2, a1
+	jsr	(a3)				;call Player Hook
 	tst.l	d7
 	beq	.no_skip
 	add.l	ahiac_BuffSamples(a2),d6	;Faked # of mixed samples
 .no_skip
 
-	bne	.skip
+	movem.l	p_MixHookRegs(a6),a0/a1/a3
+ IFEQ BETTERTIMING-1
+	move.l	p_LoopLeftovers(a6),d0
+	move.l	p_SampleFrameShift(a6),d1
+	lsl.l	d1,d0
 	PRINTF	3," adding %ld", d0
+	add.l	d0,a1				;don't overwrite the leftovers
+						;(the mixbuffer is large enough,
+						;search for EXTRABUFFSIZE!)
+ ENDC
+	PRINTF	8,"Calling MixerHook: %08lx, %08lx, %08lx", a0, a2, a1
+	jsr	(a3)				;call Mixer Hook
+
+ IFEQ BETTERTIMING-1
+	move.l	ahiac_BuffSamples(a2),d0
 	move.l	d0,d1
+	and.l	#~3,d0
+	sub.l	d0,d1
+	move.l	d1,p_LoopLeftovers(a6)
+	add.l	d0,d6				;Count actual number of played samples
+	PRINTF	4," Playing %ld, %ld missing", d0, d1
+	lsr.l	#2,d0
+	subq.l	#1,d0
+	move.l	p_Mixbuffer(a6),a1		;a1 was modified above, remember?
+ ELSE
+	move.l	p_LoopTimes(a6),d0
+ ENDC
+	ENDM
+
+;
 ; Conversion code here!
+;
 ; d0	counter
 ; d1	scratch
 ; d2-d5	buffer pointers
@@ -3292,7 +3370,7 @@ CONVERT_PRE	MACRO
 ; a3-a5	scratch
 ; a6	struct paula *
 ;
-; a1	source buffer
+; Conversion code here!
 ;
 
 CONVERT_POST	MACRO
@@ -3301,13 +3379,39 @@ CONVERT_POST	MACRO
 	; Transfer the leftovers to the beginning of the mixbuffer
 	; It's easy: just transfer p_LoopLeftovers samples from (a1) to
 	; (p_Mixbuffer).
+
+	move.l	p_Mixbuffer(a6),a0
+	move.l	p_LoopLeftovers(a6),d0
+	PRINTF	3,"Tranfering %ld samples",d0
+	move.l	p_SampleFrameShift(a6),d1
+	lsl.l	d1,d0
+	PRINTF	3,", that is %ld bytes",d0
+	addq.l	#3,d0
+	lsr.l	#2,d0
+	beq	.no_transfer
+	PRINTF	4," or %ld iterations.",d0
+	subq.l	#1,d0
+.transfer
+	move.l	(a1)+,(a0)+
+	dbf	d0,.transfer
+.no_transfer
+ ENDC
+
+.skip
+ IFEQ BETTERTIMING-0
+	add.l	ahiac_BuffSamples(a2),d6
+ ENDC
+	cmp.l	p_MinBufferLength(a6),d6
 	blo	.repeat
+	move.l	ahiac_PostTimer(a2),a0
 	PRINTF	8,"Calling PostTimer: %08lx", a2
+	jsr	(a0)
 	move.l	d6,d0
 	PRINTF	4,"I have played %ld samples", d0
 	lea	custom,a0
 	ENDM
 
+; Exit code here
 ; d0	Samples in buffer
 ; a0	custom
 
