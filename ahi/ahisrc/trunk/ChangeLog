@@ -1,9 +1,12 @@
 2002-01-06  Martin Blom  <martin@blom.org>
 
-	* ahi.device: Re-enabled optimization and removed a 64 bit kludge
-	for the Amithlon version. It's still just using the C version of
-	the mixing routines, but is already about 2.5 times faster native
-	(compared to the JIT-compiled 4.180 version). I like it.
+	* Released ahi.device 5.21.
+
+	* ahi.device: Re-enabled optimization and removed all 64 bit
+	kludges for the Amithlon version. It's still just using the C
+	version of the mixing routines, but is already about 2.5 times
+	faster native (compared to the JIT-compiled 4.180 version). I like
+	it.
 
 	* paula.audio: When opening timer.device (used in the DMA mode),
 	I didn't clear the flags parameter and opened UNIT_MICROHZ instead
