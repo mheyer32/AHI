@@ -103,6 +103,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 
   return ( AHISF_KNOWHIFI | 
 	   AHISF_KNOWSTEREO |
+	   AHISF_KNOWMULTICHANNEL |
 	   AHISF_MIXING |
 	   AHISF_TIMING );
 }
