@@ -2,6 +2,9 @@
 ##shortstrings
 /* $Id$
 * $Log$
+* Revision 4.3  1999/09/22 20:11:06  lcs
+* Removed some "uninitialized variable" warnings.
+*
 * Revision 4.2  1999/01/15 22:40:25  lcs
 * Fixed a couple of warnings.
 *
@@ -41,7 +44,7 @@ static struct Catalog *%b_Catalog = NULL;
 
 void Open%bCatalog(struct Locale *loc, STRPTR language)
 {
-  LONG tag, tagarg;
+  LONG tag = 0, tagarg = 0;
 
   if(LocaleBase != NULL  &&  %b_Catalog == NULL)
   {
@@ -65,7 +68,7 @@ void Open%bCatalog(struct Locale *loc, STRPTR language)
 
 struct Catalog *ExtOpenCatalog(struct Locale *loc, STRPTR language)
 {
-  LONG tag, tagarg;
+  LONG tag = 0, tagarg = 0;
 
   if(LocaleBase != NULL)
   {
