@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.4  1997/01/15 18:35:07  lcs
+* AHIB_Dizzy has a better implementation and definition now.
+* (Was BOOL, now pointer to a second tag list)
+*
 * Revision 1.3  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
 *
@@ -146,6 +150,8 @@ __asm  void UpdateAudioCtrl( register __a0 struct AHIPrivAudioCtrl *audioctrl)
 ** TestAudioID & DizzyTestAudioID *********************************************
 ******************************************************************************/
 
+// tags may be NULL
+
 BOOL TestAudioID(ULONG id, struct TagItem *tags )
 {
   if(DizzyTestAudioID(id, tags) != 0x10000)
@@ -154,6 +160,8 @@ BOOL TestAudioID(ULONG id, struct TagItem *tags )
     return TRUE;
 }
 
+// tags may be NULL
+
 Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 {
   LONG volume=0,stereo=0,panning=0,hifi=0,pingpong=0,record=0,realtime=0,
@@ -161,6 +169,10 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   ULONG total=0,hits=0;
   struct TagItem *tag;
   
+  if(tags == NULL)
+  {
+    return (Fixed) 0x10000;
+  }
 
 // Check source mode
   if(tag=FindTagItem(AHIDB_AudioID,tags))
@@ -791,41 +803,43 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
 
 __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 {
-  ULONG id=AHI_INVALID_ID, bestid = AHI_INVALID_ID;
-  Fixed bestscore=0;
+  ULONG id, bestid = 0;
+  Fixed score, bestscore = 0;
+  struct TagItem *dizzytags;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
     KPrintF("AHI_BestAudioIDA(0x%08lx)",tags);
   }
 
-  if(GetTagData(AHIB_Dizzy,FALSE,tags))
+  dizzytags = GetTagData(AHIB_Dizzy,NULL,tags))
+
+  while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
   {
-    while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
+    if(!TestAudioID(id,tags))
     {
-      Fixed score;
-      
-      score=DizzyTestAudioID(id,tags);
-      if(score > bestscore)
+      continue;
+    }
+
+    // Check if this id the better than the last one
+    score = DizzyTestAudioID(id,tags);
+    if(score > bestscore)
+    {
+      bestscore = score;
+      bestid = id;
+    }
+    else if(score == bestscore)
+    {
+      if(id > bestid)
       {
-        bestscore = score;
-        bestid = id;
+        bestid = id;    // Return the highest suitable audio id.
       }
     }
   }
-  else
-  {
-    while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
-    {
-      if(!TestAudioID(id,tags))
-        continue;
 
-  // Check if this id the better (==higher) than the last one
-      if(bestid == AHI_INVALID_ID)
-        bestid=0;
-      if(bestid<id)
-        bestid=id;    // Return the highest suitable audio id.
-    }
+  if(bestid == 0)
+  {
+    bestid = AHI_INVALID_ID;
   }
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
