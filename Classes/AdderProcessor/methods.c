@@ -69,7 +69,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	    Object* new_buffer = NULL;
 	    
 	    if (buffer != NULL) {
-	      new_buffer = (Object*) DoMethod(buffer, AHIM_Buffer_Clone);
+	      new_buffer = (Object*) DoMethod(buffer, AHIM_Buffer_Clone, 0);
 
 	      if (new_buffer == NULL) {
 		ULONG error = 0;
@@ -220,7 +220,7 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
   GetAttr(AHIA_Processor_Buffer, object, (ULONG*) &buffer);
 
   if (rc && buffer != NULL) {
-    Object* new_buffer = (Object*) DoMethod(buffer, AHIM_Buffer_Clone);
+    Object* new_buffer = (Object*) DoMethod(buffer, AHIM_Buffer_Clone, 0);
 
     if (new_buffer == NULL) {
       ULONG error = 0;
