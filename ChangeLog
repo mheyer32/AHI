@@ -1,5 +1,8 @@
 2003-04-29  Martin Blom  <martin@blom.org>
 
+	* The non-hifi audio modes are now assembler optimized in the m68k
+	version.
+
 	* Updated autodocs to say that V6 drivers do not need to preserve
 	all registers in AHIsub_Disable()/AHIsub_Enable().
 
