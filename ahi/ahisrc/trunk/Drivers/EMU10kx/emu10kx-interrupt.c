@@ -47,7 +47,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
   while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
   {
-//    KPrintF(".");
+//    KPrintF("IRQ: %08lx\n", intreq );
     if( intreq & IPR_INTERVALTIMER &&
 	AudioCtrl != NULL )
     {
