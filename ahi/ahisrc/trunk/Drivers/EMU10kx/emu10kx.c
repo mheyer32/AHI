@@ -43,6 +43,8 @@ driver! Anything that is based on this driver has to be GPL:ed.
 #include <proto/openpci.h>
 #include <proto/utility.h>
 
+#include <string.h>
+
 #include "8010.h"
 #include "library.h"
 #include "emu10kx-misc.h"

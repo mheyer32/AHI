@@ -19,6 +19,7 @@
 
 #include <config.h>
 
+#include <dos/dos.h>
 #include <proto/exec.h>
 #include <proto/openpci.h>
 
