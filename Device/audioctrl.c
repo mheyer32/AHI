@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:06:35  lcs
+* Replaced all EQ with ==
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -76,22 +79,22 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
 
     audioctrl->ahiac_MasterVolume=0x00010000;
 
-    if(audioctrl->ahiac_AudioID EQ AHI_DEFAULT_ID)
+    if(audioctrl->ahiac_AudioID == AHI_DEFAULT_ID)
       audioctrl->ahiac_AudioID=AHIBase->ahib_AudioMode;
 
-    if(audioctrl->ac.ahiac_MixFreq EQ AHI_DEFAULT_FREQ)
+    if(audioctrl->ac.ahiac_MixFreq == AHI_DEFAULT_FREQ)
       audioctrl->ac.ahiac_MixFreq=AHIBase->ahib_Frequency;
 
-    if(audioctrl->ahiac_RecordFunc EQ NULL)
+    if(audioctrl->ahiac_RecordFunc == NULL)
       audioctrl->ahiac_RecordFunc=&DefRecordHook;
-    if(audioctrl->ac.ahiac_PlayerFunc EQ NULL)
+    if(audioctrl->ac.ahiac_PlayerFunc == NULL)
       audioctrl->ac.ahiac_PlayerFunc=&DefPlayerHook;
 
-    if(audioctrl->ac.ahiac_PlayerFreq EQ 0)
+    if(audioctrl->ac.ahiac_PlayerFreq == 0)
       audioctrl->ac.ahiac_PlayerFreq = DEFPLAYERFREQ;
-    if(audioctrl->ac.ahiac_MinPlayerFreq EQ 0)
+    if(audioctrl->ac.ahiac_MinPlayerFreq == 0)
       audioctrl->ac.ahiac_MinPlayerFreq = DEFPLAYERFREQ;
-    if(audioctrl->ac.ahiac_MaxPlayerFreq EQ 0)
+    if(audioctrl->ac.ahiac_MaxPlayerFreq == 0)
       audioctrl->ac.ahiac_MaxPlayerFreq = DEFPLAYERFREQ;
 
     if(audiodb=LockDatabase())
@@ -160,7 +163,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   if(tag=FindTagItem(AHIDB_AudioID,tags))
   {
     total++;
-    if( ((tag->ti_Data)&0xffff0000) EQ (id & 0xffff0000) )
+    if( ((tag->ti_Data)&0xffff0000) == (id & 0xffff0000) )
       hits++;
   }
 
@@ -183,43 +186,43 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   if(tag=FindTagItem(AHIDB_Volume,tags))
   {
     total++;
-    if(tag->ti_Data EQ volume)
+    if(tag->ti_Data == volume)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_Stereo,tags))
   {
     total++;
-    if(tag->ti_Data EQ stereo)
+    if(tag->ti_Data == stereo)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_Panning,tags))
   {
     total++;
-    if(tag->ti_Data EQ panning)
+    if(tag->ti_Data == panning)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_HiFi,tags))
   {
     total++;
-    if(tag->ti_Data EQ hifi)
+    if(tag->ti_Data == hifi)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_PingPong,tags))
   {
     total++;
-    if(tag->ti_Data EQ pingpong)
+    if(tag->ti_Data == pingpong)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_Record,tags))
   {
     total++;
-    if(tag->ti_Data EQ record)
+    if(tag->ti_Data == record)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_Realtime,tags))
   {
     total++;
-    if(tag->ti_Data EQ realtime)
+    if(tag->ti_Data == realtime)
       hits++;
   }
   if(tag=FindTagItem(AHIDB_FullDuplex,tags))
@@ -357,7 +360,7 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
     }
 
 /* Max channels/2 channels per hardware channel if stereo w/o pan */
-    if((audioctrl->ac.ahiac_Flags & (AHIACF_STEREO | AHIACF_PAN)) EQ AHIACF_STEREO)
+    if((audioctrl->ac.ahiac_Flags & (AHIACF_STEREO | AHIACF_PAN)) == AHIACF_STEREO)
       audioctrl->ahiac_Channels2=(audioctrl->ac.ahiac_Channels+1)/2;
     else
       audioctrl->ahiac_Channels2=audioctrl->ac.ahiac_Channels;
@@ -643,7 +646,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
 
   if(audiodb=LockDatabase())
   {
-    if(id EQ AHI_INVALID_ID)
+    if(id == AHI_INVALID_ID)
     {
       if(!(audioctrl=actrl))
         rc=FALSE;
@@ -815,7 +818,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
         continue;
 
   // Check if this id the better (==higher) than the last one
-      if(bestid EQ AHI_INVALID_ID)
+      if(bestid == AHI_INVALID_ID)
         bestid=0;
       if(bestid<id)
         bestid=id;    // Return the highest suitable audio id.

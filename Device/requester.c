@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:08:47  lcs
+* Replaced all EQ with ==
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -175,12 +178,12 @@ static LONG GetSelected(struct AHIAudioModeRequesterExt *req)
       idnode->node.ln_Succ;
       idnode=(struct IDnode *) idnode->node.ln_Succ)
   {
-    if(idnode->ID EQ req->tempAudioID)
+    if(idnode->ID == req->tempAudioID)
       break;
     else
       valt++;
   }
-  if(idnode->node.ln_Succ EQ NULL)
+  if(idnode->node.ln_Succ == NULL)
   {
     valt=~0;
     req->tempAudioID=AHI_INVALID_ID;    // Crashed if this is not done! FIXIT!
@@ -222,8 +225,8 @@ static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
     //Set listview
     selected=GetSelected(req);
       GT_SetGadgetAttrs(req->listviewgadget, req->Window, NULL,
-          ((selected EQ ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
-          (selected EQ ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
+          ((selected == ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
+          (selected == ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
           GTLV_Selected,selected,
           TAG_DONE);
   }
@@ -358,8 +361,8 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
         GTLV_ScrollWidth,(fontwidth>8 ? fontwidth*2 : 18),
         GTLV_Labels,(struct List *) req->list,
         GTLV_ShowSelected,NULL,
-        ((selected EQ ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
-        (selected EQ ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
+        ((selected == ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
+        (selected == ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
         GTLV_Selected,selected,
         TAG_DONE);
     req->listviewgadget=gad;   // Save for HadleReq()...
@@ -403,7 +406,7 @@ static void StripIntuiMessages( struct MsgPort *mp, struct Window *win )
 
     while( succ =  msg->ExecMessage.mn_Node.ln_Succ ) {
 
-        if( msg->IDCMPWindow EQ  win ) {
+        if( msg->IDCMPWindow ==  win ) {
 
             /* Intuition is about to free this message.
              * Make sure that we have politely sent it back.
@@ -483,7 +486,7 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
         {
         case 0x4c: // Cursor Up
           selected=GetSelected(req);
-          if(selected EQ ~0)
+          if(selected == ~0)
             selected=0;
           if(selected > 0)
             selected--;
@@ -550,7 +553,7 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
           req->tempAudioID=idnode->ID;
           SetSelected(req,FALSE);
           // Test doubleclick and save timestamp
-          if( (oldid EQ req->tempAudioID) && DoubleClick(oldsec,oldmicro,sec,micro))
+          if( (oldid == req->tempAudioID) && DoubleClick(oldsec,oldmicro,sec,micro))
             done=TRUE;
           oldsec=sec;
           oldmicro=micro;
@@ -588,7 +591,7 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
           {
           case LASTMODEITEM:
             selected=GetSelected(req);
-            if(selected EQ ~0)
+            if(selected == ~0)
               selected=0;
             if(selected > 0)
               selected--;
@@ -696,9 +699,9 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
 
 // Update requester structure
   FillReqStruct(req,tags);
-  if(req->Req.ahiam_InfoLeftEdge EQ 0)
+  if(req->Req.ahiam_InfoLeftEdge == 0)
     req->Req.ahiam_InfoLeftEdge=req->Req.ahiam_LeftEdge+16;
-  if(req->Req.ahiam_InfoTopEdge EQ 0)
+  if(req->Req.ahiam_InfoTopEdge == 0)
     req->Req.ahiam_InfoTopEdge=req->Req.ahiam_TopEdge+25;
   req->tempAudioID=req->Req.ahiam_AudioID;
   req->tempFrequency=req->Req.ahiam_MixFreq;
@@ -733,7 +736,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
       Insert((struct List *) req->list,(struct Node *)node,node2->node.ln_Pred);
     }
   }
-  if(NULL EQ ((struct IDnode *)req->list->mlh_Head)->node.ln_Succ)
+  if(NULL == ((struct IDnode *)req->list->mlh_Head)->node.ln_Succ)
   {
     // List is empty, no audio modes!
     // Return immediately (no nodes to free)

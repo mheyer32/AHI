@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:06:35  lcs
+* Replaced all EQ with ==
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -107,7 +110,7 @@ __asm __saveds struct TagItem *GetDBTagList(
     for(node=(struct AHI_AudioMode *)audiodb->ahidb_AudioModes.mlh_Head;
         node->ahidbn_MinNode.mln_Succ;
         node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ)
-      if(id EQ GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
+      if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
         return node->ahidbn_Tags;
   return NULL;
 }
@@ -134,7 +137,7 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
     {
       do
       {
-        if(id EQ GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
+        if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
           break;
       } while (node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ);
       node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ;
@@ -270,7 +273,7 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
           node->ahidbn_MinNode.mln_Succ;
           node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ)
       {
-        if(id EQ GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
+        if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
         {
           Remove((struct Node *)node);
           FreeVec(node);
@@ -344,7 +347,7 @@ __asm ULONG LoadModeFile( register __a0 UBYTE *name )
               }
             }
           }
-          if(IoErr() EQ ERROR_NO_MORE_ENTRIES)
+          if(IoErr() == ERROR_NO_MORE_ENTRIES)
           {
             SetIoErr(NULL);
           }
@@ -396,7 +399,7 @@ ULONG AddModeFile(UBYTE *filename)
           || CollectionChunk(iff,ID_AHIM,ID_AUDM)
           || StopOnExit(iff,ID_AHIM,ID_FORM)))
         {
-          if(ParseIFF(iff,IFFPARSE_SCAN) EQ IFFERR_EOC)
+          if(ParseIFF(iff,IFFPARSE_SCAN) == IFFERR_EOC)
           {
             name=FindProp(iff,ID_AHIM,ID_AUDN);
             data=FindProp(iff,ID_AHIM,ID_AUDD);
