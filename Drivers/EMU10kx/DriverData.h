@@ -35,6 +35,11 @@ struct DriverData
 
     struct Interrupt    software_interrupt;
     UWORD               pad;
+
+    BOOL                requested;
+    BOOL                enabled;
+    BOOL                master_enabled;
+    BOOL                emu10k1_initialized;
     
     struct emu10k1_card card;
     struct emu_voice    voice;
