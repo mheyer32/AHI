@@ -44,13 +44,10 @@ AllocPages( size_t size, ULONG req )
   // FIXME: This should be non-cachable, DMA-able memory
   address = AllocVec( size + PAGE_SIZE, MEMF_PUBLIC );
 
-  DebugPrintF("====> AllocMem %lx size = %ld\n", address, size);
-  
   if( address != NULL )
   {
     a = (unsigned long) address;
     a = (a + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1); //(((unsigned long) (a + 4096)) / 4096) * 4096; // get a 4K-aligned memory pointer
-    DebugPrintF("====> AllocMem2 %lx\n", a);
     address = (void *) a; // tbd: we just lost a couple of bytes
   }
 #else
@@ -116,7 +113,7 @@ pci_free_consistent( void* pci_dev, size_t size, void* addr, dma_addr_t dma_hand
 #ifdef __AMIGAOS4__
   void *pageaddr = addr - 8;
   
-  DebugPrintF("FreeAbs %lx size = %ld\n", pageaddr, size);
+  //DebugPrintF("FreeAbs %lx size = %ld\n", pageaddr, size);
   //FreeVec( pageaddr, size + PAGE_SIZE); tbd
 #else
   FreeMem( addr, size );
