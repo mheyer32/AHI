@@ -27,28 +27,26 @@
 #include "hwaccess.h"
 #include "voicemgr.h"
 
-/** Make lite common library code initialize a global SysBase for us.
+/** Make the common library code initialize a global SysBase for us.
     It's required for hwaccess.c */
 
 #define DRIVER_NEED_GLOBAL_EXECBASE
-
 #include "DriverBase.h"
+
+struct EMU10kxBase
+{
+    struct DriverBase driverbase;
+
+    // This driver requires that the bases are global, since I don't
+    // want to change the original sources too much.
+};
+
+#define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
 
 #define RECORD_BUFFER_SAMPLES     4096
 #define RECORD_BUFFER_SIZE_VALUE  ADCBS_BUFSIZE_16384
 #define TIMER_INTERRUPT_FREQUENCY 1000
 
-struct EMU10kxBase
-{
-    struct DriverBase driverbase;
-    struct Library*   dosbase;
-//    struct Library*   ppcibase;
-};
-
-#define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
-
-#define DOSBase           ((struct DosLibrary*)    EMU10kxBase->dosbase)
-//#define ppcibase          (EMU10kxBase->ppcibase)
 
 struct EMU10kxData
 {

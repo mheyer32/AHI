@@ -51,7 +51,6 @@ driver! Anything that is based on this driver has to be GPL:ed.
 #include <proto/utility.h>
 
 #include "library.h"
-#include "DriverData.h"
 
 #include "8010.h"
 #include "emu10kx-misc.h"
@@ -60,29 +59,6 @@ driver! Anything that is based on this driver has to be GPL:ed.
 /* Public functions in main.c */
 int emu10k1_init(struct emu10k1_card *card);
 void emu10k1_cleanup(struct emu10k1_card *card);
-
-
-/*** Stuff that should really have been in a link library ********************/
-
-/* static UWORD rawputchar_m68k[] __attribute__ ((aligned (4))) = */
-/* { */
-/*   0x2C4B,             // MOVEA.L A3,A6 */
-/*   0x4EAE, 0xFDFC,     // JSR     -$0204(A6) */
-/*   0x4E75              // RTS */
-/* }; */
-
-/* void */
-/* KPrintFArgs( UBYTE* fmt, */
-/*              ULONG* args ) */
-/* { */
-/*   RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase ); */
-/* } */
-
-/* #define KPrintF( fmt, ... )        \ */
-/* ({                                 \ */
-/*   ULONG _args[] = { __VA_ARGS__ }; \ */
-/*   KPrintFArgs( (fmt), _args );     \ */
-/* }) */
 
 
 /******************************************************************************
@@ -236,8 +212,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     // FIXME: How about latency/pcibios_set_master()??
 
     dd->pci_master_enabled = TRUE;
-
-    dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 );
+    dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 ); 
     dd->card.length  = ( (ULONG) pci_get_base_end( dd->card.pci_dev, 0 ) -
 			 (ULONG) dd->card.iobase ) + 1;
 
@@ -434,16 +409,13 @@ _AHIsub_Start( ULONG                   flags,
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
   struct EMU10kxData* dd = (struct EMU10kxData*) AudioCtrl->ahiac_DriverData;
 
+  /* Stop playback/recording, free old buffers (if any) */
   AHIsub_Stop( flags, AudioCtrl );
 
   if( flags & AHISF_PLAY )
   {
     ULONG dma_buffer_size;
     ULONG dma_sample_frame_size;
-
-    /* Stop playback, free old buffers (if any) */
-
-    AHIsub_Stop( AHISF_PLAY, AudioCtrl );
 
     /* Update cached/syncronized variables */
 
@@ -589,10 +561,6 @@ _AHIsub_Start( ULONG                   flags,
   if( flags & AHISF_RECORD )
   {
     int adcctl = 0;
-
-    /* Stop current recording, free old buffer (if any) */
-
-    AHIsub_Stop( AHISF_RECORD, AudioCtrl );
 
     /* Find out the recording frequency */
 
