@@ -37,7 +37,7 @@
 struct IFFHandle;
 
 /* This class inherits "rootclass". */
-#define AHI_CLASS		"ahi.class"
+#define AHIC_AHI		"ahi.class"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {
@@ -228,6 +228,12 @@ namespace AHI {
    _AHIV(_P, Param_Format_FIXED28,	(3)),
    _AHIV(_P, Param_Format_DBFIXED,	(4))
 };
+
+/*****************************************************************************/
+
+ enum {
+   _AHIE(_P, OK,			(0))
+ };
 
 /*****************************************************************************/
 

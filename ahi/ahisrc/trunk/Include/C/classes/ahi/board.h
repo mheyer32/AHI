@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi.class" */
-#define AHI_BOARD_CLASS	"ahi-board.class"
+#define AHIC_Board		"ahi-board.class"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

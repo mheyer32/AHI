@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi.class" */
-#define AHI_DRIVER_CLASS	"ahi-driver.class"
+#define AHIC_Driver		"ahi-driver.class"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

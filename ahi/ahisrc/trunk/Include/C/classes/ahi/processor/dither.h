@@ -21,7 +21,7 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHI_DITHER_PROCESSOR_CLASS	"dither.ahi-processor"
+#define AHIC_DitherProcessor	"dither.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

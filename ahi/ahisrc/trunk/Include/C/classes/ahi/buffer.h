@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi.class" */
-#define AHI_BUFFER_CLASS	"ahi-buffer.class"
+#define AHIC_Buffer		"ahi-buffer.class"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {
@@ -81,7 +81,31 @@ namespace AHI {
 
 /*****************************************************************************/
 
-/* No methods */
+     enum {
+       
+       /* Calculate buffer requirements. */
+       _AHIM(_P, SampleFrameSize,	(_AHIM_Dummy+44)),
+
+     };
+
+/*****************************************************************************/
+
+     /* AHIM_SampleFrameSize */
+     struct _AHIP(_P, SampleFrameSize) {
+       ULONG		MethodID;
+       ULONG		SampleType;
+       ULONG		Samples;
+       struct TagItem*	ExtraTags;
+     };
+
+/*****************************************************************************/
+
+     enum {
+       _AHIE(_P, InvalidSampleType,		(_AHIE_Dummy+1)),
+       _AHIE(_P, InvalidSampleFreq,		(_AHIE_Dummy+2)),
+       _AHIE(_P, InvalidCapacity,		(_AHIE_Dummy+3)),
+       _AHIE(_P, InvalidLength,			(_AHIE_Dummy+4))
+     };
 
 /*****************************************************************************/
 
