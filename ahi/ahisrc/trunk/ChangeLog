@@ -1,3 +1,9 @@
+2001-07-29  Martin Blom  <martin@blom.org>
+
+        * If a file in Devs:AudioModes is not a legal mode file, the
+	scanning code would just stop.  Now, such errors are silently
+	ignored.
+
 2001-04-22  Martin Blom  <martin@blom.org>
 
         * When using a filter hook with the audio mode requester, and 
