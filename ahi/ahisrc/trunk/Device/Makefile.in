@@ -65,7 +65,8 @@ endif
 
 OBJECTS		= header.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
-		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o
+		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o\
+		  elfloader.o
 
 ifeq ($(VER),68K)
 OBJECTS		+= dspecho_68k.o mixer_68k.o
