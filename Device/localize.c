@@ -1,7 +1,7 @@
 /* $Id$
 * $Log$
-* Revision 4.4  2000/06/12 18:57:01  lcs
-* WarpUp development.
+* Revision 4.5  2000/08/03 20:12:57  lcs
+* *** empty log message ***
 *
 * Revision 4.3  1999/09/22 20:11:06  lcs
 * Removed some "uninitialized variable" warnings.
@@ -18,7 +18,7 @@
 */
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "../../ahisrc/Device/ahi.cd".
+   from "./ahi.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
