@@ -32,17 +32,14 @@ AHIClassDispatch(Class*  class,
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
   ULONG result = 0;
 
-  switch (msg->MethodID)
-  {
+  switch (msg->MethodID) {
     case OM_NEW:
       result = DoSuperMethodA(class, object, msg);
 
-      if (result != NULL)
-      {
+      if (result != NULL) {
 	LONG error = MethodNew(class, (Object*) result, (struct opSet*) msg);
 	
-	if (error)
-	{
+	if (error) {
 	  if (IoErr() == 0) {
 	    SetIoErr(error);
 	  }
