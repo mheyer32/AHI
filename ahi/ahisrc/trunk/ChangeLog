@@ -1,3 +1,9 @@
+2004-06-20  Martin Blom  <martin@blom.org>
+
+	* Bumped a lot of version numbers to 7.0.
+
+	* Implemented tick.ahi-processor and ahi-lfo.class.
+
 2004-06-07  Martin Blom  <martin@blom.org>
 
 	* Implemented gain.ahi-processor.
