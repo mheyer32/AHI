@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 1.10  1997/02/01 23:54:26  lcs
+* Rewrote the library open code in C and removed the library bases
+* from AHIBase
+*
 * Revision 1.9  1997/02/01 21:54:53  lcs
 * Max freq. for AHI_SetFreq() uncreased to more than one million! ;)
 *
@@ -826,7 +830,7 @@ SetFreq_nodebug
  IFGE	__CPU-68020
 	divu.l	d1,d0
  ELSE
-	move.l	ahib_UtilityLib(a5),a1
+	move.l	_UtilityBase(pc),a1
 	jsr	_LVOUDivMod32(a1)
  ENDC
 .setperiod

@@ -1,7 +1,8 @@
 /* $Id$
 * $Log$
-* Revision 1.5  1997/02/01 19:44:18  lcs
-* *** empty log message ***
+* Revision 1.6  1997/02/01 23:54:26  lcs
+* Rewrote the library open code in C and removed the library bases
+* from AHIBase
 *
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * ahiac_EffChannelInfoStruct addded
@@ -40,6 +41,7 @@ extern __far struct Library		*GadToolsBase;
 extern __far struct GfxBase		*GfxBase;
 extern __far struct Library		*IFFParseBase;
 extern __far struct IntuitionBase	*IntuitionBase;
+extern __far struct Library		*TimerBase;
 extern __far struct Library		*UtilityBase;
 
 extern __far ULONG			 DriverVersion;
@@ -61,11 +63,6 @@ struct AHIBase
 	UBYTE			 ahib_Flags;
 	UBYTE			 ahib_DebugLevel;
 	struct ExecBase		*ahib_SysLib;
-	struct DosLibrary	*ahib_DosLib;
-	struct Library		*ahib_UtilityLib;
-	struct Library		*ahib_GadToolsLib;
-	struct IntuitionBase	*ahib_IntuitionLib;
-	struct GfxBase 		*ahib_GraphicsLib;
 	ULONG			 ahib_SegList;
 	APTR			 ahib_AudioCtrl;
 	struct AHIDevUnit	*ahib_DevUnits[AHI_UNITS];
