@@ -127,10 +127,14 @@ VOID OpenahiprefsCatalog(VOID)
 
 {
     if (LocaleBase) {
-	if ((ahiprefsCatalog = OpenCatalog(NULL, (STRPTR) "ahiprefs.catalog",
-				     OC_BuiltInLanguage, "english",
-				     OC_Version, 4,
-				     TAG_DONE))) {
+	static const struct TagItem ahiprefs_tags[] = {
+	  { OC_BuiltInLanguage, (ULONG)"english" },
+	  { OC_Version,         4 },
+	  { TAG_DONE,           0  }
+	};
+
+	ahiprefsCatalog = OpenCatalogA(NULL, (STRPTR)"ahiprefs.catalog", (struct TagItem *)&ahiprefs_tags[0]);
+	if (ahiprefsCatalog) {
 	    struct FC_String *fc;
 	    int i;
 

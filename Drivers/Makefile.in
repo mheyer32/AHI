@@ -24,6 +24,7 @@ VPATH		= @srcdir@
 
 HAVE_OPENPCI	= @HAVE_OPENPCI@
 HAVE_OSS	= @HAVE_OSS@
+HAVE_ASMIO      = @HAVE_ASMIO@
 
 #
 # Targets
@@ -32,6 +33,11 @@ HAVE_OSS	= @HAVE_OSS@
 .PHONY:		all clean distclean maintainer-clean bindist
 
 SUBDIRS		= Device Filesave
+
+
+ifneq ($(strip $(HAVE_ASMIO)),)
+SUBDIRS		+= EMU10kx
+endif
 
 ifneq ($(strip $(HAVE_OSS)),)
 SUBDIRS		+= AROS
@@ -42,10 +48,6 @@ SUBDIRS		+= EMU10kx
 endif
 
 ifeq ($(strip $(host)),powerpc-unknown-amigaos)
-SUBDIRS		+= EMU10kx
-endif
-
-ifeq ($(patsubst %-aros,yes,$(host)),yes)
 SUBDIRS		+= EMU10kx
 endif
 

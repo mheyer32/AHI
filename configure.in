@@ -47,7 +47,7 @@ case $host in
  m68k-unknown-amigaos)
   : ${CPU="68020-60"}
   linkerflags="-noixemul -m${CPU}"
-  optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math"
+  optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math -msoft-float"
   asCPU=`echo ${CPU} | sed 's/-.*//'`
   asflags="-m${asCPU} --register-prefix-optional --bitwise-or --defsym CPU=${asCPU}"
   resident="-resident"
@@ -158,9 +158,11 @@ esac
 dnl Checks for header files.
 
 AC_CHECK_HEADERS( proto/oss.h, HAVE_OSS=1, AC_MSG_WARN( "proto/oss.h is missing." ))
+AC_CHECK_HEADERS( asm/io.h, HAVE_ASMIO=1, AC_MSG_WARN( "asm/io.h is missing." ))
 AC_CHECK_HEADERS( libraries/openpci.h, HAVE_OPENPCI=1, AC_MSG_WARN( "libraries/openpci.h is missing." ))
 
 AC_SUBST(HAVE_OSS)
+AC_SUBST(HAVE_ASMIO)
 AC_SUBST(HAVE_OPENPCI)
 
 dnl Checks for typedefs, structures, and compiler characteristics.

@@ -1,5 +1,19 @@
+2005-01-12  Martin Blom  <martin@blom.org>
+
+	* Only try to build emu10kx.audio for AROS if <asm/io.h> is found.
+
 2005-01-11  Martin Blom  <martin@blom.org>
 
+	* filesave.audio: Fixed a compiler warning. (No bumprev.) [Gunther
+	Nikl]
+
+	* AHI preferences: Used floating point instruction introduced by
+	the -m68020-60 switch by accident. Added -msoft-float for m68k to
+	prevent this. [Gunther Nikl]
+
+	* ahi.device: Tweaked the m68k gateway stubs so no nops are used
+	anymore. [Gunther Nikl]
+ 
 	* Applied more patches (mainly gcc 3.x-related but also
 	C_c_noauto.sd and gas stab) from Gunther Nikl. Thanks!
 
