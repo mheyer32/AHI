@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/07/15 00:52:05  lcs
+* This is the second bugfix release of AHI 4.
+*
 * Revision 4.2  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -48,6 +51,7 @@
 /*** Debug stuff ***/
 
 extern void KPrintF(char *fmt,...);
+extern void kprintf(char *fmt,...);
 #define HIT {char *a=0; *a=0;}
 
 /*** AHI include files ***/

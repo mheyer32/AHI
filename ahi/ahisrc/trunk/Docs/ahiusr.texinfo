@@ -1,4 +1,4 @@
-\input eightbit
+\input iso.sty
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename ahi.guide
@@ -10,11 +10,14 @@
 @c %***end of header
 
 
-@c $VER: ahiusr.texinfo 4.3 (2.5.97)
-@set ahiver 4.3
+@c $VER: ahiusr.texinfo 4.4 (14.7.97)
+@set ahiver 4.4
 
 @c $Id$
 @c $Log$
+@c Revision 4.4  1997/07/15 00:50:40  lcs
+@c This is the second bugfix release of AHI 4.
+@c
 @c Revision 4.3  1997/05/04 15:52:58  lcs
 @c Initial revision.
 @c
@@ -131,7 +134,7 @@ The latest release of @sc{Ahi} can always be found at
 @cindex Paula, custom chip
 
 The @dfn{Amiga} has always had excellent sound capabilities. In 1986, they were
-awesome. Today, well@dots{} Perhaps not awesome, but still very good. The OS
+awesome. Today, well@enddots{} Perhaps not awesome, but still very good. The OS
 interface, @code{audio.device} has however never been as good as it could have
 been. It is tied hard to the underlying hardware, and doesn't work very well for
 music. This has led to a situation where most audio programs only use
@@ -153,7 +156,7 @@ since. The suggested pronunciation is ``atchii'', as in ``God bless!''.}.
 @sc{Ahi} is a new audio subsystem, designed to be flexible, 
 hardware independent, expandable and future safe. It is designed with real-time
 applications in mind. It is designed to play @dfn{modules} @footnote{Originally
-designed in 1986 by Karsten Obarski, modules has become a de facto standard
+designed in 1986 by Karsten Obarski, modules have become a de facto standard
 for game and demo music. The original format has been improved many times,
 and many new music formats have---more or less---been derived from it,
 including the popular @dfn{S3M} and @dfn{XM} formats.} and sound effects as
@@ -198,7 +201,8 @@ donations are welcome (@pxref{Donations}).
 If you use this software in a commercial or shareware software product,
 please consider giving the author (@pxref{The Author})---and preferably
 each one of the contributors (@pxref{Contributors}) too---an original or
-registered version of your work.
+registered version of your work.  Should you want to distribute the @sc{Ahi}
+software with your own product, there is really nothing to consider, is it?
 
 If you wish to distribute this software with a hardware product, contact
 the author (@pxref{The Author}).  Distribution of @sc{AHI} with hardware
@@ -359,8 +363,10 @@ If the system is rebooted, the last saved specifications will be loaded.
 
 @end table
 
-Note that the preferences program requires @code{bgui.library} version 41
-@footnote{BGUI is Copyright ©1996-1997 Ian J. Einman}.
+Note that the preferences program requires either @code{bgui.library}
+version 41 @footnote{@dfn{BGUI} is Copyright © 1996-1997 Ian J. Einman} or
+@dfn{MUI} version 3.8 @footnote{@dfn{MUI} is Copyright © 1992-1997 Stefan
+Stuntz}
 
 @menu
 * Menus::                       
@@ -442,7 +448,7 @@ settings.
 @subsubsection @samp{Help} Menu
 
 The @samp{Help} menu's items let you view the on-line ``@sc{Ahi} User's
-Guide'' using AmigaGuide®.
+Guide'' using AmigaGuide.
 
 @table @samp
 
@@ -476,7 +482,6 @@ The preferences program's GUI is divided in two pages:
 @cindex Mode settings
 @cindex Audio mode settings
 
-
 On this page you select which audio mode to use.  You can select audio mode
 for both low-level programs (@samp{Music unit}) and other programs
 (@samp{Unit n}) that don't require low-level audio access such as the
@@ -497,17 +502,6 @@ you chose @samp{Default audio mode} from this requester, these settings
 will be used.  Note that the number of channels is not selectable here,
 it's up to the application program to decide how many channels to use.
 
-
-
-@c @node Audio mode editor, Advanced settings, Mode settings, The Pages
-@c @comment  node-name,  next,  previous,  up
-@c @subsubsection @samp{Audio mode editor} Page
-@c 
-@c @cindex Audio mode editor
-@c @cindex Mode editor
-@c 
-@c FIXIT
-@c 
 
 
 @node Advanced settings,  , Mode settings, Pages
@@ -552,7 +546,8 @@ by disabling them.
 Normally, the ``Master volume'' feature of AHI can make the output
 heavily distorted if set too high. Turning ``clipping'' on can reduce
 the distortion, but will---in the current implementation---use 128 kB of
-extra memory.
+extra memory. Note that the so-called ``HiFi'' modes are not affected by
+this switch (@pxref{The Mode Descriptors}).
 
 @cindex CPU usage limit
 
@@ -696,11 +691,15 @@ uncompressed @dfn{IFF-AIFC}, 16 bit stereo at 44.1 kHz.
 @section System Files
 
 @cindex System Files
+
 @cindex Drivers
 @cindex Sound card drivers
 @cindex Aura
+@cindex Clarity
+@c @cindex Concierto
 @cindex Delfina DSP
 @cindex DraCo Motion
+@cindex Melody MPEG
 @cindex Paula
 @cindex Prelude
 @cindex Toccata
@@ -714,9 +713,15 @@ time of writing, the following sound cards are supported:
 @item
 Aura (sampling only)
 @item
+Clarity (sampling only)
+@c @item
+@c Concierto
+@item
 Delfina DSP
 @item
 DraCo Motion
+@item
+Melody MPEG
 @item
 Paula (the built-in audio)
 @item
@@ -751,15 +756,20 @@ These extra files are not delivered with @sc{Ahi}.
 @item delfina.audio
 Requires @code{delfina.library}.
 
-@cindex AHIpaulaFilterFreq variable
-@cindex AHIpaulaSampleLimit variable
+@cindex CyberSound
+@cindex DAC calibration
+@cindex 14 bit calibration
+@cindex Calibration, 14 bit
 
 @item paula.audio
 On startup, the file @file{ENV:CyberSound/SoundDrivers/14Bit_Calibration}
 is read and used for the 14 bit DAC calibration. 
 
 The 14 bit modes cannot be used for recording, but the 8 bit modes supports
-both generic parallel port samplers and the Aura sound card.
+both generic parallel port samplers as well as both the Aura and Clarity sound
+cards.
+
+@cindex AHIpaulaFilterFreq variable
 
 The environment variable @file{AHIpaulaFilterFreq} is checked every time
 playback starts, and should be set to a frequency in Hertz.  If the mixing
@@ -771,6 +781,8 @@ turned off.  If it is lower, the filter will be activated.  The default is
 SetEnv AHIpaulaFilterFreq 16000
 Copy ENV:AHIpaulaFilterFreq ENVARC:
 @end example
+
+@cindex AHIpaulaSampleLimit variable
 
 The variable @file{AHIpaulaSampleLimit} is also checked.  This variable
 controls how the driver should handle mixing frequencies greater than 28
@@ -797,11 +809,28 @@ Delete ENVARC:AHIpaulaSampleLimit
 
 This will turn on the screen mode checking again.
 
+@cindex AHIpaulaBufferLength variable
+@cindex MC68060 CPU
+@cindex 68060 CPU
+
+Finally, the variable @file{AHIpaulaBufferLength} controls the minimum
+playback buffer size to use.  Because of the limited @dfn{Chip RAM}
+bandwidth, a @dfn{MC68060} CPU might run into trouble when using the
+default minumum buffer size (0).  By setting this variable to @samp{1024},
+for example, you will reduce the number of interrupts caused and increase
+the number of samples transferred each time to at least 1024 samples.  But
+take care!  Setting this variable too high will cause long periods with
+multitasking disabled.
+
+
 @cindex AHItoccataNoTask variable
 
 @item toccata.audio
-Requires @code{toccata.library} version 12 or greater.  This driver also
-reads the environment variable @file{AHItoccataNoTask}.  If set to
+Requires @code{toccata.library} version 12 or greater @footnote{
+@code{toccata.library} is available from AmiNet, for example @*
+@url{ftp://ftp.germany.aminet.org/pub/aminet/util/libs/toclib12.lha}.}.
+This driver also reads the environment variables @file{AHItoccataNoTask}
+and @file{AHItoccataIrqSize}.  If @file{AHItoccataNoTask} is set to
 @samp{1}, all mixing will be done in a @dfn{Software Interrupt} which means
 the sound output will not suffer when multitasking is turned off.  The back
 side is that it requires a faster CPU.  Much faster.  Only use this option
@@ -812,7 +841,16 @@ SetEnv AHItoccataNoTask 1
 Copy ENV:AHItoccataNoTask ENVARC:
 @end example
 
-Please note that this driver is used for both the DraCo Motion and Toccata.
+@cindex AHItoccataIrqSize variable
+
+@file{AHItoccataIrqSize} specifies the number of bytes transferred to
+the card each interrupt and defaults to @samp{512}. It must be one of
+@samp{32}, @samp{64}, @samp{128}, @samp{256} or @samp{512}. If you 
+encounter problems with serial port hardware, you might want to set this
+variable to a lower value than the default.
+
+Please note that this driver is used for both the DraCo Motion and the
+Toccata.
 
 @item wavetools.audio
 Requires @code{dad_audio.device}.
@@ -940,9 +978,10 @@ didn't share his passion for @emph{it}. The school work suffered. Other
 interests suffered. @emph{It} was the Commodore 64 home computer, and it would
 forever change his life.
 
-Today, more than ten years after the tragedy, things are worse than ever. He is
-studying @dfn{Computer Science and Engineering} at @dfn{Linköping Institute of
-Technology}, surrounded every day by other computer nerds.
+Today, more than ten years after the tragedy, things are worse than ever.
+He is studying @dfn{Computer Science and Engineering} at
+@dfn{Linköping Institute of Technology}, surrounded every
+day by other computer nerds.
 
 @cindex Modules on a C64
 
@@ -1041,10 +1080,16 @@ The author wish to give special thanks to the following persons
 
 @table @asis
 
+@item Amiga Translators' Organization
+For the catalog translations.
+
 @item Daniel Arthursson and Johan Nyblom
 For making it possible to write the first driver for a sound card, the
 @dfn{Wavetools} card. I'm sure @sc{Ahi} would not have been accepted as
-quick as it was without this driver. Funny that it didn't even work@dots{}
+quick as it was without this driver. Funny that it didn't even work@enddots{}
+
+@item SAS Institute, Inc. and Steve Krueger
+For the compiler and all the updates.
 
 @item Jyrki Petsalo and Teemu Suikki
 For the Delfina driver, and for supporting @sc{Ahi} in the early days.
@@ -1052,37 +1097,32 @@ For the Delfina driver, and for supporting @sc{Ahi} in the early days.
 @item Pauli Porkka
 For active support and promotion of @sc{Ahi} from the beginning.
 
-@item Thomas Wenzel
-For the Prelude driver.
-
 @item All the rest
 Many, many other have helped me, sent suggestions etc. I owe you a lot.
 
 @end table
 
-And of course, the catalog translators:
-
-@table @asis
-
-@item Stéphane Barbaray
-The Frensh translation.
-
-@item Roger Hågensen
-The Norwegian translation.
-
-@item Bernardo Innocenti
-The Italian translation.
-
-@item Pauli Porkka
-The Finnish translation.
-
-@c @item Martin Sprenger
-@c The German translation.
-
-@item Michel Vissers
-The Dutch translation.
-
-@end table
+And of course, the actual catalog translators:
+Samuel Aguilera,
+Andrija Antonijevic
+Rúben Alvim,
+Stéphane Barbaray,
+Frederico Borges,
+Piergiorgio Ghezzo,
+Roger Hågensen,
+Bernardo Innocenti,
+Ljubomir Jankovic,
+Petteri Kallio,
+Eivind Olsen,
+Marcin Orîowski,
+Thomas Petersen,
+Pauli Porkka,
+Vit Sindlar,
+Martin Sprenger,
+Sönke Tesch,
+Michel Vissers,
+Ondrej Zima,
+me, myself and I@enddots{}
 
 @menu
 * Contributors::                Who has contributed to the @sc{Ahi} project?
@@ -1103,11 +1143,18 @@ The following people has contributed to the @sc{Ahi} project with code:
 
 @table @asis
 
+@item Stéphane Barbaray @email{opty@@club-internet.fr}
+The MUI version of the preferences program.
+
 @item Johan Nyblom @email{nyblom@@ludd.luth.se}
 The latest Wavetools driver.
 
 @item Pauli Porkka @email{pporkka@@iki.fi}
 The first version of the Toccata driver.
+
+@item Rüdiger Sopp
+The first version of the preferences program. Too bad things didn't
+work out as planned.
 
 @item Teemu Suikki @email{zuikkis@@zuikkis.pp.sci.fi}
 The Delfina driver.
@@ -1117,6 +1164,7 @@ The Prelude driver.
 
 @end table
 
+Many thanks!
 
 
 

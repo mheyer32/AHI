@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.6  1997/07/15 00:52:05  lcs
+* This is the second bugfix release of AHI 4.
+*
 * Revision 4.5  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -204,16 +207,9 @@ stuffChar:
 *       on-board DSP, for example, to maximize performance and sound quality.
 *       For sound cards with own DSP but little or no memory, it is possible
 *       to use the main CPU to mix channels and do the post-processing
-*       with the DSP. Available today are drivers for
-*
-*       · Aura (sampler only)
-*       · Delfina
-*       · DraCo Motion
-*       · Paula (8/14/14c bit)
-*       · Prelude
-*       · Toccata
-*       · Wavetools
-*       · 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
+*       with the DSP. Drivers are available for most popular sound cards,
+*       as well as an 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
+*       driver.
 *  
 *       * Fast, powerful mixing routines (yeah, right... haha)
 *  
@@ -223,14 +219,14 @@ stuffChar:
 *       (as long as 'any' means less than 128...).  Tables can be used speed
 *       the mixing up (especially when using 8-bit samples).  The samples can
 *       have any length (including odd) and can have any number of loops.
+*       There are also so-called HiFi mixing routines that can be used, that
+*       use linear interpolation and gives 32 bit output.
 *       
 *       * Support for non-realtime mixing
 *  
 *       By providing a timing feature, it is possible to create high-
 *       quality output even if the processing power is lacking, by saving
 *       the output to disk, for example as an IFF AIFF or 8SXV file.
-*       There are so-called HiFi mixing routines that can be used, which
-*       use linear interpolation and gives 32 bit output.
 *  
 *       * Audio database
 *  

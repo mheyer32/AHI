@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.7  1997/07/15 00:52:05  lcs
+* This is the second bugfix release of AHI 4.
+*
 * Revision 4.6  1997/06/22 18:41:59  lcs
 * Bug fixes in the "normal" mixing routines (not fast or hifi).
 * Much faster HiFi routines.
@@ -1152,7 +1155,6 @@ DoMasterVolume
 	bge	.16bit_nonegclip
 	move.w	#-32768,d2
 .16bit_nonegclip
-	move.w	d2,$dff180
 	move.w	d2,(a1)+
 	subq.l	#1,d0
 	bne	.16bit_loop
@@ -1195,7 +1197,7 @@ DoMasterVolume
 ;ut:
 * d0	Samples
 CalcSamples:
-* Calc how many samples it will take when mixed (Samples=Length×Rate)
+* Calc how many loops the addroutines should run (Times=Length/Rate)
 
 ;	and.l	#AHIST_BW|AHIST_INPUT,d2
 ;	beq	.forwards
@@ -1216,6 +1218,7 @@ CalcSamples:
 	move.l	d5,d3
 .1
 	bmi	.error
+  IFLT	__CPU-68060
 	swap.w	d4
 	move.w	d3,d4
 	swap.w	d4
@@ -1229,20 +1232,51 @@ CalcSamples:
 	beq	.error
 ; d0 is now rate<<16
 
- IFGE	__CPU-68020
+  IFGE	__CPU-68020
 	divu.l	d0,d3:d4
 	move.l	d4,d0
- ELSE
+  ELSE
 	move.l	d3,d1
 	move.l	d4,d2
 	bsr	_UDivMod64		;d0 = (d1:d2)/d0
- ENDC
+  ENDC * 68020
 	addq.l	#1,d0
+
+ ELSE
+
+*
+* BAHH! It doesn't work!
+*
+;	fmove.l	d3,fp0
+;	fmove.l	#65536,fp2
+;	fmul	fp2,fp0
+;	fmove.l	d0,fp1
+;	fadd.w	d4,fp0
+;	fmul	fp2,fp1
+;	fadd.w	d1,fp1
+;	fbeq	.error
+;	fdiv	fp1,fp0
+;	fmove.l	fp0,d0
+
+	swap.w	d4
+	move.w	d3,d4
+	swap.w	d4
+	clr.w	d3
+	swap.w	d3
+	swap	d0
+	move.w	d1,d0
+	tst.l	d0
+	beq	.error
+	move.l	d3,d1
+	move.l	d4,d2
+	bsr	_UDivMod64		;d0 = (d1:d2)/d0
+	addq.l	#1,d0
+ ENDC * 68060
+
 	rts
 .error
 	moveq	#0,d0
 	rts
-
 
 
 * ALL FIXVOL RUTINES:
@@ -2583,6 +2617,7 @@ AddWordsSVPHB:
 
 AddSilence:
  IFGE	__CPU-68020
+  IFLT	__CPU-68060
 	move.l	d5,d1			;AddI<65535
 	swap.w	d1
 	move.w	d6,d1			;d1=Add<<16
@@ -2592,11 +2627,22 @@ AddSilence:
 	move.w	d2,d1
 	swap.w	d1			;d1=d2:d1>>16
 	addx.l	d1,d3			;New OffsetI
+  ELSE
+	move.l	d5,d1
+	mulu.w	d0,d1			;OffsI*BuffSamples
+	move.l	d6,d2
+	add.l	d1,d3			;New OffsetI (1)
+	mulu.w	d0,d2			;OffsF*BuffSamples...
+	add.w	d2,d4			;New OffsetF (X)
+	clr.w	d2
+	swap.w	d2			;...>>16
+	addx.l	d2,d3			;New OffsetI (2)
+  ENDC
  ELSE
 	move.l	d5,d1
 	mulu.w	d0,d1			;OffsI*BuffSamples
-	add.l	d1,d3			;New OffsetI (1)
 	move.l	d6,d2
+	add.l	d1,d3			;New OffsetI (1)
 	mulu.w	d0,d2			;OffsF*BuffSamples...
 	add.w	d2,d4			;New OffsetF (X)
 	clr.w	d2
@@ -2620,6 +2666,7 @@ AddSilence:
 
 AddSilenceB:
  IFGE	__CPU-68020
+  IFLT	__CPU-68060
 	move.l	d5,d1			;AddI<65535
 	swap.w	d1
 	move.w	d6,d1			;d1=Add<<16
@@ -2629,11 +2676,22 @@ AddSilenceB:
 	move.w	d2,d1
 	swap.w	d1			;d1=d2:d1>>16
 	subx.l	d1,d3			;New OffsetI
+  ELSE
+	move.l	d5,d1
+	mulu.w	d0,d1			;OffsI*BuffSamples
+	move.l	d6,d2
+	add.l	d1,d3			;New OffsetI (1)
+	mulu.w	d0,d2			;OffsF*BuffSamples...
+	sub.w	d2,d4			;New OffsetF (X)
+	clr.w	d2
+	swap.w	d2			;...>>16
+	subx.l	d2,d3			;New OffsetI (2)
+  ENDC
  ELSE
 	move.l	d5,d1
 	mulu.w	d0,d1			;OffsI*BuffSamples
-	add.l	d1,d3			;New OffsetI (1)
 	move.l	d6,d2
+	add.l	d1,d3			;New OffsetI (1)
 	mulu.w	d0,d2			;OffsF*BuffSamples...
 	sub.w	d2,d4			;New OffsetF (X)
 	clr.w	d2

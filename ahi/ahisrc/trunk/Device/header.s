@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.4  1997/07/15 00:52:05  lcs
+* This is the second bugfix release of AHI 4.
+*
 * Revision 4.3  1997/05/03 19:59:56  lcs
 * *** empty log message ***
 *
@@ -77,7 +80,11 @@ _IDString:	VSTRING
 	dc.b	") "
 	dc.b	"©1994-1997 Martin Blom. "
  IFGE	__CPU-68020
+  IFGE	__CPU-68060
+	dc.b	"68060 version.",0
+  ELSE
 	dc.b	"68020+ version.",0
+  ENDC
  ELSE
 	dc.b	"68000 version.",0
  ENDC
