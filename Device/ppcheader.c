@@ -60,42 +60,6 @@ void WarpUpInt( void );
 ** First address **************************************************************
 ******************************************************************************/
 
-#ifdef POWERUP_USE_MIXTASK
-void main( void )
-{  
-  struct AHIPrivAudioCtrl* audioctrl;
-  ULONG                    signals;
-
-  audioctrl = (struct AHIPrivAudioCtrl*) 
-      PPCGetTaskAttr( PPCTASKTAG_STARTUP_MSGDATA );
-
-//  PPCkprintf( "Got here.... 0x%08lx\n", audioctrl );
-  
-  while( TRUE )
-  {
-    signals = PPCWait( SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F );
-
-//    PPCkprintf( "Got signal!\n" );
-
-    if( signals & SIGBREAKF_CTRL_C )
-    {
-//      PPCkprintf( "***Break\n" );
-      break;
-    }
-    else if( signals & SIGBREAKF_CTRL_F )
-    {
-//      PPCkprintf( "***Mix\n" );
-      CallMixroutine( 0xC0DECAFE,
-                      audioctrl->ahiac_PPCPowerUpContext->Hook,
-                      audioctrl->ahiac_PPCPowerUpContext->Dst,
-                      audioctrl,
-                      TRUE );
-    }
-  }
-}
-
-#else
-
 // This must be the first code in the ELF object due to a bug in
 // ppc.library < 46.26
 
@@ -126,8 +90,6 @@ KernelObject:
         blr
 
 ");
-
-#endif
 
 
 /******************************************************************************
@@ -184,26 +146,15 @@ CallMixroutine( unsigned int             magic,
       {
         // *Flush* all and exit (add an L2 cache and watch this code break!)
 
-#ifdef POWERUP_USE_MIXTASK
-        PPCCacheFlushAll();
-#else
         FlushCacheAll();
-#endif
         break;
       }
       else
       {
-#ifdef POWERUP_USE_MIXTASK
-        // Flushing the block block is the best we can do as task....
-
-        PPCCacheFlush( sd->sd_Addr,
-                       sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
-#else
         // *Invalidate* block
 
         InvalidateCache( sd->sd_Addr,
                          sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
-#endif
       }
     }
     sd++;
@@ -358,14 +309,7 @@ wc_PowerPCBase   = 8
 wc_XLock         = 12
 wc_Hook          = 16
 wc_Dst           = 20
-"
-#ifndef WARPUP_INVALIDATE_CACHE
-"
-wc_MixBuffer     = 24;
-wc_MixLongWords  = 28;
-"
-#endif
-"
+
 /* InitWarpUp ****************************************************************/
 
         .align  2
@@ -475,43 +419,14 @@ WarpUpInt:
         lwz     3,0(3)
         lwz     4,wc_Hook(14)
         lwz     6,wc_AudioCtrl(14)
-"
-#ifdef WARPUP_INVALIDATE_CACHE
-"
+
         lwz     5,wc_Dst(14)
         li      7,1                          # Do flush the buffer!
-"
-#else
-"
-        lwz     5,wc_MixBuffer(14)
-        li      7,0                          # No need to flush the buffer!
-"
-#endif
-"
         bl      CallMixroutine
 
         lwz     2,8(1)
         lwz     13,12(1)
         addi    1,1,16
-"
-#ifndef WARPUP_INVALIDATE_CACHE
-
-"
-# Copy the cachable mixing buffer to the non-cachable (so the m68k can read it)
-
-        lwz     3,wc_MixBuffer(14)
-        lwz     4,wc_Dst(14)
-        subi    3,3,4
-        subi    4,4,4
-        lwz     5,wc_MixLongWords(14)
-        mtctr   5
-3:
-        lwzu    5,4(3)
-        stwu    5,4(4)
-        bdnz    3b
-"
-#endif
-"        
 2:
 
 # Restore MMU

@@ -53,11 +53,6 @@ extern void kprintf(char *fmt,...);
 # define MC68060_PLUS
 #endif
 
-#ifdef MC68020_PLUS
-# define HAVE_HIFI
-# define HAVE_CLIPPING
-#endif
-
 /*** AHI include files ***/
 
 #include <config.h>
@@ -223,9 +218,6 @@ struct AHIPrivAudioCtrl
   struct AHISoundData       *ahiac_SoundDatas;
   ULONG                      ahiac_BuffSizeNow;     /* How many bytes of the buffer are used? */
 
-  APTR                       ahiac_MasterVolumeTable;
-  APTR                       ahiac_MultTableS;
-  APTR                       ahiac_MultTableU;
   struct Hook               *ahiac_RecordFunc;      /* AHIA_RecordFunc */
   ULONG                      ahiac_AudioID;
   Fixed                      ahiac_MasterVolume;    /* Real */
@@ -251,7 +243,7 @@ struct AHIPrivAudioCtrl
   APTR                       ahiac_PPCStartupMsg;
   APTR                       ahiac_PPCTask;
   char                       ahiac_DriverName[ 256 ];
-};  
+};
 
 #define AHIAC_COM_NONE          0
 #define AHIAC_COM_START         1

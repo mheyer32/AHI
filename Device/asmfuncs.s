@@ -35,7 +35,7 @@
 	XREF	_TimerBase
 	XREF	_UtilityBase
 
-	XDEF	_Mix
+	XDEF	_MixEntry
 
 	section	.text,code
 
@@ -167,19 +167,19 @@ _UDivMod64:
 
 ** Stubs **********************************************************************
 
-_Mix:
-	XREF	_MixGeneric
-	XREF	_MixPowerUp
+_MixEntry:
+	XREF	_MixM68K
+	XREF	_MixPowerPC
 	XREF	_PPCObject
 
 	pushm	d0-d1/a0-a1
 	tst.l	_PPCObject
-	bne	.powerup
-	jsr	_MixGeneric
+	bne	.powerpc
+	jsr	_MixM68K
 	popm	d0-d1/a0-a1
 	rts
-.powerup
-	jsr	_MixPowerUp
+.powerpc
+	jsr	_MixPowerPC
 	popm	d0-d1/a0-a1
 	rts
 

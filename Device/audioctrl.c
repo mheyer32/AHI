@@ -212,12 +212,12 @@ CreateAudioCtrl(struct TagItem *tags)
       if((dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID)))
       {
         audioctrl->ac.ahiac_Flags=PackBoolTags(GetTagData(AHIDB_Flags,NULL,dbtags),dbtags,boolmap);
-#ifdef HAVE_CLIPPING
+
         if(AHIBase->ahib_Flags & AHIBF_CLIPPING)
         {
           audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
         }
-#endif
+
         strcpy( audioctrl->ahiac_DriverName,
                 "DEVS:AHI/" );
         strcat( audioctrl->ahiac_DriverName,
@@ -496,13 +496,9 @@ AllocAudioA( REG(a1, struct TagItem *tags),
     audioctrl->ac.ahiac_Flags &= ~AHIACF_STEREO;
 
 // HiFi
-#ifdef HAVE_HIFI
+
   if(!(audioctrl->ahiac_SubAllocRC & AHISF_KNOWHIFI))
     audioctrl->ac.ahiac_Flags &= ~AHIACF_HIFI;
-#else
-  // If plain 68k, unconditionally clear the HIFI bit
-    audioctrl->ac.ahiac_Flags &= ~AHIACF_HIFI;
-#endif
 
 // Post-processing
   if(audioctrl->ahiac_SubAllocRC & AHISF_CANPOSTPROCESS)
@@ -567,7 +563,7 @@ AllocAudioA( REG(a1, struct TagItem *tags),
       goto error;
 
 
-    audioctrl->ac.ahiac_MixerFunc->h_Entry = (HOOKFUNC) Mix;
+    audioctrl->ac.ahiac_MixerFunc->h_Entry = (HOOKFUNC) MixEntry;
 
     if((AHIBase->ahib_MaxCPU >= 0x10000) || (AHIBase->ahib_MaxCPU <= 0x0))
     {
@@ -689,9 +685,6 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
       CleanUpMixroutine( audioctrl );
     }
 
-    FreeVec( audioctrl->ahiac_MasterVolumeTable );
-    FreeVec( audioctrl->ahiac_MultTableS );
-    FreeVec( audioctrl->ahiac_MultTableU );
     FreeVec( audioctrl->ac.ahiac_SamplerFunc );
     FreeVec( audioctrl->ac.ahiac_MixerFunc );
 
