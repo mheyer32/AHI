@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.23  1998/12/06 11:43:39  lcs
-* Clean-up.
+* Revision 4.24  1999/01/23 22:12:00  lcs
+* Added code to mix in a task and not an interrupt (AHIpaulaMixTaskPri).
 *
+*
+* Revision 4.21  1998/10/25 13:13:48  lcs
+* Added the AHIpaulaFakeMixFreq variable.
 *
 * Revision 4.20  1998/06/28 09:26:04  lcs
 * The low pass filter state is now restored when the audio is deallocated.
@@ -75,6 +78,7 @@ pushm	MACRO
 	include	graphics/gfxbase.i
 	include intuition/intuitionbase.i
 	include intuition/screens.i
+	include	resources/misc.i
 	include	resources/card.i
 	include	utility/utility.i
 	include	utility/hooks.i
@@ -218,8 +222,13 @@ AHIDB_PaulaDMA		EQU	AHIDB_UserBase+2	* Boolean
 
 	UWORD	p_MixTaskPri
 	APTR	p_MixTask
-	UWORD	p_SwapChannels			;TRUE if left/right should be swapped
-	UWORD	p_ScreenIsDouble		;TRUE if screen mode allows >28kHz
+	APTR	p_ReplyTask
+
+	ULONG	p_MinBufferLength		;Minimum length of chipmem playbuffer
+	APTR	p_CalibrationTable		;Pointer to 14 bit conversion tables
+
+	APTR	p_DMAbuffer			;Chipmem play buffer
+	ULONG	p_DoubleBufferOffset		;Buffer flag
 
 	LABEL	p_AudPtrs			; Pointers to chipmem play buffer
 	APTR	p_AudPtr1A
@@ -343,6 +352,7 @@ taskVar:	dc.b	"AHIpaulaMixTaskPri",0
 
 InitTable:
 	DC.L	paulaBase_SIZEOF
+	DC.L	funcTable
 	DC.L	dataTable
 	DC.L	initRoutine
 
@@ -761,7 +771,7 @@ AHIsub_AllocAudio:
 * Check if a table should be used (14 bit calibration)
 	move.l	#AHIDB_PaulaTable,d0
 	moveq	#0,d1
-	move.w	d0,p_ScreenIsDouble(a3)
+	move.l	d3,a0				;tag list
 	call	GetTagData
 	tst.l	d0
 	beq	.notable
@@ -823,7 +833,13 @@ AHIsub_AllocAudio:
 * Check if we should use a task instead of a software interrupt
 	move.l	#128,d0				;Default (softint)
 	lea	taskVar(pc),a0
-	move.w	d0,p_SwapChannels(a3)
+	bsr	GetVarInt
+	move.w	d0,p_MixTaskPri(a3)
+
+* allocate audio.device
+	move.l	pb_SysLib(a5),a6
+	call	CreateMsgPort
+	move.l	d0,p_audioport(a3)
 	beq	.error_noport
 	moveq	#ioa_SIZEOF,d0
 	move.l	#MEMF_PUBLIC|MEMF_CLEAR,d1
@@ -1034,7 +1050,7 @@ AHIsub_AllocAudio:
 	move.l	#custom+AUD1,p_Channels+channel_SIZEOF*0+ch_RegBase(a3)
 	move.l	#custom+AUD0,p_Channels+channel_SIZEOF*1+ch_RegBase(a3)
 	move.l	#custom+AUD2,p_Channels+channel_SIZEOF*2+ch_RegBase(a3)
-	tst.w	p_SwapChannels(a3)
+	move.l	#custom+AUD3,p_Channels+channel_SIZEOF*3+ch_RegBase(a3)
 	move.w	#DMAF_AUD1,p_Channels+channel_SIZEOF*0+ch_DMAMask(a3)
 	move.w	#DMAF_AUD0,p_Channels+channel_SIZEOF*1+ch_DMAMask(a3)
 	move.w	#DMAF_AUD2,p_Channels+channel_SIZEOF*2+ch_DMAMask(a3)
@@ -1897,6 +1913,39 @@ AHIsub_Start:
 	moveq	#0,d0
 	move.w	p_MixTaskPri(a3),d0
 	cmp.w	#128,d0
+	beq	.nomixtask
+
+	move.l	sp,d2				;Save sp
+	move.l	#TAG_DONE,-(sp)
+	pea	MixTask(pc)
+	move.l	#NP_Entry,-(sp)
+	pea	IDString(pc)
+	move.l	#NP_Name,-(sp)
+	move.l	d0,-(sp)
+	move.l	#NP_Priority,-(sp)
+	move.l	pb_SysLib(a5),a6
+	call	Forbid
+	move.l	sp,d1
+	move.l	pb_DosLib(a5),a6
+	call	CreateNewProc
+	move.l	d2,sp				;Restore sp
+	move.l	d0,p_MixTask(a3)
+	beq	.permit
+	move.l	d0,a0
+	move.l	a3,TC_Userdata(a0)		;Send struct as argument
+.permit
+	move.l	pb_SysLib(a5),a6
+	call	Permit
+	
+	; If it worked, it worked. If not, softints will still be used.
+
+.nomixtask
+
+* Install play interrupt
+	lea	p_PlayInt(a3),a1
+	moveq	#INTB_AUD0,d0
+	call	SetIntVector
+
 	or.w	#INTF_SETCLR|INTF_AUD0,p_IRQMask(a3)
 	
 	call	Disable
@@ -2419,6 +2468,22 @@ AHIsub_Stop:
 	beq	.nomixtask
 	suba.l	a1,a1
 	call	FindTask
+	move.l	d0,p_ReplyTask(a3)
+	moveq	#0,d0
+	move.l	#SIGF_SINGLE,d1			;Clear SINGLE signal
+	call	SetSignal
+	move.l	p_MixTask(a3),a1
+	move.l	#SIGBREAKF_CTRL_C,d0		;Kill child
+	call	Signal
+	move.l	#SIGF_SINGLE,d0
+	call	Wait				;Wait until child is dead
+.nomixtask
+
+	move.l	p_DMAbuffer(a3),d0
+	beq.b	.nodmamem
+	move.l	d0,a1
+	clr.l	p_DMAbuffer(a3)
+	call	FreeVec
 .nodmamem
 	move.l	p_Mixbuffer(a3),d0
 	beq.b	.nomixmem
@@ -3032,6 +3097,47 @@ MixTask:
 	suba.l	a1,a1
 	call	FindTask
 	move.l	d0,a0
+	move.l	TC_Userdata(a0),a3
+	move.l	p_PaulaBase(a3),a5
+
+.loop
+	move.l	#SIGBREAKF_CTRL_C|SIGBREAKF_CTRL_D,d0
+	call	Wait
+
+	btst	#SIGBREAKB_CTRL_C,d0
+	bne	.quit
+	PRINTF	0,"."
+
+	btst	#SIGBREAKB_CTRL_D,d0
+	beq	.loop
+
+	pushm	a3/a5-a6
+	move.l	p_PlaySoftInt+IS_CODE(a3),a5
+	move.l	p_PlaySoftInt+IS_DATA(a3),a1
+	jsr	(a5)
+	popm	a3/a5-a6
+
+	bra	.loop
+
+.quit
+	call	Forbid
+	move.l	p_ReplyTask(a3),d0
+	move.l	d0,a1
+	beq	.exit
+	move.l	#SIGF_SINGLE,d0
+	call	Signal
+
+.exit
+
+; Multitasking will resume when we're dead
+
+	rts
+
+Interrupt_Dummy:
+	move.w	#INTF_AUDIO,INTREQ(a0)
+SoftInt_Dummy:
+	rts
+
 ;in:
 * d0	scratch
 * d1	INTENAR & INTREQR
@@ -3223,7 +3329,7 @@ AudioInterrupt2:				;Two hardware channels used
 	move.l	(a5)+,AUD0LC(a0)
 	move.l	(a5)+,AUD1LC(a0)
 	bra	.1
-	tst.w	p_SwapChannels(a1)
+.swap
 	move.l	(a5)+,AUD1LC(a0)
 	move.l	(a5)+,AUD0LC(a0)
 .1
@@ -3232,9 +3338,15 @@ AudioInterrupt2:				;Two hardware channels used
 	bne	.signal
 	lea	p_PlaySoftInt(a1),a1
 	jmp	_LVOCause(a6)			;start PlaySoftInt
+.signal
+	move.l	d0,a1
+	move.l	#SIGBREAKF_CTRL_D,d0
 	jmp	_LVOSignal(a6)
-	move.w	#INTF_AUD0,INTREQ(a0)		;Clear the interrupt 
 
+
+AudioInterrupt4:				;Four hardware channels used
+;	move.l	p_AudLenPer(a1),d0
+;	move.l	d0,AUD0LEN(a0)
 ;	move.l	d0,AUD1LEN(a0)
 ;	move.l	d0,AUD2LEN(a0)
 ;	move.l	d0,AUD3LEN(a0)
@@ -3258,7 +3370,7 @@ AudioInterrupt2:				;Two hardware channels used
 	move.l	(a5)+,AUD0LC(a0)
 	move.l	(a5)+,AUD1LC(a0)
 	move.l	(a5)+,AUD2LC(a0)
-	tst.w	p_SwapChannels(a1)
+	move.l	(a5)+,AUD3LC(a0)
 	bra	.1
 .swap
 	move.l	(a5)+,AUD1LC(a0)
@@ -3271,9 +3383,16 @@ AudioInterrupt2:				;Two hardware channels used
 	bne	.signal
 	lea	p_PlaySoftInt(a1),a1
 	jmp	_LVOCause(a6)			;start PlaySoftInt
+.signal
+	move.l	d0,a1
+	move.l	#SIGBREAKF_CTRL_D,d0
 	jmp	_LVOSignal(a6)
-	move.w	#INTF_AUD0,INTREQ(a0)		;Clear the interrupt 
 
+
+
+*******************************************************************************
+
+;in:
 * d0	scratch
 * d1	scratch
 * a0	scratch
@@ -4599,7 +4718,7 @@ AHIsub_SetFreq:
 	move.l	#48000,d0
 .1
 	moveq	#0,d3			; Decimate/scale (log)
-	tst.w	p_ScreenIsDouble(a3)
+.loop
 	cmp.l	d0,d1
 	bls	.scaled
 	addq.l	#1,d3
