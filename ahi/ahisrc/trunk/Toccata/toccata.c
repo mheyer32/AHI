@@ -1,6 +1,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  1997/07/27 22:07:32  lcs
+ * Last check-in, Leviticus signing off... ;)
+ *
  * Revision 1.2  1997/06/29 03:04:02  lcs
  * RawPlayback() seems to work now!
  *
@@ -17,6 +20,7 @@
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
+#include <proto/iffparse.h>
 #include <clib/toccata_protos.h>
 #include <pragmas/toccata_pragmas.h>
 
@@ -31,10 +35,13 @@
 
 /* Globals */
 
-struct Library        *UtilityBase = NULL;
-struct Library        *AHIBase     = NULL;
-struct ToccataBase    *ToccataBase = NULL;
-struct DosLibrary     *DOSBase     = NULL;
+#include "version.h"
+
+struct Library        *IFFParseBase = NULL;
+struct Library        *UtilityBase  = NULL;
+struct Library        *AHIBase      = NULL;
+struct ToccataBase    *ToccataBase  = NULL;
+struct DosLibrary     *DOSBase      = NULL;
 
 struct Process        *SlaveProcess = NULL;
 
@@ -84,6 +91,11 @@ int ASM __UserLibInit (REG(a6) struct Library *libbase)
 
   ToccataBase->tb_BoardAddress = (APTR) 0xBADC0DED;
 
+  if(!(IFFParseBase = OpenLibrary("iffparse.library",37)))
+  {
+    return 1;
+  }
+
   if(!(DOSBase = (struct DosLibrary *)OpenLibrary("dos.library",37)))
   {
     Alert(AN_Unknown|AG_OpenLib|AO_DOSLib);
@@ -106,6 +118,11 @@ int ASM __UserLibInit (REG(a6) struct Library *libbase)
 
 void ASM __UserLibCleanup (REG(a6) struct Library *libbase)
 {
+  if(IFFParseBase) {
+    CloseLibrary(IFFParseBase);
+    IFFParseBase = NULL;
+  }
+
   if(DOSBase) {
     CloseLibrary((struct Library *)DOSBase);
     DOSBase = NULL;
