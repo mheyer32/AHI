@@ -476,7 +476,8 @@ LONG __asm __saveds intAHIsub_GetAttr(
     case AHIDB_MinMonitorVolume:
       return 0x00000;
     case AHIDB_MaxMonitorVolume:
-      if(ToccataBase->tb_HardInfo->hi_Flags & HIF_1845)
+      if(ToccataBase->tb_HardInfo != NULL &&
+	 ToccataBase->tb_HardInfo->hi_Flags & HIF_1845)
       {
         return 0x0000; // Workaround for bug in AD1845
       }
