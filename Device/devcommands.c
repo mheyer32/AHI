@@ -70,9 +70,9 @@ static void RemPlayers( struct List *, struct AHIDevUnit *, struct AHIBase *);
 // This function is called by the system each time exec.library/DoIO()
 // is called.
 
-void ASMCALL
-DevBeginIO ( REG(a1, struct AHIRequest *ioreq),
-             REG(a6, struct AHIBase *AHIBase) )
+void
+DevBeginIO( struct AHIRequest* ioreq,
+            struct AHIBase*    AHIBase )
 {
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -116,9 +116,9 @@ DevBeginIO ( REG(a1, struct AHIRequest *ioreq),
 // This function is called by the system each time exec.library/AbortIO()
 // is called.
 
-ULONG ASMCALL
-DevAbortIO ( REG(a1, struct AHIRequest *ioreq),
-             REG(a6, struct AHIBase *AHIBase) )
+ULONG
+DevAbortIO( struct AHIRequest* ioreq,
+            struct AHIBase*    AHIBase )
 {
   ULONG rc = NULL;
   struct AHIDevUnit *iounit;

@@ -78,4 +78,7 @@ extern ADDFUNC*                  AddLofiWordStereoBPtr;
 extern ADDFUNC*                  AddLofiWordsMonoBPtr;
 extern ADDFUNC*                  AddLofiWordsStereoBPtr;
 
+BPTR
+DevExpunge( struct AHIBase* device );
+
 #endif /* _HEADER_H_ */

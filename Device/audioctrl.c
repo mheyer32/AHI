@@ -431,9 +431,9 @@ Sampler ( REG(a0, struct Hook *hook),
 *
 */
 
-struct AHIAudioCtrl * ASMCALL
-AllocAudioA( REG(a1, struct TagItem *tags),
-             REG(a6, struct AHIBase *AHIBase) )
+struct AHIAudioCtrl*
+AllocAudioA( struct TagItem* tags,
+             struct AHIBase* AHIBase )
 {
   struct AHIPrivAudioCtrl* audioctrl;
   struct Library *AHIsubBase;
@@ -651,9 +651,9 @@ error:
 *
 */
 
-ULONG ASMCALL
-FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-           REG(a6, struct AHIBase *AHIBase) )
+ULONG
+FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
+           struct AHIBase*          AHIBase )
 {
   struct Library *AHIsubBase;
   int i;
@@ -734,8 +734,8 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
 *
 */
 
-ULONG ASMCALL
-KillAudio( REG(a6, struct AHIBase *AHIBase) )
+ULONG
+KillAudio( struct AHIBase* AHIBase )
 {
   UWORD i;
 
@@ -858,10 +858,10 @@ KillAudio( REG(a6, struct AHIBase *AHIBase) )
 *
 */
 
-ULONG ASMCALL
-ControlAudioA( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-               REG(a1, struct TagItem *tags),
-               REG(a6, struct AHIBase *AHIBase) )
+ULONG
+ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
+               struct TagItem*          tags,
+               struct AHIBase*          AHIBase )
 {
   ULONG *ptr, playflags=NULL, stopflags=NULL, rc=AHIE_OK;
   UBYTE update=FALSE;

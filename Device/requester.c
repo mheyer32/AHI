@@ -942,9 +942,9 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
 *
 */
 
-struct AHIAudioModeRequester * ASMCALL
-AllocAudioRequestA( REG(a0, struct TagItem *tags),
-                    REG(a6, struct AHIBase *AHIBase) )
+struct AHIAudioModeRequester*
+AllocAudioRequestA( struct TagItem* tags,
+                    struct AHIBase* AHIBase )
 {
   struct AHIAudioModeRequesterExt *req;
 
@@ -1160,10 +1160,10 @@ AllocAudioRequestA( REG(a0, struct TagItem *tags),
 *
 */
 
-ULONG ASMCALL 
-AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
-               REG(a1, struct TagItem *tags ),
-               REG(a6, struct AHIBase *AHIBase) )
+ULONG
+AudioRequestA( struct AHIAudioModeRequester* req_in,
+               struct TagItem*               tags,
+               struct AHIBase*               AHIBase )
 {
   struct AHIAudioModeRequesterExt *req=(struct AHIAudioModeRequesterExt *)req_in;
   struct MinList list;
@@ -1517,9 +1517,9 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
 *
 */
 
-void ASMCALL 
-FreeAudioRequest( REG(a0, struct AHIAudioModeRequester *req),
-                  REG(a6, struct AHIBase *AHIBase) )
+void
+FreeAudioRequest( struct AHIAudioModeRequester* req,
+                  struct AHIBase*               AHIBase )
 {
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)

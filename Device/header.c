@@ -23,6 +23,11 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
+#if defined( morphos )
+# include <exec/types.h>
+# include <emul/emulregs.h>
+#endif
+
 #include <exec/memory.h>
 #include <exec/resident.h>
 #include <exec/alerts.h>
@@ -161,10 +166,10 @@ enum MixBackend_t          MixBackend     = MB_NATIVE;
 ** Device code ****************************************************************
 ******************************************************************************/
 
-static struct AHIBase * ASMCALL
-initRoutine( REG( d0, struct AHIBase* device ),
-             REG( a0, APTR seglist ),
-             REG( a6, struct ExecBase* sysbase ) )
+static struct AHIBase*
+initRoutine( struct AHIBase*  device,
+             APTR             seglist,
+             struct ExecBase* sysbase )
 {
   SysBase = sysbase;
   AHIBase = device;
@@ -197,8 +202,8 @@ initRoutine( REG( d0, struct AHIBase* device ),
 }
 
 
-BPTR ASMCALL
-DevExpunge( REG( a6, struct AHIBase* device ) )
+BPTR
+DevExpunge( struct AHIBase* device )
 {
   BPTR seglist = 0;
 
@@ -220,72 +225,470 @@ DevExpunge( REG( a6, struct AHIBase* device ) )
 }
 
 
-int Null( void )
+ULONG
+Null( void )
 {
   return 0;
 }
 
+/******************************************************************************
+** Entry gateway functions ****************************************************
+******************************************************************************/
 
-extern APTR DevOpen;
-extern APTR DevClose;
 
-extern APTR DevBeginIO;
-extern APTR DevAbortIO;
+/* Prototypes ****************************************************************/
 
-extern APTR AllocAudioA;
-extern APTR FreeAudio;
-extern APTR KillAudio;
-extern APTR ControlAudioA;
-extern APTR SetVol;
-extern APTR SetFreq;
-extern APTR SetSound;
-extern APTR SetEffect;
-extern APTR LoadSound;
-extern APTR UnloadSound;
-extern APTR NextAudioID;
-extern APTR GetAudioAttrsA;
-extern APTR BestAudioIDA;
-extern APTR AllocAudioRequestA;
-extern APTR AudioRequestA;
-extern APTR FreeAudioRequest;
-extern APTR PlayA;
-extern APTR SampleFrameSize;
-extern APTR AddAudioMode;
-extern APTR RemoveAudioMode;
-extern APTR LoadModeFile;
 
+ULONG
+DevOpen ( ULONG              unit,
+          ULONG              flags,
+          struct AHIRequest* ioreq,
+          struct AHIBase*    AHIBase );
+
+
+BPTR
+DevClose ( struct AHIRequest* ioreq,
+           struct AHIBase*    AHIBase );
+
+
+void
+DevBeginIO( struct AHIRequest* ioreq,
+            struct AHIBase*    AHIBase );
+
+
+ULONG
+DevAbortIO( struct AHIRequest* ioreq,
+            struct AHIBase*    AHIBase );
+
+
+struct AHIAudioCtrl*
+AllocAudioA( struct TagItem* tags,
+             struct AHIBase* AHIBase );
+
+
+ULONG
+FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
+           struct AHIBase*          AHIBase );
+
+
+ULONG
+KillAudio( struct AHIBase* AHIBase );
+
+
+ULONG
+ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
+               struct TagItem*          tags,
+               struct AHIBase*          AHIBase );
+
+
+ULONG
+GetAudioAttrsA( ULONG                   id,
+                struct AHIAudioCtrlDrv* actrl,
+                struct TagItem*         tags,
+                struct AHIBase*         AHIBase );
+
+
+ULONG
+BestAudioIDA( struct TagItem* tags,
+              struct AHIBase* AHIBase );
+
+
+ULONG
+SetVol ( UWORD                    channel,
+         Fixed                    volume,
+         sposition                pan,
+         struct AHIPrivAudioCtrl* audioctrl,
+         ULONG                    flags,
+         struct AHIBase*          AHIBase );
+
+
+ULONG
+SetFreq ( UWORD                    channel,
+          ULONG                    freq,
+          struct AHIPrivAudioCtrl* audioctrl,
+          ULONG                    flags,
+          struct AHIBase*          AHIBase );
+
+
+ULONG
+SetSound ( UWORD                    channel,
+           UWORD                    sound,
+           ULONG                    offset,
+           LONG                     length,
+           struct AHIPrivAudioCtrl* audioctrl,
+           ULONG                    flags,
+           struct AHIBase*          AHIBase );
+
+
+ULONG
+SetEffect( ULONG*                   effect,
+           struct AHIPrivAudioCtrl* audioctrl,
+           struct AHIBase*          AHIBase );
+
+
+ULONG
+LoadSound( UWORD                    sound,
+           ULONG                    type,
+           APTR                     info,
+           struct AHIPrivAudioCtrl* audioctrl,
+           struct AHIBase*          AHIBase );
+
+
+ULONG
+UnloadSound( UWORD                    sound,
+             struct AHIPrivAudioCtrl* audioctrl,
+             struct AHIBase*          AHIBase );
+
+
+ULONG
+PlayA( struct AHIAudioCtrl* audioctrl,
+       struct TagItem*      tags,
+       struct AHIBase*      AHIBase );
+
+
+ULONG
+SampleFrameSize( ULONG           sampletype,
+                 struct AHIBase* AHIBase );
+
+
+struct AHIAudioModeRequester*
+AllocAudioRequestA( struct TagItem* tags,
+                    struct AHIBase* AHIBase );
+
+
+ULONG
+AudioRequestA( struct AHIAudioModeRequester* req_in,
+               struct TagItem*               tags,
+               struct AHIBase*               AHIBase );
+
+
+void
+FreeAudioRequest( struct AHIAudioModeRequester* req,
+                  struct AHIBase*               AHIBase);
+
+
+ULONG
+NextAudioID( ULONG           id,
+             struct AHIBase* AHIBase );
+
+
+ULONG
+AddAudioMode( struct TagItem* DBtags,
+              struct AHIBase* AHIBase );
+
+
+ULONG
+RemoveAudioMode( ULONG           id,
+                 struct AHIBase* AHIBase );
+
+
+ULONG
+LoadModeFile( UBYTE*          name,
+              struct AHIBase* AHIBase );
+
+#if defined( morphos )
+
+/* MorphOS *******************************************************************/
+
+static struct AHIBase *
+gw_initRoutine( void )
+{
+  struct AHIBase*  device  = (struct AHIBase*)  REG_D0;
+  APTR             seglist = (APTR)             REG_A0;
+  struct ExecBase* sysbase = (struct ExecBase*) REG_A6;
+
+  return initRoutine( device, seglist, sysbase );
+}
+
+BPTR
+DevExpunge( void )
+{
+  struct AHIBase* device = (struct AHIBase*) REG_A6;
+
+  return initRoutine( device, seglist, sysbase );
+}
+
+#else
+
+/* AmigaOS *******************************************************************/
+
+static struct AHIBase * ASMCALL
+gw_initRoutine( REG( d0, struct AHIBase*  device ),
+                REG( a0, APTR             seglist ),
+                REG( a6, struct ExecBase* sysbase ) )
+{
+  return initRoutine( device, seglist, sysbase );
+}
+
+
+BPTR ASMCALL
+gw_DevExpunge( REG( a6, struct AHIBase* device ) )
+{
+  return DevExpunge( device );
+}
+
+ULONG ASMCALL
+gw_DevOpen( REG( d0, ULONG              unit ),
+            REG( d1, ULONG              flags ),
+            REG( a1, struct AHIRequest* ioreq ),
+            REG( a6, struct AHIBase*    AHIBase ) )
+{
+  return DevOpen( unit, flags, ioreq, AHIBase );
+}
+
+
+BPTR ASMCALL
+gw_DevClose( REG( a1, struct AHIRequest* ioreq ),
+             REG( a6, struct AHIBase*    AHIBase ) )
+{
+  return DevClose( ioreq, AHIBase );
+}
+
+
+void ASMCALL
+gw_DevBeginIO( REG( a1, struct AHIRequest* ioreq ),
+               REG( a6, struct AHIBase*    AHIBase ) )
+{
+  DevBeginIO( ioreq, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_DevAbortIO( REG( a1, struct AHIRequest* ioreq ),
+               REG( a6, struct AHIBase*    AHIBase ) )
+{
+  return DevAbortIO( ioreq, AHIBase );
+}
+
+
+struct AHIAudioCtrl * ASMCALL
+gw_AllocAudioA( REG(a1, struct TagItem* tags),
+                REG(a6, struct AHIBase* AHIBase) )
+{
+  return AllocAudioA( tags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_FreeAudio( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+              REG(a6, struct AHIBase*          AHIBase) )
+{
+  return FreeAudio( audioctrl, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_KillAudio( REG(a6, struct AHIBase* AHIBase) )
+{
+  return KillAudio( AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_ControlAudioA( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+                  REG(a1, struct TagItem*          tags),
+                  REG(a6, struct AHIBase*          AHIBase) )
+{
+  return ControlAudioA( audioctrl, tags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_SetVol( REG(d0, UWORD                    channel),
+           REG(d1, Fixed                    volume),
+           REG(d2, sposition                pan),
+           REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+           REG(d3, ULONG                    flags),
+           REG(a6, struct AHIBase*          AHIBase) )
+{
+  return SetVol( channel, volume, pan, audioctrl, flags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_SetFreq( REG( d0, UWORD                    channel ),
+            REG( d1, ULONG                    freq ),
+            REG( a2, struct AHIPrivAudioCtrl* audioctrl ),
+            REG( d2, ULONG                    flags ),
+            REG( a6, struct AHIBase*          AHIBase ) )
+{
+  return SetFreq( channel, freq, audioctrl, flags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_SetSound( REG(d0, UWORD                    channel),
+             REG(d1, UWORD                    sound),
+             REG(d2, ULONG                    offset),
+             REG(d3, LONG                     length),
+             REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+             REG(d4, ULONG                    flags),
+             REG(a6, struct AHIBase*          AHIBase) )
+{
+  return SetSound( channel, sound, offset, length, audioctrl, flags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_SetEffect( REG(a0, ULONG*                   effect),
+              REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+              REG(a6, struct AHIBase*          AHIBase) )
+{
+  return SetEffect( effect, audioctrl, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_LoadSound( REG(d0, UWORD                    sound),
+              REG(d1, ULONG                    type),
+              REG(a0, APTR                     info),
+              REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+              REG(a6, struct AHIBase*          AHIBase) )
+{
+  return LoadSound( sound, type, info, audioctrl, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_UnloadSound( REG(d0, UWORD                    sound),
+                REG(a2, struct AHIPrivAudioCtrl* audioctrl),
+                REG(a6, struct AHIBase*          AHIBase) )
+{
+  return UnloadSound( sound, audioctrl, AHIBase );
+}
+
+
+ULONG ASMCALL 
+gw_PlayA( REG(a2, struct AHIAudioCtrl* audioctrl),
+          REG(a1, struct TagItem*      tags),
+          REG(a6, struct AHIBase*      AHIBase) )
+{
+  return PlayA( audioctrl, tags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_SampleFrameSize( REG(d0, ULONG           sampletype),
+                    REG(a6, struct AHIBase* AHIBase) )
+{
+  return SampleFrameSize( sampletype, AHIBase );
+}
+
+
+ULONG ASMCALL 
+gw_GetAudioAttrsA( REG(d0, ULONG                   id),
+                   REG(a2, struct AHIAudioCtrlDrv* actrl),
+                   REG(a1, struct TagItem*         tags),
+                   REG(a6, struct AHIBase*         AHIBase) )
+{
+  return GetAudioAttrsA( id, actrl, tags, AHIBase );
+}
+
+
+ULONG ASMCALL 
+gw_BestAudioIDA( REG(a1, struct TagItem* tags),
+                 REG(a6, struct AHIBase* AHIBase) )
+{
+  return BestAudioIDA( tags, AHIBase );
+}
+
+
+struct AHIAudioModeRequester* ASMCALL
+gw_AllocAudioRequestA( REG(a0, struct TagItem* tags),
+                       REG(a6, struct AHIBase* AHIBase) )
+{
+  return AllocAudioRequestA( tags, AHIBase );
+}
+
+
+ULONG ASMCALL 
+gw_AudioRequestA( REG(a0, struct AHIAudioModeRequester* req_in),
+                  REG(a1, struct TagItem*               tags ),
+                  REG(a6, struct AHIBase*               AHIBase) )
+{
+  return AudioRequestA( req_in, tags, AHIBase );
+}
+
+
+void ASMCALL 
+gw_FreeAudioRequest( REG(a0, struct AHIAudioModeRequester* req),
+                     REG(a6, struct AHIBase*               AHIBase) )
+{
+  return FreeAudioRequest( req, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_NextAudioID( REG(d0, ULONG           id),
+                REG(a6, struct AHIBase* AHIBase) )
+{
+  return NextAudioID( id, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_AddAudioMode( REG(a0, struct TagItem* DBtags),
+                 REG(a6, struct AHIBase* AHIBase) )
+{
+  return AddAudioMode( DBtags, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_RemoveAudioMode( REG(d0, ULONG           id),
+                    REG(a6, struct AHIBase* AHIBase) )
+{
+  return RemoveAudioMode( id, AHIBase );
+}
+
+
+ULONG ASMCALL
+gw_LoadModeFile( REG(a0, UBYTE*          name),
+                 REG(a6, struct AHIBase* AHIBase) )
+{
+  return LoadModeFile( name, AHIBase );
+}
+
+
+
+#endif
 
 static const APTR funcTable[] =
 {
-  &DevOpen,
-  &DevClose,
-  &DevExpunge,
+
+#if defined( morphos )
+  (APTR) FUNCARRAY_32BIT_NATIVE
+#endif
+
+  &gw_DevOpen,
+  &gw_DevClose,
+  &gw_DevExpunge,
   &Null,
 
-  &DevBeginIO,
-  &DevAbortIO,
+  &gw_DevBeginIO,
+  &gw_DevAbortIO,
 
-  &AllocAudioA,
-  &FreeAudio,
-  &KillAudio,
-  &ControlAudioA,
-  &SetVol,
-  &SetFreq,
-  &SetSound,
-  &SetEffect,
-  &LoadSound,
-  &UnloadSound,
-  &NextAudioID,
-  &GetAudioAttrsA,
-  &BestAudioIDA,
-  &AllocAudioRequestA,
-  &AudioRequestA,
-  &FreeAudioRequest,
-  &PlayA,
-  &SampleFrameSize,
-  &AddAudioMode,
-  &RemoveAudioMode,
-  &LoadModeFile,
+  &gw_AllocAudioA,
+  &gw_FreeAudio,
+  &gw_KillAudio,
+  &gw_ControlAudioA,
+  &gw_SetVol,
+  &gw_SetFreq,
+  &gw_SetSound,
+  &gw_SetEffect,
+  &gw_LoadSound,
+  &gw_UnloadSound,
+  &gw_NextAudioID,
+  &gw_GetAudioAttrsA,
+  &gw_BestAudioIDA,
+  &gw_AllocAudioRequestA,
+  &gw_AudioRequestA,
+  &gw_FreeAudioRequest,
+  &gw_PlayA,
+  &gw_SampleFrameSize,
+  &gw_AddAudioMode,
+  &gw_RemoveAudioMode,
+  &gw_LoadModeFile,
   (APTR) -1
 };
 
