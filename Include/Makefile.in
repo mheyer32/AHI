@@ -69,7 +69,7 @@ endif
 all:		$(TARGETS)
 
 clean:
-	$(RM) -r $(TARGETS) *.bak *~ \#*\# core gcc
+	$(RM) -r $(TARGETS) gcc-include.stamp *.bak *~ \#*\# core gcc
 
 distclean:	clean
 	$(RM) Makefile
@@ -92,7 +92,10 @@ bindist:	$(TARGETS)
 	 $(INSTALL_DATA) $(srcdir)/$$file $(DEVINCDIR)/$$file; \
 	done
 
-gcc-include: SFD/ahi_lib.sfd SFD/ahi_sub_lib.sfd $(CTARGETS) $(GCCTARGETS)
+gcc-include: gcc-include.stamp
+
+gcc-include.stamp:	SFD/ahi_lib.sfd SFD/ahi_sub_lib.sfd \
+			$(CTARGETS) $(GCCTARGETS)
 	 $(INSTALL) --directory gcc/clib gcc/devices gcc/libraries \
 	                        gcc/inline gcc/proto
 
@@ -100,12 +103,13 @@ gcc-include: SFD/ahi_lib.sfd SFD/ahi_sub_lib.sfd $(CTARGETS) $(GCCTARGETS)
 	 $(INSTALL_DATA) $(srcdir)/C/$$file gcc/$$file; \
 	done
 
-	cp C-clib-ahi_protos.h		gcc/clib/ahi_protos.h
-	cp C-clib-ahi_sub_protos.h	gcc/clib/ahi_sub_protos.h
-	cp C-inline-ahi.h		gcc/inline/ahi.h
-	cp C-inline-ahi_sub.h		gcc/inline/ahi_sub.h
-	cp C-proto-ahi.h		gcc/proto/ahi.h
-	cp C-proto-ahi_sub.h		gcc/proto/ahi_sub.h
+	$(INSTALL_DATA) C-clib-ahi_protos.h	gcc/clib/ahi_protos.h
+	$(INSTALL_DATA) C-clib-ahi_sub_protos.h	gcc/clib/ahi_sub_protos.h
+	$(INSTALL_DATA) C-inline-ahi.h		gcc/inline/ahi.h
+	$(INSTALL_DATA) C-inline-ahi_sub.h	gcc/inline/ahi_sub.h
+	$(INSTALL_DATA) C-proto-ahi.h		gcc/proto/ahi.h
+	$(INSTALL_DATA) C-proto-ahi_sub.h	gcc/proto/ahi_sub.h
+	touch $@
 
 
 #
