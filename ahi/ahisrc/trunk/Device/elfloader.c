@@ -431,7 +431,7 @@ ELFLoadObject( const char* objname )
 
   if( elfobj != NULL )
   {
-    memset(elfobj,sizeof(struct ElfObject),0);
+    memset(elfobj,0,sizeof(struct ElfObject));
 
     elfobj->header = alloc32( sizeof( struct Elf32_Ehdr ) );
 
@@ -549,7 +549,7 @@ static BOOL loadelf32(struct ElfObject *eo,struct Elf32_Shdr *shdrs)
 
   if ((eo->secnames = readsection(eo,&shdrs[hdr->e_shstrndx])) &&
       (eo->sections = alloc32((hdr->e_shnum+1)*sizeof(void *)))) {
-    memset(eo->sections,(hdr->e_shnum+1)*sizeof(void *),0);
+    memset(eo->sections,0,(hdr->e_shnum+1)*sizeof(void *));
     eo->nsects = hdr->e_shnum + 1;  /* +1 section for COMMON symbols */
     for (i=1; i<hdr->e_shnum; i++) {
       switch (shdrs[i].sh_type) {
@@ -979,7 +979,7 @@ static struct ELFSection *progsection(struct ElfObject *eo,
   struct ELFSection *s;
 
   if( (s = AllocVec(sizeof(struct ELFSection),MEMF_ANY)) != NULL ) {
-    memset(s,sizeof(struct ELFSection),0);
+    memset(s,0,sizeof(struct ELFSection));
     s->name = eo->secnames + sh->sh_name;
     s->flags = sh->sh_type==SHT_NOBITS ? ElfSecF_NOBITS:0;
     s->alignment = (uint8)sh->sh_addralign;
@@ -1020,7 +1020,7 @@ static BOOL common_symbols(struct ElfObject *eo)
   if (!s) {
     /* No .bss section present, allocate an own one */
     if( (s = AllocVec(sizeof(struct ELFSection),MEMF_ANY)) != NULL ) {
-      memset(s,sizeof(struct ELFSection),0);
+      memset(s,0,sizeof(struct ELFSection));
       s->name = allocstr((char *)bssname);
       s->flags = ElfSecF_NOBITS;
       s->alignment = 32;
