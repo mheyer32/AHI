@@ -1,3 +1,7 @@
+2005-01-28  Martin Blom  <martin@blom.org>
+
+	* Updated the docs and .readme files a bit.
+
 2005-01-23  Martin Blom  <martin@blom.org>
 
 	* ahi.device: That CPU overload protection (PreTimer/PostTimer)
