@@ -1,3 +1,7 @@
+2001-12-29  Martin Blom  <martin@matilda.localnet>
+
+	* When cross-building, the wrong 'strip' was used on the binaries.
+
 2001-12-22  Martin Blom  <martin@blom.org>
 
 	* Added a note about AHIA_PlayerFunc in the autodocs.
