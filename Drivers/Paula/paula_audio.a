@@ -2,11 +2,21 @@
 
 * $Id$
 * $Log$
+* Revision 4.29  2003/03/30 05:38:08  piru
+* DMA playback did CloseDevice with a0 = p_TimerReq. Fixed.
+* Library cleanup didn't free resources at failure. Fixed.
+* Small cleanup here and there.
+*
 * Revision 4.28  2002/01/06 09:46:10  martin
 * When opening timer.device (used in the DMA mode), I didn't clear the flags
 * parameter and opened UNIT_MICROHZ instead of UNIT_ECLOCK.  [Sigbjørn
 * Skjæret]
 *
+* Revision 4.27  2001/09/28 20:52:17  lcs
+* I broke the DMA playback mode in the last update. Fixed now.
+*
+* Revision 4.26  2001/09/16 19:04:26  lcs
+* * paula.audio:  The fixed CMD_STOP/CMD_START in ahi.device
 * triggered a bug that could make the driver lose track of the
 * AHIsub_Disable and AHIsub_Enable nesting.  Also, these functions
 * was not "thread safe" (they are not actually called from a thread
@@ -93,7 +103,83 @@ EXEC_MACROS_I	SET	1	; Fake a bit to avoid exec/macros.i problems
 
 pushm	MACRO
 	movem.l	\1,-(sp)
-	include	hardware/all.i
+	ENDM
+popm	MACRO
+	movem.l	(sp)+,\1
+	ENDM
+
+*************************************************************************
+		IFND	PRINTF
+PRINTF		MACRO	; level,<string>,...
+		IFGE	DEBUG_DETAIL-\1
+		XREF	kprint_macro
+PUSHCOUNT	SET	0
+
+		IFNC	'\9',''
+		move.l	\9,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		IFNC	'\8',''
+		move.l	\8,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		IFNC	'\7',''
+		move.l	\7,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		IFNC	'\6',''
+		move.l	\6,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		IFNC	'\5',''
+		move.l	\5,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		IFNC	'\4',''
+		move.l	\4,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		IFNC	'\3',''
+		move.l	\3,-(sp)
+PUSHCOUNT	SET	PUSHCOUNT+4
+		ENDC
+
+		movem.l a0/a1,-(sp)
+		lea.l	PSS\@(pc),A0
+		lea.l	4*2(SP),A1
+		BSR	kprint_macro
+		movem.l (sp)+,a0/a1
+		bra.s	PSE\@
+
+PSS\@		dc.b	\2
+		IFEQ	(\1&1)	;If even, add CR/LF par...
+		   dc.b 13,10
+		ENDC
+		dc.b	0
+		ds.w	0
+PSE\@
+		lea.l	PUSHCOUNT(sp),sp
+		ENDC	;IFGE	DEBUG_DETAIL-\1
+		ENDM	;PRINTF	MACRO
+		ENDC	;IFND	PRINTF
+
+
+	include	hardware/cia.i
+	include	hardware/custom.i
+	include	hardware/intbits.i
+	include	hardware/dmabits.i
+
+
+	include	devices/audio.i
+	include	devices/timer.i
+	include	dos/dos.i
+	include	dos/dostags.i
 	include	exec/exec.i
 	include	graphics/gfxbase.i
 	include intuition/intuitionbase.i
@@ -120,7 +206,55 @@ call MACRO
  jsr	_LVO\1(a6)
  ENDM
 push MACRO
-	include	macros.i
+ movem.l \1,-(sp)
+ ENDM
+pop MACRO
+ movem.l (sp)+,\1
+ ENDM
+
+std	equrl	d2-d7/a2-a6
+skipl	MACRO
+	dc.w	$0C80
+	ENDM
+TRUE		EQU	1
+FALSE		EQU	0
+
+custom	EQU	$dff000
+INTENA	EQU	intena
+INTREQ	EQU	intreq
+DMACON	EQU	dmacon
+VHPOSR	EQU	vhposr
+
+AUD0LC	EQU	aud0+ac_ptr
+AUD0LEN	EQU	aud0+ac_len
+AUD0PER	EQU	aud0+ac_per
+AUD0VOL	EQU	aud0+ac_vol
+AUD0DAT	EQU	aud0+ac_dat
+
+AUD1LC	EQU	aud1+ac_ptr
+AUD1LEN	EQU	aud1+ac_len
+AUD1PER	EQU	aud1+ac_per
+AUD1VOL	EQU	aud1+ac_vol
+AUD1DAT	EQU	aud1+ac_dat
+
+AUD2LC	EQU	aud2+ac_ptr
+AUD2LEN	EQU	aud2+ac_len
+AUD2PER	EQU	aud2+ac_per
+AUD2VOL	EQU	aud2+ac_vol
+AUD2DAT	EQU	aud2+ac_dat
+
+AUD3LC	EQU	aud3+ac_ptr
+AUD3LEN	EQU	aud3+ac_len
+AUD3PER	EQU	aud3+ac_per
+AUD3VOL	EQU	aud3+ac_vol
+AUD3DAT	EQU	aud3+ac_dat
+
+
+
+BETTERTIMING	EQU	1
+
+DEBUG_DETAIL	SET	0
+
 _ciaa		EQU	$bfe001
 _ciab		EQU	$bfd000
 
@@ -267,7 +401,9 @@ AHIDB_PaulaDMA		EQU	AHIDB_UserBase+2	* Boolean
 	UWORD	p_wpad1
 	APTR	p_ParBitsUser			;Parallel port locking
 	APTR	p_ParPortUser			;Parallel port locking
-	ULONG	p_audiodev			;For audio.device
+	APTR	p_SerBitsUser			;Serial port locking
+	APTR	p_CardHandle			;Aura PCMCIA card hanle
+
 	STRUCT	p_PlayInt,IS_SIZE		;Player hardware interrupt
 	STRUCT	p_PlaySoftInt,IS_SIZE		;Player software interrupt (mixing only)
 	STRUCT	p_RecInt,IS_SIZE		;Recorder hardware interrupt (mixing only)
@@ -415,52 +551,49 @@ initRoutine:
 	move.l	a6,pb_SysLib(a5)
 	move.l	a0,pb_SegList(a5)
 
+	lea	gfxName(pc),a1
 	moveq	#37,d0
 	call	OpenLibrary
 	move.l	d0,pb_GfxLib(a5)
+	bne.b	.gfxOK
 	ALERT	AG_OpenLib|AO_GraphicsLib
-	moveq	#0,d0
+	bra	.gfxFail
 .gfxOK
 	lea	utilName(pc),a1
 	moveq	#37,d0
 	call	OpenLibrary
-	moveq	#0,d0
-	bra	.exit
+	move.l	d0,pb_UtilLib(a5)
 	bne.b	.utilOK
 	ALERT	AG_OpenLib|AO_UtilityLib
-	moveq	#0,d0
+	bra	.utilFail
 .utilOK
 	lea	dosName(pc),a1
 	moveq	#37,d0
 	call	OpenLibrary
-	moveq	#0,d0
-	bra	.exit
+	move.l	d0,pb_DosLib(a5)
 	bne.b	.dosOK
 	ALERT	AG_OpenLib|AO_DOSLib
-	moveq	#0,d0
+	bra	.dosFail
 .dosOK
 	lea	intuiName(pc),a1
 	moveq	#37,d0
 	call	OpenLibrary
-	moveq	#0,d0
-	bra	.exit
+	move.l	d0,pb_IntuiLib(a5)
 	bne.b	.intuiOK
 	ALERT	AG_OpenLib|AO_Intuition
-	moveq	#0,d0
+	bra	.intuiFail
 .intuiOK
 	lea	miscName(pc),a1
 	call	OpenResource
 	move.l	d0,pb_MiscResource(a5)
-	moveq	#0,d0
-	bra	.exit
+	bne.b	.miscOK
 	ALERT	AG_OpenRes|AO_MiscRsrc
 	bra	.miscFail
 .miscOK
 	lea	cardName(pc),a1
 	call	OpenResource
 	move.l	d0,pb_CardResource(a5)		;Don't fail on error
-	moveq	#0,d0
-	bra	.exit
+
 	move.l	#PALFREQ,d1			;PAL
 	move.l	pb_GfxLib(a5),a0
 	move.w	gb_DisplayFlags(a0),d0
@@ -480,12 +613,33 @@ initRoutine:
 	call	CloseLibrary
 .intuiFail
 	move.l	pb_DosLib(a5),a1
+	call	CloseLibrary
+.dosFail
+	move.l	pb_UtilLib(a5),a1
+	call	CloseLibrary
+.utilFail
+	move.l	pb_GfxLib(a5),a1
+	call	CloseLibrary
+.gfxFail
+	moveq	#0,d0
+	move.l	a5,a1
+	move.w	LIB_NEGSIZE(a5),d0
+	sub.l	d0,a1
+	add.w	LIB_POSSIZE(a5),d0
+	call	FreeMem
 
 	moveq	#0,d0
+	bra.b	.exit
+
+Open:
+	addq.w	#1,LIB_OPENCNT(a6)
+	bclr.b	#LIBB_DELEXP,pb_Flags(a6)
+	move.l	a6,d0
+	rts
+
 Close:
 	moveq	#0,d0
 	subq.w	#1,LIB_OPENCNT(a6)
-.exit
 	bne.b	.exit
 	btst.b	#LIBB_DELEXP,pb_Flags(a6)
 	beq.b	.exit
@@ -520,16 +674,18 @@ Expunge:
 
 	move.l	pb_SegList(a5),d2
 
-	move.l	pb_SegList(a5),d2
 	moveq	#0,d0
 	move.l	a5,a1
 	move.w	LIB_NEGSIZE(a5),d0
+	sub.l	d0,a1
+	add.w	LIB_POSSIZE(a5),d0
 	call	FreeMem
 
 	move.l	d2,d0
 .Expunge_end
 	movem.l	(sp)+,d1/d2/a0/a1/a5/a6
 	rts
+
 Null:
 	moveq	#0,d0
 	rts
@@ -541,7 +697,7 @@ BeginIO:
 	move.l	IO_DEVICE(a1),a6
 	jsr	-30(a6)
 	pop	a6
-	move.l	a1,a0		;probably not neccesary
+	rts
 
 ;in:
 * d0	Default value
@@ -563,21 +719,21 @@ GetVarInt:
 	call	GetVar
 
 	addq.l	#1,d0				;cmp.l	#-1,d0
-	moveq.l	#8,d3
-	moveq.l	#0,d4
+	beq	.gotvar
+	move.l	sp,d1
 	clr.l	-(sp)
 	move.l	sp,d2
-	cmp.l	#-1,d0
+	call	StrToLong
 	move.l	(sp)+,d5
 .gotvar
-	pea.l	0.w
+	addq.l	#8,sp
 
 ; d5 is now the integer value
 	move.l	d5,d0
 	popm	std
 	rts
 
-; d5 is now the integer valie
+****** [driver].audio/--background-- ****************************************
 *
 *   OVERVIEW
 *
@@ -740,8 +896,8 @@ AHIsub_AllocAudio:
 	move.l	#-1,p_ParBitsUser(a3)
 	move.l	#-1,p_ParPortUser(a3)
 	move.l	#-1,p_SerBitsUser(a3)
-	move.b	#-1,p_TimerDev(a3)
-	move.l	#-1,p_audiodev(a3)
+	move.l	a5,p_PaulaBase(a3)
+	move.l	a2,p_AudioCtrl(a3)
 	lea	p_RecSoftInt(a3),a0
 	move.l	a0,p_RecSoftIntPtr(a3)
 	move.l	#AHIST_S16S,p_rmType(a3)
@@ -883,7 +1039,7 @@ AHIsub_AllocAudio:
 	move.l	p_audioreq(a3),a1
 	move.w	#CMD_RESET,IO_COMMAND(a1)
 	bsr.w	BeginIO				;clear attach, stop sound.
-	move.l	d0,p_audiodev(a3)
+	move.l	p_audioport(a3),a0
 	call	WaitPort
 	move.l	p_audioport(a3),a0
 	call	GetMsg
@@ -1209,20 +1365,16 @@ checkvideo:
 	lea	screenVar(pc),a0
 	bsr	GetVarInt
 	addq.l	#1,d0			; cmp.l	#-1,d0
-	move.l	pb_DosLib(a5),a6
-	clr.w	-(sp)				;Initialize local data
-	subq.l	#1,d0			; cmp.l	#0,d0
-	move.l	a0,d1
-	move.l	sp,d2
-	moveq.l	#2,d3
-	moveq.l	#0,d4
-	call	GetVar
-	move.w	(sp)+,d1
-	cmp.l	#-1,d0
-	beq	.is31k
-	cmp.w	#"0"<<8|0,d1
+	beq	.testfreq
 
-	cmp.w	#"1"<<8|0,d1
+	subq.l	#1,d0			; cmp.l	#0,d0
+	beq	.no31k
+	subq.l	#1,d0			; cmp.l	#1,d0
+	beq	.is31k
+
+.testfreq
+
+; Chip revision test
 
 	move.l	pb_GfxLib(a5),a0
 	move.b	gb_ChipRevBits0(a0),d0
@@ -1297,8 +1449,8 @@ checkvideo:
 	call	GetVar
 	move.l	(sp)+,d1
 	swap.w	d1
-	moveq.l	#4,d3
-	moveq.l	#0,d4
+	cmp.w	#"31",d1
+	beq	.is31k
 	bra	.no31k
 
 .cgfx
@@ -1549,8 +1701,9 @@ AHIsub_FreeAudio:
 	st	p_audiodev(a3)
 	move.l	p_audioreq(a3),a1
 	move.w	#CMD_RESET,IO_COMMAND(a1)	;Restore audio interrupts
-	tst.l	p_audiodev(a3)
+	bsr.w	BeginIO
 	move.l	p_audioport(a3),a0
+	call	WaitPort
 	move.l	p_audioport(a3),a0
 	call	GetMsg
 	move.l	p_audioreq(a3),a1
@@ -1559,7 +1712,6 @@ AHIsub_FreeAudio:
 	move.l	p_audioreq(a3),d0
 	beq.b	.noaudioreq
 	move.l	d0,a1
-	subq.l	#1,p_audiodev(a3)
 	call	FreeVec
 .noaudioreq
 	move.l	p_audioport(a3),d0
@@ -1612,7 +1764,7 @@ AHIsub_FreeAudio:
 	rts
 
 
-	moveq	#0,d0
+****** [driver].audio/AHIsub_Disable ****************************************
 *
 *   NAME
 *       AHIsub_Disable -- Temporary turn off audio interrupt/task
@@ -2431,7 +2583,7 @@ AHIsub_Update:
 	rts
 
 
-	moveq	#0,d0
+****** [driver].audio/AHIsub_Stop *******************************************
 *
 *   NAME
 *       AHIsub_Stop -- Stops playback.
@@ -2572,7 +2724,7 @@ AHIsub_Stop:
 	rts
 
 
-	moveq	#0,d0
+****** [driver].audio/AHIsub_GetAttr ****************************************
 *
 *   NAME
 *       AHIsub_GetAttr -- Returns information about audio modes or driver
@@ -4592,6 +4744,7 @@ DMA_Stop:
 * Ask timer softint to stop
 
 	addq.w	#1,p_TimerCommFlag(a3)
+.waittimer
 	tst.w	p_TimerCommFlag(a3)
 	beq	.closetimer
 	move.l	pb_DosLib(a5),a6
@@ -4605,11 +4758,10 @@ DMA_Stop:
 	move.l	pb_SysLib(a5),a6
 	move.l	p_TimerReq(a3),a1
 	call	CloseDevice
-	move.b	#-1,p_TimerDev(a3)
 .notimer
 	move.l	p_TimerReq(a3),a0
 	clr.l	p_TimerReq(a3)
-	move.l	p_TimerReq(a3),a0
+	call	DeleteIORequest
 
 	move.l	#Interrupt_Dummy,IS_CODE+p_PlayInt(a3)
 
