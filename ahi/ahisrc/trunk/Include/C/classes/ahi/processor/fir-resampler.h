@@ -33,7 +33,7 @@ namespace AHI {
 
       enum {
 
-	/* Enable low-pass filtering when upsampling. (BOOL) */
+	/* Enable low-pass filtering when downsampling. (BOOL) */
 	_AHIA(_P, LowPass,	(_AHIA_Dummy+111)),	/* OM_NEW,
 							   OM_GET */
 
@@ -49,21 +49,26 @@ namespace AHI {
 
 	/* The number of bits used when calculating fractional
 	 * offsets. The FIR table size equals Taps*(2^Accuracy);
-	 * double it if interpolation is used. (ULONG, suggester
-	 * range: 8-12)
+	 * double it if interpolation is used. (ULONG, suggested
+	 * range is 8-12) */
 	_AHIA(_P, Accuracy,	(_AHIA_Dummy+114))	/* OM_NEW,
 							   OM_GET */
 
+	/* The low-pass filters normalized cutoff frequency. (Fixed,
+	 * range is 0.0-1.0) */
+	_AHIA(_P, CutOff,	(_AHIA_Dummy+115))	/* OM_NEW,
+							   OM_GET */
+	
 	/* The quality of the resampling. (ULONG) */
-	_AHIA(_P, Quality,	(_AHIA_Dummy+115))	/* OM_NEW,
+	_AHIA(_P, Quality,	(_AHIA_Dummy+116))	/* OM_NEW,
 							   OM_GET */
       };
 
       enum {
-	_AHIV(_P, CustomQuality,	(0)),
-	_AHIV(_P, LowQuality,		(1)), /* 8 taps, 8 bits */
-	_AHIV(_P, MediumQuality,	(2)), /* 12 taps, 12 bits, LP */
-	_AHIV(_P, HighQuality,		(3))  /* 32 taps, 12 bits, LP, LI */
+	_AHIV(_P, CustomQuality, (0)),
+	_AHIV(_P, LowQuality,	 (1)), /* 8 taps, 8 bits */
+	_AHIV(_P, MediumQuality, (2)), /* 12 taps, 12 bits, 0.9 LP */
+	_AHIV(_P, HighQuality,	 (3))  /* 32 taps, 12 bits, 0.9 LP, LI */
       };
       
 /*****************************************************************************/

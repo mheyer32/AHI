@@ -168,6 +168,7 @@ AC_CONFIG_FILES([AHI/Makefile
                  Classes/Processor/Makefile
                  Classes/AdderProcessor/Makefile
                  Classes/GainProcessor/Makefile
+                 Classes/ResamplerProcessor/Makefile
                  Classes/SplitterProcessor/Makefile
                  Classes/TickProcessor/Makefile
                  Device/Makefile
