@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1999/01/08 23:42:55  lcs
+* Switched to gcc and GNU make.
+* Clean-up in source code.
+*
 * Revision 4.2  1998/03/11 12:31:57  lcs
 * Added hardware-banging code to force VGA mode.
 *
@@ -26,48 +30,18 @@
 #include <proto/intuition.h>
 #include <stdlib.h>
 
-void OpenAHI(void);
-void cleanup(LONG);
-LONG main(void);
+#include "config.h"
+#include "version.h"
 
 struct Library    *AHIBase   = NULL;
 struct MsgPort    *AHImp     = NULL;
 struct AHIRequest *AHIio     = NULL;
 BYTE               AHIDevice = -1;
 
+static const char version[] = "$VER: AddAudioModes " VERS "\n\r";
+
 #define AHIVERSION 4
-
-LONG __OSlibversion=37;
-
-const static UBYTE version[]="$VER: AddAudioModes 4.2 "__AMIGADATE__"\n\r";
-
-void OpenAHI(void) {
-  if(AHIDevice) {
-    if(AHImp=CreateMsgPort()) {
-      if(AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest))) {
-        AHIio->ahir_Version=AHIVERSION;
-        AHIDevice=OpenDevice(AHINAME,AHI_NO_UNIT,
-            (struct IORequest *)AHIio,AHIDF_NOMODESCAN);
-      }
-    }
-
-    if(AHIDevice) {
-      Printf("Unable to open %s version %d\n",AHINAME,AHIVERSION);
-      cleanup(RETURN_FAIL);
-    }
-
-    AHIBase=(struct Library *)AHIio->ahir_Std.io_Device;
-  }
-}
-
-void cleanup(LONG rc) {
-  if(!AHIDevice) {
-    CloseDevice((struct IORequest *)AHIio);
-  }
-  DeleteIORequest((struct IORequest *)AHIio);
-  DeleteMsgPort(AHImp);
-  exit(rc);
-}
+LONG __OSlibversion = 37;
 
 #define TEMPLATE "FILES/M,QUIET/S,REFRESH/S,REMOVE/S,DBLSCAN/S"
 
@@ -79,95 +53,188 @@ struct {
   ULONG   dblscan;
 } args = {NULL, FALSE, FALSE, FALSE, FALSE};
 
-LONG main(void) {
-  struct RDArgs *rdargs;
-  ULONG  i=0,id,rc=RETURN_OK;
 
-  if(rdargs=ReadArgs( TEMPLATE , (LONG *) &args, NULL)) {
+void
+cleanup( int rc )
+{
+  if( AHIDevice == 0 )
+  {
+    CloseDevice( (struct IORequest *) AHIio );
+  }
 
-    // Refresh database
-    if(args.refresh && !args.remove) {
-      OpenAHI();
-      if(!AHI_LoadModeFile("DEVS:AudioModes") && !args.quiet) {
-        PrintFault(IoErr(),"DEVS:AudioModes");
-        rc=RETURN_ERROR;
+  DeleteIORequest( (struct IORequest *) AHIio);
+  DeleteMsgPort( AHImp );
+
+  exit( rc );
+}
+
+
+void
+OpenAHI( void )
+{
+  if( AHIDevice != 0 )
+  {
+    AHImp = CreateMsgPort();
+
+    if( AHImp != NULL )
+    {
+      AHIio = (struct AHIRequest *)
+                  CreateIORequest( AHImp, sizeof( struct AHIRequest ) );
+
+      if( AHIio != NULL )
+      {
+        AHIio->ahir_Version = AHIVERSION;
+
+        AHIDevice = OpenDevice( AHINAME, 
+                                AHI_NO_UNIT,
+                                (struct IORequest *) AHIio,
+                                AHIDF_NOMODESCAN );
       }
     }
 
-    // Load mode files
-    if(args.files && !args.remove) {
+    if( AHIDevice != 0 )
+    {
+      Printf( "Unable to open %s version %ld\n", (ULONG) AHINAME, AHIVERSION );
+      cleanup( RETURN_FAIL );
+    }
+
+    AHIBase = (struct Library *) AHIio->ahir_Std.io_Device;
+  }
+}
+
+
+int
+main( void )
+{
+  struct RDArgs *rdargs;
+  int            rc = RETURN_OK;
+
+  rdargs = ReadArgs( TEMPLATE , (LONG *) &args, NULL );
+
+  if( rdargs != NULL )
+  {
+    /* Refresh database */
+
+    if( args.refresh && !args.remove )
+    {
       OpenAHI();
-      while(args.files[i]) {
-        if(!AHI_LoadModeFile(args.files[i]) && !args.quiet) {
-          PrintFault(IoErr(),args.files[i]);
-          rc=RETURN_ERROR;
+      
+      if( !AHI_LoadModeFile( "DEVS:AudioModes" ) && !args.quiet )
+      {
+        PrintFault( IoErr(), "DEVS:AudioModes" );
+        rc = RETURN_ERROR;
+      }
+    }
+
+    /* Load mode files */
+
+    if( args.files != NULL && !args.remove )
+    {
+      int i = 0;
+
+      OpenAHI();
+
+      while( args.files[i] )
+      {
+        if( !AHI_LoadModeFile( args.files[i] ) && !args.quiet )
+        {
+          PrintFault( IoErr(), args.files[i] );
+          rc = RETURN_ERROR;
         }
         i++;
       }
     }
 
-    // Remove database
-    if(args.remove) {
-      if(args.files || args.refresh) {
-        PutStr("The REMOVE switch cannot be used together with FILES or REFRESH.\n");
-        rc=RETURN_FAIL;
+    /* Remove database */
+
+    if( args.remove )
+    {
+      if( args.files || args.refresh )
+      {
+        PutStr( "The REMOVE switch cannot be used together with FILES or REFRESH.\n" );
+        rc = RETURN_FAIL;
       }
-      else {
+      else
+      {
+        ULONG id;
+
         OpenAHI();
-        while((id=AHI_NextAudioID(AHI_INVALID_ID)) != AHI_INVALID_ID) {
-          AHI_RemoveAudioMode(id);
+
+        for( id = AHI_NextAudioID( AHI_INVALID_ID );
+             id != AHI_INVALID_ID;
+             id = AHI_NextAudioID( AHI_INVALID_ID ) )
+        {
+          AHI_RemoveAudioMode( id );
         }
       }
     }
 
-    // Make display mode doublescan (allowing > 28 kHz sample rates)
-    if(args.dblscan) {
-      ULONG id = INVALID_ID, bestid = INVALID_ID, minper = MAXINT;
+    /* Make display mode doublescan (allowing > 28 kHz sample rates) */
+
+    if( args.dblscan )
+    {
+      ULONG          id;
+      ULONG          bestid = INVALID_ID;
+      int            minper = MAXINT;
       struct Screen *screen = NULL;
-      const static struct ColorSpec colorspecs[] = {
+
+      static const struct ColorSpec colorspecs[] =
+      {
         { 0, 0, 0, 0 },
         { 1, 0, 0, 0 },
         {-1, 0, 0, 0 }
       };
       
-      while( (id = NextDisplayInfo(id)) != INVALID_ID) {
-        union {
-          struct MonitorInfo mon;
-          struct DisplayInfo dis;
-        } buffer;
+      union {
+        struct MonitorInfo mon;
+        struct DisplayInfo dis;
+      } buffer;
 
-        ULONG period;
+      for( id = NextDisplayInfo( INVALID_ID );
+           id != (ULONG) INVALID_ID;
+           id = NextDisplayInfo( id ) )
+      {
+        int period;
 
-        if(GetDisplayInfoData(NULL, (UBYTE*)&buffer.dis, sizeof(buffer.dis),
-            DTAG_DISP, id)) {
-          if( ! (buffer.dis.PropertyFlags & (DIPF_IS_ECS | DIPF_IS_AA))) {
+        if( GetDisplayInfoData( NULL, 
+                                (UBYTE*) &buffer.dis, sizeof(buffer.dis),
+                                DTAG_DISP, id ) )
+        {
+          if( !(buffer.dis.PropertyFlags & (DIPF_IS_ECS | DIPF_IS_AA ) ) )
+          {
             continue;
           }
         }
 
-        if(GetDisplayInfoData(NULL, (UBYTE*)&buffer.mon, sizeof(buffer.mon),
-            DTAG_MNTR, id)) {
+        if( GetDisplayInfoData( NULL,
+                                (UBYTE*) &buffer.mon, sizeof(buffer.mon),
+                                DTAG_MNTR, id ) )
+        {
           period = buffer.mon.TotalColorClocks * buffer.mon.TotalRows
-                   / (2 * (buffer.mon.TotalRows - buffer.mon.MinRow + 1));
-          if(period < minper) {
+                   / ( 2 * ( buffer.mon.TotalRows - buffer.mon.MinRow + 1 ) );
+
+          if( period < minper )
+          {
             minper = period;
             bestid = id;
           }
         }
+
       }
 
-      if(bestid != INVALID_ID && minper < 100) {
-        screen = OpenScreenTags(NULL,
-            SA_DisplayID,  bestid,
-            SA_Colors,    &colorspecs,
-            TAG_DONE);
+      if( bestid != (ULONG) INVALID_ID && minper < 100 )
+      {
+        screen = OpenScreenTags( NULL,
+                                 SA_DisplayID,  bestid,
+                                 SA_Colors,    (ULONG) &colorspecs,
+                                 TAG_DONE );
       }
-      else if(GfxBase->ChipRevBits0 & (GFXF_HR_DENISE | GFXF_AA_LISA)) {
+      else if( ( GfxBase->ChipRevBits0 & (GFXF_HR_DENISE | GFXF_AA_LISA ) ) != 0 )
+      {
+        /* No suitable screen mode found, let's bang the hardware...
+           Using code from Sebastiano Vigna <vigna@eolo.usr.dsi.unimi.it>. */
 
-        // No suitable screen mode found, let's bang the hardware...
-        // Using code from Sebastiano Vigna <vigna@eolo.usr.dsi.unimi.it>.
-
-        extern struct Custom far custom;
+        extern struct Custom custom;
 
         custom.bplcon0  = 0x8211;
         custom.ddfstrt  = 0x0018;
@@ -188,11 +255,14 @@ LONG main(void) {
         custom.bplcon4  = 0x0011;
       }
 
-      if(screen) {
-        CloseScreen(screen);
+      if( screen != NULL )
+      {
+        CloseScreen( screen );
       }
     }
-    FreeArgs(rdargs);
+
+    FreeArgs( rdargs );
   }
-  cleanup(rc);
+
+  cleanup( rc );
 }
