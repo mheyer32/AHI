@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.6  1997/01/27 01:37:17  lcs
+* Even more bugs in the 16 bit routines found (68k version this time).
+*
 * Revision 1.5  1997/01/27 00:27:02  lcs
 * Fixed a bug in the 16 bit routines (was lsr instead of asr)
 *
@@ -2179,7 +2182,8 @@ AddByteSVTr:
 	move.w	0(a0,d1.w),d2		;signed multiplication
 	moveq	#0,d1
  ENDC
-	add.l	d2,(a4)+
+	addq.l	#2,a4
+	add.w	d2,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
@@ -2192,7 +2196,8 @@ AddByteSVTr:
 	move.w	0(a0,d1.w),d2		;signed multiplication
 	moveq	#0,d1
  ENDC
-	add.l	d2,(a4)+
+	addq.l	#2,a4
+	add.w	d2,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
@@ -2433,8 +2438,6 @@ AddWordSVr:
 	move.l	d3,d7
 	add.l	d7,d7
 	move.b	0(a3,d7.l),d7		;high byte
-	add.w	d6,d4
-	addx.l	d5,d3
 	ext.w	d7
 	muls.w	d2,d7
  ENDC
@@ -2451,8 +2454,6 @@ AddWordSVr:
 	move.l	d3,d7
 	add.l	d7,d7
 	move.b	0(a3,d7.l),d7		;high byte
-	add.w	d6,d4
-	addx.l	d5,d3
 	ext.w	d7
 	muls.w	d2,d7
  ENDC
@@ -2609,7 +2610,6 @@ AddWordSVTr:
 
 	move.l	d2,a0
 	moveq	#0,d1
-	moveq	#0,d2
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -2630,7 +2630,8 @@ AddWordSVTr:
 	move.w	0(a0,d1.w),d2		;signed multiplication
 	moveq	#0,d1
  ENDC
-	add.l	d2,(a4)+
+	addq.l	#2,a4
+	add.w	d2,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
@@ -2701,6 +2702,7 @@ AddWordSVPT:
 
 	move.w	0(a1,d1.w),d2		;signed multiplication
 	add.w	d2,(a4)+
+	moveq	#0,d1
  ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
@@ -2730,6 +2732,7 @@ AddWordSVPT:
 
 	move.w	0(a1,d1.w),d2		;signed multiplication
 	add.w	d2,(a4)+
+	moveq	#0,d1
  ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
