@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.23  1997/03/26 00:14:32  lcs
+* Echo is finally working!
+*
 * Revision 1.22  1997/03/25 22:27:49  lcs
 * Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
 *
@@ -1336,6 +1339,7 @@ _Fixed2Shift:
 	moveq	#0,d1
 	cmp.l	#$10000,d0
 	bge	.exit
+	addq.l	#1,d1
 	cmp.l	#$8000,d0
 	bge	.exit
 	addq.l	#1,d1
