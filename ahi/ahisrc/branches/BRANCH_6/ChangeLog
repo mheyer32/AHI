@@ -1,3 +1,8 @@
+2005-01-08  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Tweaked the default "dizzy" tags for BestAudioID()
+	to award the user's preferred audio mode. [Fab]
+
 2004-11-08  Martin Blom  <martin@blom.org>
 
  	* Released AHI-Handler 5.5.
