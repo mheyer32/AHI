@@ -467,6 +467,7 @@ AllocAudioA( REG(a1, struct TagItem *tags),
   audioctrl->ahiac_SubAllocRC = AHISF_ERROR;
   audioctrl->ahiac_SubLib=
   AHIsubBase = OpenLibrary(audioctrl->ahiac_DriverName,DriverVersion);
+
   if(!AHIsubBase)
     goto error;
 
