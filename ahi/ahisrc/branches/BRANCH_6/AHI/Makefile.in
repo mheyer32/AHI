@@ -135,7 +135,8 @@ $(srcdir)/ahiprefs_Cat.h:	$(srcdir)/ahiprefs.cd $(srcdir)/C_h_noauto.sd
 	$(FLEXCAT) $(srcdir)/ahiprefs.cd $(srcdir)/ahiprefs_Cat.h=$(srcdir)/C_h_noauto.sd
 
 %.catalog:	translations/%.ct
-	$(FLEXCAT) FILL $(srcdir)/ahiprefs.cd $< CATALOG=$@ 
+	$(FLEXCAT) WARNCTGAPS NOOPTIM FILL NOAUTODATE \
+		   $(srcdir)/ahiprefs.cd $< CATALOG=$@ 
 
 %.ct:
 	$(FLEXCAT) $(srcdir)/ahiprefs.cd $@ NEWCTFILE=$@
