@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.4  1997/01/04 20:19:56  lcs
+* ahiac_EffChannelInfoStruct addded
+*
 * Revision 1.3  1997/01/04 13:26:41  lcs
 * Debugged CMD_WRITE
 *
@@ -102,7 +105,8 @@ struct AHIPrivAudioCtrl
 	ULONG			 ahiac_AudioID;
 	Fixed			 ahiac_MasterVolume;
 	struct AHIEffOutputBuffer *ahiac_EffOutputBufferStruct;
-	APTR			 *ahiac_EffDSPEchoStruct;
+	APTR			*ahiac_EffDSPEchoStruct;
+	struct AHIEffChannelInfo *ahiac_EffChannelInfoStruct;
 	APTR			 ahiac_WetList;
 	APTR			 ahiac_DryList;
 	UBYTE			 ahiac_WetOrDry;
