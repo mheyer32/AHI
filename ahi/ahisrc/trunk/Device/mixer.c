@@ -195,7 +195,7 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
 
         case AHIAC_COM_DEBUG:
-          //CallDebug( audioctrl, (ULONG) audioctrl->ahiac_PPCArgument );
+          CallDebug( audioctrl, (ULONG) audioctrl->ahiac_PPCArgument );
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
@@ -810,6 +810,7 @@ MixGeneric ( struct Hook *Hook,
                                                          cd->cd_Add,
                                                         &cd->cd_Offset, 
                                                          TRUE );
+            CallDebug( audioctrl, processed );
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
           }

@@ -215,7 +215,7 @@ AHIUnLoadObject( void* obj )
 #endif
 
 /******************************************************************************
-** AHIUnLoadObject ************************************************************
+** AHIGetELFSymbol ************************************************************
 ******************************************************************************/
 
 #ifndef VERSION68K
@@ -226,6 +226,7 @@ AHIGetELFSymbol( const char* name,
 {
   BOOL rc = FALSE;
 
+kprintf( "getting symbol %s: ", name );
   if( PPCLibBase != NULL )
   {
     struct PPCObjectInfo oi =
@@ -249,11 +250,10 @@ AHIGetELFSymbol( const char* name,
   }
   else
   {
-//kprintf( "getting symbol %s: ", name );
     rc = ELFGetSymbol( PPCObject, name, ptr );
-//kprintf( "%08lx\n", *ptr );
   }
 
+kprintf( "%08lx (%ld)\n", *ptr, rc );
   return rc;
 }
 
