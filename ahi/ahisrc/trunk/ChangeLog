@@ -6,6 +6,9 @@
 	complains, I'll bump the version to 6.0 and branch the source
 	tree. Speak now or forever hold ...
 
+	* Updated the User's and Developer's guides slightly (dynamic
+	volume, AntiClickSamples, AHISF_NODELAY, 32 bit samples).
+
 	* ahi.device: Device mode now automatically scales the volume to
 	the number of playing requests. This means that you can now set
 	the number of channels in the preferences program as high as you
