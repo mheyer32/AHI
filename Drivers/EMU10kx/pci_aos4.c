@@ -11,8 +11,9 @@
 
 #include "DriverData.h"
 #include "pci_wrapper.h"
+#include "library.h"
 
-struct ExpansionBase*       ExpansionBase = NULL;
+struct Library*             ExpansionBase = NULL;
 struct ExpansionIFace*      IExpansion    = NULL;
 struct PCIIFace*            IPCI          = NULL;
 
