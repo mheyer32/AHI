@@ -390,8 +390,8 @@ SamplerFunc( struct Hook*             hook,
 *           frequencies. The result of MixFreq/PlayerFreq must fit an UWORD,
 *           ie it must be less or equal to 65535. It is also suggested that
 *           you keep the result over 80. For normal use this should not be a
-*           problem. Note that the data type is Fixed, not integer. 50 Hz is
-*           50<<16.
+*           problem. Note that the data type is Fixed, not integer (see BUGS
+*           below). 50 Hz is 50<<16, which is a reasonable lower limit.
 *
 *           Default is a reasonable value. Don't depend on it.
 *
@@ -441,6 +441,15 @@ SamplerFunc( struct Hook*             hook,
 *       accept new commands.
 *
 *   BUGS
+*       For compability reasons with some really old applications,
+*       AHIA_PlayerFreq, AHIA_MinPlayerFreq and AHIA_MaxPlayerFreq 
+*       interpret values lower than 0x10000 as integers, not Fixed.
+*       This means that the lowest frequency possible is 1 Hz. However,
+*       you should *never* use a value than say 10-20 Hz anyway, because
+*       of the high latency and the impact on multitasking. 
+*
+*       This kludge will be removed some day. Always use Fixed!
+*
 *
 *   SEE ALSO
 *       AHI_FreeAudio(), AHI_ControlAudioA()
