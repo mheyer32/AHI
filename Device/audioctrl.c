@@ -272,37 +272,6 @@ Sampler ( REG(a0, struct Hook *hook),
           REG(a2, struct AHIPrivAudioCtrl *actrl),
           REG(a1, struct AHIRecordMessage *recmsg) )
 {
-  if(actrl->ahiac_InputRecordPtr)
-  {
-    CopyMemQuick(recmsg->ahirm_Buffer, actrl->ahiac_InputRecordPtr,
-        actrl->ahiac_InputBlockLength << 2);  // AHIST_S16S
-
-//    KPrintF("Skrev %ld bytes till 0x%08lx, ",
-//        actrl->ahiac_InputBlockLength << 2, actrl->ahiac_InputRecordPtr);
-
-    actrl->ahiac_InputRecordPtr = (APTR) (((ULONG) actrl->ahiac_InputRecordPtr) +
-                                          (actrl->ahiac_InputBlockLength << 2));
-    actrl->ahiac_InputRecordCnt -= actrl->ahiac_InputBlockLength;
-    
-//    KPrintF("%ld kvar\n",actrl->ahiac_InputRecordCnt);
-
-    if(actrl->ahiac_InputRecordCnt == 0)
-    {
-      APTR temp;
-
-      temp                        = actrl->ahiac_InputBuffer[2];
-      actrl->ahiac_InputBuffer[2] = actrl->ahiac_InputBuffer[1];
-      actrl->ahiac_InputBuffer[1] = actrl->ahiac_InputBuffer[0];
-      actrl->ahiac_InputBuffer[0] = temp;
-
-      actrl->ahiac_InputRecordPtr = temp;
-      actrl->ahiac_InputRecordCnt = actrl->ahiac_InputLength;
-
-//      KPrintF("0x%08lx klar\n", actrl->ahiac_InputBuffer[1]);
-
-    }
-  }
-
   if(actrl->ahiac_RecordFunc)
   {
     CallHookPkt(actrl->ahiac_RecordFunc, actrl, recmsg);
@@ -719,9 +688,6 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
       CleanUpMixroutine( audioctrl );
     }
 
-    FreeVec( audioctrl->ahiac_InputBuffer[0] );
-    FreeVec( audioctrl->ahiac_InputBuffer[1] );
-    FreeVec( audioctrl->ahiac_InputBuffer[2] );
     FreeVec( audioctrl->ahiac_MasterVolumeTable );
     FreeVec( audioctrl->ahiac_MultTableS );
     FreeVec( audioctrl->ahiac_MultTableU );

@@ -40,10 +40,10 @@ BOOL	  StopAtZero		20(r1) word		StopAtZero
 
 */
 
-AddI		= 56 + 8
-AddF		= 56 + 12
-Offset		= 56 + 16
-StopAtZero	= 56 + 20
+AddI		.equ	56 + 8
+AddF		.equ	56 + 12
+Offset		.equ	56 + 16
+StopAtZero	.equ	56 + 20
 
 	.text
 
@@ -88,7 +88,6 @@ AddWordMono:
 AddWordStereo:
 AddWordsMono:
 AddWordsStereo:
-AddByteMonoB:
 AddByteStereoB:
 AddBytesMonoB:
 AddBytesStereoB:
@@ -96,25 +95,6 @@ AddWordMonoB:
 AddWordStereoB:
 AddWordsMonoB:
 AddWordsStereoB:
-	stwu	r1,-36(r1)
-	stw	r14,8(r1)
-	stw	r16,12(r1)
-	stw	r17,16(r1)
-	stw	r18,20(r1)
-	stw	r19,24(r1)
-
-	lwz	r14,Offset(r1)
-	lwz	r18,AddI(r1)
-	lwz	r19,AddF(r1)
-	lwz	r16,0(r14)
-	lwz	r17,4(r14)
-
-	lwz	r16,8(r1)
-	lwz	r17,12(r1)
-	lwz	r18,16(r1)
-	lwz	r19,20(r1)
-	addi	r1,r1,36
-
 	blr
 
 
@@ -171,6 +151,7 @@ AddSilenceStereoB:
 	li	r3,0
 	blr
 
+
 /*
 
 Register usage:
@@ -192,7 +173,8 @@ r24	lastpoint right
 
 */
 
-AddByteMono:
+	.macro	prelude
+
 	stwu	r1,-56(r1)
 	stw	r14,8(r1)
 	stw	r15,12(r1)
@@ -216,113 +198,14 @@ AddByteMono:
 	subi	r20,r20,4
 
 	li	r23,0
-#	li	r24,0
+	li	r24,0
 
 	mtctr	r3			# Number of loop times to CTR
 
-#	lhz	r15,20(r1)		# Test StopAtZero
-#	cmpwi	cr0,r15,0
-#	bne+	.L00first_sampleZ
-#	cmpwi	cr0,r4,0		# Test if volume == 0
-#	bne+	.L00first_sample
-#	bl	AddSilenceMono
-#	b	.L00abort
-	b	.L00first_sample
+	.endm
 
-.L00next_sampleZ:
-	addc	r17,r17,r19		# Add fraction
-	adde	r16,r16,r18		# Add integer
-.L00first_sampleZ:
-	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
-	add	r14,r8,r16		# (Calculate &src[ offset ])
-	bne+	.L00not_firstZ
-	lwz	r15,0(r6)		# Fetch left lastpoint (normalized)
-	lbz	r22,0(r14)		# Fetch src[ offset ]
-	b	.L00got_sampleZ
-.L00not_firstZ:
-	lbz	r15,-1(r14)		# Fetch src[ offset - 1 ]
-	lbz	r22,0(r14)		# Fetch src[ offset ]
-	slwi	r15,r15,8		# Normalize...
-	extsh	r15,r15			# ...src[ offset - 1 ]
-.L00got_sampleZ:
-	slwi	r22,r22,8		# Normalize...
-	extsh	r22,r22			# ...src[ offset ]
-	srwi	r14,r17,17		# Get linear high word / 2
-	sub	r22,r22,r15
-	mullw	r14,r14,r22		# Linear interpolation
-	lwz	r22,4(r20)		# Fetsh *dst
-	srawi	r14,r14,15
-	add	r14,r14,r15
 
-#	cmpwi	cr0,r23,0
-#	bgt	.L00lastpoint_gtZ
-#	beq	.L00lastpoint_checkedZ
-#	cmpwi	cr0,r14,0
-#	bge	.L00abort
-#	b	.L00lastpoint_checkedZ
-#.L00lastpoint_gtZ:
-#	cmpwi	cr0,r14,0
-#	ble	.L00abort
-#.L00lastpoint_checkedZ:
-#	mr	r23,r14			# Update lastsample
-
-	mullw	r14,r14,r4		# Volume scale
-	add	r14,r14,r22
-	stwu	r14,4(r20)		# Store to *dst, dst++
-
-	bdnz	.L00next_sampleZ
-	b	.L00exit
-
-.L00next_sample:
-	addc	r17,r17,r19		# Add fraction
-	adde	r16,r16,r18		# Add integer
-.L00first_sample:
-	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
-	add	r14,r8,r16		# (Calculate &src[ offset ])
-	bne+	.L00not_first
-	lwz	r15,0(r6)		# Fetch left lastpoint (normalized)
-	lbz	r22,0(r14)		# Fetch src[ offset ]
-	b	.L00got_sample
-.L00not_first:
-	lbz	r15,-1(r14)		# Fetch src[ offset - 1 ]
-	lbz	r22,0(r14)		# Fetch src[ offset ]
-	slwi	r15,r15,8		# Normalize...
-	extsh	r15,r15			# ...src[ offset - 1 ]
-.L00got_sample:
-	slwi	r22,r22,8		# Normalize...
-	extsh	r22,r22			# ...src[ offset ]
-	srwi	r14,r17,17		# Get linear high word / 2
-	sub	r22,r22,r15
-	mullw	r14,r14,r22		# Linear interpolation
-	lwz	r22,4(r20)		# Fetsh *dst
-	srawi	r14,r14,15
-	add	r14,r14,r15
-	mullw	r14,r14,r4		# Volume scale
-	add	r14,r14,r22
-	stwu	r14,4(r20)		# Store to *dst, dst++
-
-	bdnz	.L00next_sample
-	b	.L00exit
-
-.L00abort:
-	li	r18,0
-	li	r19,0
-.L00exit:
-	add	r14,r8,r16		# (Calculate &src[ offset ])
-	lbz	r22,0(r14)		# Fetch src[ offset ]
-	slwi	r22,r22,8		# Normalize...
-	extsh	r22,r22			# ...src[ offset ]
-	stw	r22,0(r6)
-
-	addc	r17,r17,r19		# Add fraction
-	adde	r16,r16,r18		# Add integer
-
-	lwz	r14,Offset(r1)
-	stw	r16,0(r14)
-	stw	r17,4(r14)
-
-	addi	r20,r20,4
-	stw	r20,0(r9)
+	.macro	postlude
 
 	mfctr	r21
 	sub	r3,r3,r21
@@ -340,4 +223,235 @@ AddByteMono:
 	lwz	r24,48(r1)
 
 	addi	r1,r1,56
+
+	.endm
+
+
+
+x:	.ASSIGNC "AddByteMono"
+
+\&x:
+	prelude
+
+	lhz	r15,StopAtZero(r1)	# Test StopAtZero
+	cmpwi	cr0,r15,0
+	bne+	.Lfirst_sampleZ\&x
+	cmpwi	cr0,r4,0		# Test if volume == 0
+	bne+	.Lfirst_sample\&x
+#	bl	AddSilenceMono
+#	b	.Labort\&x
+	b	.Lfirst_sample\&x
+
+.Lnext_sampleZ\&x:
+	addc	r17,r17,r19		# Add fraction
+	adde	r16,r16,r18		# Add integer
+.Lfirst_sampleZ\&x:
+	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	bne+	.Lnot_firstZ\&x
+	lwz	r15,0(r6)		# Fetch left lastpoint (normalized)
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	b	.Lgot_sampleZ\&x
+.Lnot_firstZ\&x:
+	lbz	r15,-1(r14)		# Fetch src[ offset - 1 ]
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	slwi	r15,r15,8		# Normalize...
+	extsh	r15,r15			# ...src[ offset - 1 ]
+.Lgot_sampleZ\&x:
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset ]
+	srwi	r14,r17,17		# Get linear high word / 2
+	sub	r22,r22,r15
+	mullw	r14,r14,r22		# Linear interpolation
+	lwz	r22,4(r20)		# Fetsh *dst
+	srawi	r14,r14,15
+	add	r14,r14,r15
+
+	cmpwi	cr0,r23,0
+	bgt	.Llastpoint_gtZ\&x
+	beq	.Llastpoint_checkedZ\&x
+	cmpwi	cr0,r14,0
+	bge	.Labort\&x
+	b	.Llastpoint_checkedZ\&x
+.Llastpoint_gtZ\&x:
+	cmpwi	cr0,r14,0
+	ble	.Labort\&x
+.Llastpoint_checkedZ\&x:
+	mr	r23,r14			# Update lastsample
+
+	mullw	r14,r14,r4		# Volume scale
+	add	r14,r14,r22
+	stwu	r14,4(r20)		# Store to *dst, dst++
+
+	bdnz	.Lnext_sampleZ\&x
+	b	.Lexit\&x
+
+.Lnext_sample\&x:
+	addc	r17,r17,r19		# Add fraction
+	adde	r16,r16,r18		# Add integer
+.Lfirst_sample\&x:
+	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	bne+	.Lnot_first\&x
+	lwz	r15,0(r6)		# Fetch left lastpoint (normalized)
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	b	.Lgot_sample\&x
+.Lnot_first\&x:
+	lbz	r15,-1(r14)		# Fetch src[ offset - 1 ]
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	slwi	r15,r15,8		# Normalize...
+	extsh	r15,r15			# ...src[ offset - 1 ]
+.Lgot_sample\&x:
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset ]
+	srwi	r14,r17,17		# Get linear high word / 2
+	sub	r22,r22,r15
+	mullw	r14,r14,r22		# Linear interpolation
+	lwz	r22,4(r20)		# Fetsh *dst
+	srawi	r14,r14,15
+	add	r14,r14,r15
+	mullw	r14,r14,r4		# Volume scale
+	add	r14,r14,r22
+	stwu	r14,4(r20)		# Store to *dst, dst++
+
+	bdnz	.Lnext_sample\&x
+	b	.Lexit\&x
+
+.Labort\&x:
+	li	r18,0
+	li	r19,0
+.Lexit\&x:
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset ]
+	stw	r22,0(r6)
+
+	addc	r17,r17,r19		# Add fraction
+	adde	r16,r16,r18		# Add integer
+
+	lwz	r14,Offset(r1)
+	stw	r16,0(r14)
+	stw	r17,4(r14)
+
+	addi	r20,r20,4
+	stw	r20,0(r9)
+
+	postlude
 	blr
+
+
+x:	.ASSIGNC "AddByteMonoB"
+
+\&x:
+	prelude
+
+	lhz	r15,StopAtZero(r1)	# Test StopAtZero
+	cmpwi	cr0,r15,0
+	bne+	.Lfirst_sampleZ\&x
+	cmpwi	cr0,r4,0		# Test if volume == 0
+	bne+	.Lfirst_sample\&x
+#	bl	AddSilenceMonoB
+#	b	.Labort\&x
+	b	.Lfirst_sample\&x
+
+.Lnext_sampleZ\&x:
+	subfc	r17,r19,r17		# Subtract fraction
+	subfe	r16,r18,r16		# Subtract integer
+.Lfirst_sampleZ\&x:
+	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	bne+	.Lnot_firstZ\&x
+	lwz	r22,0(r6)		# Fetch left lastpoint (normalized)
+	lbz	r15,0(r14)		# Fetch src[ offset ]
+	b	.Lgot_sampleZ\&x
+.Lnot_firstZ\&x:
+	lbz	r22,1(r14)		# Fetch src[ offset + 1 ]
+	lbz	r15,0(r14)		# Fetch src[ offset ]
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset + 1 ]
+.Lgot_sampleZ\&x:
+	slwi	r15,r15,8		# Normalize...
+	extsh	r15,r15			# ...src[ offset ]
+	srwi	r14,r17,17		# Get linear high word / 2
+	sub	r22,r22,r15
+	mullw	r14,r14,r22		# Linear interpolation
+	lwz	r22,4(r20)		# Fetsh *dst
+	srawi	r14,r14,15
+	add	r14,r14,r15
+
+	cmpwi	cr0,r23,0
+	bgt	.Llastpoint_gtZ\&x
+	beq	.Llastpoint_checkedZ\&x
+	cmpwi	cr0,r14,0
+	bge	.Labort\&x
+	b	.Llastpoint_checkedZ\&x
+.Llastpoint_gtZ\&x:
+	cmpwi	cr0,r14,0
+	ble	.Labort\&x
+.Llastpoint_checkedZ\&x:
+	mr	r23,r14			# Update lastsample
+
+	mullw	r14,r14,r4		# Volume scale
+	add	r14,r14,r22
+	stwu	r14,4(r20)		# Store to *dst, dst++
+
+	bdnz	.Lnext_sampleZ\&x
+	b	.Lexit\&x
+
+.Lnext_sample\&x:
+	subfc	r17,r19,r17		# Subtract fraction
+	subfe	r16,r18,r16		# Subtract integer
+.Lfirst_sample\&x:
+	cmp	cr0,1,r16,r10		# Offset == FirstOffset?
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	bne+	.Lnot_first\&x
+	lwz	r22,0(r6)		# Fetch left lastpoint (normalized)
+	lbz	r15,0(r14)		# Fetch src[ offset ]
+	b	.Lgot_sample\&x
+.Lnot_first\&x:
+	lbz	r22,1(r14)		# Fetch src[ offset + 1 ]
+	lbz	r15,0(r14)		# Fetch src[ offset ]
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset + 1 ]
+.Lgot_sample\&x:
+	slwi	r15,r15,8		# Normalize...
+	extsh	r15,r15			# ...src[ offset ]
+	srwi	r14,r17,17		# Get linear high word / 2
+	sub	r22,r22,r15
+	mullw	r14,r14,r22		# Linear interpolation
+	lwz	r22,4(r20)		# Fetsh *dst
+	srawi	r14,r14,15
+	add	r14,r14,r15
+	mullw	r14,r14,r4		# Volume scale
+	add	r14,r14,r22
+	stwu	r14,4(r20)		# Store to *dst, dst++
+
+	bdnz	.Lnext_sample\&x
+	b	.Lexit\&x
+
+.Labort\&x:
+	li	r18,0
+	li	r19,0
+.Lexit\&x:
+	add	r14,r8,r16		# (Calculate &src[ offset ])
+	lbz	r22,0(r14)		# Fetch src[ offset ]
+	slwi	r22,r22,8		# Normalize...
+	extsh	r22,r22			# ...src[ offset ]
+	stw	r22,0(r6)
+
+	subfc	r17,r19,r17		# Subtract fraction
+	subfe	r16,r18,r16		# Subtract integer
+
+	lwz	r14,Offset(r1)
+	stw	r16,0(r14)
+	stw	r17,4(r14)
+
+	addi	r20,r20,4
+	stw	r20,0(r9)
+
+	postlude
+	blr
+
+
+	.end

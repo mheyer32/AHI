@@ -56,16 +56,6 @@ HAVE_CLIPPING	EQU	1
 	APTR	ahiac_SoundDatas
 	ULONG	ahiac_BuffSizeNow		* Now many bytes of the buffer are used?
 	
-	* For AHIST_INPUT
-	APTR	ahiac_InputBuffer0		* Filling
-	APTR	ahiac_InputBuffer1		* Filled
-	APTR	ahiac_InputBuffer2		* Filled, older
-	ULONG	ahiac_InputLength
-	ULONG	ahiac_InputBlockLength
-	APTR	ahiac_InputRecordPtr
-	ULONG	ahiac_InputRecordCnt
-
-
 	APTR	ahiac_MasterVolumeTable
 	APTR	ahiac_MultTableS
 	APTR	ahiac_MultTableU

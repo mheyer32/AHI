@@ -356,7 +356,7 @@ _SelectAddRoutine:
 	move.l	d2,d3
 	move.l	ahiac_Flags(a2),d4
 
-	and.l	#~(AHIST_BW|AHIST_INPUT),d2
+	and.l	#~AHIST_BW,d2
 
 ;FIXIT  -- Unsigned samples are obosolete, and should be removed!
 	cmp.l	#AHIST_M8U,d2
@@ -711,27 +711,6 @@ _Mix68k:
 	move.l	cd_TempLastSampleL(a5),cd_LastSampleL(a5) ;linear interpol. stuff
 	move.l	cd_TempLastSampleR(a5),cd_LastSampleR(a5) ;linear interpol. stuff
 
-*** Give AHIST_INPUT special treatment!
-
-	move.l	cd_Type(a5),d1
-	and.l	#AHIST_INPUT,d1
-	beq	.notinput2
-
-	move.l	cd_NextFlags(a5),cd_Flags(a5)
-	movem.l	cd_NextAdd(a5),d0-d7/a0/a3/a6	; Add,DataStart,LastOffset,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
-	movem.l	d0-d7/a0/a3/a6,cd_Add(a5)
-
-	move.l	ahiac_InputLength(a2),cd_Samples(a5)
-	clr.l	cd_Offset+F64_I(a5)
-	clr.l	cd_Offset+F64_F(a5)
-	clr.l	cd_FirstOffsetI(a5)
-	move.l	ahiac_InputBuffer1(a2),cd_DataStart(a5)
-
-	pop	d0
-	bra.w	.contchannel		;same channel, new sound
-
-.notinput2
-
 ; d3:d4 always points OUTSIDE the sample after this call. Ie, if we read a
 ; sample at offset d3 now, it does not belong to the sample just played.
 ; This is true for both backward and forward mixing.
@@ -969,15 +948,8 @@ _CalcSamples:
 	swap.w	d4
 	swap.w	d6
 
-;	and.l	#AHIST_BW|AHIST_INPUT,d2
-;	beq	.forwards
 	and.l	#AHIST_BW,d2
 	bne	.backwards
-;*** AHIST_INPUT here
-;	sub.l	d5,d3
-;	move.l	d3,d0
-;	rts
-;.forwards
 	sub.w	d6,d4
 	subx.l	d5,d3
 	bra	.1
