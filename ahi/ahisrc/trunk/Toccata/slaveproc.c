@@ -1,6 +1,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2002/01/03 08:51:06  martin
+ * Imported RCS archive to the AHI CVS tree.
+ * Imported the last source snapshot I got from Teemu.
+ *
  * Revision 1.2  1997/07/27 22:07:32  lcs
  * Last check-in, Leviticus signing off... ;)
  *
@@ -27,8 +31,20 @@
 #include <math.h>
 #include <limits.h>
 #include <string.h>
+#include <stdio.h>
+
 #include "toccata.h"
 
+//#define DEBUG
+
+#ifdef DEBUG
+BPTR dfh;
+#define DBG(text) {Forbid();FPuts(dfh,text);Flush(dfh);Permit();}
+#define DVAL(text,val) {Forbid();VFPrintf(dfh,(STRPTR)text,&val);Flush(dfh);Permit();}
+#else
+#define DBG(text)
+#define DVAL(text,val)
+#endif
 
 /* Prototypes */
 
@@ -38,7 +54,6 @@ static ASM ULONG SoundFunc(REG(a0) struct Hook *hook,
 static ASM ULONG RecordFunc(REG(a0) struct Hook *hook,
                             REG(a2) struct AHIAudioCtrl *audioctrl,
                             REG(a1) struct AHIRecordMessage *msg);
-ASM void RawReply(void);
 
 ASM LONG ReadMAUD(REG(a0) UBYTE *buffer, REG(d0) ULONG length, REG(a1) ULONG unused);
 
@@ -68,7 +83,8 @@ BOOL Leveling         = FALSE;
 BOOL Pausing          = FALSE;
 BOOL Sound0Loaded     = FALSE;
 BOOL Sound1Loaded     = FALSE;
-WORD SoundFlag        = 0;
+LONG SoundFlag        = 0;
+BOOL FirstBuf		  = FALSE;
 
 /* RawPlayback variables */
 
@@ -76,15 +92,12 @@ struct Task      *ErrorTask, *RawTask, *SigTask;
 ULONG             ErrorMask, RawMask, SigMask;
 struct Interrupt *RawInt;
 BYTE             *RawBuffer1, *RawBuffer2;
-ULONG             RawBufferSize, RawIrqSize;
+ULONG             RawBufferSize, RawIrqSize=512;
 ULONG            *ByteCount;
 ULONG             ByteSkip;
 
-BYTE             *RawBufferPtr;
-ULONG             RawBufferOffset;
 ULONG             RawBufferLength;  /* RawBufferSize / samplesize */
-ULONG             RawChunckLength;  /* RawIrqSize / samplesize */
-BOOL              NextBufferOK;
+LONG              NextBufferOK;
 LONG              ByteSkipCounter;
 
 /* Playback variables */
@@ -154,55 +167,44 @@ static ASM ULONG SoundFunc(REG(a0) struct Hook *hook,
                            REG(a2) struct AHIAudioCtrl *audioctrl,
                            REG(a1) struct AHISoundMessage *msg) {
 
-  RawBufferOffset += RawChunckLength;
-
-//  kprintf("%ld\n",RawBufferOffset);
-
-  if(RawBufferOffset >= RawBufferLength) {
-
     if(SoundFlag == 0) {
       SoundFlag = 1;
-      RawBufferPtr = RawBuffer2;
     }
     else {
       SoundFlag = 0;
-      RawBufferPtr = RawBuffer1;
     }
 
-    RawBufferOffset = 0;
+	if (!FirstBuf) {
+	  if(!NextBufferOK && (ErrorTask != NULL)) {
+	      Signal(ErrorTask, ErrorMask);
+	      if(IOProcess != NULL) {
+	        Signal((struct Task *) IOProcess, SIGBREAKF_CTRL_E);
+	      }
+	      else {
+	        Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_E);
+	      }
+	  }
+	
+	  if(RawInt != NULL) {
+	      Cause(RawInt);
+	  }
+	  else if(RawTask != NULL) {
+		  NextBufferOK=FALSE;
+	      Signal(RawTask, RawMask);
+	  }
+  } else FirstBuf=FALSE;
 
-    if(!NextBufferOK && (ErrorTask != NULL)) {
-      Signal(ErrorTask, ErrorMask);
-      if(IOProcess != NULL) {
-        Signal((struct Task *) IOProcess, SIGBREAKF_CTRL_E);
-      }
-      else {
-        Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_E);
-      }
-    }
-
-    if(RawInt != NULL) {
-      Cause(RawInt);
-    }
-    else if(RawTask != NULL) {
-      NextBufferOK = FALSE;
-      Signal(RawTask, RawMask);
-    }
-  }
-
-  AHI_SetSound(0, SoundFlag, RawBufferOffset, 
-      min(RawChunckLength, RawBufferLength - RawBufferOffset), audioctrl, 0);
-
+  AHI_SetSound(0, SoundFlag, 0,RawBufferLength, audioctrl,0);
 
   if(ByteCount != NULL) {
-    *ByteCount += RawIrqSize;
+    *ByteCount += RawBufferSize;
   }
 
 
   if(SigTask != NULL) {
-    ByteSkipCounter -= RawIrqSize;
+    ByteSkipCounter -= RawBufferSize;
     if(ByteSkipCounter <= 0) {
-      ByteSkipCounter = ByteSkip;
+      ByteSkipCounter += ByteSkip;
       Signal(SigTask, SigMask);
     }
   }
@@ -224,15 +226,6 @@ static ASM ULONG RecordFunc(REG(a0) struct Hook *hook,
 
 
 /*
- *  RawRely(): Called by the library user when (s)he has filled a buffer
- */
-
-ASM void RawReply(void) {
-  NextBufferOK = TRUE;
-}
-
-
-/*
  *  SlaveTask(): The slave process
  *  CTRL_C terminates, CTRL_E stops playing/recording (error signal)
  */
@@ -243,6 +236,11 @@ void ASM SlaveTask(void) {
   BYTE AHIDevice = -1;
   struct Process    *me;
   ToccataBase->tb_HardInfo = NULL;
+
+#ifdef DEBUG
+  dfh=Open("con:10/300/400/300/Output",MODE_OLDFILE);
+  DBG("Slave started!\n");
+#endif    
 
   me = (struct Process *) FindTask(NULL);
 
@@ -256,7 +254,7 @@ void ASM SlaveTask(void) {
   if(AHIDevice == 0) {
     AHIBase = (struct Library *) AHIio->ahir_Std.io_Device;
 
-    fillhardinfo();
+	fillhardinfo();
 
     SlaveInitialized = TRUE;
 
@@ -277,7 +275,8 @@ void ASM SlaveTask(void) {
 
       if(signals & (1L << me->pr_MsgPort.mp_SigBit)) {
         while(msg = (struct slavemessage *) GetMsg(&me->pr_MsgPort)) {
-          kprintf("gotmessage! %ld: 0x%08lx\n",msg->ID, msg->Data);
+          DVAL("gotmessage! %ld: ",msg->ID);
+		  DVAL("0x%08lx\n",msg->Data);
           switch(msg->ID) {
             case MSG_MODE:
               FreeAudio();
@@ -293,7 +292,7 @@ void ASM SlaveTask(void) {
               msg->Data = (APTR) Playback(msg->Data);
               break;
             case MSG_RECORD:
-              kprintf("record\n");
+              DBG("record\n");
               break;
             case MSG_STOP:
               Stop(*((ULONG *) msg->Data));
@@ -302,13 +301,13 @@ void ASM SlaveTask(void) {
               Pause(*((ULONG *) msg->Data));
               break;
             case MSG_LEVELON:
-              kprintf("levelon\n");
+              DBG("levelon\n");
               break;
             case MSG_LEVELOFF:
-              kprintf("leveloff\n");
+              DBG("leveloff\n");
               break;
             default:
-              kprintf("unknown\n");
+              DBG("unknown\n");
               break;
           }
           ReplyMsg((struct Message *) msg);
@@ -328,7 +327,12 @@ void ASM SlaveTask(void) {
   }
   DeleteIORequest((struct IORequest *)AHIio);
   DeleteMsgPort(AHImp);
-  kprintf("(slave closed down)\n");
+  DBG("(slave closed down)\n");
+
+#ifdef DEBUG
+	Close(dfh);
+	dfh=NULL;
+#endif
 
   Forbid();
   SlaveProcess = NULL;
@@ -421,7 +425,7 @@ void ASM IOTask(void) {
 
     IOInitialized = TRUE;
 
-    kprintf("iotask initialized\n");
+    DBG("iotask initialized\n");
   }
 
   while(rc) {
@@ -430,7 +434,7 @@ void ASM IOTask(void) {
     signals = SetSignal(0,0);
     
     if(signals & SIGBREAKF_CTRL_C) {
-      kprintf("iotask got break\n");
+      DBG("iotask got break\n");
       break;
     }
 
@@ -438,7 +442,7 @@ void ASM IOTask(void) {
       struct Buffer *buffer;
       LONG size = 0;
 
-      kprintf("iotask swapped buffer!\n");
+      DBG("iotask swapped buffer!\n");
 
       buffer = (struct Buffer *) RemHead(&BufferList);
       if(buffer) {
@@ -466,7 +470,7 @@ void ASM IOTask(void) {
     }
 
     if(SIGBREAKF_CTRL_E) {
-      kprintf("iotask got error\n");
+      DBG("iotask got error\n");
       if(!SmartPlay) {
         /* Ask him to stop and kill us */
         Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_E);
@@ -510,7 +514,7 @@ void ASM IOTask(void) {
 
   }
 
-  kprintf("iotask terminating\n");
+  DBG("iotask terminating\n");
 
   if(iff) {
 
@@ -564,7 +568,7 @@ ASM LONG ReadMAUD(REG(a0) UBYTE *buffer, REG(d0) ULONG length,
 
 static BOOL AllocAudio(void) {
 
-  kprintf("(AllocAudio())...\n");
+  DBG("(AllocAudio())...\n");
 
   /* Set up for HookFunc */
   SoundHook.h_Data = ToccataBase;
@@ -582,10 +586,9 @@ static BOOL AllocAudio(void) {
       AHIA_Sounds,        2,
       AHIA_SoundFunc,     &SoundHook,
 
-/*    AHIA_PlayerFreq,    (tprefs.Frequency / 512) << 16, */
-      AHIA_PlayerFreq,    PLAYERFREQ << 16,
-      AHIA_MinPlayerFreq, min(PLAYERFREQ, tprefs.Frequency / 512) << 16,
-      AHIA_MaxPlayerFreq, max(PLAYERFREQ, tprefs.Frequency / 32) << 16,
+      AHIA_PlayerFreq,    (tprefs.Frequency / 512) << 16,
+      AHIA_MinPlayerFreq, (tprefs.Frequency / 512) << 16,
+      AHIA_MaxPlayerFreq, (tprefs.Frequency / 512) << 16,
       AHIA_RecordFunc,    &RecordHook,
       TAG_DONE);
 
@@ -603,10 +606,10 @@ static BOOL AllocAudio(void) {
     TuneAudio();
 
     AudioInitialized = TRUE;
-    kprintf("ok!\n");
+    DBG("ok!\n");
     return TRUE;
   }
-  kprintf("Nope!\n");
+  DBG("Nope!\n");
   return FALSE;
 }
 
@@ -617,7 +620,7 @@ static BOOL AllocAudio(void) {
 
 static void FreeAudio(void) {
 
-  kprintf("(FreeAudio())...\n");
+  DBG("(FreeAudio())...\n");
 
   Playing = FALSE;
   Recording = FALSE;
@@ -642,7 +645,7 @@ static BOOL TuneAudio() {
   ULONG Input;
   BOOL rc = FALSE;
 
-  kprintf("(TuneAudio())\n");
+  DBG("(TuneAudio())\n");
 
   if(audioctrl != NULL) {
 
@@ -698,13 +701,13 @@ static BOOL TuneAudio() {
 static BOOL ControlAudio(void) {
   BOOL rc;
 
-  kprintf("(ControlAudio())\n");
+  DBG("(ControlAudio())\n");
 
   if(audioctrl) {
     rc = AHI_ControlAudio(audioctrl,
         AHIC_Play,        (Playing && !Pausing),
         AHIC_Record,      (Recording && !Pausing),
-        AHIA_PlayerFreq,  (RawInt ? tprefs.Frequency / RawIrqSize : PLAYERFREQ),
+        AHIA_PlayerFreq,  (tprefs.Frequency / 512),
         TAG_DONE);
   }
 
@@ -719,7 +722,7 @@ static BOOL ControlAudio(void) {
 
 static void Pause(ULONG pause) {
 
-  kprintf("(Pause %ld)\n", pause);
+  DVAL("(Pause %ld)\n", pause);
   Pausing = pause;
   ControlAudio();
 }
@@ -731,7 +734,7 @@ static void Pause(ULONG pause) {
 
 static void Stop(ULONG flags) {
 
-  kprintf("Stop(%lx)...\n", flags);
+  DVAL("Stop(%lx)...\n", flags);
 
   Playing = FALSE;
   Recording = FALSE;
@@ -774,7 +777,7 @@ static void Stop(ULONG flags) {
   }
 
   /* Check if a record/play file is open, and close them if so */
-  kprintf("ok\n");
+  DBG("ok\n");
 }
 
 
@@ -788,7 +791,7 @@ static BOOL RawPlayback(struct TagItem *tags) {
   struct TagItem *tstate;
   struct TagItem *tag;
 
-  kprintf("RawPlayback()...\n");
+  DBG("RawPlayback()...\n");
 
   /* Is this correct?? */
 
@@ -801,7 +804,8 @@ static BOOL RawPlayback(struct TagItem *tags) {
   tstate = tags;
 
   while (tag = NextTagItem(&tstate)) {
-    kprintf("%ld, 0x%08lx,\n", tag->ti_Tag - TT_Min, tag->ti_Data);
+    DVAL("%ld ", tag->ti_Tag - TT_Min);
+	DVAL("0x%08lx,\n", tag->ti_Data);
     switch (tag->ti_Tag) {
 
       case TT_IrqPri:
@@ -842,7 +846,7 @@ static BOOL RawPlayback(struct TagItem *tags) {
         ULONG *p = (ULONG *) tag->ti_Data;
         
         *p = GetRawReply(ToccataBase);
-        kprintf("Rawreply is 0x%08lx\n", *p);
+        DVAL("Rawreply is 0x%08lx\n", *p);
         break;
       }
 
@@ -885,7 +889,7 @@ static BOOL RawPlayback(struct TagItem *tags) {
     } /* switch */
   } /* while */
 
-  kprintf("<<%ld\n", rc);
+  DVAL("<<%ld\n", rc);
 
   if((ErrorTask == NULL) ||
      ((RawTask == NULL) && (RawInt == NULL)) ||
@@ -895,13 +899,13 @@ static BOOL RawPlayback(struct TagItem *tags) {
     rc = FALSE;
   }
 
-  kprintf("<<%ld\n", rc);
+  DVAL("<<%ld\n", rc);
   if(rc && (newmode || !AudioInitialized)) {
     FreeAudio();
     rc = AllocAudio();
   }
 
-  kprintf("<<%ld\n", rc);
+  DVAL("<<%ld\n", rc);
 
   if(rc) {
     ULONG sampletype = AHIST_NOTYPE;
@@ -934,7 +938,7 @@ static BOOL RawPlayback(struct TagItem *tags) {
           rc = FALSE;
     }
 
-  kprintf("<<%ld\n", rc);
+  DVAL("<<%ld\n", rc);
     if(sampletype != AHIST_NOTYPE) {
 
       s0.ahisi_Type    =
@@ -956,18 +960,17 @@ static BOOL RawPlayback(struct TagItem *tags) {
         rc = FALSE;
       }
 
-      RawChunckLength = RawIrqSize / AHI_SampleFrameSize(sampletype);
       RawBufferLength = RawBufferSize / AHI_SampleFrameSize(sampletype);
+
     }
   }
 
-  kprintf("<<%ld\n", rc);
+  DVAL("<<%ld\n", rc);
   if(rc) {
     Playing         = TRUE;
     SoundFlag       = 0;
     NextBufferOK    = TRUE;
-    RawBufferPtr    = RawBuffer1;
-    RawBufferOffset = 0;;
+	FirstBuf		= TRUE;
 
     ControlAudio();
     AHI_Play(audioctrl,
@@ -977,12 +980,12 @@ static BOOL RawPlayback(struct TagItem *tags) {
       AHIP_Pan,           0x8000,
       AHIP_Sound,         0,
       AHIP_Offset,        0,
-      AHIP_Length,        RawChunckLength,
+      AHIP_Length,        RawBufferLength,
       AHIP_EndChannel,    NULL,
       TAG_DONE);
   }
 
-  kprintf("ok %ld\n", rc);
+  DVAL("ok %ld\n", rc);
   return rc;
 }
 
@@ -992,7 +995,7 @@ static BOOL Playback(struct TagItem *tags) {
   struct TagItem *tstate;
   struct TagItem *tag;
 
-  kprintf("Playback()...\n");
+  DBG("Playback()...\n");
 
   Stop(0);
 
@@ -1190,16 +1193,12 @@ static BOOL Playback(struct TagItem *tags) {
   }
 
   if(rc) {
-    Forbid();
-    if(IOProcess = CreateNewProcTags(
+    IOProcess = CreateNewProcTags(
         NP_Entry,     IOTaskEntry,
         NP_Name,      _LibName,
         NP_Priority,  IoPri,
         NP_WindowPtr, Window,
-        TAG_DONE)) {
-      IOProcess->pr_Task.tc_UserData = ToccataBase;
-    }
-    Permit();
+        TAG_DONE);
 
     if(IOProcess == NULL) {
       rc = FALSE;

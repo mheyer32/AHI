@@ -1,6 +1,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.4  2002/01/03 08:51:06  martin
+ * Imported RCS archive to the AHI CVS tree.
+ * Imported the last source snapshot I got from Teemu.
+ *
  * Revision 1.3  1997/07/27 22:07:32  lcs
  * Last check-in, Leviticus signing off... ;)
  *
@@ -25,6 +29,7 @@
 #include <pragmas/toccata_pragmas.h>
 
 #include <string.h>
+#include <stdio.h>
 
 #include "toccata.h"
 
@@ -69,8 +74,8 @@ struct toccataprefs tprefs = {
   PATDEF_PLAYBACKBLOCKS,
 
   /* AHI prefs */
-  0x0002000B,
-  0x00020007,
+  0x00100006,
+  0x00100002,
   0, 0, 0, 0, 0
 };
 
@@ -108,7 +113,7 @@ int ASM __UserLibInit (REG(a6) struct Library *libbase)
     return 1;
   }
 
-  kprintf("(lib initialized)\n");
+	puta4();
   return 0;
 }
 
@@ -118,6 +123,7 @@ int ASM __UserLibInit (REG(a6) struct Library *libbase)
 
 void ASM __UserLibCleanup (REG(a6) struct Library *libbase)
 {
+
   if(IFFParseBase) {
     CloseLibrary(IFFParseBase);
     IFFParseBase = NULL;
@@ -132,7 +138,6 @@ void ASM __UserLibCleanup (REG(a6) struct Library *libbase)
     CloseLibrary(UtilityBase);
     UtilityBase = NULL;
   }
-  kprintf("(lib expunged)\n");
 }
 
 
@@ -141,33 +146,30 @@ void ASM __UserLibCleanup (REG(a6) struct Library *libbase)
  */
 
 int ASM __UserLibOpen (REG(a6) struct Library *libbase) {
+
   if(libbase->lib_OpenCnt == 1) {
     /* Was 0, became 1 */
-    Forbid();
-    if(SlaveProcess = CreateNewProcTags(
+    SlaveProcess = CreateNewProcTags(
         NP_Entry,     SlaveTaskEntry,
         NP_Name,      _LibName,
-        NP_Priority,  1,
-        TAG_DONE)) {
-      SlaveProcess->pr_Task.tc_UserData = ToccataBase;
-    }
-    Permit();
+        NP_Priority,  3,
+        TAG_DONE);
 
     /* Wait until our slave is ready */
     while(SlaveProcess && !SlaveInitialized) {
       Delay(1);
     }
 
-    if(SlaveProcess && SlaveInitialized) {
-      T_LoadSettings(0);
-    }
+//	DBG("Loading settings..\n");
+//    if(SlaveProcess && SlaveInitialized) {
+//      T_LoadSettings(0);
+//    }
   }
 
   if(!SlaveInitialized) {
     return 1;
   }
 
-  kprintf("(lib opened %ld)\n", libbase->lib_OpenCnt);
   return 0;
 }
 
@@ -186,7 +188,7 @@ void ASM __UserLibClose (REG(a6) struct Library *libbase) {
       Delay(1);
     }
   }
-  kprintf("(lib closed %ld)\n", libbase->lib_OpenCnt);
+
 }
 
 /*
@@ -240,8 +242,6 @@ static ULONG sendmessage(ULONG id, APTR data) {
   struct MsgPort      *replyport = NULL;
   struct slavemessage *msg = NULL;
   ULONG rc = 0;
-
-  kprintf("sendmessage %ld: 0x%08lx\n", id, data);
 
   if(msg = AllocVec(sizeof(struct slavemessage), MEMF_PUBLIC | MEMF_CLEAR)) {
     if(replyport = CreateMsgPort()) {
@@ -303,7 +303,6 @@ static BOOL savesettings(STRPTR name) {
 ASM BOOL t_SaveSettings(REG(d0) ULONG flags) {
   BOOL rc = TRUE;
 
-  kprintf("(SaveSettings (%ld))\n", flags);
   if(flags == 1) {
     rc = savesettings(ENVARCPREFS);
   }
@@ -341,7 +340,6 @@ static BOOL loadsettings(STRPTR name) {
 ASM BOOL t_LoadSettings(REG(d0) ULONG flags) {
   BOOL rc = FALSE;
 
-  kprintf("(LoadSettings (%ld))\n", flags);
   if(flags == 1) {
     rc = loadsettings(ENVARCPREFS);
   }
@@ -370,7 +368,6 @@ ASM BOOL t_LoadSettings(REG(d0) ULONG flags) {
  */
 
 ASM WORD t_Expand(REG(d0) UBYTE value, REG(d1) ULONG mode) {
-  kprintf("Expand\n");
   return 0;
 }
 
@@ -441,7 +438,6 @@ ASM ULONG t_FindFrequency(REG(d0) ULONG frequency) {
   ULONG id;
   struct AHIAudioCtrl *actrl = NULL;
 
-  kprintf("(FindFrequency)\n");
   if(audioctrl) {
     id = AHI_INVALID_ID;
     actrl = audioctrl;
@@ -460,6 +456,7 @@ ASM ULONG t_FindFrequency(REG(d0) ULONG frequency) {
       AHIDB_IndexArg, frequency,
       AHIDB_Index,    &index,
       TAG_DONE);
+
   AHI_GetAudioAttrs(id, actrl,
       AHIDB_FrequencyArg, index,
       AHIDB_Frequency,    &freq,
@@ -480,7 +477,6 @@ ASM ULONG t_NextFrequency(REG(d0) ULONG frequency) {
   ULONG id;
   struct AHIAudioCtrl *actrl = NULL;
 
-  kprintf("(NextFrequency)\n");
   if(audioctrl) {
     id = AHI_INVALID_ID;
     actrl = audioctrl;
@@ -639,6 +635,7 @@ ASM void t_GetPart(REG(a0) struct TagItem *tags) {
 
   tstate = tags;
 
+
   while (tag = NextTagItem(&tstate)) {
     ULONG *dst;
     
@@ -720,7 +717,6 @@ ASM void t_GetPart(REG(a0) struct TagItem *tags) {
  */
 
 ASM struct TocHandle * t_Open(REG(a0) UBYTE *name, REG(a1) struct TagItem *tags) {
-  kprintf("Open\n");
   return NULL;
 }
 
@@ -730,7 +726,6 @@ ASM struct TocHandle * t_Open(REG(a0) UBYTE *name, REG(a1) struct TagItem *tags)
  */
 
 ASM void t_Close(REG(a0) struct TocHandle *handle) {
-  kprintf("Close\n");
 }
 
 
@@ -739,7 +734,6 @@ ASM void t_Close(REG(a0) struct TocHandle *handle) {
  */
 
 ASM BOOL t_Play(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags) {
-  kprintf("Play\n");
   return FALSE;
 }
 
@@ -749,7 +743,6 @@ ASM BOOL t_Play(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags) 
  */
 
 ASM BOOL t_Record(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags) {
-  kprintf("Record\n");
   return FALSE;
 }
 
@@ -759,7 +752,6 @@ ASM BOOL t_Record(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags
 
 ASM void t_Convert(REG(a0) APTR src, REG(a1) APTR dest, REG(d0) ULONG samples,
                  REG(d1) ULONG srcmode, REG(d2) ULONG destmode) {
-  kprintf("Convert\n");
 }
 
 
@@ -787,7 +779,6 @@ ASM ULONG t_BytesPerSample(REG(d0) ULONG mode) {
     0
   };
 
-  kprintf("(BytesPerSample)\n");
   return table[mode];
 }
 
@@ -802,7 +793,6 @@ ASM ULONG t_BytesPerSample(REG(d0) ULONG mode) {
  */
 
 ASM struct MultiSoundHandle * t_OpenFile(REG(a0) UBYTE *name, REG(d0) ULONG flags) {
-  kprintf("OpenFile\n");
   return NULL;
 }
 
@@ -812,7 +802,6 @@ ASM struct MultiSoundHandle * t_OpenFile(REG(a0) UBYTE *name, REG(d0) ULONG flag
  */
 
 ASM void t_CloseFile(REG(a0) struct MultiSoundHandle *handle) {
-  kprintf("CloseFile\n");
 }
 
 
@@ -822,7 +811,6 @@ ASM void t_CloseFile(REG(a0) struct MultiSoundHandle *handle) {
 
 ASM LONG t_ReadFile(REG(a0) struct MultiSoundHandle *handle,
                     REG(a1) UBYTE *dest, REG(d0) ULONG length) {
-  kprintf("ReadFile\n");
   return 0;
 }
 
@@ -838,7 +826,6 @@ ASM LONG t_ReadFile(REG(a0) struct MultiSoundHandle *handle,
  */
 
 ASM ULONG t_WriteSmpte(void) {
-  kprintf("WriteSmpte\n");
   return 0;
 }
 
@@ -848,7 +835,6 @@ ASM ULONG t_WriteSmpte(void) {
  */
 
 ASM ULONG t_StopSmpte(void) {
-  kprintf("StopSmpte\n");
   return 0;
 }
 
@@ -858,7 +844,6 @@ ASM ULONG t_StopSmpte(void) {
  */
 
 ASM ULONG t_Reserved1(void) {
-  kprintf("Reserved1\n");
   return 0;
 }
 
@@ -868,7 +853,6 @@ ASM ULONG t_Reserved1(void) {
  */
 
 ASM ULONG t_Reserved2(void) {
-  kprintf("Reserved2\n");
   return 0;
 }
 
@@ -878,7 +862,6 @@ ASM ULONG t_Reserved2(void) {
  */
 
 ASM ULONG t_Reserved3(void) {
-  kprintf("Reserved3\n");
   return 0;
 }
 
@@ -888,7 +871,6 @@ ASM ULONG t_Reserved3(void) {
  */
 
 ASM ULONG t_Reserved4(void) {
-  kprintf("Reserved4\n");
   return 0;
 }
 
@@ -898,7 +880,6 @@ ASM ULONG t_Reserved4(void) {
  */
 
 ASM void t_Own(void) {
-  kprintf("Own\n");
 }
 
 
@@ -907,7 +888,6 @@ ASM void t_Own(void) {
  */
 
 ASM void t_Disown(void) {
-  kprintf("Disown\n");
 }
 
 
@@ -916,7 +896,6 @@ ASM void t_Disown(void) {
  */
 
 ASM void t_SetReg(void) {
-  kprintf("SetReg\n");
 }
 
 
@@ -925,6 +904,5 @@ ASM void t_SetReg(void) {
  */
 
 ASM ULONG t_GetReg(void) {
-  kprintf("GetReg\n");
   return 0;
 }
