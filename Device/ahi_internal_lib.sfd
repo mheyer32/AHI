@@ -12,7 +12,7 @@ struct Library* DevInit(struct Library* library,
 ULONG DevOpen(struct AHIRequest* ioreq,
 	      ULONG unit,
 	      ULONG flags) (a1,d0,d1)
-BPTR DevClose() ()
+BPTR DevClose(struct AHIRequest* ioreq) (a1)
 BPTR DevExpunge() ()
 ULONG DevNull() ()
 VOID DevBeginIO(struct AHIRequest* ioreq) (a1)
