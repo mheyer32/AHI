@@ -4,6 +4,10 @@
 
 	* Added missing TAG_DONEs to ScanAudioModes.
 
+2004-06-04  Martin Blom  <martin@blom.org>
+
+	* Forked off BRANCH_6.
+
 2004-06-02  Martin Blom  <martin@blom.org>
 
 	* Released AHI preferences 5.12.
