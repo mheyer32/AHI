@@ -1,3 +1,8 @@
+2003-07-23  Martin Blom  <martin@blom.org>
+
+	* AHI: "Play a test sound" now plays a 16 bit sample instead of 8
+	bit, and it's always played at full volume.
+
 2003-07-14  Martin Blom  <martin@blom.org>
 
 	* Minor updates to the SFD files.
