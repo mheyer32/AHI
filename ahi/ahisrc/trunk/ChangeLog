@@ -1,3 +1,10 @@
+2002-01-03  Martin Blom  <martin@blom.org>
+
+	* toccata.audio: The PreTimer() and PostTimer() calls did not pass
+	the required argument.
+
+	* ahi.device: "elfloader.h" was included even when it's not used.
+
 2002-01-02  Martin Blom  <martin@blom.org>
 
 	* Updated the Hungarian catalogs. [Márton Dósa]

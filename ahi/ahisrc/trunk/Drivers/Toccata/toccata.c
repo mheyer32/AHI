@@ -54,7 +54,11 @@ LONG fixed2posdbvalue( LONG volume);
 BOOL StartPlaying(struct AHIAudioCtrlDrv *AudioCtrl, struct Process *me);
 BOOL StartRecording(struct AHIAudioCtrlDrv *AudioCtrl, struct Process *me);
 
+typedef BOOL __asm 
+PreTimer_proto(register __a2 struct AHIAudioCtrlDrv* actrl);
 
+typedef void __asm 
+PostTimer_proto(register __a2 struct AHIAudioCtrlDrv* actrl);
 
 const static STRPTR Inputs[] =
 {
@@ -662,11 +666,14 @@ void __asm __saveds SlaveProcess(register __a2 struct AHIAudioCtrlDrv *AudioCtrl
 
       if(signalset & (1L << dd->t_MixSignal))
       {
+        PreTimer_proto*  pretimer  = (PreTimer_proto*)  AudioCtrl->ahiac_PreTimer;
+        PostTimer_proto* posttimer = (PostTimer_proto*) AudioCtrl->ahiac_PostTimer;
+
         CallHookPkt(AudioCtrl->ahiac_PlayerFunc, AudioCtrl, NULL);
-        if(! ((*AudioCtrl->ahiac_PreTimer)()) ) {
+        if(! pretimer(AudioCtrl) ) {
           CallHookPkt(AudioCtrl->ahiac_MixerFunc, AudioCtrl, dd->t_MixBuffer3);
         }
-        (*AudioCtrl->ahiac_PostTimer)();
+        posttimer(AudioCtrl);
       }
     }
   }
