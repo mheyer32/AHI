@@ -78,16 +78,21 @@ AHIClassDispatch(Class*  class,
 
     case OM_SET:
     case OM_UPDATE:
+      DoSuperMethod(class,object, AHIM_Lock);
       DoSuperMethodA(class, object, msg);
       result = MethodUpdate(class, object, (struct opUpdate*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break; 
 
     case OM_GET:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodGet(class, object, (struct opGet*) msg);
       
       if (!result) {
 	result = DoSuperMethodA(class, object, msg);
       }
+
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case AHIM_Processor_Process:
@@ -95,13 +100,17 @@ AHIClassDispatch(Class*  class,
       break;
 
     case AHIM_GainProcessor_SetBalance:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodSetBalance(class, object,
 				(struct AHIP_GainProcessor_Balance*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case AHIM_GainProcessor_GetBalance:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodGetBalance(class, object,
 				(struct AHIP_GainProcessor_Balance*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
       
     default:

@@ -77,24 +77,33 @@ AHIClassDispatch(Class*  class,
 
     case OM_SET:
     case OM_UPDATE:
+      DoSuperMethod(class,object, AHIM_Lock);
       DoSuperMethodA(class, object, msg);
       result = MethodUpdate(class, object, (struct opUpdate*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break; 
 
     case OM_GET:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodGet(class, object, (struct opGet*) msg);
       
       if (!result) {
 	result = DoSuperMethodA(class, object, msg);
       }
+
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case OM_ADDMEMBER:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodAddMember(class, object, (struct opMember*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case OM_REMMEMBER:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodRemMember(class, object, (struct opMember*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
       
     case AHIM_Processor_Prepare:
