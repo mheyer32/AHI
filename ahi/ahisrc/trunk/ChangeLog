@@ -1,3 +1,7 @@
+2003-05-03  Martin Blom  <martin@blom.org>
+
+	* Minor Makefile fixes for building in the the source tree.
+
 2003-05-01  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.38.
