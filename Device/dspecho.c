@@ -174,6 +174,92 @@
 
 
 static void
+EchoMono16( LONG          loops,
+            struct Echo  *es,
+            void        **buffer,
+            void        **srcptr,
+            void        **dstptr)
+{
+  WORD *buf;
+  WORD *src, *dst;
+  LONG sample, delaysample;
+
+  buf = *buffer;
+  src = *srcptr;
+  dst = *dstptr;
+
+  while(loops > 0)
+  {
+    sample      = *buf;
+    delaysample = *src++;
+
+    *buf++ = ( es->ahiecho_MixN * sample + es->ahiecho_MixD * delaysample ) >> 16;
+
+    sample = es->ahiecho_FeedbackNS * sample + 
+             es->ahiecho_FeedbackDS * (delaysample + 1);
+    
+    *dst++ = sample >> 16;
+
+    loops--;
+  }
+
+  *buffer = buf;
+  *srcptr = src;
+  *dstptr = dst;
+}
+
+
+static void
+EchoStereo16( LONG          loops,
+              struct Echo  *es,
+              void        **buffer,
+              void        **srcptr,
+              void        **dstptr)
+{
+  WORD *buf;
+  WORD *src, *dst;
+  LONG sample, sampleL, sampleR, delaysampleL, delaysampleR;
+  
+  buf = *buffer;
+  src = *srcptr;
+  dst = *dstptr;
+
+  while(loops > 0)
+  {
+    sampleL      = *buf;
+    delaysampleL = *src++;
+
+    *buf++ = ( es->ahiecho_MixN * sampleL + es->ahiecho_MixD * delaysampleL ) >> 16;
+
+    sampleR      = *buf;
+    delaysampleR = *src++;
+
+    *buf++ = ( es->ahiecho_MixN * sampleR + es->ahiecho_MixD * delaysampleR ) >> 16;
+
+    sample = es->ahiecho_FeedbackDS * (delaysampleL + 1) +
+             es->ahiecho_FeedbackDO * (delaysampleR + 1) +
+             es->ahiecho_FeedbackNS * sampleL +
+             es->ahiecho_FeedbackNO * sampleR;
+
+    *dst++ = sample >> 16;
+
+    sample = es->ahiecho_FeedbackDO * (delaysampleL + 1) +
+             es->ahiecho_FeedbackDS * (delaysampleR + 1) +
+             es->ahiecho_FeedbackNO * sampleL +
+             es->ahiecho_FeedbackNS * sampleR;
+
+    *dst++ = sample >> 16;
+
+    loops--;
+  }
+
+  *buffer = buf;
+  *srcptr = src;
+  *dstptr = dst;
+}
+
+
+static void
 EchoMono32 ( LONG          loops,
              struct Echo  *es,
              void        **buffer,
@@ -207,6 +293,7 @@ EchoMono32 ( LONG          loops,
   *srcptr = src;
   *dstptr = dst;
 }
+
 
 static void
 EchoStereo32 ( LONG          loops,
@@ -330,18 +417,37 @@ do_DSPEcho ( struct Echo *es,
 /* Entry points **************************************************************/
 
 void
+do_DSPEchoMono16( struct Echo *es,
+                  void *buf,
+                  struct AHIPrivAudioCtrl *audioctrl )
+{
+  do_DSPEcho( es, buf, audioctrl, EchoMono16 );
+}
+
+
+void
+do_DSPEchoStereo16( struct Echo *es,
+                    void *buf,
+                    struct AHIPrivAudioCtrl *audioctrl )
+{ 
+  do_DSPEcho( es, buf, audioctrl, EchoStereo16 );
+}
+
+
+void
 do_DSPEchoMono32 ( struct Echo *es,
                    void *buf,
                    struct AHIPrivAudioCtrl *audioctrl )
 {
-  do_DSPEcho(es, buf, audioctrl, EchoMono32);
+  do_DSPEcho( es, buf, audioctrl, EchoMono32 );
 }
 
+
 void
-do_DSPEchoStereo32 ( struct Echo *es,
-                     void *buf,
-                     struct AHIPrivAudioCtrl *audioctrl )
+do_DSPEchoStereo32( struct Echo *es,
+                    void *buf,
+                    struct AHIPrivAudioCtrl *audioctrl )
 { 
-  do_DSPEcho(es, buf, audioctrl, EchoStereo32);
+  do_DSPEcho( es, buf, audioctrl, EchoStereo32 );
 }
 

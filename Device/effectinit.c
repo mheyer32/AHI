@@ -187,12 +187,22 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
     switch(mode)
     {
-      // 32bit
+      // 16 bit
+      case 0:
+        es->ahiecho_Code   = do_DSPEchoMono16;
+        break;
+
+      // stereo 16 bit
+      case 1:
+        es->ahiecho_Code   = do_DSPEchoStereo16;
+        break;
+
+      // 32 bit
       case 2:
         es->ahiecho_Code   = do_DSPEchoMono32;
         break;
 
-      // stereo 32bit
+      // stereo 32 bit
       case 3:
         es->ahiecho_Code   = do_DSPEchoStereo32;
         break;

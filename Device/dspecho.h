@@ -30,13 +30,23 @@
 #include "dsp.h"
 
 void
-do_DSPEchoMono32 ( struct Echo *es,
-                   void *buf,
-                   struct AHIPrivAudioCtrl *audioctrl );
+do_DSPEchoMono16( struct Echo *es,
+                  void *buf,
+                  struct AHIPrivAudioCtrl *audioctrl );
 
 void
-do_DSPEchoStereo32 ( struct Echo *es,
-                     void *buf,
-                     struct AHIPrivAudioCtrl *audioctrl );
+do_DSPEchoStereo16( struct Echo *es,
+                    void *buf,
+                    struct AHIPrivAudioCtrl *audioctrl );
+
+void
+do_DSPEchoMono32( struct Echo *es,
+                  void *buf,
+                  struct AHIPrivAudioCtrl *audioctrl );
+
+void
+do_DSPEchoStereo32( struct Echo *es,
+                    void *buf,
+                    struct AHIPrivAudioCtrl *audioctrl );
 
 #endif /* _DSPECHO_H_ */
