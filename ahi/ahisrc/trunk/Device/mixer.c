@@ -4,12 +4,14 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
+#include <exec/interrupts.h>
+#include <hardware/intbits.h>
 #include <powerup/ppclib/memory.h>
 
 #if defined( VERSIONPOWERUP )
-#include <utility/tagitem.h>
-#include <powerup/ppclib/interface.h>
-#include <powerup/gcclib/powerup_protos.h>
+# include <utility/tagitem.h>
+# include <powerup/ppclib/interface.h>
+# include <powerup/gcclib/powerup_protos.h>
 #else
 # include <proto/exec.h>
 # include <proto/utility.h>
@@ -25,16 +27,18 @@
 #include "dsp.h"
 #include "mixer.h"
 #include "misc.h"
+#include "header.h"
 
 
-Vad är kvar? 
-Ändra selectaddroutine så den hämtar från pekarna.
-Fixa kommunikationen.
-Sen bör det vara klart! Skitenkelt.
+/******************************************************************************
+** Prototypes *****************************************************************
+******************************************************************************/
 
 static void
 DoMasterVolume ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl );
+
+#if !defined( VERSIONPOWERUP )
 
 static void
 DoOutputBuffer ( void *buffer,
@@ -43,46 +47,14 @@ DoOutputBuffer ( void *buffer,
 static void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
+#endif /* !defined( VERSIONPOWERUP ) */
+
 static void
 CallAddRoutine ( LONG samples,
                  void **dst,
                  struct AHIChannelData *cd,
                  struct AHIPrivAudioCtrl *audioctrl );
 
-
-#if defined( VERSIONPOWERUP )
-
-#define CallHookPkt AHICallHookPkt
-
-ULONG
-AHICallHookPkt( struct Hook *hook, APTR object, APTR paramPacket )
-{
-  return NULL;
-}
-
-
-static const UBYTE type2bytes[]=
-{
-  1,    // AHIST_M8S  (0)
-  2,    // AHIST_M16S (1)
-  2,    // AHIST_S8S  (2)
-  4,    // AHIST_S16S (3)
-  1,    // AHIST_M8U  (4)
-  0,
-  0,
-  0,
-  4,    // AHIST_M32S (8)
-  0,
-  8     // AHIST_S32S (10)
-};
-
-static ULONG
-AHI_SampleFrameSize( ULONG sampletype )
-{
-  return type2bytes[sampletype];
-}
-
-#endif /* defined( VERSIONPOWERUP ) */
 
 void AddSilence ( ADDARGS );
 void AddSilenceB ( ADDARGS );
@@ -124,6 +96,156 @@ ADDFUNC* AddWordSVPHBPtr  = NULL;
 ADDFUNC* AddWordsMVHBPtr  = NULL;
 ADDFUNC* AddWordsSVPHBPtr = NULL;
 
+/******************************************************************************
+** PowerUp Support code *******************************************************
+******************************************************************************/
+
+#if defined( VERSIONPOWERUP )
+
+/* PPC code ******************************************************************/
+
+static const UBYTE type2bytes[]=
+{
+  1,    // AHIST_M8S  (0)
+  2,    // AHIST_M16S (1)
+  2,    // AHIST_S8S  (2)
+  4,    // AHIST_S16S (3)
+  1,    // AHIST_M8U  (4)
+  0,
+  0,
+  0,
+  4,    // AHIST_M32S (8)
+  0,
+  8     // AHIST_S32S (10)
+};
+
+static ULONG
+AHI_SampleFrameSize( ULONG sampletype )
+{
+  return type2bytes[sampletype];
+}
+
+static void
+CallSoundHook( volatile struct AHIPrivAudioCtrl *audioctrl )
+{
+  audioctrl->ahiac_Com = AHIAC_COM_SOUNDFUNC;
+  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
+}
+
+#else
+
+/* M68k code *****************************************************************/
+
+INTERRUPT SAVEDS int
+Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
+{
+
+  if( audioctrl->ahiac_Com != AHIAC_COM_INIT )
+  {
+    /* Not for us, continue */
+    return 0;
+  }
+  else
+  {
+    BOOL running = TRUE;
+
+    audioctrl->ahiac_Com = AHIAC_COM_ACK;
+
+    while( running )
+    {
+      switch( audioctrl->ahiac_Com )
+      {
+        case AHIAC_COM_INIT:
+        case AHIAC_COM_ACK:
+          // Keep looping
+          break;
+
+        case AHIAC_COM_SOUNDFUNC:
+          CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
+                       (struct AHIPrivAudioCtrl*) audioctrl,
+                       (UWORD*) &audioctrl->ahiac_ChannelNo );
+          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          break;
+
+        case AHIAC_COM_QUIT:
+          running = FALSE;
+          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          break;
+        
+        case AHIAC_COM_NONE:
+        default:
+          // Error
+          running  = FALSE;
+          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          break;
+      }
+    }
+
+    /* End chain! */
+    return 1;
+  }
+};
+
+void ASMCALL
+MixPowerUp ( REG(a0, struct Hook *Hook), 
+             REG(a1, void *dst), 
+             REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
+{
+  struct Interrupt  is =
+  {
+    { NULL, NULL, NT_INTERRUPT, 32, (STRPTR) DevName },
+    (APTR) audioctrl,
+    (VOID (*)(void)) Interrupt
+  };
+
+  struct ModuleArgs mod =
+  {
+    IF_CACHEFLUSHNO, 0, 0,
+    IF_CACHEFLUSHNO, 0, 0,
+
+    (ULONG) Hook, (ULONG) dst, (ULONG) audioctrl, 0, 0, 0, 0,
+    0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
+  };
+
+  int res;
+
+  // Flush all DYNAMICSAMPLE's 
+  // TODO: Only flush if there are DYNAMICSAMPLE's loaded!
+
+  CacheClearU();
+
+  kprintf( "Running kernel object... \n" );
+
+  // NOTE: Not allowed in interrupts, must move!
+
+  AddIntServer( INTB_PORTS, &is );
+
+  res = PPCRunKernelObject( AHIPPCObject, &mod );
+
+  RemIntServer( INTB_PORTS, &is );
+
+  kprintf( "Returned %ld, clearing caches\n", res );
+
+  kprintf( "Calling additional hooks... " );
+
+  /*** AHIET_OUTPUTBUFFER ***/
+
+  DoOutputBuffer(dst, audioctrl);
+
+  /*** AHIET_CHANNELINFO ***/
+
+  DoChannelInfo(audioctrl);
+
+  kprintf( "Done!\n" );
+}
+
+
+#endif /* defined( VERSIONPOWERUP ) */
+
+
+
+
+#if !defined( VERSIONPOWERUP )
 
 /******************************************************************************
 ** InitMixroutine *************************************************************
@@ -131,8 +253,6 @@ ADDFUNC* AddWordsSVPHBPtr = NULL;
 
 // This function is used to initialize the mixer routine (called from 
 // AHI_AllocAudio()).
-
-#if !defined( VERSIONPOWERUP )
 
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
@@ -226,79 +346,32 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
         oi.Binding = STB_GLOBAL;
         oi.Size    = 0;
 
-        oi.Name = "AddSilence";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddSilencePtr = (ADDFUNC*) oi.Address;
+#define GetSymbol( name ) \
+        oi.Name = #name; \
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE ); \
+        name ## Ptr = (ADDFUNC*) oi.Address;
 
-        oi.Name = "AddSilenceB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddSilenceBPtr = (ADDFUNC*) oi.Address;
+        GetSymbol( AddSilence    );
+        GetSymbol( AddSilence    );
+        GetSymbol( AddSilenceB   );
+        GetSymbol( AddByteMVH    );
+        GetSymbol( AddByteSVPH   );
+        GetSymbol( AddBytesMVH   );
+        GetSymbol( AddBytesSVPH  );
+        GetSymbol( AddWordMVH    );
+        GetSymbol( AddWordSVPH   );
+        GetSymbol( AddWordsMVH   );
+        GetSymbol( AddWordsSVPH  );
+        GetSymbol( AddByteMVHB   );
+        GetSymbol( AddByteSVPHB  );
+        GetSymbol( AddBytesMVHB  );
+        GetSymbol( AddBytesSVPHB );
+        GetSymbol( AddWordMVHB   );
+        GetSymbol( AddWordSVPHB  );
+        GetSymbol( AddWordsMVHB  );
+        GetSymbol( AddWordsSVPHB );
 
-
-        oi.Name = "AddByteMVH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddByteMVHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddByteSVPH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddByteSVPHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddBytesMVH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddBytesMVHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddBytesSVPH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddBytesSVPHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordMVH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordMVHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordSVPH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordSVPHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordsMVH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordsMVHPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordsSVPH";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordsSVPHPtr = (ADDFUNC*) oi.Address;
-
-
-        oi.Name = "AddByteMVHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddByteMVHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddByteSVPHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddByteSVPHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddBytesMVHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddBytesMVHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddBytesSVPHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddBytesSVPHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordMVHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordMVHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordSVPHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordSVPHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordsMVHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordsMVHBPtr = (ADDFUNC*) oi.Address;
-
-        oi.Name = "AddWordsSVPHB";
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
-        AddWordsSVPHBPtr = (ADDFUNC*) oi.Address;
+#undef GetSymbol
 
         // Sucess?
       
@@ -306,24 +379,31 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       }
       else
       {
-        AddSilencePtr    = AddSilence;
-        AddSilenceBPtr   = AddSilenceB;
-        AddByteMVHPtr    = AddByteMVH;
-        AddByteSVPHPtr   = AddByteSVPH;
-        AddBytesMVHPtr   = AddBytesMVH;
-        AddBytesSVPHPtr  = AddBytesSVPH;
-        AddWordMVHPtr    = AddWordMVH;
-        AddWordSVPHPtr   = AddWordSVPH;
-        AddWordsMVHPtr   = AddWordsMVH;
-        AddWordsSVPHPtr  = AddWordsSVPH;
-        AddByteMVHBPtr   = AddByteMVHB;
-        AddByteSVPHBPtr  = AddByteSVPHB;
-        AddBytesMVHBPtr  = AddBytesMVHB;
-        AddBytesSVPHBPtr = AddBytesSVPHB;
-        AddWordMVHBPtr   = AddWordMVHB;
-        AddWordSVPHBPtr  = AddWordSVPHB;
-        AddWordsMVHBPtr  = AddWordsMVHB;
-        AddWordsSVPHBPtr = AddWordsSVPHB;
+
+#define GetSymbol( name ) \
+        name ## Ptr = name;
+
+        GetSymbol( AddSilence    );
+        GetSymbol( AddSilence    );
+        GetSymbol( AddSilenceB   );
+        GetSymbol( AddByteMVH    );
+        GetSymbol( AddByteSVPH   );
+        GetSymbol( AddBytesMVH   );
+        GetSymbol( AddBytesSVPH  );
+        GetSymbol( AddWordMVH    );
+        GetSymbol( AddWordSVPH   );
+        GetSymbol( AddWordsMVH   );
+        GetSymbol( AddWordsSVPH  );
+        GetSymbol( AddByteMVHB   );
+        GetSymbol( AddByteSVPHB  );
+        GetSymbol( AddBytesMVHB  );
+        GetSymbol( AddBytesSVPHB );
+        GetSymbol( AddWordMVHB   );
+        GetSymbol( AddWordSVPHB  );
+        GetSymbol( AddWordsMVHB  );
+        GetSymbol( AddWordsSVPHB );
+
+#undef GetSymbol
 
         // Sucess!
       
@@ -456,9 +536,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft + VolumeRight;
           *ScaleRight = 0;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddByteMVHB;
+            *AddRoutine = AddByteMVHBPtr;
           else
-            *AddRoutine = AddByteMVH;
+            *AddRoutine = AddByteMVHPtr;
           break;
 
         case AHIST_S8S:
@@ -466,9 +546,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddBytesMVHB;
+            *AddRoutine = AddBytesMVHBPtr;
           else
-            *AddRoutine = AddBytesMVH;
+            *AddRoutine = AddBytesMVHPtr;
           break;
 
         case AHIST_M16S:
@@ -476,9 +556,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft + VolumeRight;
           *ScaleRight = 0;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordMVHB;
+            *AddRoutine = AddWordMVHBPtr;
           else
-            *AddRoutine = AddWordMVH;
+            *AddRoutine = AddWordMVHPtr;
           break;
 
         case AHIST_S16S:
@@ -486,9 +566,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordsMVHB;
+            *AddRoutine = AddWordsMVHBPtr;
           else
-            *AddRoutine = AddWordsMVH;
+            *AddRoutine = AddWordsMVHPtr;
           break;
 
         default:
@@ -510,9 +590,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddByteSVPHB;
+            *AddRoutine = AddByteSVPHBPtr;
           else
-            *AddRoutine = AddByteSVPH;
+            *AddRoutine = AddByteSVPHPtr;
           break;
 
         case AHIST_S8S:
@@ -520,9 +600,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddBytesSVPHB;
+            *AddRoutine = AddBytesSVPHBPtr;
           else
-            *AddRoutine = AddBytesSVPH;
+            *AddRoutine = AddBytesSVPHPtr;
           break;
 
         case AHIST_M16S:
@@ -530,9 +610,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordSVPHB;
+            *AddRoutine = AddWordSVPHBPtr;
           else
-            *AddRoutine = AddWordSVPH;
+            *AddRoutine = AddWordSVPHPtr;
           break;
 
         case AHIST_S16S:
@@ -540,9 +620,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordsSVPHB;
+            *AddRoutine = AddWordsSVPHBPtr;
           else
-            *AddRoutine = AddWordsSVPH;
+            *AddRoutine = AddWordsSVPHPtr;
           break;
 
         default:
@@ -563,9 +643,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
   if(*AddRoutine != NULL && *ScaleLeft == 0 && *ScaleRight == 0)
   {
     if(SampleType & AHIST_BW)
-      *AddRoutine = AddSilenceB;
+      *AddRoutine = AddSilenceBPtr;
     else
-      *AddRoutine = AddSilence;
+      *AddRoutine = AddSilencePtr;
   }
 }
 
@@ -580,7 +660,7 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 // to play. 
 
 // There is a stub function in asmfuncs.a called Mix() that saves d0-d1/a0-a1
-// and calls MixMixGeneric. This stub is only assembled if VERSIONGEN is set.
+// and calls MixGeneric. This stub is only assembled if VERSIONGEN is set.
 
 #if !defined( VERSIONPOWERUP )
 void ASMCALL
@@ -589,7 +669,7 @@ MixGeneric ( REG(a0, struct Hook *Hook),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 #else
 void
-MixPowerUp ( struct Hook *Hook, 
+MixGeneric ( struct Hook *Hook, 
              void *dst, 
              struct AHIPrivAudioCtrl *audioctrl )
 #endif
@@ -624,7 +704,14 @@ MixPowerUp ( struct Hook *Hook,
           cd->cd_EOS = FALSE;
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
-            CallHookPkt(audioctrl->ac.ahiac_SoundFunc, audioctrl, &cd->cd_ChannelNo);
+#if defined( VERSIONPOWERUP )
+            audioctrl->ahiac_ChannelNo = cd->cd_ChannelNo;
+            CallSoundHook( audioctrl );
+#else
+            CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
+                         audioctrl,
+                         &cd->cd_ChannelNo);
+#endif
           }
         }
 
@@ -782,6 +869,10 @@ MixPowerUp ( struct Hook *Hook,
 
   DoMasterVolume(dst, audioctrl);
 
+#if !defined( VERSIONPOWERUP )
+
+  // This is handled in m68k code, in order to minimize cache flushes.
+
   /*** AHIET_OUTPUTBUFFER ***/
 
   DoOutputBuffer(dst, audioctrl);
@@ -789,6 +880,8 @@ MixPowerUp ( struct Hook *Hook,
   /*** AHIET_CHANNELINFO ***/
 
   DoChannelInfo(audioctrl);
+
+#endif /* !defined( VERSIONPOWERUP ) */
 
   return;
 }
@@ -842,6 +935,7 @@ DoMasterVolume ( void *buffer,
 }
 
 
+#if !defined( VERSIONPOWERUP )
 
 static void
 DoOutputBuffer ( void *buffer,
@@ -857,7 +951,9 @@ DoOutputBuffer ( void *buffer,
     ob->ahieob_Length = audioctrl->ac.ahiac_BuffSamples;
     ob->ahieob_Type   = audioctrl->ac.ahiac_BuffType;
 
-    CallHookPkt(ob->ahieob_Func, audioctrl, ob);
+    CallHookPkt( ob->ahieob_Func,
+                 audioctrl,
+                 ob);
   }
 }
 
@@ -883,10 +979,13 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl )
       cd++;
     }
     
-    CallHookPkt(ci->ahieci_Func, audioctrl, ci);
+    CallHookPkt( ci->ahieci_Func,
+                 audioctrl,
+                 ci );
   }
 }
 
+#endif /* !defined( VERSIONPOWERUP ) */
 
 static void
 CallAddRoutine ( LONG samples,

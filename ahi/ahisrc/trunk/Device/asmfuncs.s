@@ -159,9 +159,17 @@ _Mix:
  ELSE
 
 	XREF	_MixGeneric
+	XREF	_MixPowerUp
+	XREF	_AHIPPCObject
 
 	pushm	d0-d1/a0-a1
+	tst.l	_AHIPPCObject
+	bne	.powerup
 	jsr	_MixGeneric
+	popm	d0-d1/a0-a1
+	rts
+.powerup
+	jsr	_MixPowerUp
 	popm	d0-d1/a0-a1
 	rts
 

@@ -8,7 +8,7 @@
 
 CPU	= 68060
 
-#Can be VERSION68K, VERSIONGEN, VERSIONPOWERUP or VERSIONWARPUP:
+#Can be 68K, GEN, POWERUP or WARPUP:
 
 VER	= 68K
 
@@ -78,7 +78,7 @@ CC		= ppc-amigaos-gcc
 CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -mcpu=$(CPU)
 LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
 LIBS		=
-OBJECTS		= dspecho.o mixer.o
+OBJECTS		= ppcheader.o dspecho.o mixer.o
 TARGET		= ahi.elf.$(CPU)
 endif
 
