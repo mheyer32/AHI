@@ -2,6 +2,7 @@
 #define AHI_Classes_Common_util_h
 
 #include <exec/types.h>
+#include <intuition/classusr.h>
 
 /*** Put up a requester ******************************************************/
 
@@ -40,6 +41,22 @@ MySPrintFArgs( char*       buffer,
   ULONG _args[] = { __VA_ARGS__ };         \
   MySPrintFArgs( (buffer), (fmt), _args ); \
 })
+
+/*** NotifySuper *************************************************************/
+
+static inline void
+NotifySuper(Class* class, Object* object, struct opUpdate* msg,
+	    ULONG tag, ULONG data) {
+  struct TagItem tl[] = {
+    { tag,      data },
+    { TAG_DONE, 0    }
+  };
+
+  DoSuperMethod(class, object,
+		OM_NOTIFY, (ULONG) tl, (ULONG) msg->opu_GInfo,
+		msg->MethodID == OM_UPDATE ? msg->opu_Flags : 0 );
+}
+  
 
 /*** Interrupt and process glue **********************************************/
 
