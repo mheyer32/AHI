@@ -185,7 +185,7 @@ AHILoadObject( const char* objname )
   }
   else
   {
-kprintf( "loading elf object\n" );
+//kprintf( "loading elf object\n" );
     return ELFLoadObject( objname );
   }
 }
@@ -207,7 +207,7 @@ AHIUnLoadObject( void* obj )
   }
   else
   {
-kprintf( "unloading elf object\n" );
+//kprintf( "unloading elf object\n" );
     ELFUnLoadObject( obj );
   }
 }
@@ -249,9 +249,9 @@ AHIGetELFSymbol( const char* name,
   }
   else
   {
-kprintf( "getting symbol %s: ", name );
+//kprintf( "getting symbol %s: ", name );
     rc = ELFGetSymbol( PPCObject, name, ptr );
-kprintf( "%08lx\n", *ptr );
+//kprintf( "%08lx\n", *ptr );
   }
 
   return rc;

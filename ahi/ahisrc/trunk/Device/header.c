@@ -405,7 +405,6 @@ OpenLibs ( void )
   if( PowerPCBase != NULL )
   {
     PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-kprintf( "opened powerpc.library\n" );
   }
   else
   {
@@ -415,7 +414,6 @@ kprintf( "opened powerpc.library\n" );
   if( PPCLibBase == NULL )
   {
     PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-kprintf( "opened powerpc.library #2\n" );
   }
 
   if( PPCLibBase != NULL || PowerPCBase != NULL )
@@ -423,8 +421,6 @@ kprintf( "opened powerpc.library #2\n" );
     /* Load our code to PPC..  */
 
     PPCObject = AHILoadObject( "DEVS:ahi.elf" );
-    
-kprintf("Got elf object: %08lx\n", PPCObject );
   }
   
 #endif 

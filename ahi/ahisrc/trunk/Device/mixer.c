@@ -301,7 +301,7 @@ BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 {
   BOOL rc = FALSE;
-kprintf( "InitMixroutine\n" );
+//kprintf( "InitMixroutine\n" );
 
   // Allocate and initialize the AHIChannelData structures
   // This structure could be accessed from from interrupts!
@@ -317,7 +317,7 @@ kprintf( "InitMixroutine\n" );
       audioctrl->ac.ahiac_Sounds * sizeof(struct AHISoundData),
       MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
-kprintf( "InitMixroutine #2\n" );
+//kprintf( "InitMixroutine #2\n" );
   // Allocate structures specific to the PPC version
 
   if( PPCObject != NULL )
@@ -331,7 +331,7 @@ kprintf( "InitMixroutine #2\n" );
         MEMF_PUBLIC | MEMF_CLEAR );
   }
 
-kprintf( "InitMixroutine #3\n" );
+//kprintf( "InitMixroutine #3\n" );
   // Now link the list and fill in the channel number for each structure.
 
   if( audioctrl->ahiac_ChannelDatas != NULL &&
@@ -372,7 +372,7 @@ kprintf( "InitMixroutine #3\n" );
       sd->sd_Type = AHIST_NOTYPE;
     }
 
-kprintf( "InitMixroutine #4\n" );
+//kprintf( "InitMixroutine #4\n" );
     if( PPCObject != NULL )
     {
       int r = ~0;
@@ -385,7 +385,7 @@ kprintf( "InitMixroutine #4\n" );
 
       AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
 
-kprintf( "InitMixroutine #5\n" );
+//kprintf( "InitMixroutine #5\n" );
 #define GetSymbol( name ) r &= AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
       GetSymbol( AddByteMVH    );
@@ -407,7 +407,7 @@ kprintf( "InitMixroutine #5\n" );
 
 #undef GetSymbol
 
-kprintf( "InitMixroutine #6\n" );
+//kprintf( "InitMixroutine #6\n" );
       // Sucess?
 
       if( r != 0 )
@@ -430,11 +430,11 @@ kprintf( "InitMixroutine #6\n" );
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
           };
-kprintf( "finding WarpInit..." );
+//kprintf( "finding WarpInit..." );
           if( AHIGetELFSymbol( "WarpInit", args.PP_Code ) )
           {
             int status;
-kprintf( "%08lx\n", args.PP_Code );
+//kprintf( "%08lx\n", args.PP_Code );
             status = RunPPC( &args );
             
             if( status == PPERR_SUCCESS )
@@ -489,9 +489,10 @@ kprintf( "%08lx\n", args.PP_Code );
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
-//kprintf( "CleanUpMixroutine\n" );
-
-  RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
+  if( audioctrl->ahiac_PPCMixInterrupt != NULL )
+  {
+    RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
+  }
   FreeVec( audioctrl->ahiac_PPCMixInterrupt );
   AHIFreeVec( audioctrl->ahiac_PPCMixBuffer );
   AHIFreeVec( audioctrl->ahiac_SoundDatas );
