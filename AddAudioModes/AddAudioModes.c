@@ -65,8 +65,8 @@ cleanup( void )
   DeleteIORequest( (struct IORequest *) AHIio);
   DeleteMsgPort( AHImp );
 
-  CloseLibrary( IntuitionBase );
-  CloseLibrary( GfxBase );
+  CloseLibrary( (struct Library*) IntuitionBase );
+  CloseLibrary( (struct Library*) GfxBase );
 }
 
 
@@ -136,8 +136,21 @@ main( void )
 
     if( args.refresh && !args.remove )
     {
+      ULONG id;
+
       OpenAHI();
+
+      /* First, empty the database */
       
+      for( id = AHI_NextAudioID( AHI_INVALID_ID );
+           id != AHI_INVALID_ID;
+           id = AHI_NextAudioID( AHI_INVALID_ID ) )
+      {
+        AHI_RemoveAudioMode( id );
+      }
+
+      /* Now add all modes */
+
       if( !AHI_LoadModeFile( "DEVS:AudioModes" ) && !args.quiet )
       {
         PrintFault( IoErr(), "DEVS:AudioModes" );
