@@ -87,7 +87,7 @@ AHIGetELFSymbol( const char* name,
                  void** ptr );
 
 
-#if !defined( WORDS_BIG_ENDIAN )
+#if !defined( WORDS_BIGENDIAN )
 void EndianSwap( size_t size, void* data );
 #else
 # define EndianSwap(s, x)
