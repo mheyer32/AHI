@@ -2,6 +2,9 @@
 
 * $Id$
 * $Log$
+* Revision 4.2.2.1  2004/07/26 17:48:32  martin
+* Enabled panning for all mono modes.
+*
 * Revision 4.2  2001/04/12 14:25:31  lcs
 * Always use calibration tables for 14-bit output.
 *
@@ -138,7 +141,7 @@ ModeE:
 	dc.l	AHIDB_PaulaTable,	TRUE
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		FALSE
 	dc.l	AHIDB_MultTable,	FALSE
@@ -160,7 +163,7 @@ ModeF:
 	dc.l	AHIDB_PaulaTable,	TRUE
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		FALSE
 	dc.l	AHIDB_MultTable,	TRUE
@@ -270,7 +273,7 @@ ModeK:
 	dc.l	AHIDB_PaulaTable,	FALSE
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		FALSE
 	dc.l	AHIDB_MultTable,	FALSE
@@ -292,7 +295,7 @@ ModeL:
 	dc.l	AHIDB_PaulaTable,	FALSE
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		FALSE
 	dc.l	AHIDB_MultTable,	TRUE
@@ -359,7 +362,7 @@ ModeO:
 	dc.l	AHIDB_PaulaTable,	TRUE
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		TRUE
 	dc.l	AHIDB_MultTable,	FALSE
@@ -425,7 +428,7 @@ ModeR:
 	dc.l	AHIDB_PaulaTable,	FALSE
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		TRUE
 	dc.l	AHIDB_MultTable,	FALSE

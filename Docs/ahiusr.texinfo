@@ -63,6 +63,15 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.3  2004/10/23 12:19:39  martin
+Fixed some typos.
+
+Revision 5.9.2.2  2004/09/08 13:56:37  martin
+Added description of the default anti-click time
+
+Revision 5.9.2.1  2004/06/08 21:16:16  martin
+Added 7.1 multichannel support.
+
 Revision 5.9  2004/06/01 19:00:01  martin
 Makeinfo fix.
 
@@ -675,6 +684,18 @@ your mouse pointer freezes when playing music, reduce the limit slightly.
 If on the other hand the sound becomes cut and distorted, you can try to
 increase the limit---but remember that you risk locking up the computer!
 
+@cindex Anti-click
+@cindex Default anti-click time
+
+@item Default anti-click time
+Starting with @sc{Ahi} V6, the software mixer can delay the sounds an
+application wants to play until the currently playing sound goes
+through a zero-crossing, in order to avoid nasty clicks. Normally,
+it's the applications job to specify the maximum time the sounds may
+be delayed, but not all applications provide this information. By
+setting this slider to the desired value, all applications not
+specifying their own limit will will default to this value instead.
+
 @end table
 
 
@@ -755,7 +776,7 @@ The default options for reading are @samp{BITS=8} @samp{CHANNELS=1}
 @samp{FREQUENCY=8000} @samp{TYPE=SIGNED} @samp{LENGTH=very-very-much}
 @samp{BUFFER=32768} @samp{UNIT=0}.
 
-The default options for reading are @samp{BITS=8} @samp{CHANNELS=1}
+The default options for writing are @samp{BITS=8} @samp{CHANNELS=1}
 @samp{FREQUENCY=8000} @samp{TYPE=<none>} @samp{VOLUME=100}
 @samp{POSITION=0} @samp{PRIORITY=0} @samp{LENGTH=very-very-much}
 @samp{BUFFER=32768 UNIT=0}.
@@ -936,7 +957,7 @@ at the Kato Development Group's WWW page:
 On startup, the file
 @file{ENV:CyberSound/SoundDrivers/14Bit_Calibration} is read and used
 for the 14 bit DAC calibration. This file can be created by using
-Christian Buchner's CyberSound calibration tool, which is avalilable
+Christian Buchner's CyberSound calibration tool, which is available
 from
 @url{http://www.lysator.liu.se/~lcs/files/ahi/extras/CyberSound.lha},
 among other places.
@@ -998,7 +1019,7 @@ This will turn on the screen mode checking again.
 @cindex CyberGraphX
 @cindex AddAudioModes
 
-Please note that this 31 kHz screen mode is not neccessary the screen mode
+Please note that this 31 kHz screen mode is not necessary the screen mode
 you're seeing on your monitor.  If you're using a graphic card, you must
 force the Amiga video signal to 31 kHz.  CyberGraphX users might want to
 try this command (@pxref{AddAudioModes} for more information):
@@ -1181,6 +1202,12 @@ volume with clipping automatically (@pxref{Advanced settings}).
 ``HiFi'' modes are useful when you're playing music---@dfn{MIDI} songs or
 @dfn{modules}, for example---and want the best possible quality @sc{Ahi}
 has to offer.
+
+
+@cindex HiFi 7.1 (audio mode)
+
+@item  HiFi 7.1
+``HiFi 7.1'' modes can be used by movie players or audio editors.
 
 @end table
 
@@ -1548,7 +1575,7 @@ Many thanks!
 The following people has donated money to the project. It has ment a
 lot to me, and please forgive me for not being able to finish a
 working WarpUp or PowerUp PPC version of @sc{Ahi}. I hope the MorphOS
-and upcomming AmigaOS 4 versions made up for that.
+and upcoming AmigaOS 4 versions made up for that.
 
 Agneta Nord,
 Alan Surrette,
