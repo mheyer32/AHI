@@ -26,20 +26,9 @@
 #include <exec/types.h>
 #include "ahi_def.h"
 
-
-#ifdef VERSION68K
-
-typedef void ASMCALL (*ECHOFUNC)( REG(a0, struct Echo *),
-                                  REG(a1, void *),
-                                  REG(a2, struct AHIPrivAudioCtrl *) );
-
-#else
-
 typedef void (*ECHOFUNC)( struct Echo *,
                           void *,
                           struct AHIPrivAudioCtrl * );
-
-#endif
 
 struct Echo
 {

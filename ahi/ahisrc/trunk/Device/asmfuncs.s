@@ -168,14 +168,6 @@ _UDivMod64:
 ** Stubs **********************************************************************
 
 _Mix:
- IFD	VERSION68K
-
-	XREF	_Mix68k
-
-	jmp	_Mix68k
-
- ELSE
-
 	XREF	_MixGeneric
 	XREF	_MixPowerUp
 	XREF	_PPCObject
@@ -190,8 +182,6 @@ _Mix:
 	jsr	_MixPowerUp
 	popm	d0-d1/a0-a1
 	rts
-
- ENDC
 
 ** Debug functions ************************************************************
 

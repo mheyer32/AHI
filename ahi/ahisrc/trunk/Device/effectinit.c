@@ -181,56 +181,10 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
     es->ahiecho_FeedbackNS = ((0x10000 - echo->ahiede_Feedback) >> 8) *
                              ((0x10000 - echo->ahiede_Cross) >> 8);
 
-
-#ifndef VERSION68K
-
     audioctrl->ahiac_EchoMasterVolume = 0x10000;
-
-#else
-
-    if((echo->ahiede_Cross == 0) && (echo->ahiede_Mix == 0x10000))
-    {
-      mode |= mode_ncnm;
-      audioctrl->ahiac_EchoMasterVolume = es->ahiecho_FeedbackNS;
-    }
-    else
-    {
-      audioctrl->ahiac_EchoMasterVolume = 0x10000;
-    }
-
-#endif
 
     update_MasterVolume( audioctrl );
 
-#ifdef VERSION68K
-
-    /* No fast echo in generic or PPC version*/
-
-    // No fast echo in 32 bit (HiFi) modes!
-    switch(audioctrl->ac.ahiac_BuffType)
-    {
-      case AHIST_M16S:
-      case AHIST_S16S:
-        if((AHIBase->ahib_Flags & AHIBF_FASTECHO))
-        {
-          es->ahiecho_MixD = Fixed2Shift(es->ahiecho_MixD);
-          es->ahiecho_MixN = Fixed2Shift(es->ahiecho_MixN);
-          es->ahiecho_FeedbackDO = Fixed2Shift(es->ahiecho_FeedbackDO);
-          es->ahiecho_FeedbackDS = Fixed2Shift(es->ahiecho_FeedbackDS);
-          es->ahiecho_FeedbackNO = Fixed2Shift(es->ahiecho_FeedbackNO);
-          es->ahiecho_FeedbackNS = Fixed2Shift(es->ahiecho_FeedbackNS);
-          mode |= mode_fast;
-        }
-        break;
-
-      default:
-        break;
-    }
-
-#endif
-
-#ifndef VERSION68K
-
     switch(mode)
     {
       // 32bit
@@ -248,97 +202,6 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
         AHIFreeVec(es);
         return FALSE;
     }
-
-#else
-
-    switch(mode)
-    {
-      case 0:
-        es->ahiecho_Code   = do_DSPEchoMono16;
-        break;
-
-      // stereo
-      case 1:
-        es->ahiecho_Code   = do_DSPEchoStereo16;
-        break;
-
-      // 32bit
-      case 2:
-        es->ahiecho_Code   = do_DSPEchoMono32;
-        break;
-
-      // stereo 32bit
-      case 3:
-        es->ahiecho_Code   = do_DSPEchoStereo32;
-        break;
-
-      // ncnm
-      case 4:
-        es->ahiecho_Code   = do_DSPEchoMono16NCFM;
-        break;
-
-      // stereo ncnm
-      case 5:
-        es->ahiecho_Code   = do_DSPEchoStereo16NCFM;
-        break;
-
-      // 32bit ncnm
-      case 6:
-        es->ahiecho_Code   = do_DSPEchoMono32;
-        break;
-
-      // stereo 32bit ncnm
-      case 7:
-        es->ahiecho_Code   = do_DSPEchoStereo32;
-        break;
-
-      // fast
-      case 8:
-        es->ahiecho_Code   = do_DSPEchoMono16Fast;
-        break;
-
-      // stereo fast
-      case 9:
-        es->ahiecho_Code   = do_DSPEchoStereo16Fast;
-        break;
-
-      // 32bit fast
-      case 10:
-        es->ahiecho_Code   = do_DSPEchoMono32;
-        break;
-
-      // stereo 32bit fast
-      case 11:
-        es->ahiecho_Code   = do_DSPEchoStereo32;
-        break;
-
-      // ncnm fast
-      case 12:
-        es->ahiecho_Code   = do_DSPEchoMono16NCFMFast;
-        break;
-
-      // stereo ncnm fast
-      case 13:
-        es->ahiecho_Code   = do_DSPEchoStereo16NCFMFast;
-        break;
-
-      // 32bit ncnm fast
-      case 14:
-        es->ahiecho_Code   = do_DSPEchoMono32;
-        break;
-
-      // stereo 32bit ncnm fast
-      case 15:
-        es->ahiecho_Code   = do_DSPEchoStereo32;
-        break;
-
-      // Should not happen!
-      default:
-        AHIFreeVec(es);
-        return FALSE;
-    }
-
-#endif
 
     // Structure filled, make it available to the mixing routine
 

@@ -29,11 +29,9 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 
-#ifndef VERSION68K
-# include <powerup/ppclib/object.h>
-# include <powerup/ppclib/interface.h>
-# include <proto/ppc.h>
-#endif
+#include <powerup/ppclib/object.h>
+#include <powerup/ppclib/interface.h>
+#include <proto/ppc.h>
 
 #include "ahi_def.h"
 #include "version.h"
@@ -96,11 +94,9 @@ struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
-#ifndef VERSION68K
 struct Library            *PowerPCBase    = NULL;
 struct Library            *PPCLibBase     = NULL;
 void                      *PPCObject      = NULL;
-#endif
 
 /* linker can use symbol b for symbol a if a is not defined */
 #define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
@@ -116,9 +112,7 @@ const char IDString[]  = "ahi.device " VERS "\r\n";
 static const char VersTag[] =
  "$VER: ahi.device " VERS " ©1994-1999 Martin Blom. "
  CPU 
-#ifndef VERSION68K
  "/PPC"
-#endif
  " version.\r\n";
 
 
@@ -374,8 +368,6 @@ OpenLibs ( void )
   }
 
 
-#ifndef VERSION68K
-
   /* PPC/PowerPC library loading
 
      Strategy:
@@ -465,8 +457,6 @@ OpenLibs ( void )
     }
   }
 
-#endif
-
   OpenahiCatalog(NULL, NULL);
 
   {
@@ -504,7 +494,6 @@ CloseLibs ( void )
 {
   CloseahiCatalog();
 
-#ifndef VERSION68K
   if( PPCObject != NULL )
   {
     AHIUnLoadObject( PPCObject );
@@ -512,7 +501,6 @@ CloseLibs ( void )
 
   CloseLibrary( PPCLibBase );
   CloseLibrary( PowerPCBase );
-#endif
 
   CloseLibrary( (struct Library *) UtilityBase );
   if( TimerIO  != NULL )

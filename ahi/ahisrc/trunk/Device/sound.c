@@ -170,18 +170,6 @@ SetVol ( REG(d0, UWORD channel),
 
   if(flags & AHISF_IMM)
   {
-#ifdef VERSION68K
-    cd->cd_VolumeLeft  = cd->cd_NextVolumeLeft;
-    cd->cd_VolumeRight = cd->cd_NextVolumeRight;
-    
-    SelectAddRoutine( cd->cd_VolumeLeft,
-                      cd->cd_VolumeRight, 
-                      cd->cd_Type, 
-                      audioctrl,
-                     &cd->cd_ScaleLeft,
-                     &cd->cd_ScaleRight, 
-         (ADDFUNC**) &cd->cd_AddRoutine );
-#else
     cd->cd_DelayedVolumeLeft  = cd->cd_NextVolumeLeft;
     cd->cd_DelayedVolumeRight = cd->cd_NextVolumeRight;
 
@@ -211,7 +199,6 @@ SetVol ( REG(d0, UWORD channel),
     {
       cd->cd_VolDelayed = TRUE;
     }
-#endif
   }
 
   AHIsub_Enable(&audioctrl->ac);
@@ -328,25 +315,10 @@ SetFreq ( REG( d0, UWORD channel ),
 
   AHIsub_Disable(&audioctrl->ac);
 
-#ifdef VERSION68K
-  cd->cd_NextAdd.I = add >> 16;
-  cd->cd_NextAdd.F = (add & 0xffff) << 16;
-#else
   cd->cd_NextAdd = (Fixed64) add << 16;
-#endif
 
   if(flags & AHISF_IMM)
   {
-#ifdef VERSION68K
-    cd->cd_Add.I   = cd->cd_NextAdd.I;
-    cd->cd_Add.F   = cd->cd_NextAdd.F;
-    cd->cd_FreqOK  = cd->cd_NextFreqOK;
-
-    cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
-                                  cd->cd_Type,
-                                  cd->cd_LastOffset.I, cd->cd_LastOffset.F,
-                                  cd->cd_Offset.I, cd->cd_Offset.F );
-#else
     cd->cd_DelayedAdd     = cd->cd_NextAdd;
     cd->cd_DelayedFreqOK  = cd->cd_NextFreqOK;
 
@@ -381,8 +353,6 @@ SetFreq ( REG( d0, UWORD channel ),
     {
       cd->cd_FreqDelayed = TRUE;
     }
-#endif
-
   }
 
   AHIsub_Enable(&audioctrl->ac);
@@ -501,39 +471,21 @@ SetSound ( REG(d0, UWORD channel),
 
     cd->cd_NextDataStart = sd->sd_Addr;
     cd->cd_NextType      = sd->sd_Type;
-#ifdef VERSION68K
-    cd->cd_NextOffset.I  = offset;
-#else
     cd->cd_NextOffset    = (Fixed64) offset << 32 ;
-#endif
 
     cd->cd_NextSoundOK   = TRUE;
 
     if(length < 0)
     {
       cd->cd_NextType         |= AHIST_BW;
-
-#ifdef VERSION68K
-      cd->cd_NextLastOffset.I  = offset + length + 1;
-      cd->cd_NextLastOffset.F  = 0;
-      cd->cd_NextOffset.F      = 0xffffffff;
-#else
       cd->cd_NextLastOffset    = (Fixed64) ( offset + length + 1 ) << 32;
       cd->cd_NextOffset       |= 0xffffffffLL;
-#endif
-
     }
     else
     {
-#ifdef VERSION68K
-      cd->cd_NextLastOffset.I  = offset + length - 1;
-      cd->cd_NextLastOffset.F  = 0xffffffff;
-      cd->cd_NextOffset.F      = 0;
-#else
       cd->cd_NextLastOffset    = ( (Fixed64) ( offset + length - 1 ) << 32 )
                                  | 0xffffffffLL;
       /* Low cd->cd_NextOffset already 0 */
-#endif
     }
 
     SelectAddRoutine( cd->cd_NextVolumeLeft,
@@ -546,29 +498,6 @@ SetSound ( REG(d0, UWORD channel),
 
     if(flags & AHISF_IMM)
     {
-#ifdef VERSION68K
-      cd->cd_Offset.I      = cd->cd_NextOffset.I;
-      cd->cd_FirstOffsetI  = cd->cd_NextOffset.I; /* for linear interpol. */
-      cd->cd_Offset.F      = cd->cd_NextOffset.F;
-      cd->cd_LastOffset.I  = cd->cd_NextLastOffset.I;
-      cd->cd_LastOffset.F  = cd->cd_NextLastOffset.F;
-      cd->cd_DataStart     = cd->cd_NextDataStart;
-      cd->cd_Type          = cd->cd_NextType;
-      cd->cd_SoundOK       = cd->cd_NextSoundOK;
-
-      SelectAddRoutine( cd->cd_VolumeLeft,
-                        cd->cd_VolumeRight,
-                        cd->cd_Type,
-                        audioctrl,
-                       &cd->cd_ScaleLeft,
-                       &cd->cd_ScaleRight,
-           (ADDFUNC**) &cd->cd_AddRoutine );
-
-      cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
-                                    cd->cd_Type,
-                                    cd->cd_LastOffset.I, cd->cd_LastOffset.F,
-                                    cd->cd_Offset.I, cd->cd_Offset.F);
-#else
       cd->cd_DelayedOffset        = cd->cd_NextOffset;
       cd->cd_DelayedFirstOffsetI  = cd->cd_NextOffset >> 32; /* for linear interpol. */
       cd->cd_DelayedLastOffset    = cd->cd_NextLastOffset;
@@ -613,8 +542,6 @@ SetSound ( REG(d0, UWORD channel),
       {
         cd->cd_SoundDelayed = TRUE;
       }
-#endif
-
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
     }
   }
