@@ -58,6 +58,8 @@
 ** Some hardcoded m68k code ***************************************************
 ******************************************************************************/
 
+/* Unused...
+
 struct PreserveRegs
 {
   ULONG pushm;
@@ -82,6 +84,8 @@ struct PreserveRegs
     0x4cdf0302,              \
     0x4e75                   \
   };
+
+*/
 
 #if defined( morphos )
 
@@ -444,9 +448,17 @@ static LONG gw_IndexToFrequency( void )
   return IndexToFrequency( gad , level );
 }
 
-const struct EmulLibEntry m68k_IndexToFrequency =
+struct EmulLibEntry m68k_IndexToFrequency =
 {
   TRAP_LIB, 0, (void (*)(void)) gw_IndexToFrequency
+};
+
+
+/* m68k_DevProc **************************************************************/
+
+struct EmulLibEntry m68k_DevProc =
+{
+  TRAP_LIB, 0, (void (*)(void)) DevProc
 };
 
 
@@ -481,8 +493,10 @@ struct EmulLibEntry m68k_HookEntry =
 
 /* m68k_HookEntryPreserveAllRegs  ********************************************/
 
-struct PreserveRegs m68k_HookEntryPreserveAllRegs = 
-  PRESERVE_D0D1A0A1( &m68k_HookEntry );
+struct EmulLibEntry m68k_HookEntryPreserveAllRegs =
+{
+  TRAP_LIBNR, 0, (void (*)(void)) &gw_HookEntry
+};
 
 
 /* m68k_PreTimer  ************************************************************/
@@ -495,13 +509,10 @@ gw_PreTimer( void )
   return PreTimer( audioctrl );
 }
 
-static struct EmulLibEntry trap_PreTimer =
+struct EmulLibEntry m68k_PreTimer =
 {
   TRAP_LIB, 0, (void (*)(void)) &gw_PreTimer
 };
-
-struct PreserveRegs m68k_PreTimer = 
-  PRESERVE_D1A0A1( &trap_PreTimer );
 
 
 /* m68k_PostTimer  ***********************************************************/
@@ -514,13 +525,10 @@ gw_PostTimer( void )
   PostTimer( audioctrl );
 }
 
-static struct EmulLibEntry trap_PostTimer =
+struct EmulLibEntry m68k_PostTimer =
 {
-  TRAP_LIB, 0, (void (*)(void)) &gw_PostTimer
+  TRAP_LIBNR, 0, (void (*)(void)) &gw_PostTimer
 };
-
-struct PreserveRegs m68k_PostTimer = 
-  PRESERVE_D0D1A0A1( &trap_PostTimer );
 
 #else
 
@@ -829,6 +837,15 @@ m68k_IndexToFrequency( struct Gadget *gad, WORD level)
 }
 
 
+/* m68k_DevProc **************************************************************/
+
+void
+m68k_DevProc( void )
+{
+  DevProc();
+}
+
+
 /* HookEntry *****************************************************************/
 
 ULONG ASMCALL
@@ -853,208 +870,48 @@ m68k_HookEntry( REG( a0, struct Hook* h ),
 
 /* m68k_HookEntryPreserveAllRegs  ********************************************/
 
-struct PreserveRegs m68k_HookEntryPreserveAllRegs = 
-  PRESERVE_D0D1A0A1( m68k_HookEntry );
+asm("
+        .even
+        .globl _m68k_HookEntryPreserveAllRegs
+_m68k_HookEntryPreserveAllRegs:
+
+        moveml d0/d1/a0/a1,sp@-
+        jsr    _m68k_HookEntry
+        moveml sp@+,d0/d1/a0/a1
+        rts
+");
 
 
 /* m68k_PreTimer  ************************************************************/
 
-static BOOL ASMCALL
-gw_PreTimer( REG( a2, struct AHIPrivAudioCtrl* audioctrl ) )
-{
-  return PreTimer( audioctrl );
-}
+asm("
+        .even
+        .globl _m68k_PreTimer
+_m68k_PreTimer:
 
-struct PreserveRegs m68k_PreTimer = 
-  PRESERVE_D1A0A1( gw_PreTimer );
+        moveml d1/a0/a1,sp@-
+        movel  a2,sp@-
+        jsr    _PreTimer
+        extl   d0
+        addql  #4,%sp
+        moveml sp@+,d1/a0/a1
+        rts
+");
 
 
 /* m68k_PostTimer  ***********************************************************/
 
-static void ASMCALL
-gw_PostTimer( REG( a2, struct AHIPrivAudioCtrl* audioctrl ) )
-{
-  PostTimer( audioctrl );
-}
-
-struct PreserveRegs m68k_PostTimer = 
-  PRESERVE_D0D1A0A1( gw_PostTimer );
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#if 0
-/* m68k_MixerFunc  ***********************************************************/
-
-static void
-ActualMixerFunc( void )
-{
-  struct Hook*             hook      = (struct Hook*)             REG_A0;
-  void*                    dst       = (void*)                    REG_A1;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) REG_A2;
-
-  MixerFunc( hook, dst, audioctrl );
-}
-
-
-static struct PreserveRegs MixerFuncWrapper = 
-  PRESERVE_D0D1A0A1( ActualMixerFunc );
-
-struct EmulLibEntry m68k_MixerFunc =
-{
-  TRAP_LIB, 0, (void (*)(void)) &MixerFuncWrapper
-};
-
-
-/* m68k_SamplerFunc  *********************************************************/
-
-static void
-ActualSamplerFunc( void )
-{
-  struct Hook*             hook   = (struct Hook*)             REG_A0;
-  struct AHIPrivAudioCtrl* actrl  = (struct AHIPrivAudioCtrl*) REG_A2;
-  struct AHIRecordMessage* recmsg = (struct AHIRecordMessage*) REG_A1;
-
-  SamplerFunc( hook, actrl, recmsg );
-}
-
-struct EmulLibEntry m68k_SamplerFunc =
-{
-  TRAP_LIB, 0, ActualSamplerFunc
-};
-
-
-/* m68k_PlayerFunc  **********************************************************/
-
-static void
-ActualPlayerFunc( void )
-{
-  struct Hook*         hook  = (struct Hook*)         REG_A0;
-  struct AHIAudioCtrl* actrl = (struct AHIAudioCtrl*) REG_A2;
-  APTR                 null  = (APTR)                 REG_A1;
-
-  PlayerFunc( hook, actrl, null );
-
-}
-
-struct EmulLibEntry m68k_PlayerFunc =
-{
-  TRAP_LIB, 0, ActualPlayerFunc
-};
-
-
-/* m68k_RecordFunc  **********************************************************/
-
-static ULONG
-ActualRecordFunc( void )
-{
-  struct Hook*             hook   = (struct Hook*)             REG_A0;
-  struct AHIAudioCtrl*     actrl  = (struct AHIAudioCtrl*)     REG_A2;
-  struct AHIRecordMessage* recmsg = (struct AHIRecordMessage*) REG_A1;
-
-  return RecordFunc( hook, actrl, recmsg );
-
-}
-
-struct EmulLibEntry m68k_RecordFunc =
-{
-  TRAP_LIB, 0, (void (*)(void)) ActualRecordFunc
-};
-
-
-/* m68k_SoundFunc  ***********************************************************/
-
-static void
-ActualSoundFunc( void )
-{
-  struct Hook*            hook   = (struct Hook*)            REG_A0;
-  struct AHIAudioCtrl*    actrl  = (struct AHIAudioCtrl*)    REG_A2;
-  struct AHISoundMessage* sndmsg = (struct AHISoundMessage*) REG_A1;
-
-  SoundFunc( hook, actrl, sndmsg );
-
-}
-
-struct EmulLibEntry m68k_SoundFunc =
-{
-  TRAP_LIB, 0, ActualSoundFunc
-};
-
-
-/* m68k_ChannelInfoFunc  *****************************************************/
-
-static void
-ActualChannelInfoFunc( void )
-{
-  struct Hook*              hook  = (struct Hook*)              REG_A0;
-  struct AHIAudioCtrl*      actrl = (struct AHIAudioCtrl*)      REG_A2;
-  struct AHIEffChannelInfo* cimsg = (struct AHIEffChannelInfo*) REG_A1;
-
-  ChannelInfoFunc( hook, actrl, cimsg );
-
-}
-
-struct EmulLibEntry m68k_ChannelInfoFunc =
-{
-  TRAP_LIB, 0, ActualChannelInfoFunc
-};
-#endif
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+asm("
+        .even
+        .globl _m68k_PostTimer
+_m68k_PostTimer:
+
+        moveml d0/d1/a0/a1,sp@-
+        movel  a2,sp@-
+        jsr    _PostTimer
+        addql  #4,%sp
+        moveml sp@+,d0/d1/a0/a1
+        rts
+");
 
 #endif

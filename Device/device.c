@@ -71,9 +71,6 @@ static void
 ExpungeUnit( struct AHIDevUnit *, struct AHIBase * );
 
 static void
-DevProc( void );
-
-static void
 PlayerFunc( struct Hook*         hook,
             struct AHIAudioCtrl* actrl,
             APTR                 null );
@@ -466,7 +463,7 @@ InitUnit ( ULONG unit,
               iounit
             };
 
-            iounit->Process = CreateNewProcTags( NP_Entry,    (ULONG) &DevProc,
+            iounit->Process = CreateNewProcTags( NP_Entry,    (ULONG) &m68k_DevProc,
                                                  NP_Name,     (ULONG) AHINAME " Unit Process",
                                                  NP_Priority, AHI_PRI,
                                                  TAG_DONE );
@@ -782,7 +779,7 @@ FreeHardware ( struct AHIDevUnit *iounit,
 ** DevProc ********************************************************************
 ******************************************************************************/
 
-static void
+void
 DevProc( void )
 {
   struct Process *proc;
