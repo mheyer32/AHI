@@ -89,7 +89,7 @@ AHIClassDispatch(Class*  class,
 
     case AHIM_Buffer_Clone:
       DoSuperMethod(class,object, AHIM_Lock);
-      result = (ULONG) MethodClone(class, object, msg);
+      result = (ULONG) MethodClone(class, object, (struct AHIP_Buffer_Clone*) msg);
       DoSuperMethod(class,object, AHIM_Unlock);
       break;
       

@@ -62,7 +62,7 @@ namespace AHI {
       _AHIA(_P, UseChildBuffers,(_AHIA_Dummy+120)),	/* OM_GET */
 
       /* Assuming UseChildBuffers is TRUE, how many old sample frames
-       * should be available? */
+       * should be available (AHIA_Buffer_PreLength)? */
       _AHIA(_P, HistorySamples,	(_AHIA_Dummy+121)),	/* OM_GET */
       
       /* A list of NumChildren child buffers (struct MinList*). Use
