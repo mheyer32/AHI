@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.3  1997/02/08 11:34:00  lcs
+* Changed the template (FILES/M => FILE/M)
+*
 * Revision 1.2  1997/01/04 00:24:51  lcs
 * Added DBLSCAN switch + some other small changes
 *
@@ -57,7 +60,7 @@ void cleanup(LONG rc) {
   exit(rc);
 }
 
-#define TEMPLATE "FILES/M,QUIET/S,REFRESH/S,REMOVE/S,DBLSCAN/S"
+#define TEMPLATE "FILE/M,QUIET/S,REFRESH/S,REMOVE/S,DBLSCAN/S"
 
 struct {
   STRPTR *files;
