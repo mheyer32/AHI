@@ -15,17 +15,17 @@ entry( struct Hook *Hook,
        void *dst, 
        volatile struct AHIPrivAudioCtrl *audioctrl )
 {
-//  audioctrl->ahiac_Com = AHIAC_COM_INIT;
-//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+  audioctrl->ahiac_Com = AHIAC_COM_INIT;
+  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
-//  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
+  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
 
-  //MixGeneric( Hook, dst, audioctrl );
+  MixGeneric( Hook, dst, audioctrl );
 
   // TODO: Clear cache here!
 
-//  audioctrl->ahiac_Com = AHIAC_COM_QUIT;
-//  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
+  audioctrl->ahiac_Com = AHIAC_COM_QUIT;
+  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
 
   return -1974;
 }
