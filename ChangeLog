@@ -1,3 +1,10 @@
+2001-09-28  Martin Blom  <martin@blom.org>
+
+	* Released paula.audio version 4.27.
+
+	* paula.audio:  I broke the DMA playback mode in the last update.
+	Fixed now.
+
 2001-09-24  Martin Blom  <martin@blom.org>
 
 	* ahi.device:  A missing 'break' statment made AbortIO() return
