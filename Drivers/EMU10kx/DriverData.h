@@ -30,16 +30,16 @@
 
 struct DriverData
 {
+    BOOL                requested;
+    BOOL                enabled;
+    BOOL                master_enabled;
+    BOOL                emu10k1_initialized;
+    
     struct Interrupt    interrupt;
     BOOL                interrupt_added;
 
     struct Interrupt    software_interrupt;
     UWORD               pad;
-
-    BOOL                requested;
-    BOOL                enabled;
-    BOOL                master_enabled;
-    BOOL                emu10k1_initialized;
     
     struct emu10k1_card card;
     struct emu_voice    voice;
@@ -49,11 +49,18 @@ struct DriverData
     BOOL                voice_allocated;
     BOOL                voice_started;
 
+    BOOL                mixing_enabled;
+
     ULONG               current_length;
     ULONG               current_size;
     APTR                current_buffer;
     ULONG               current_position;
-    BOOL                mixing_enabled;
+
+    UWORD               input;
+    UWORD               output;
+    Fixed               monitor_volume;
+    Fixed               input_gain;
+    Fixed               output_volume;
 };
 
 #endif /* EMU10kx_DriverData_h */

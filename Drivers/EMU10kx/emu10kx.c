@@ -562,7 +562,14 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
     pci_add_irq( dd->card.pci_dev, &dd->interrupt );
     dd->interrupt_added = TRUE;
 
-    
+    /* Initialize chip */
+
+    if( emu10k1_init( &dd->card ) < 0 )
+    {
+      KPrintF( DRIVER_NAME ": Unable to initialize EMU10kx subsystem.\n");
+      return AHISF_ERROR;
+    }
+
     /* Initialize mixer */
 
     emu10k1_writeac97( &dd->card, AC97_RESET, 0L);
@@ -576,7 +583,7 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
     else
     {
       emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0000 );
+      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0808 );
       emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x000a );
       emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0a0a );
       emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
@@ -592,14 +599,6 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
 	sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
 	emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
       }
-    }
-
-    /* Initialize chip */
-
-    if( emu10k1_init( &dd->card ) < 0 )
-    {
-      KPrintF( DRIVER_NAME ": Unable to initialize EMU10kx subsystem.\n");
-      return AHISF_ERROR;
     }
 
     dd->emu10k1_initialized = TRUE;
@@ -744,13 +743,13 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 
     if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
     {
-      dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * sizeof( WORD ) * 2;
       dma_sample_frame_size = 4;
+      dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
     }
     else
     {
-      dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * sizeof( WORD );
       dma_sample_frame_size = 2;
+      dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
     }
 
     if( emu10k1_voice_alloc_buffer( &dd->card,
@@ -1061,7 +1060,7 @@ intAHIsub_HardwareControl( REG( d0, ULONG attribute ),
                            REG( d1, LONG argument ),
                            REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
 {
-  return NULL;
+  return FALSE;
 }
 
 
@@ -1237,6 +1236,7 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
     /* Update 'current_position' and 'samples' before destroying 'i' */
     
     dd->current_position += i;
+    
     samples -= i;
     
     if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
@@ -1254,13 +1254,17 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
       --i;
     }
 
-    if( samples > 0 )
+    if( dd->current_position == AudioCtrl->ahiac_MaxBuffSamples * 2 )
     {
       dst = dd->voice.mem.addr;
-
+      dd->current_position = 0;
+    }
+    
+    if( samples > 0 )
+    {
       /* Update 'current_position' before destroying 'samples' */
     
-      dd->current_position = samples;
+      dd->current_position += samples;
 
       if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
       {
@@ -1277,14 +1281,15 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
 	--samples;
       }
     }
-
-    /* Update 'current_buffer' */
-    dd->current_buffer = dst;
-
     
     /* Flush to RAM */
   
     CacheClearE( dd->current_buffer, dd->current_size, CACRF_ClearD );
+
+
+    /* Update 'current_buffer' */
+
+    dd->current_buffer = dst;
   
     posttimer( AudioCtrl );
   }
