@@ -1,4 +1,18 @@
+2004-07-27  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Replaced the EMU10k1 routing completely. Disabled
+	most of the patch manager. Somebody needs to fix it for Audigy
+	cards.
+
+	* emu10kx.audio: Added 5.1 multichannel support for Live!
+	cards. And there was much rejoicing.
+
 2004-07-26  Martin Blom  <martin@blom.org>
+
+	* Examples/Low-level/Test-7.1: Added a 7.1 test example.
+
+	* AROS, DEVICE, EMU10KX, FILESAVE, PAULA, TOCCATA, VOID,
+	WAVETOOLS (mode files): Enabled panning for all mono modes.
 
 	* Released void.audio 5.8.
 

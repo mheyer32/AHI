@@ -130,6 +130,40 @@ struct patch_manager {
 
 #define PATCH(mgr, i) ((struct dsp_patch *) (mgr)->patch[(i) / PATCHES_PER_PAGE] + (i) % PATCHES_PER_PAGE)
 
+#ifdef AHI
+
+/* AHI streams */
+#define AHI_FRONT_L     0x00
+#define AHI_FRONT_R     0x01
+#define AHI_REAR_L      0x04
+#define AHI_REAR_R      0x05
+#define AHI_SURROUND_L  0x06
+#define AHI_SURROUND_R	0x07
+#define AHI_CENTER	0x08
+#define AHI_LFE		0x09
+
+/* Input volume */
+#define RES_SPDIF_CD_L	0x100
+#define RES_SPDIF_CD_R	0x101
+#define VOL_SPDIF_CD_L	0x102
+#define VOL_SPDIF_CD_R	0x103
+
+/* Output volume */
+#define SUM_SPDIF_FRONT_L	0x104
+#define SUM_SPDIF_FRONT_R	0x105
+#define VOL_SPDIF_FRONT_L	0x106
+#define VOL_SPDIF_FRONT_R	0x107
+#define SUM_SPDIF_REAR_L	0x108
+#define SUM_SPDIF_REAR_R	0x109
+#define VOL_SPDIF_REAR_L	0x10a
+#define VOL_SPDIF_REAR_R	0x10b
+#define SUM_SPDIF_CENTER	0x10c
+#define VOL_SPDIF_CENTER	0x10d
+#define SUM_SPDIF_LFE		0x10e
+#define VOL_SPDIF_LFE		0x10f
+
+#else
+
 /* PCM volume control */
 #define TMP_PCM_L     0x100 //temp PCM L (after the vol control)       
 #define TMP_PCM_R     0x101
@@ -160,6 +194,7 @@ struct patch_manager {
 #define MULTI_REAR_R	0x0b
 #define MULTI_CENTER	0x0c
 #define MULTI_LFE	0x0d
+#endif // AHI
 
 #define AC97_IN_L	0x10
 #define AC97_IN_R	0x11

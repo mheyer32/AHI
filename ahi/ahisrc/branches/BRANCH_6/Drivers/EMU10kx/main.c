@@ -671,6 +671,54 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		
 		pc = 0;
 
+#ifdef AHI
+		/* Scale digital CD in */
+		OP(0, RES_SPDIF_CD_L, 0x40, SPDIF_CD_L, VOL_SPDIF_CD_L);
+		OP(0, RES_SPDIF_CD_R, 0x40, SPDIF_CD_R, VOL_SPDIF_CD_R);
+
+		/* AHI_FRONT + RES_SPDIF_CD --> Front Channel DAC */
+		OP(6, AC97_FRONT_L, AHI_FRONT_L, RES_SPDIF_CD_L, 0x40);
+		OP(6, AC97_FRONT_R, AHI_FRONT_R, RES_SPDIF_CD_R, 0x40);
+
+		/* AHI_FRONT + RES_SPDIF_CD --> Front Channel SPDIF */
+		OP(6, SUM_SPDIF_FRONT_L, AHI_FRONT_L, RES_SPDIF_CD_L, 0x40);
+		OP(6, SUM_SPDIF_FRONT_R, AHI_FRONT_R, RES_SPDIF_CD_R, 0x40);
+		
+		/* AHI_REAR + AHI_SURROUND --> Rear Channel DAC */
+		OP(6, ANALOG_REAR_L, AHI_REAR_L, AHI_SURROUND_L, 0x40);
+		OP(6, ANALOG_REAR_R, AHI_REAR_R, AHI_SURROUND_R, 0x40);
+
+		/* AHI_CENTER/AHI_LFE --> Center/LFE Channel DAC */
+		OP(6, ANALOG_CENTER, AHI_CENTER, 0x40, 0x40);
+		OP(6, ANALOG_LFE, AHI_LFE, 0x40, 0x40);
+
+		/* AHI_CENTER/AHI_LFE --> Center/LFE Channel SPDIF */
+		OP(6, SUM_SPDIF_CENTER, AHI_CENTER, 0x40, 0x40);
+		OP(6, SUM_SPDIF_LFE, AHI_LFE, 0x40, 0x40);
+
+		/* Digital SPDIF volume */
+		OP(0, DIGITAL_OUT_L, 0x40, SUM_SPDIF_FRONT_L, VOL_SPDIF_FRONT_L);
+		OP(0, DIGITAL_OUT_R, 0x40, SUM_SPDIF_FRONT_R, VOL_SPDIF_FRONT_R);
+		OP(0, DIGITAL_CENTER, 0x40, SUM_SPDIF_CENTER, VOL_SPDIF_CENTER);
+		OP(0, DIGITAL_LFE, 0x40, SUM_SPDIF_LFE, VOL_SPDIF_LFE);
+
+		/* Connect AC97 to ADC */
+		OP(6, ADC_REC_L, AC97_IN_L, 0x40, 0x40);
+		OP(6, ADC_REC_R, AC97_IN_R, 0x40, 0x40);
+
+		/* Now set the digital input volume controls to full volume */
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_CD_L - GPR_BASE, 100, VOL_5BIT);
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_CD_R - GPR_BASE, 100, VOL_5BIT);
+
+		/* Now set the digital output volume controls to full volume */
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_FRONT_L - GPR_BASE, 100, VOL_5BIT);
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_FRONT_R - GPR_BASE, 100, VOL_5BIT);
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_REAR_L - GPR_BASE, 100, VOL_5BIT);
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_REAR_R - GPR_BASE, 100, VOL_5BIT);
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_CENTER - GPR_BASE, 100, VOL_5BIT);
+		emu10k1_set_volume_gpr(card, VOL_SPDIF_LFE - GPR_BASE, 100, VOL_5BIT);
+#else
+
 		//first free GPR = 0x11b
 	
 		
@@ -758,7 +806,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		OP(6, 0x102, AC97_IN_L, 0x40, 0x40);
 		OP(6, 0x103, AC97_IN_R, 0x40, 0x40);
 
-
+		
 		/* Digital In + PCM + MULTI_FRONT-> AC97 out (front speakers)*/
 		OP(6, AC97_FRONT_L, 0x100, 0x10c, 0x113);
 
@@ -772,7 +820,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		CONNECT(PCM_IN_R, AC97_FRONT_R);
 		CONNECT(SPDIF_CD_R, AC97_FRONT_R);
 
-		/* Digital In + PCM + AC97 In + PCM1 + MULTI_REAR --> Rear Channel */ 
+		/* Digital In + PCM + AC97 In + PCM1 + MULTI_REAR --> Rear Channel */
 		OP(6, 0x104, PCM1_IN_L, 0x100, 0x115);
 		OP(6, 0x104, 0x104, 0x10c, 0x102);
 
@@ -816,7 +864,6 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		OP(6, ADC_REC_R, 0x103, 0x40, 0x40);
 
 		CONNECT(AC97_IN_R, ADC_REC_R);
-
 
 		/* fx12:Analog-Center */
 		OP(6, ANALOG_CENTER, 0x117, 0x40, 0x40);
@@ -868,7 +915,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 
 		OP(0, DIGITAL_OUT_R, 0x040, 0x10b, 0x109);
 		OUTPUT_PATCH_END(patch);
-
+#endif
 
 		/* delimiter patch */
 		patch = PATCH(mgr, patch_n);
@@ -880,7 +927,6 @@ static int __devinit fx_init(struct emu10k1_card *card)
 
 #ifndef AHI
 	mgr->lock = SPIN_LOCK_UNLOCKED;
-#endif
 
 	// Set up Volume controls, try to keep this the same for both Audigy and Live
 
@@ -888,30 +934,22 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_VOLUME][0] = 8;
 	mgr->ctrl_gpr[SOUND_MIXER_VOLUME][1] = 9;
 
-#ifdef AHI
-	left = right = 100;
-
-	emu10k1_set_volume_gpr(card, 8, left, 1 << 5);
-	emu10k1_set_volume_gpr(card, 9, right, 1 << 5);
-#else
 	left = card->ac97.mixer_state[SOUND_MIXER_VOLUME] & 0xff;
 	right = (card->ac97.mixer_state[SOUND_MIXER_VOLUME] >> 8) & 0xff;
 
 	emu10k1_set_volume_gpr(card, 8, left, 1 << card->ac97.bit_resolution);
 	emu10k1_set_volume_gpr(card, 9, right, 1 << card->ac97.bit_resolution);
-#endif
 
 	//Rear volume
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][0] = 0x19;
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][1] = 0x1a;
 
 	left = right = 67;
-#ifndef AHI
+
 	card->ac97.mixer_state[SOUND_MIXER_OGAIN] = (right << 8) | left;
 
 	card->ac97.supported_mixers |= SOUND_MASK_OGAIN;
 	card->ac97.stereo_mixers |= SOUND_MASK_OGAIN;
-#endif
 
 	emu10k1_set_volume_gpr(card, 0x19, left, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, 0x1a, right, VOL_5BIT);
@@ -920,12 +958,8 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_PCM][0] = 6;
 	mgr->ctrl_gpr[SOUND_MIXER_PCM][1] = 7;
 
-#ifdef AHI
-	left = right = 100;
-#else
 	left = card->ac97.mixer_state[SOUND_MIXER_PCM] & 0xff;
 	right = (card->ac97.mixer_state[SOUND_MIXER_PCM] >> 8) & 0xff;
-#endif
 
 	emu10k1_set_volume_gpr(card, 6, left, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, 7, right, VOL_5BIT);
@@ -935,17 +969,14 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_DIGITAL1][1] = 0xf;
 
 	left = right = 67;
-#ifndef AHI
 	card->ac97.mixer_state[SOUND_MIXER_DIGITAL1] = (right << 8) | left; 
 
 	card->ac97.supported_mixers |= SOUND_MASK_DIGITAL1;
 	card->ac97.stereo_mixers |= SOUND_MASK_DIGITAL1;
-#endif
 	
 	emu10k1_set_volume_gpr(card, 0xd, left, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, 0xf, right, VOL_5BIT);
 
-#ifndef AHI
 	//hard wire the ac97's pcm, pcm volume is done above using dsp code.
 	if (card->is_audigy)
 		//for Audigy, we mute it and use the philips 6 channel DAC instead
@@ -962,7 +993,6 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	emu10k1_ac97_write(&card->ac97, AC97_RECORD_GAIN, 0x0000);
 	card->ac97.mixer_state[SOUND_MIXER_IGAIN] = 0x101;
 #endif
-
 	return 0;
 }
 

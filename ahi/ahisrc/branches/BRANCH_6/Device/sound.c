@@ -941,9 +941,10 @@ _AHI_LoadSound( UWORD                    sound,
       switch(si->ahisi_Type)
       {
         case AHIST_L7_1:
-	  if(audioctrl->ac.ahiac_BuffType != AHIST_L7_1)
+	  if( (audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0 )
 	  {
 	    rc = AHIE_BADSAMPLETYPE;
+	    break;
 	  }
 	  else
 	  {
@@ -961,7 +962,6 @@ _AHI_LoadSound( UWORD                    sound,
           audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
           audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
           audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
-
           break;
 
         default:
