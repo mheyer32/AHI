@@ -1,5 +1,8 @@
 2003-04-24  Martin Blom  <martin@blom.org>
 
+	* filesave.audio: Now endian aware. Avoided varargs in order to
+	make it compile for AROS.
+
 	* filesave.audio: Can now be compiled using gcc.
 
 2003-04-23  Martin Blom  <martin@blom.org>
