@@ -77,32 +77,20 @@ CallMixroutine( struct PowerPCContext* context )
 
   audioctrl = context->AudioCtrl;
 
-  *((ULONG*) 0x100000) = 1;
+//  *((ULONG*) 0x100000) = 1;
 
   // Wait for start signal...
 
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_START );
 
-  *((ULONG*) 0x100000) = 2;
-
-  // Acknowledge
-
-  audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
-
-  *((ULONG*) 0x100000) = 3;
-
-  // Wait for continue signal...
-
-  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_CONTINUE );
-
-  *((ULONG*) 0x100000) = 4;
+//  *((ULONG*) 0x100000) = 4;
 
   // Start m68k interrupt handler
 
   audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
-  *((ULONG*) 0x100000) = 5;
+//  *((ULONG*) 0x100000) = 5;
 
 #if 0
 
@@ -145,7 +133,7 @@ CallMixroutine( struct PowerPCContext* context )
 
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 
-  *((ULONG*) 0x100000) = 6;
+//  *((ULONG*) 0x100000) = 6;
 
 #if 0
 
@@ -160,24 +148,24 @@ CallMixroutine( struct PowerPCContext* context )
 
 #endif
 
-  *((ULONG*) 0x100000) = 7;
+//  *((ULONG*) 0x100000) = 7;
 
   // Kill the m68k interrupt handler
 
   audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_QUIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
-  *((ULONG*) 0x100000) = 8;
+//  *((ULONG*) 0x100000) = 8;
 
   // Wait for it
 
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 
-  *((ULONG*) 0x100000) = 9;
+//  *((ULONG*) 0x100000) = 9;
 
   audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_FINISHED;
 
-  *((ULONG*) 0x100000) = 10;
+//  *((ULONG*) 0x100000) = 10;
 
   return 0;
 }
@@ -518,7 +506,7 @@ Interrupt( struct AHIPrivAudioCtrl* audioctrl __asm( "a1" ) )
   else
   {
     BOOL running = TRUE;
-kprintf("I");
+//kprintf("I");
     while( running )
     {
 //kprintf("0");
@@ -565,7 +553,7 @@ kprintf("I");
           break;
       }
     }
-kprintf("i");
+//kprintf("i");
 
     /* End chain! */
     return 1;
@@ -590,7 +578,7 @@ WarpUpInit( struct AHIPrivAudioCtrl* audioctrl )
 
   BOOL rc = FALSE;
 
-KPrintF( "WarpUpInit( 0x%08lx )", audioctrl );
+//KPrintF( "WarpUpInit( 0x%08lx )", audioctrl );
 
   audioctrl->ahiac_PowerPCContext = 
     AllocVec32( sizeof( struct PowerPCContext ), 
@@ -672,7 +660,7 @@ KPrintF( "WarpUpInit( 0x%08lx )", audioctrl );
     }
   }
 
-KPrintF( "=> %ld\n", rc );
+//KPrintF( "=> %ld\n", rc );
   return rc;
 
 #endif /* __PPC__ */
@@ -700,7 +688,7 @@ WarpUpCallMixer( struct AHIPrivAudioCtrl* audioctrl,
   int                  i;
   BOOL                 flushed = FALSE;
 
-kprintf("M");
+//kprintf("M");
   // Flush all DYNAMICSAMPLE's
 
   sd = audioctrl->ahiac_SoundDatas;
@@ -711,7 +699,7 @@ kprintf("M");
     {
       if( sd->sd_Addr == NULL )
       {
-kprintf("a");
+//kprintf("a");
         // Flush all and exit
         CacheClearU();
         flushed = TRUE;
@@ -719,17 +707,17 @@ kprintf("a");
       }
       else
       {
-kprintf("b");
+//kprintf("b");
         SetCache68K( CACHE_DCACHEFLUSH,
                      sd->sd_Addr,
                      sd->sd_Length * AHI_SampleFrameSize( sd->sd_Type ) );
       }
-kprintf("c");
+//kprintf("c");
     }
     sd++;
   }
 
-kprintf("d");
+//kprintf("d");
   if( ! flushed )
   {
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
@@ -739,7 +727,7 @@ kprintf("d");
                  audioctrl->ahiac_PowerPCContext->MixBuffer,
                  audioctrl->ahiac_BuffSizeNow );
   }
-kprintf("e");
+//kprintf("e");
 
   audioctrl->ahiac_PowerPCContext->Hook         = audioctrl->ac.ahiac_MixerFunc;
   audioctrl->ahiac_PowerPCContext->Dst          = audioctrl->ahiac_PowerPCContext->MixBuffer;
@@ -748,15 +736,9 @@ kprintf("e");
 
   CausePPCInterrupt();
 
-kprintf("f");
-  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
-
-kprintf("g");
-  audioctrl->ahiac_PowerPCContext->Command      = PPCC_COM_CONTINUE;
-
-kprintf("h");
+//kprintf("h");
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
-kprintf("i");
+//kprintf("i");
 
 #endif /* __PPC__ */
 
