@@ -1,5 +1,18 @@
 2003-04-12  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.33.
+
+	* ahi.device: The audio mode requester now resizes to its minimum
+	width if asked to open a smaller window. Before, it just failed
+	to open.
+
+	* ahi.device: The audio mode requester now uses the ASL
+	preferences if available (requires asl.library V45 or
+	later). [Todd A. Oberly]
+
+	* ahi.device (AudioRequestA): AHIR_PrivateIDCMP is now honored
+	even if AHIR_Screen or AHIR_PubScreenName is provided.
+
 	* PlayTest: I finally fixed the bug that could make the example
 	call DeleteIORequest() on a pointer obtained from AllocMem().
 
