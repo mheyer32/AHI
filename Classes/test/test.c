@@ -3,13 +3,16 @@
 #include <classes/ahi/buffer.h>
 #include <classes/ahi/processor.h>
 #include <classes/ahi/processor/gain.h>
-#include <intuition/classusr.h>
+#include <devices/ahi.h>
 
 #include <math.h>
 #include <stdio.h>
 
+#include <proto/ahi.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
+
+struct Library* AHIBase;
 
 static int buffer_type = AHIST_F2;
 static int buffer_len  = 16;
@@ -85,7 +88,7 @@ int main(void) {
 	SetAttrs(p, AHIA_Processor_Busy, TRUE, TAG_DONE);
 	check_err(p);
 
-	DoMethod(p, AHIM_GainProcessor_Set, 2, gains);
+	DoMethod(p, AHIM_GainProcessor_SetBalance, 2, gains);
 	check_err(p);
 
 	printf("Prepare: %d\n", DoMethod(p, AHIM_Processor_Prepare, 0, 0, 0));
@@ -111,4 +114,22 @@ int main(void) {
   CloseLibrary(processor);
   
   return 0;
+}
+
+
+static int
+test(Object* proc) {
+  int rc = 0;
+  static struct AHIRequest ahirequest;
+
+  ahirequest.ahir_Std.io_Message.mn_Length = sizeof (ahirequest);
+  ahirequest.ahir_Version = 7;
+
+  if (OpenDevice( AHINAME, AHI_NO_UNIT, (struct IORequest*) &ahirequest, 0) == 0) {
+    AHIBase = (struct Library*) ahirequest.ahir_Std.io_Device;
+
+    CloseDevice((struct IORequest*) &ahirequest);
+  }
+
+  return rc;
 }
