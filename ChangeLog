@@ -1,3 +1,9 @@
+2003-01-23  Martin Blom  <martin@blom.org>
+
+	* Limit lha compression method to lh6.
+
+	* Now builds AHI-Handler for ppc-morphos too.
+
 2003-01-22  Martin Blom  <martin@blom.org>
 
 	* Docs: Now builds AutoDocs for ahi.device and drivers.
@@ -5,9 +11,9 @@
 	* Released AHI-Handler 5.1.
 
 	* Drivers: source code for a couple of drivers now included in
-	bindist (ahi6dev.lha).
+	bindist (ahidev.lha).
 
-	* Examples: source code now included in bindist (ahi6dev.lha).
+	* Examples: source code now included in bindist (ahidev.lha).
 
 2003-01-20  Martin Blom  <martin@blom.org>
 
