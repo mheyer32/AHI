@@ -11,7 +11,6 @@
 #include "util.h"
 #include "version.h"
 
-
 /******************************************************************************
 ** MethodNew ******************************************************************
 ******************************************************************************/
@@ -20,19 +19,73 @@ LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-  
+
+  struct TagItem* tstate = msg->ops_AttrList;
+  struct TagItem* tag;
+  ULONG result = 0;
+
+  AHIClassData->sample_type = AHIST_NOTYPE;
+
+  while ((tag = NextTagItem(&tstate))) {
+    switch (tag->ti_Tag) {
+      case AHIA_Buffer_SampleType:
+	AHIClassData->sample_type = tag->ti_Data;
+	break;
+
+      case AHIA_Buffer_SampleFreqInt:
+	AHIClassData->sample_freq_int = tag->ti_Data;
+	break;
+
+      case AHIA_Buffer_SampleFreqFract:
+	AHIClassData->sample_freq_fract = tag->ti_Data;
+	break;
+	
+      case AHIA_Buffer_Capacity:
+	AHIClassData->capacity = tag->ti_Data;
+	break;
+
+      default:
+	break;
+    }
+  }
+
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
-  if (AHIClassData->capacity > 0) {
-    AHIClassData->data = AllocVec(AHIClassData->capacity,
-				  MEMF_PUBLIC | MEMF_CLEAR);
+  GetAttr(AHIA_Error, object, &result);
+
+  if (result != 0) {
+    return result;
+  }
+
+  if (AHIClassData->sample_freq_int == 0 &&
+      AHIClassData->sample_freq_fract == 0) {
+    return AHIE_Buffer_InvalidSampleFreq;
+  }
+  
+  if (AHIClassData->length == 0) {
+    AHIClassData->length = AHIClassData->capacity;
+  }
+
+  if (AHIClassData->capacity == 0) {
+    return AHIE_Buffer_InvalidCapacity;
+  }
+  else {
+    ULONG size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
+			  AHIClassData->sample_type, AHIClassData->capacity, NULL);
+
+    if (size == 0) {
+      return AHIE_Buffer_InvalidSampleType;
+    }
+    
+    AHIClassData->data = AllocVec(size, MEMF_PUBLIC | MEMF_CLEAR);
+    KPrintF("Allocated %ld bytes sample buffer: %08lx\n", size, AHIClassData->data);
   }
 
   if (AHIClassData->data == NULL) {
     return ERROR_NO_FREE_STORE;
   }
   
-  return 0;
+  return AHIE_OK;
 }
 
 
@@ -64,25 +117,15 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
-      case AHIA_Buffer_SampleType:
-	AHIClassData->sample_type = tag->ti_Data;
-	break;
-
-      case AHIA_Buffer_SampleFreqInt:
-	AHIClassData->sample_freq_int = tag->ti_Data;
-	break;
-
-      case AHIA_Buffer_SampleFreqFract:
-	AHIClassData->sample_freq_fract = tag->ti_Data;
-	break;
-	
-      case AHIA_Buffer_Capacity:
-	AHIClassData->capacity = tag->ti_Data;
-	break;
-
       case AHIA_Buffer_Length:
-	AHIClassData->length = tag->ti_Data;
-	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data);
+	if (tag->ti_Data < AHIClassData->capacity) {
+	  AHIClassData->length = tag->ti_Data;
+	  NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data);
+	}
+	else {
+	  SetAttrs(object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
+//	  SetSuperAttrs(class, object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
+	}
 	break;
 
       case AHIA_Buffer_TimestampHigh:
@@ -102,8 +145,6 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	break;
 
       default:
-	KPrintF("Unknown NEW/SET attribute in " _AHI_CLASS_NAME ": %08lx, %08lx\n",
-		tag->ti_Tag, tag->ti_Data);
 	break;
     }
   }
@@ -197,4 +238,79 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
   }
 
   return TRUE;
+}
+
+/******************************************************************************
+** MethodSampleFrameSize ******************************************************
+******************************************************************************/
+
+ULONG
+MethodSampleFrameSize(Class* class, Object* object,
+		      struct AHIP_Buffer_SampleFrameSize* msg) {
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+
+  ULONG cnt = 0;
+  
+  switch (msg->SampleType & AHIST_T_MASK) {
+    case AHIST_T_BYTE:
+      cnt = 1;
+      break;
+
+    case AHIST_T_WORD:
+      cnt = 2;
+      break;
+
+    case AHIST_T_LONG:
+      cnt = 4;
+      break;
+
+    case AHIST_T_QUAD:
+      cnt = 8;
+      break;
+
+    case AHIST_T_UBYTE:
+      cnt = 1;
+      break;
+
+    case AHIST_T_UWORD:
+      cnt = 2;
+      break;
+
+    case AHIST_T_ULONG:
+      cnt = 4;
+      break;
+
+    case AHIST_T_UQUAD:
+      cnt = 8;
+      break;
+
+    case AHIST_T_FLOAT:
+      cnt = 4;
+      break;
+
+    case AHIST_T_DOUBLE:
+      cnt = 8;
+      break;
+  }
+
+  switch (msg->SampleType & AHIST_D_MASK) {
+    case AHIST_D_DISCRETE:
+    case AHIST_D_AMBISONIC:
+    case AHIST_D_FOURIER:
+      cnt *= AHIST_C_DECODE(msg->SampleType);
+      cnt *= msg->Samples;
+      break;
+
+    case AHIST_D_COMPRESSED:
+      // TODO: Fix later
+      cnt = 0;
+      break;
+
+    default:
+      cnt = 0;
+      break;
+  }
+
+  return cnt;
 }

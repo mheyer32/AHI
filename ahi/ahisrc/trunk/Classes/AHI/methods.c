@@ -1,5 +1,7 @@
 
 #include <classes/ahi.h>
+#include <classes/ahi/buffer.h>
+#include <classes/ahi/processor.h>
 #include <intuition/icclass.h>
 
 #include <clib/alib_protos.h>
@@ -9,6 +11,42 @@
 #include "ahiclass.h"
 #include "util.h"
 #include "version.h"
+
+static char*
+get_error_message(struct AHIClassData* AHIClassData) {
+  switch (AHIClassData->error) {
+    case AHIE_OK:
+      return "No error";
+
+    case AHIE_Buffer_InvalidSampleType:
+      return "Invalid sample type";
+
+    case AHIE_Buffer_InvalidSampleFreq:
+      return "Invalid sample frequency";
+
+    case AHIE_Buffer_InvalidCapacity:
+      return "Invalid buffer capacity";
+
+    case AHIE_Buffer_InvalidLength:
+      return "Invalid buffer length";
+
+    case AHIE_Processor_ObjectNotReady:
+      return "Object is not ready";
+
+    case AHIE_Processor_ObjectBusy:
+      return "Object is busy";
+	  
+    default:
+      if (Fault(AHIClassData->error,
+		NULL,
+		AHIClassData->error_message,
+		sizeof (AHIClassData->error_message)) > 0) {
+	return  AHIClassData->error_message;
+      }
+  }
+
+  return "Unknown error";
+}
 
 
 /******************************************************************************
@@ -237,23 +275,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
 
     case AHIA_ErrorMessage:
-      switch (AHIClassData->error) {
-	case 0:
-	  *msg->opg_Storage = (ULONG) "No error";
-	  break;
-	  
-	default:
-	  if (Fault(AHIClassData->error,
-		    NULL,
-		    AHIClassData->error_message,
-		    sizeof (AHIClassData->error_message)) > 0) {
-	    *msg->opg_Storage = (ULONG) AHIClassData->error_message;
-	  }
-	  else {
-	    *msg->opg_Storage = (ULONG) "Unknown error";
-	  }
-	  break;
-      }
+      *msg->opg_Storage = get_error_message(AHIClassData);
       break;
       
     case AHIA_UserData:

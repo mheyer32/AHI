@@ -36,7 +36,7 @@ MethodDispose(Class* class, Object* object, Msg msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  Object* ostate = (Object*) &AHIClassData->members.mlh_Head;
+  Object* ostate = (Object*) AHIClassData->members.mlh_Head;
   Object* member;
 
   while ((member = NextObject(&ostate)) != NULL) {
@@ -88,8 +88,6 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	break;
 
       default:
-	KPrintF("Unknown NEW/SET attribute in " _AHI_CLASS_NAME ": %08lx, %08lx\n",
-		tag->ti_Tag, tag->ti_Data);
 	break;
     }
   }
@@ -171,10 +169,16 @@ MethodPrepare(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  Object* ostate = (Object*) &AHIClassData->members.mlh_Head;
+  Object* ostate = (Object*) AHIClassData->members.mlh_Head;
   Object* member;
 
   BOOL result = FALSE;
+
+  if (!AHIClassData->busy) {
+    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
+//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
+    return FALSE;
+  }
   
   while ((member = NextObject(&ostate)) != NULL) {
     result |= DoMethodA(member, (Msg) msg);
@@ -193,13 +197,22 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  Object* ostate = (Object*) &AHIClassData->members.mlh_Head;
+  Object* ostate = (Object*) AHIClassData->members.mlh_Head;
   Object* member;
 
-  BOOL result = FALSE;
+  BOOL result = TRUE;
+  
+  if (!AHIClassData->busy) {
+    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
+//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
+    return FALSE;
+  }
   
   while ((member = NextObject(&ostate)) != NULL) {
-    result |= DoMethodA(member, (Msg) msg);
+    if (!DoMethodA(member, (Msg) msg)) {
+      result = FALSE;
+      break;
+    }
   }
 
   return result != FALSE;
@@ -215,7 +228,15 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  return DoMethod(msg->opam_Object, OM_ADDTAIL, &AHIClassData->members);
+  if (!AHIClassData->busy) {
+    DoMethod(msg->opam_Object, OM_ADDTAIL, &AHIClassData->members);
+    return TRUE;
+  }
+  else {
+    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+    return FALSE;
+  }
 }
 
 
@@ -228,5 +249,13 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  return DoMethod(msg->opam_Object, OM_REMOVE);
+  if (!AHIClassData->busy) {
+    DoMethod(msg->opam_Object, OM_REMOVE);
+    return TRUE;
+  }
+  else {
+    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+    return FALSE;
+  }
 }
