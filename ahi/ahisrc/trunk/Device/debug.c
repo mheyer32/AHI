@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 1.1  1997/10/23 01:10:03  lcs
 * Initial revision
 *
@@ -72,35 +75,38 @@ Debug_KillAudio( void )
 void
 Debug_ControlAudioA( struct AHIPrivAudioCtrl *audioctrl, struct TagItem *tags )
 {
-    KPrintF("AHI_ControlAudioA(0x%08lx,",audioctrl);
-    PrintTagList(tags);
+  KPrintF("AHI_ControlAudioA(0x%08lx,",audioctrl);
+  PrintTagList(tags);
 }
 
-/*
+
 void
 Debug_SetVol( UWORD chan, Fixed vol, sposition pan, struct AHIPrivAudioCtrl *audioctrl, ULONG flags)
 {
-
+  KPrintF("AHI_SetVol(%ld, 0x%08lx, 0x%08lx, 0x%08lx, %ld)\n",
+      chan & 0xffff, vol, pan, audioctrl, flags);
 }
 
 void
 Debug_SetFreq( UWORD chan, ULONG freq, struct AHIPrivAudioCtrl *audioctrl, ULONG flags)
 {
-
+  KPrintF("AHI_SetFreq(%ld, %ld, 0x%08lx, %ld)\n",
+      chan & 0xffff, freq, audioctrl, flags);
 }
 
 void
 Debug_SetSound( UWORD chan, UWORD sound, ULONG offset, LONG length, struct AHIPrivAudioCtrl *audioctrl, ULONG flags)
 {
-
+  KPrintF("AHI_SetSound(%ld, %ld, 0x%08lx, 0x%08lx, 0x%08lx, %ld)\n",
+      chan & 0xffff, sound & 0xffff, offset, length, audioctrl, flags);
 }
 
 void
-Debug_SetEffect( APTR effect, struct AHIPrivAudioCtrl *audioctrl )
+Debug_SetEffect( ULONG *effect, struct AHIPrivAudioCtrl *audioctrl )
 {
-
+  KPrintF("AHI_SetEffect(0x%08lx (Effect 0x%08lx), 0x%08lx)\n",
+      effect, *effect, audioctrl);
 }
-*/
 
 void
 Debug_LoadSound( UWORD sound, ULONG type, APTR info, struct AHIPrivAudioCtrl *audioctrl )

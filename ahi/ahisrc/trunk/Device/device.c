@@ -1,91 +1,10 @@
 /* $Id$
 * $Log$
+* Revision 4.10  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.9  1997/10/23 01:10:03  lcs
 * Better debug output.
-*
-* Revision 4.8  1997/07/15 00:52:05  lcs
-* This is the second bugfix release of AHI 4.
-*
-* Revision 4.7  1997/06/02 18:15:02  lcs
-* Added optional clipping when using master volume > 100%.
-*
-* Revision 4.6  1997/05/11 01:06:46  lcs
-* Forgot to remove debug statements...
-*
-* Revision 4.5  1997/05/08 23:59:58  lcs
-* Fixed problem with IO/Requests that didn't get replied, and
-* lockup problem with CMD_START.
-*
-* Revision 4.4  1997/05/03 19:59:56  lcs
-* Fixed a race condition (happened with small CMD_WRITE's).
-*
-* Revision 4.3  1997/04/22 01:35:21  lcs
-* This is release 4! Finally.
-*
-* Revision 4.2  1997/04/14 01:50:39  lcs
-* Spellchecked
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.20  1997/03/27 12:16:27  lcs
-* Major bug in the device interface code fixed.
-*
-* Revision 1.19  1997/03/20 02:07:02  lcs
-* Weiß nicht?
-*
-* Revision 1.18  1997/03/15 09:51:52  lcs
-* Dynamic sample loading in the device: No more alignment restrictions.
-*
-* Revision 1.17  1997/03/13 00:19:43  lcs
-* Up to 4 device units are now available.
-*
-* Revision 1.16  1997/03/01 21:36:04  lcs
-* Added docs for OpenDevice() and CloseDevice().
-*
-* Revision 1.15  1997/02/18 22:26:49  lcs
-* Added flag for OpenDevice(): AHIDF_NOMODESCAN
-*
-* Revision 1.14  1997/02/12 15:32:45  lcs
-* Moved each autodoc header to the file where the function is
-*
-* Revision 1.13  1997/02/10 02:23:06  lcs
-* Infowindow in the requester added.
-*
-* Revision 1.12  1997/02/04 15:44:30  lcs
-* AHIDB_MaxChannels didn't work in AHI_BestAudioID()
-*
-* Revision 1.11  1997/02/02 22:35:50  lcs
-* Localized it
-*
-* Revision 1.10  1997/02/02 18:15:04  lcs
-* Added protection against CPU overload
-*
-* Revision 1.9  1997/02/01 23:54:26  lcs
-* Rewrote the library open code in C and removed the library bases
-* from AHIBase
-*
-* Revision 1.8  1997/02/01 19:44:18  lcs
-* Added stereo samples
-*
-* Revision 1.6  1997/01/15 14:59:50  lcs
-* Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
-*
-* Revision 1.5  1997/01/05 13:38:01  lcs
-* Prettified the code a bit... ;)
-*
-* Revision 1.4  1997/01/04 20:19:56  lcs
-* Changed the AHI_DEBUG levels
-* CMD_WRITE seem to work as supposed now
-*
-* Revision 1.3  1997/01/04 13:26:41  lcs
-* Debugged CMD_WRITE
-*
-* Revision 1.2  1996/12/21 23:06:35  lcs
-* "Finished" the code for CMD_WRITE
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
 *
 */
 
@@ -159,7 +78,8 @@ extern __asm void DevProcEntry(void);
 extern struct timerequest *TimerIO;
 extern struct timeval     *timeval;
 
-__asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
+ASMFUNC BOOL 
+OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 {
 
   /* DOS Library */
@@ -252,7 +172,8 @@ __asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
 // This function is called by DevExpunge() when the device is about to be
 // flushed
 
-__asm void CloseLibs(register __a6 struct ExecBase *SysBase)
+ASMCALL void
+CloseLibs ( REG(a6, struct ExecBase *SysBase) )
 {
 
   CloseahiCatalog();
@@ -329,11 +250,11 @@ __asm void CloseLibs(register __a6 struct ExecBase *SysBase)
 // This function is called by the system each time a unit is opened with
 // exec.library/OpenDevice().
 
-__asm ULONG DevOpen(
-    register __d0 ULONG unit,
-    register __d1 ULONG flags,
-    register __a1 struct AHIRequest *ioreq,
-    register __a6 struct AHIBase *AHIBase)
+ASMCALL ULONG
+DevOpen ( REG(d0, ULONG unit),
+          REG(d1, ULONG flags),
+          REG(a1, struct AHIRequest *ioreq),
+          REG(a6, struct AHIBase *AHIBase) )
 {
   ULONG rc=NULL;
   BOOL  error=FALSE;
@@ -463,9 +384,9 @@ __asm ULONG DevOpen(
 // This function is called by the system each time a unit is closed with
 // exec.library/CloseDevice().
 
-__asm BPTR DevClose(
-    register __a1 struct AHIRequest *ioreq,
-    register __a6 struct AHIBase *AHIBase)
+ASMCALL BPTR
+DevClose ( REG(a1, struct AHIRequest *ioreq),
+           REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHIDevUnit *iounit;
   BPTR  seglist=0;
@@ -507,7 +428,9 @@ __asm BPTR DevClose(
 
 // This function is called by DevOpen() to initialize a unit
 
-static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase )
+static struct AHIDevUnit *
+InitUnit ( ULONG unit, 
+           struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
   struct TagItem NPTags[]=
@@ -592,7 +515,9 @@ static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase )
 
 // This function is called by DevClose() to remove a unit.
 
-static void ExpungeUnit(struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
+static void 
+ExpungeUnit ( struct AHIDevUnit *iounit,
+              struct AHIBase *AHIBase )
 {
   struct Task *unittask;
 
@@ -612,7 +537,9 @@ static void ExpungeUnit(struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
 // This functions loads the users settings for AHI.
 
-BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
+BOOL
+ReadConfig ( struct AHIDevUnit *iounit,
+             struct AHIBase *AHIBase )
 {
   struct IFFHandle *iff;
   struct StoredProperty *prhd,*ahig;
@@ -768,7 +695,9 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
 // Allocates the audio hardware
 
-BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
+BOOL
+AllocHardware ( struct AHIDevUnit *iounit,
+                struct AHIBase *AHIBase )
 {
   BOOL rc = FALSE;
   ULONG fullduplex=FALSE;
@@ -829,7 +758,9 @@ BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 
 // Take a wild guess!
 
-void FreeHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
+void
+FreeHardware ( struct AHIDevUnit *iounit,
+               struct AHIBase *AHIBase )
 {
   if(iounit->AudioCtrl)
   {
@@ -851,7 +782,8 @@ void FreeHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 ** DevProc ********************************************************************
 ******************************************************************************/
 
-__asm void DevProc(register __a6 struct AHIBase *AHIBase)
+ASMCALL void 
+DevProc ( REG(a6, struct AHIBase *AHIBase) )
 {
   struct Process *proc;
   struct StartupMessage *sm;
@@ -985,10 +917,10 @@ __asm void DevProc(register __a6 struct AHIBase *AHIBase)
 ** PlayerFunc *****************************************************************
 ******************************************************************************/
 
-static __asm __interrupt void PlayerFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 APTR null)
+ASMCALL INTERRUPT static void
+PlayerFunc ( REG(a0, struct Hook *hook),
+             REG(a2, struct AHIAudioCtrl *actrl),
+             REG(a1, APTR null) )
 {
   struct AHIDevUnit *iounit = (struct AHIDevUnit *) hook->h_Data;
 
@@ -1009,10 +941,10 @@ static __asm __interrupt void PlayerFunc(
 ** RecordFunc *****************************************************************
 ******************************************************************************/
 
-static __asm __interrupt BOOL RecordFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 struct AHIRecordMessage *recmsg)
+ASMCALL INTERRUPT static BOOL
+RecordFunc ( REG(a0, struct Hook *hook),
+             REG(a2, struct AHIAudioCtrl *actrl),
+             REG(a1, struct AHIRecordMessage *recmsg) )
 {
   struct AHIDevUnit *iounit;
   
@@ -1034,10 +966,10 @@ static __asm __interrupt BOOL RecordFunc(
 ** SoundFunc ******************************************************************
 ******************************************************************************/
 
-static __asm __interrupt void SoundFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 struct AHISoundMessage *sndmsg)
+ASMCALL INTERRUPT static void
+SoundFunc ( REG(a0, struct Hook *hook),
+            REG(a2, struct AHIAudioCtrl *actrl),
+            REG(a1, struct AHISoundMessage *sndmsg) )
 {
   struct AHIDevUnit *iounit;
   struct Voice *voice;  
@@ -1118,10 +1050,10 @@ static __asm __interrupt void SoundFunc(
 
 // This hook keeps updating the io_Actual field of each playing requests
 
-static __asm __interrupt void ChannelInfoFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 struct AHIEffChannelInfo *cimsg)
+ASMCALL INTERRUPT static void
+ChannelInfoFunc ( REG(a0, struct Hook *hook),
+                  REG(a2, struct AHIAudioCtrl *actrl),
+                  REG(a1, struct AHIEffChannelInfo *cimsg) )
 {
   struct AHIDevUnit *iounit = (struct AHIDevUnit *) hook->h_Data;
   struct Voice      *voice;

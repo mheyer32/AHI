@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 4.3  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.2  1997/04/14 01:50:39  lcs
 * Spellchecked
 *
@@ -23,26 +26,28 @@
 *******************************************************************************
 
 */
-	#include <devices/ahi.h>
 
-#define RecArgs register __d0 ULONG size,    \
-                register __d1 ULONG add,     \
-                register __a0 APTR src,      \
-                register __a2 ULONG *offset, \
-                register __a3 void **dest
+#include <CompilerSpecials.h>
+#include <devices/ahi.h>
 
-__asm void  RecM8S( RecArgs ) {}
-__asm void  RecS8S( RecArgs ) {}
-__asm void RecM16S( RecArgs ) {}
-__asm void RecS16S( RecArgs ) {}
-__asm void RecM32S( RecArgs ) {}
-__asm void RecS32S( RecArgs ) {}
+#define RecArgs REG(d0, ULONG size),    \
+                REG(d1, ULONG add),     \
+                REG(a0, APTR src),      \
+                REG(a2, ULONG *offset), \
+                REG(a3, void **dest)
 
-__asm ULONG MultFixed( register __d0 ULONG a, register __d1 Fixed b ) {}
-__asm void asmRecordFunc(
-	register __d0 ULONG samples,
-	register __a0 void *data,
-	register __a1 void *buffer ) {}
+ASMCALL void  RecM8S( RecArgs ) {}
+ASMCALL void  RecS8S( RecArgs ) {}
+ASMCALL void RecM16S( RecArgs ) {}
+ASMCALL void RecS16S( RecArgs ) {}
+ASMCALL void RecM32S( RecArgs ) {}
+ASMCALL void RecS32S( RecArgs ) {}
+
+ASMCALL ULONG MultFixed ( REG(d0, ULONG a),
+                          REG(d1, Fixed b) ) {}
+ASMCALL void asmRecordFunc ( REG(d0, ULONG samples),
+                             REG(a0, void *data),
+                             REG(a1, void *buffer) ) {}
 
 ;/*     Comment terminated at the end of the file!
 
@@ -401,6 +406,7 @@ _RecS32S:
 ;out:
 * d0	d0*d1
 _MultFixed:
+	push	d2
 	move.l	d0,d2
 	move.l	d1,d0
 	beq	.exit			;Sanity check
@@ -413,13 +419,12 @@ _MultFixed:
 	divu.l	d0,d1:d2
 	move.l	d2,d0
  ELSE
-;	move.l	d3,d1
-;	move.l	d4,d2
 	XREF	_UDivMod64
 	bsr	_UDivMod64		;d0 = (d1:d2)/d0
  ENDC
 ;	addq.l	#1,d0
 .exit
+	pop	d2
 	rts
 
 *******************************************************************************
@@ -503,6 +508,6 @@ _asmRecordFunc:
 
 	rts
 
-;*/
+;	C comment terminating here... */
 
 

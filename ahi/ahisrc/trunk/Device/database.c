@@ -1,37 +1,14 @@
 /* $Id$
 * $Log$
+* Revision 4.5  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.4  1997/10/23 01:10:03  lcs
 * Better debug output.
 *
-* Revision 4.3  1997/06/28 22:00:37  lcs
-* Roze the database semaphore pri from 0 to 20.
-*
-* Revision 4.2  1997/04/14 01:50:39  lcs
-* AHIST_INPUT still doesn't work...
-*
-* Revision 4.1  1997/04/02 22:28:11  lcs
-* Bumped to version 4
-*
-* Revision 1.6  1997/03/24 12:41:51  lcs
-* Echo rewritten
-*
-* Revision 1.5  1997/02/12 15:32:45  lcs
-* Moved each autodoc header to the file where the function is
-*
-* Revision 1.4  1997/01/29 23:34:38  lcs
-* *** empty log message ***
-*
-* Revision 1.3  1997/01/04 20:19:56  lcs
-* Changed the AHI_DEBUG levels
-*
-* Revision 1.2  1996/12/21 23:06:35  lcs
-* Replaced all EQ with ==
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
-*
 */
 
+#include <CompilerSpecific.h>
 #include "ahi_def.h"
 
 #include <exec/memory.h>
@@ -85,7 +62,8 @@ struct AHI_AudioMode
 ** Lock the database for read access. Return NULL if database not present.
 */
 
-__asm __saveds struct AHI_AudioDatabase *LockDatabase(void)
+struct AHI_AudioDatabase *
+LockDatabase(void)
 {
   struct AHI_AudioDatabase *audiodb;
 
@@ -100,7 +78,8 @@ __asm __saveds struct AHI_AudioDatabase *LockDatabase(void)
 ** Lock the database for write access. Create it if not present.
 */
 
-__asm __saveds struct AHI_AudioDatabase *LockDatabaseWrite(void)
+struct AHI_AudioDatabase *
+LockDatabaseWrite(void)
 {
   struct AHI_AudioDatabase *audiodb;
 
@@ -124,16 +103,16 @@ __asm __saveds struct AHI_AudioDatabase *LockDatabaseWrite(void)
   return audiodb;
 }
 
-__asm __saveds void UnlockDatabase(
-    register __a0 struct AHI_AudioDatabase *audiodb)
+void
+UnlockDatabase ( struct AHI_AudioDatabase *audiodb )
 {
   if(audiodb)
     ReleaseSemaphore((struct SignalSemaphore *)audiodb);
 }
 
-__asm __saveds struct TagItem *GetDBTagList(
-    register __a0 struct AHI_AudioDatabase *audiodb,
-    register __d0 ULONG id)
+struct TagItem *
+GetDBTagList ( struct AHI_AudioDatabase *audiodb,
+               ULONG id )
 {
   struct AHI_AudioMode *node;
 
@@ -185,7 +164,9 @@ __asm __saveds struct TagItem *GetDBTagList(
 *
 */
 
-__asm ULONG NextAudioID( register __d0 ULONG id )
+ASMCALL ULONG
+NextAudioID( REG(d0, ULONG id),
+             REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHI_AudioDatabase *audiodb;
   struct AHI_AudioMode *node;
@@ -259,7 +240,9 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
 *
 */
 
-__asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
+ASMCALL ULONG
+AddAudioMode( REG(a0, struct TagItem *DBtags),
+              REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHI_AudioDatabase *audiodb;
   struct AHI_AudioMode *node;
@@ -384,7 +367,9 @@ __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
 *
 */
 
-__asm ULONG RemoveAudioMode( register __d0 ULONG id )
+ASMCALL ULONG
+RemoveAudioMode( REG(d0, ULONG id),
+                 REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHI_AudioMode *node;
   struct AHI_AudioDatabase *audiodb;
@@ -482,7 +467,9 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
 *
 */
 
-__asm ULONG LoadModeFile( register __a0 UBYTE *name )
+ASMCALL ULONG
+LoadModeFile( REG(a0, UBYTE *name),
+              REG(a6, struct AHIBase *AHIBase) )
 {
   ULONG rc=FALSE;
   struct FileInfoBlock  *fib;

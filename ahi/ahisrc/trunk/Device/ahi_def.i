@@ -1,38 +1,10 @@
 * $Id$
 * $Log$
+* Revision 4.4  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.3  1997/10/11 15:58:13  lcs
 * Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
-*
-* Revision 4.2  1997/06/02 18:15:02  lcs
-* Added optional clipping when using master volume > 100%.
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.9  1997/03/25 22:27:49  lcs
-* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
-*
-* Revision 1.8  1997/03/24 18:03:10  lcs
-* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
-*
-* Revision 1.7  1997/03/24 12:41:51  lcs
-* Echo rewritten
-*
-* Revision 1.6  1997/03/13 00:19:43  lcs
-* Up to 4 device units are now available.
-*
-* Revision 1.5  1997/02/02 18:15:04  lcs
-* Added protection against CPU overload
-*
-* Revision 1.4  1997/02/01 23:54:26  lcs
-* Rewrote the library open code in C and removed the library bases
-* from AHIBase
-*
-* Revision 1.2  1997/01/04 20:19:56  lcs
-* ahiac_EffChannelInfoStruct added
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
 *
 
 	IFND    AHI_DEF_I
@@ -186,9 +158,6 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	LONG	cd_NextVolumeLeft	;Fixed
 	LONG	cd_NextVolumeRight	;Fixed
 	ULONG	cd_NextType
-
-	ULONG	cd_LCommand		;for loops
-	ULONG	cd_LAddress		;for loops
 
 	ULONG	cd_Samples		;Samples left to store (down-counter)
 	ULONG	cd_FirstOffsetI		;for linear interpolation routines
