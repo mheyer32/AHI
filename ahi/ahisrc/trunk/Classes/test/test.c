@@ -1,135 +1,200 @@
 
-#include <classes/ahi.h>
 #include <classes/ahi/buffer.h>
-#include <classes/ahi/processor.h>
+#include <classes/ahi/lfo.h>
 #include <classes/ahi/processor/gain.h>
+#include <classes/ahi/processor/tick.h>
 #include <devices/ahi.h>
+#include <intuition/classes.h>
+#include <intuition/icclass.h>
 
 #include <math.h>
 #include <stdio.h>
 
+#include <clib/alib_protos.h>
 #include <proto/ahi.h>
+#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
+
+STRPTR ClassName = "test";
+#include "../Common/util.h"
 
 struct Library* AHIBase;
 
 static int buffer_type = AHIST_F2;
-static int buffer_len  = 16;
+static int buffer_len  = 48000/32;
 
-static inline void check_err(Object* o) {
+static struct ClassLibrary* libs[32];
+static int lib_count = 0;
+
+#define AHI_NewObject(name, ...) ({			\
+  ULONG _tags[] = { __VA_ARGS__ };			\
+  AHI_NewObjectA((name), (struct TagItem*) _tags);	\
+})
+
+static Object*
+AHI_NewObjectA(STRPTR name, struct TagItem* tags) {
+  struct ClassLibrary* cl = NULL;
+  Object* o;
+  int i;
+
+  for (i = 0; i < lib_count; ++i) {
+    if (strcmp(name, libs[i]->cl_Lib.lib_Node.ln_Name) == 0) {
+      cl = libs[i];
+      break;
+    }
+  }
+
+  if (i == lib_count) {
+    char path[32];
+
+    snprintf(path, sizeof (path), "AHI/%s", name);
+
+    libs[i] = (struct ClassLibrary*) OpenLibrary(path,0);
+
+    if (libs[i] != NULL) {
+      ++lib_count;
+    }
+  }
+
+  return NewObjectA(libs[i]->cl_Class, NULL, tags);
+}
+
+static void
+CleanUpAHI(void) {
+  int i;
+
+  for (i = 0; i < lib_count; ++i) {
+    CloseLibrary((struct Library*) libs[i]);
+  }
+}
+
+
+static inline void
+check_err(Object* o) {
   ULONG  error = 0;
-  STRPTR error_msg = NULL;
 
   GetAttr(AHIA_Error, o, &error);
-  GetAttr(AHIA_ErrorMessage, o, &error_msg);
-
-  SetAttrs(o, AHIA_Error, AHIE_OK, TAG_DONE);
   
   if (error) {
-    printf("Error %08x: %s\n", error, error_msg);
+    STRPTR error_msg = NULL;
+    
+    GetAttr(AHIA_ErrorMessage, o, (ULONG*) &error_msg);
+    Printf("Error %08lx: %s\n", error, (ULONG) error_msg);
+
+    SetAttrs(o, AHIA_Error, AHIE_OK, TAG_DONE);
   }
 }
 
-int main(void) {
-  struct Library* buffer    = OpenLibrary("AHI/" AHIC_Buffer, 7);
-  struct Library* processor = OpenLibrary("AHI/" AHIC_GainProcessor, 7);
-
-  Object* b = NewObject(NULL, AHIC_Buffer,
-			AHIA_Buffer_SampleType,    buffer_type,
-			AHIA_Buffer_SampleFreqInt, 48000,
-			AHIA_Buffer_Capacity,      buffer_len,
-			TAG_DONE);
-  Object* p = NewObject(NULL, AHIC_GainProcessor,
-			AHIA_Processor_Buffer, b,
-			TAG_DONE);
-
-  if (IoErr()) {
-    printf("Error %x\n", IoErr());
-  }
-
-  printf("AHIST_C_DECODE(AHIST_F1): %d\n", AHIST_C_DECODE(AHIST_F1));
-  printf("AHIST_C_DECODE(AHIST_NOTYPE): %d\n", AHIST_C_DECODE(AHIST_NOTYPE));
-  
-  if (b && p) {
+#if 0
     float* buffer = NULL;
-
-    check_err(b);
-    check_err(p);
-    
-    printf("Buffer object %08x, Processor object %08x\n", b, p);
-    
     if (GetAttr(AHIA_Buffer_Data, b, &buffer)) {
-      ULONG length;
-      
-      printf("Data buffer %08x\n", buffer);
-
-      length = DoMethod(b, AHIM_Buffer_SampleFrameSize,
-			buffer_type, buffer_len, NULL);
-
-      check_err(b);
-      
-      if (length > 0) {
-	dBFixed gains[] = { 0x60000, 0xc0000 };
-	int i;
+      int i;
 	
-	printf("Length %d bytes.\n", length);
-
-	for (i = 0; i < buffer_len; ++i) {
-	  buffer[2 * i + 0] = +1.0 * sin((double) i / buffer_len * 2 * M_PI);
-	  buffer[2 * i + 1] = -0.5 * sin((double) i / buffer_len * 2 * M_PI);
-	}
-
-	printf("Prepare: %d\n", DoMethod(p, AHIM_Processor_Prepare, 0, 0, 0));
-	check_err(p);
-	printf("Process: %d\n", DoMethod(p, AHIM_Processor_Process, 0, 0, 0));
-	check_err(p);
-
-	SetAttrs(p, AHIA_Processor_Busy, TRUE, TAG_DONE);
-	check_err(p);
-
-	DoMethod(p, AHIM_GainProcessor_SetBalance, 2, gains);
-	check_err(p);
-
-	printf("Prepare: %d\n", DoMethod(p, AHIM_Processor_Prepare, 0, 0, 0));
-	check_err(p);
-	printf("Process: %d\n", DoMethod(p, AHIM_Processor_Process, 0, 0, 0));
-	check_err(p);
-
-	for (i = 0; i < buffer_len; ++i) {
-	  printf( "%f, %f\n", buffer[2 * i + 0], buffer[2 * i + 1]);
-	}
-
-	SetAttrs(b, AHIA_Buffer_Length, 8, TAG_DONE);
+      for (i = 0; i < buffer_len; ++i) {
+	buffer[2 * i + 0] = +1.0 * sin((double) i / buffer_len * 2 * M_PI);
+	buffer[2 * i + 1] = -0.5 * sin((double) i / buffer_len * 2 * M_PI);
       }
-
+      for (i = 0; i < buffer_len; ++i) {
+	Printf( "%f, %f\n", buffer[2 * i + 0], buffer[2 * i + 1]);
+      }
     }
-    
-  }
-  
-  DisposeObject(p);
-  DisposeObject(b);
-
-  CloseLibrary(buffer);
-  CloseLibrary(processor);
-  
-  return 0;
-}
-
+#endif
 
 static int
-test(Object* proc) {
+execute(Object* proc, int seconds) {
   int rc = 0;
   static struct AHIRequest ahirequest;
 
   ahirequest.ahir_Std.io_Message.mn_Length = sizeof (ahirequest);
-  ahirequest.ahir_Version = 7;
+  ahirequest.ahir_Version = 5;
 
   if (OpenDevice( AHINAME, AHI_NO_UNIT, (struct IORequest*) &ahirequest, 0) == 0) {
     AHIBase = (struct Library*) ahirequest.ahir_Std.io_Device;
 
+    {
+      int i;
+      Object* b = NULL;
+
+      GetAttr(AHIA_Processor_Buffer, proc, (ULONG*) &b);
+
+      SetAttrs(proc, AHIA_Processor_Busy, TRUE, TAG_DONE);
+      check_err(proc);
+
+      for (i = 0; i < 32; ++i) {
+	// Set Timestamp
+	SetAttrs(b, AHIA_Buffer_TimestampLow, i * buffer_len, TAG_DONE);
+	
+	DoMethod(proc, AHIM_Processor_Prepare, 0, 0, i * buffer_len);
+	DoMethod(proc, AHIM_Processor_Process, 0, 0, i * buffer_len);
+	check_err(proc);
+      }
+
+      SetAttrs(proc, AHIA_Processor_Busy, FALSE, TAG_DONE);
+      check_err(proc);
+    }
+    
     CloseDevice((struct IORequest*) &ahirequest);
   }
 
   return rc;
+}
+
+
+int main(void) {
+  Object* b = AHI_NewObject(AHIC_Buffer,
+			    AHIA_Buffer_SampleType,	buffer_type,
+			    AHIA_Buffer_SampleFreqInt,	48000,
+			    AHIA_Buffer_Capacity,	buffer_len,
+			    TAG_DONE);
+
+  Object* gain = AHI_NewObject(AHIC_GainProcessor,
+			       TAG_DONE);
+
+  struct TagItem gain_map[] = {
+      { AHIA_LFO_I, AHIA_GainProcessor_Gain },
+      { TAG_DONE,   0                       }
+  };
+  
+  Object* lfo1 = AHI_NewObject(AHIC_LFO,
+			       AHIA_LFO_Frequency,	0x20000,
+			       AHIA_LFO_Amplitude,	0x60000,
+			       AHIA_LFO_Bias,		0,
+			       AHIA_LFO_Waveform,	AHIV_LFO_Sine,
+			       ICA_TARGET,              (ULONG) gain,
+			       ICA_MAP,                 (ULONG) gain_map,
+			       TAG_DONE);
+
+/*   Object* lfo2 = AHI_NewObject(AHIC_LFO, */
+/* 			       AHIA_LFO_Frequency,	0x8000, */
+/* 			       AHIA_LFO_Amplitude,	0x30000, */
+/* 			       AHIA_LFO_Bias,		0, */
+/* 			       AHIA_LFO_Waveform,	AHIV_LFO_Triangle, */
+/* 			       TAG_DONE); */
+  
+  Object* tick = AHI_NewObject(AHIC_TickProcessor,
+			       AHIA_Processor_Buffer,	(ULONG) b,
+			       AHIA_AddNotify,		(ULONG) lfo1,
+/* 			       AHIA_AddNotify,		(ULONG) lfo2, */
+			       AHIA_Processor_AddChild,	(ULONG) gain,
+			       TAG_DONE);
+
+  if (IoErr()) {
+    Printf("Error %lx\n", IoErr());
+  }
+  
+  check_err(tick);
+    
+  if (b != NULL && tick != NULL) {
+    dBFixed gains[] = { 0x60000, 0xc0000 };
+    
+    DoMethod(tick, AHIM_GainProcessor_SetBalance, 2, gains);
+    check_err(tick);
+
+    execute(tick, 1);
+  }
+    
+  DisposeObject(tick);
+  DisposeObject(b);
+  CleanUpAHI();
 }
