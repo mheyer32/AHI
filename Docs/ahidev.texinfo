@@ -15,6 +15,9 @@
 
 @c $Id$
 @c $Log$
+@c Revision 4.4  1997/07/27 00:13:32  lcs
+@c Fixed a mistypeing: was SetFreq() instead of AHI_SetFreq().
+@c
 @c Revision 4.3  1997/07/15 00:50:40  lcs
 @c This is the second bugfix release of AHI 4.
 @c
@@ -733,7 +736,7 @@ that is out of range!  If you have allocated 4 channels you may only modify
 channels 0-3.
 
 The sound will not start until both @code{AHI_SetSound()} and
-@code{SetFreq()} has been called.  The sound will play even if
+@code{AHI_SetFreq()} has been called.  The sound will play even if
 @code{AHI_SetVol()} was not called, but it will play completely silent.  If
 you wish to temporary stop a sound, set its frequency to 0.  When you
 change the frequency again, the sound will continue where it were.
