@@ -135,12 +135,20 @@ CallSoundHook( volatile struct AHIPrivAudioCtrl *audioctrl )
 static void
 CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, short int value )
 {
-  audioctrl->ahiac_Pad = int;
+  audioctrl->ahiac_Pad = value;
   audioctrl->ahiac_Com = AHIAC_COM_DEBUG;
   while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
 }
 
 #else
+
+static void
+CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, short int value )
+{
+  kprintf( "AHIAC_COM_DEBUG: Channel %ld, Value %ld\n",
+           audioctrl->ahiac_ChannelNo,
+           value );
+}
 
 /* M68k code *****************************************************************/
 
@@ -177,9 +185,7 @@ Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
 
         case AHIAC_COM_DEBUG:
-          kprintf( "AHIAC_COM_DEBUG: Channel %ld, Value %ld\n",
-                   audioctrl->ahiac_ChannelNo,
-                   audioctrl->ahiac_Pad );
+          CallDebug( audioctrl, audioctrl->ahiac_Pad );
           audioctrl->ahiac_Com = AHIAC_COM_ACK;
           break;
 
