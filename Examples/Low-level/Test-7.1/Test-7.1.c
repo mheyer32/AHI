@@ -41,7 +41,7 @@ main( int argc, char* argv[] ) {
 	    == 0 ) {
 	  AHIBase = (struct Library *) io->ahir_Std.io_Device;
 
-	  rc = Test71( atoi( argv[ 1 ] ) );
+	  rc = Test71( strtol( argv[ 1 ], NULL, 0 ) );
 
 	  CloseDevice( (struct IORequest *) io );
 	}
@@ -68,11 +68,12 @@ main( int argc, char* argv[] ) {
   return rc;
 }
 
-#define LENGTH 100
+#define LENGTH 1000
 //#define SINE
 
 int
 Test71( ULONG mode_id ) {
+  char  name[ 64 ];
   int   rc = RETURN_OK;
   LONG* sample;
 
@@ -97,6 +98,15 @@ Test71( ULONG mode_id ) {
 #endif
     }
 
+
+    name[0] = 0;
+    AHI_GetAudioAttrs( mode_id, NULL,
+		       AHIDB_Name, (ULONG) &name,
+		       AHIDB_BufferLen, 64,
+		       TAG_DONE );
+    
+    printf( "Testing mode 0x%08lx (%s)\n", mode_id, name );
+    
     actrl = AHI_AllocAudio( AHIA_AudioID,   mode_id,
 			    AHIA_MixFreq,   44100,
 			    AHIA_Channels,  1,
