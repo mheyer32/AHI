@@ -452,7 +452,8 @@ PrintTagList(struct TagItem *tags)
 
         case dt_String:
           KPrintF( "\n  %30s, %s,", 
-                   (ULONG) GetTagName( tag->ti_Tag ), tag->ti_Data );
+                   (ULONG) GetTagName( tag->ti_Tag ),
+		   tag->ti_Data != NULL ? tag->ti_Data : "(null)" );
           break;
 
         case dt_Fixed:
