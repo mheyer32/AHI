@@ -162,6 +162,12 @@ struct patch_manager {
 #define SUM_SPDIF_LFE		0x10e
 #define VOL_SPDIF_LFE		0x10f
 
+/* AHI_FRONT-to-rear */
+#define RES_REAR_FRONT_L	0x110
+#define RES_REAR_FRONT_R	0x111
+#define VOL_REAR_FRONT_L	0x119
+#define VOL_REAR_FRONT_R	0x11a
+
 #else
 
 /* PCM volume control */
