@@ -27,6 +27,7 @@
 #include <exec/alerts.h>
 #include <exec/execbase.h>
 #include <proto/exec.h>
+#include <proto/dos.h>
 
 #ifndef VERSION68K
 # include <powerup/ppclib/object.h>
@@ -467,6 +468,25 @@ OpenLibs ( void )
 #endif
 
   OpenahiCatalog(NULL, NULL);
+
+  {
+    char buf[2];
+    
+    if( GetVar( "AHINoBetaRequester", buf, sizeof( buf ), 0 ) == -1 )
+    {
+      Req( "This is a beta release of AHI. The latest supported \n"
+           "version is 4.180, which can be found at\n"
+           "<URL:http://www.lysator.liu.se/~lcs/ahi.html>.\n"
+           "\n"
+           "Detailed bug reports and patches are welcome.\n"
+           "Sound kernel in use: %s.\n"
+           "\n"
+           "/Martin Blom <martin@blom.org>\n",
+           PPCObject == NULL ? CPU :
+             ( PPCLibBase == NULL ? "WarpUp" : "PowerUp" ) );
+           
+    }
+  }
 
   return TRUE;
 }
