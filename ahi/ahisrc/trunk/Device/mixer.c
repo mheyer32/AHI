@@ -73,6 +73,8 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 #endif /* !defined( VERSIONPPC ) */
 
 
+#if 1
+
 ADDFUNC* AddByteMonoPtr     = NULL;
 ADDFUNC* AddByteStereoPtr   = NULL;
 ADDFUNC* AddBytesMonoPtr    = NULL;
@@ -106,6 +108,44 @@ ADDFUNC* AddLofiWordMonoBPtr    = NULL;
 ADDFUNC* AddLofiWordStereoBPtr  = NULL;
 ADDFUNC* AddLofiWordsMonoBPtr   = NULL;
 ADDFUNC* AddLofiWordsStereoBPtr = NULL;
+
+#else
+
+ADDFUNC* AddByteMonoPtr     = AddByteMono;
+ADDFUNC* AddByteStereoPtr   = AddByteStereo;
+ADDFUNC* AddBytesMonoPtr    = AddBytesMono;
+ADDFUNC* AddBytesStereoPtr  = AddBytesStereo;
+ADDFUNC* AddWordMonoPtr     = AddWordMono;
+ADDFUNC* AddWordStereoPtr   = AddWordStereo;
+ADDFUNC* AddWordsMonoPtr    = AddWordsMono;
+ADDFUNC* AddWordsStereoPtr  = AddWordsStereo;
+ADDFUNC* AddByteMonoBPtr    = AddByteMonoB;
+ADDFUNC* AddByteStereoBPtr  = AddByteStereoB;
+ADDFUNC* AddBytesMonoBPtr   = AddBytesMonoB;
+ADDFUNC* AddBytesStereoBPtr = AddBytesStereoB;
+ADDFUNC* AddWordMonoBPtr    = AddWordMonoB;
+ADDFUNC* AddWordStereoBPtr  = AddWordStereoB;
+ADDFUNC* AddWordsMonoBPtr   = AddWordsMonoB;
+ADDFUNC* AddWordsStereoBPtr = AddWordsStereoB;
+
+ADDFUNC* AddLofiByteMonoPtr     = AddLofiByteMonoPtr;
+ADDFUNC* AddLofiByteStereoPtr   = AddLofiByteStereoPtr;
+ADDFUNC* AddLofiBytesMonoPtr    = AddLofiBytesMonoPtr;
+ADDFUNC* AddLofiBytesStereoPtr  = AddLofiBytesStereoPtr;
+ADDFUNC* AddLofiWordMonoPtr     = AddLofiWordMonoPtr;
+ADDFUNC* AddLofiWordStereoPtr   = AddLofiWordStereoPtr;
+ADDFUNC* AddLofiWordsMonoPtr    = AddLofiWordsMonoPtr;
+ADDFUNC* AddLofiWordsStereoPtr  = AddLofiWordsStereoPtr;
+ADDFUNC* AddLofiByteMonoBPtr    = AddLofiByteMonoBPtr;
+ADDFUNC* AddLofiByteStereoBPtr  = AddLofiByteStereoBPtr;
+ADDFUNC* AddLofiBytesMonoBPtr   = AddLofiBytesMonoBPtr;
+ADDFUNC* AddLofiBytesStereoBPtr = AddLofiBytesStereoBPtr;
+ADDFUNC* AddLofiWordMonoBPtr    = AddLofiWordMonoBPtr;
+ADDFUNC* AddLofiWordStereoBPtr  = AddLofiWordStereoBPtr;
+ADDFUNC* AddLofiWordsMonoBPtr   = AddLofiWordsMonoBPtr;
+ADDFUNC* AddLofiWordsStereoBPtr = AddLofiWordsStereoBPtr;
+
+#endif
 
 static const UBYTE type2bytes[]=
 {
@@ -806,7 +846,7 @@ SelectAddRoutine ( Fixed     VolumeLeft,
     switch(audioctrl->ac.ahiac_BuffType)
     {
 
-      case AHIST_M32S:
+      case AHIST_M16S:
 
         // ...and then the source format.
 
@@ -860,7 +900,7 @@ SelectAddRoutine ( Fixed     VolumeLeft,
         }
         break;
 
-      case AHIST_S32S:
+      case AHIST_S16S:
 
         // ...and then the source format.
 
@@ -1098,6 +1138,7 @@ MixGeneric ( struct Hook *Hook,
           {
             cd->cd_TempStartPointL = cd->cd_StartPointL;
             cd->cd_TempStartPointR = cd->cd_StartPointR;
+
             processed = ((ADDFUNC *) cd->cd_AddRoutine)( samples,
                                                          cd->cd_ScaleLeft,
                                                          cd->cd_ScaleRight,
@@ -1299,7 +1340,6 @@ static void
 DoMasterVolume ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl )
 {
-  LONG *dst = buffer;
   int   cnt;
   LONG  vol;
   LONG  sample;
@@ -1309,9 +1349,11 @@ DoMasterVolume ( void *buffer,
   switch(audioctrl->ac.ahiac_BuffType)
   {
 
+    case AHIST_M16S:
     case AHIST_M32S:
       break;
 
+    case AHIST_S16S:
     case AHIST_S32S:
       cnt *= 2;
       break;
@@ -1320,20 +1362,47 @@ DoMasterVolume ( void *buffer,
       return; // Panic
   }
 
-  vol = audioctrl->ahiac_SetMasterVolume >> 8;
-
-  while(cnt > 0)
+  if( audioctrl->ac.ahiac_BuffType == AHIST_M32S
+      || audioctrl->ac.ahiac_BuffType == AHIST_S32S )
   {
-    cnt--;
+    LONG *dst = buffer;
+
+    vol = audioctrl->ahiac_SetMasterVolume >> 8;
+
+    while(cnt > 0)
+    {
+      cnt--;
     
-    sample = (*dst >> 12) * vol;
+      sample = (*dst >> 12) * vol;
 
-    if(sample > (LONG) 0x07ffffff)
-      sample = 0x07ffffff;
-    else if(sample < (LONG) 0xf8000000)
-      sample = 0xf8000000;
+      if(sample > (LONG) 0x07ffffff)
+        sample = 0x07ffffff;
+      else if(sample < (LONG) 0xf8000000)
+        sample = 0xf8000000;
 
-    *dst++ = sample << 4;
+      *dst++ = sample << 4;
+    }
+  }
+  else
+  {
+    WORD *dst = buffer;
+
+    vol = audioctrl->ahiac_SetMasterVolume >> 4;
+
+    while(cnt > 0)
+    {
+      cnt--;
+    
+      sample = *dst * vol;
+
+      if(sample > (LONG) 0x07ffffff)
+        sample = 0x07ffffff;
+      else if(sample < (LONG) 0xf8000000)
+        sample = 0xf8000000;
+
+      *dst++ = sample >> 12;
+    }
+  
   }
 }
 
