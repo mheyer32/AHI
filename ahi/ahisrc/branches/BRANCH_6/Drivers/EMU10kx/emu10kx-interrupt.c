@@ -430,7 +430,7 @@ RecordInterrupt( struct EMU10kxData* dd )
 
   if( EMU10kxBase->flush_caches )
   {
-    // This is used to make sure the call above doesn't pushe dirty data
+    // This is used to make sure the call above doesn't push dirty data
     // the next time it's called. God help us if dd->current_record_buffer
     // is not a the beginning of a cache line and there are dirty data
     // in the DMA buffer before or after the current buffer.
