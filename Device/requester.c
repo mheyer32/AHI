@@ -21,7 +21,6 @@
 */
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
 // Fix broken includes
 struct VSPrite;

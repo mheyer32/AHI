@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.2  2003/09/22 20:06:17  martin
+ * Nuked CompilerSpecific.h
+ *
  * Revision 5.1  2003/01/19 12:22:29  martin
  * Another year, another copyright update.
  *  ... which seems to have caused the translation files to change slightly.
@@ -65,7 +68,6 @@
 //#define NO_INLINE_STDARG
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
 #include <libraries/asl.h>
 #include <libraries/bgui.h>
