@@ -53,7 +53,7 @@ esac
 top_builddir=$(pwd)
 
 : ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${optflags}"}
-: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${top_builddir} -I${top_builddir}/Include/gcc -I${os_includedir}"}
+: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc -I${os_includedir}"}
 : ${LDFLAGS="${linkerflags}"}
 : ${ASFLAGS="${asflags}"}
 : ${ARFLAGS="-ru"}

@@ -137,7 +137,7 @@ $(srcdir)/ahiprefs_Cat.h:	$(srcdir)/ahiprefs.cd $(srcdir)/C_h_noauto.sd
 SOURCES		= $(wildcard $(srcdir)/*.c)
 HEADERS		= $(wildcard $(srcdir)/*.h)
 
-#DEPENDENCIES	= $(SOURCES) $(HEADERS) version.h
+#DEPENDENCIES	= $(SOURCES) $(HEADERS)
 
 .PHONY:	depend
 
@@ -145,8 +145,7 @@ depend:
 	$(RM) Makefile.dep
 	$(MAKE) Makefile.dep
 
-Makefile.dep:	$(DEPENDENCIES)
-	@$(MAKE) version.h
+Makefile.dep:	$(DEPENDENCIES) version.h
 	@echo Making $@
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 
