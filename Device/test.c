@@ -11,6 +11,13 @@ test( ADDARGS )
          + (int) Src + (int) Dst + FirstOffsetI + Add + (int) Offset + (int) StopAtZero;
 }
 
+long long
+ test2( long long* offset, long long add, unsigned long samples )
+{
+  *offset += add * samples;
+  return offset;
+}
+
 int
 main( void )
 {
