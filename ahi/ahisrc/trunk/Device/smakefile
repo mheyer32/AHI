@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.13  1997/02/12 15:32:45  lcs
+# Moved each autodoc header to the file where the function is
+#
 # Revision 1.12  1997/02/10 02:23:06  lcs
 # Infowindow in the requester added.
 #
@@ -181,16 +184,19 @@ includes:
 ###############################################################################
 
 autodocs:
-#	robodoc >NIL: AHI:Developer/__ahi/asmfuncs.a ahi.doc GUIDE SORT GENXREF T:ahi.xref
+	join asmfuncs.a \#?.c AS T:AHI-AD.tmp
+
+#	robodoc >NIL: T:AHI-AD.tmp ahi.doc GUIDE SORT GENXREF T:ahi.xref
 #	robodoc >NIL: AHI:Developer/drivers/paula/paula_audio.a ahi_sub.doc GUIDE SORT GENXREF T:ahi_sub.xref
-	robodoc AHI:Developer/__ahi/asmfuncs.a ahi.doc TOC SORT #XREF T:ahi_sub.xref
-	robodoc AHI:Developer/__ahi/asmfuncs.a ahi.guide GUIDE SORT #XREF T:ahi_sub.xref
-	robodoc AHI:Developer/__ahi/asmfuncs.a ahi.html HTML SORT ;XREF T:ahi_sub.xref
+
+	robodoc T:AHI-AD.tmp ahi.doc TOC SORT #XREF T:ahi_sub.xref
+	robodoc T:AHI-AD.tmp ahi.guide GUIDE SORT #XREF T:ahi_sub.xref
+	robodoc T:AHI-AD.tmp ahi.html HTML SORT ;XREF T:ahi_sub.xref
 	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.doc TOC SORT #XREF T:ahi.xref
 	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.guide GUIDE SORT #XREF T:ahi.xref
 	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.html HTML SORT #XREF T:ahi.xref
 	--move ahi.doc ahi.guide ahi.html ahi_sub.doc ahi_sub.guide ahi_sub.html AHI:Developer/Docs/ QUIET
-	--delete T:ahi.xref T:ahi_sub.xref QUIET
+	--delete T:ahi.xref T:ahi_sub.xref T:AHI-AD.tmp QUIET
 
 ##
 ## Build catalog files

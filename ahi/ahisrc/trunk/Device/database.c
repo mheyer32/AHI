@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/02/12 15:32:45  lcs
+* Moved each autodoc header to the file where the function is
+*
 * Revision 1.4  1997/01/29 23:34:38  lcs
 * *** empty log message ***
 *
@@ -34,7 +37,8 @@
 #endif
 #endif
 
-/******************************************************************************
+
+/******************************************************************************
 ** Audio Database *************************************************************
 ******************************************************************************/
 
@@ -123,9 +127,44 @@ __asm __saveds struct TagItem *GetDBTagList(
   return NULL;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_NextAudioID ************************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_NextAudioID ******************************************
+*
+*   NAME
+*       AHI_NextAudioID -- iterate current audio mode identifiers
+*
+*   SYNOPSIS
+*       next_ID = AHI_NextAudioID( last_ID );
+*       D0                         D0
+*
+*       ULONG AHI_NextAudioID( ULONG );
+*
+*   FUNCTION
+*       This function is used to itereate through all current AudioIDs in
+*       the audio database.
+*
+*   INPUTS
+*       last_ID - previous AudioID or AHI_INVALID_ID if beginning iteration.
+*
+*   RESULT
+*       next_ID - subsequent AudioID or AHI_INVALID_ID if no more IDs.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*      AHI_GetAudioAttrsA(), AHI_BestAudioIDA()
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG NextAudioID( register __d0 ULONG id )
 {
@@ -163,9 +202,43 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
   return nextid;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_AddAudioMode ***********************************************************
 ******************************************************************************/
+
+/****i* ahi.device/AHI_AddAudioMode *****************************************
+*
+*   NAME
+*       AHI_AddAudioMode -- add a audio mode to the database (V3)
+*
+*   SYNOPSIS
+*       success = AHI_AddAudioMode( DBtags );
+*       D0                          A0
+*
+*       ULONG AHI_AddAudioMode( struct TagItem *, UBYTE *, UBYTE *);
+*
+*   FUNCTION
+*       Adds the audio mode described by a taglist to the audio mode
+*       database. If the database does not exists, it will be created.
+*
+*   INPUTS
+*       DBtags - Tags describing the properties of this mode.
+*
+*   RESULT
+*       success - FALSE if the mode could not be added.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
 {
@@ -255,9 +328,42 @@ __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
   return rc;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_RemoveAudioMode ********************************************************
 ******************************************************************************/
+
+/****i* ahi.device/AHI_RemoveAudioMode **************************************
+*
+*   NAME
+*       AHI_RemoveAudioMode -- remove a audio mode to the database (V3)
+*
+*   SYNOPSIS
+*       success = AHI_RemoveAudioMode( ID );
+*       D0                             D0
+*
+*       ULONG AHI_RemoveAudioMode( ULONG );
+*
+*   FUNCTION
+*       Removes the audio mode from the audio mode database.
+*
+*   INPUTS
+*       ID - The audio ID of the mode to be removed.
+*
+*   RESULT
+*       success - FALSE if the mode could not be removed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG RemoveAudioMode( register __d0 ULONG id )
 {
@@ -316,9 +422,46 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
   return rc;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_LoadModeFile ***********************************************************
 ******************************************************************************/
+
+/****i* ahi.device/AHI_LoadModeFile *****************************************
+*
+*   NAME
+*       AHI_LoadModeFile -- Add all modes in a mode file to the database (V3)
+*
+*   SYNOPSIS
+*       success = AHI_LoadModeFile( name );
+*       D0                          A0
+*
+*       ULONG AHI_LoadModeFile( STRPTR );
+*
+*   FUNCTION
+*       This function takes the name of a file or a directory and either
+*       adds all modes in the file or the modes of all files in the
+*       directory to the audio mode database. Directories inside the
+*       given directory will not be recursed. The file format is IFF-AHIM.
+*
+*   INPUTS
+*       name - A pointer to the name of a file or directory.
+*
+*   RESULT
+*       success - FALSE on error. Check dos.library/IOErr() for more
+*           information.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG LoadModeFile( register __a0 UBYTE *name )
 {
