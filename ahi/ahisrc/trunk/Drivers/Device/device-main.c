@@ -58,6 +58,8 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     dd->mastersignal     = AllocSignal( -1 );
     dd->mastertask       = (struct Process*) FindTask( NULL );
     dd->ahisubbase       = DeviceBase;
+    dd->unit             = (GetTagData( AHIDB_AudioID, 0, taglist) & 0x0000f000) >> 12;
+
   }
   else
   {
@@ -158,11 +160,16 @@ _AHIsub_Start( ULONG                   flags,
       };
 
     
-    dd->mixbuffer = AllocVec( AudioCtrl->ahiac_BuffSize,
-			      MEMF_ANY | MEMF_PUBLIC );
+    dd->mixbuffers[ 0 ] = AllocVec( AudioCtrl->ahiac_BuffSize,
+				    MEMF_ANY | MEMF_PUBLIC );
 
-    if( dd->mixbuffer == NULL ) return AHIE_NOMEM;
-
+    if( dd->mixbuffers[ 0 ] == NULL ) return AHIE_NOMEM;
+    
+    dd->mixbuffers[ 1 ] = AllocVec( AudioCtrl->ahiac_BuffSize,
+				    MEMF_ANY | MEMF_PUBLIC );
+    
+    if( dd->mixbuffers[ 1 ] == NULL ) return AHIE_NOMEM;
+    
     Forbid();
 
     dd->slavetask = CreateNewProc( proctags );
@@ -237,8 +244,10 @@ _AHIsub_Stop( ULONG                   flags,
       Wait( 1L << dd->mastersignal );            // Wait for slave to die
     }
 
-    FreeVec( dd->mixbuffer );
-    dd->mixbuffer = NULL;
+    FreeVec( dd->mixbuffers[ 0 ] );
+    FreeVec( dd->mixbuffers[ 1 ] );
+    dd->mixbuffers[ 0 ] = NULL;
+    dd->mixbuffers[ 1 ] = NULL;
   }
 
   if(flags & AHISF_RECORD)
