@@ -23,13 +23,49 @@
 #ifndef ahi_warpup_h
 #define ahi_warpup_h
 
+#include <exec/interrupts.h>
+#include <utility/hooks.h>
+
 #include "ahi_def.h"
 
+struct PowerPCContext
+{
+  volatile int              Command;
+  volatile void*            Argument;
+
+  int                       Active;
+  struct Hook*              Hook;
+  void*	                    Dst;
+  void*                     XLock;
+
+  struct AHIPrivAudioCtrl*  AudioCtrl;
+  struct Library*           PowerPCBase;
+  
+  struct Interrupt*         MixInterrupt;
+  void*                     MixBuffer;
+};
+
+#define PPCC_COM_NONE          0
+#define PPCC_COM_START         1
+#define PPCC_COM_ACK           2
+#define PPCC_COM_INIT          3
+#define PPCC_COM_SOUNDFUNC     4
+#define PPCC_COM_QUIT          5
+#define PPCC_COM_DEBUG         6
+#define PPCC_COM_FINISHED      7
+
+BOOL
 WarpUpInit( struct AHIPrivAudioCtrl* audioctrl );
 
+void
 WarpUpCallMixer( struct AHIPrivAudioCtrl* audioctrl,
                  void* dst );
 
+void
+WarpUpCallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
+                     void* arg );
+
+void
 WarpUpCleanUp( struct AHIPrivAudioCtrl* audioctrl );
 
 #endif /* ahi_warpup_h */

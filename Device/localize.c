@@ -1,7 +1,10 @@
 /* $Id$
 * $Log$
-* Revision 4.3  1999/09/11 22:02:28  lcs
-* *** empty log message ***
+* Revision 4.4  2000/06/12 18:57:01  lcs
+* WarpUp development.
+*
+* Revision 4.3  1999/09/22 20:11:06  lcs
+* Removed some "uninitialized variable" warnings.
 *
 * Revision 4.2  1999/01/15 22:40:25  lcs
 * Fixed a couple of warnings.
@@ -15,7 +18,7 @@
 */
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "./ahi.cd".
+   from "../../ahisrc/Device/ahi.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
@@ -65,7 +68,7 @@ static struct Catalog *ahi_Catalog = NULL;
 
 void OpenahiCatalog(struct Locale *loc, STRPTR language)
 {
-  LONG tag, tagarg;
+  LONG tag = 0, tagarg = 0;
 
   if(LocaleBase != NULL  &&  ahi_Catalog == NULL)
   {
@@ -89,7 +92,7 @@ void OpenahiCatalog(struct Locale *loc, STRPTR language)
 
 struct Catalog *ExtOpenCatalog(struct Locale *loc, STRPTR language)
 {
-  LONG tag, tagarg;
+  LONG tag = 0, tagarg = 0;
 
   if(LocaleBase != NULL)
   {

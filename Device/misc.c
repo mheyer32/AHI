@@ -27,12 +27,10 @@
 
 #include <exec/lists.h>
 #include <exec/nodes.h>
-#include <powerup/ppclib/memory.h>
-#include <powerup/ppclib/interface.h>
-#include <powerup/ppclib/object.h>
 #include <powerpc/powerpc.h>
 #include <powerpc/memoryPPC.h>
 #include <intuition/intuition.h>
+
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/timer.h>
@@ -140,28 +138,13 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
   {
     case MB_NATIVE:
     case MB_MORPHOS:
-      return AllocVec( byteSize, requirements & ~MEMF_PPCMASK );
+      return AllocVec( byteSize, requirements );
 
     case MB_WARPUP:
     {
-      ULONG new_requirements;
-      void* v;
+      APTR v;
 
-      new_requirements = requirements & ~MEMF_PPCMASK;
-
-      if( requirements & ( MEMF_WRITETHROUGHPPC | MEMF_WRITETHROUGHM68K ) )
-      {
-        Req( "Internal error: Illegal memory attribute in AHIAllocVec()." );
-      }
-
-      if( requirements & 
-          ( MEMF_NOCACHEPPC | MEMF_NOCACHEM68K |
-            MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K ) )
-      {
-        new_requirements |= MEMF_CHIP;            // Sucks!
-      }
-
-      v = AllocVec32( byteSize, new_requirements );
+      v = AllocVec32( byteSize, requirements );
       CacheClearU();
       return v;
     }
@@ -217,7 +200,7 @@ AHILoadObject( const char* objname )
 
       return o;
     }
-  }    
+  }
 
   Req( "Internal error: Unknown MixBackend in AHILoadObject()." );
   return NULL;

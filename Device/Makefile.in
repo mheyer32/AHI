@@ -8,10 +8,6 @@
 
 CPU	= 68060
 
-#Can be GEN, PPC:
-
-VER	= GEN
-
 include Makefile.opt
 
 
@@ -33,46 +29,29 @@ CATDIR		= ${DISTDIR}/User/Catalogs
 build_os	= @build_os@
 host_cpu	= @host_cpu@
 
-CPPFLAGS	= @CPPFLAGS@ -DVERSION$(VER)
-
-ifeq ($(VER),PPC)
-
-CC		= ppc-amigaos-gcc
-AS		= ppc-amigaos-as
-AR		= ppc-amigaos-ar
-RANLIB		= ppc-amigaos-ranlib
-CFLAGS		= @CFLAGS@ -O3 -mcpu=$(CPU) -DCPU=\"$(CPU)\"
-CPPFLAGS	+= -I/gg/os-include -I/gg/include
-ASFLAGS		= @ASFLAGS@ -m$(CPU) -mregnames --defsym CPU=$(CPU)
-LDFLAGS		= -nostartfiles -nostdlib -r 
-LIBS		= -lgcc
-
-TARGET		= ahi.elf.$(CPU)
-
-else
-
 CC		= @CC@
 AS		= @AS@
 AR              = @AR@
 RANLIB          = @RANLIB@
+
+CPPFLAGS	= @CPPFLAGS@ -I${srcdir}
 CFLAGS		= @CFLAGS@ -O3 -m$(CPU) -DCPU=\"$(CPU)\"
 ASFLAGS		= @ASFLAGS@ -m$(CPU) --register-prefix-optional --bitwise-or \
 		  --defsym CPU=$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 ARFLAGS         = @ARFLAGS@
+
 LIBS		= @LIBS@
 
 ASM		= @ASM@
 ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
 		  QUIET NOEXE OPT NRQBPSMD \
-		  MACHINE $(CPU) SET "VERSION$(VER)"
+		  MACHINE $(CPU)
 
-TARGET		= ahi.device.$(VER)-$(CPU)
+TARGET		= ahi.device.$(CPU)
 
 ifeq ($(strip $(ASM)),)
 ASM		= @echo 'No suitable assembler found; cannot make $@!'; false \#
-endif
-
 endif
 
 INSTALL		= @INSTALL@
@@ -97,23 +76,14 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 OBJECTS		= header.o gateway.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o\
-		  mixer.o ppchandler.o elfloader.o
-
-ifeq ($(VER),GEN)
+		  mixer.o elfloader.o warpup.o
 
 ifeq ($(host_cpu),m68k)
 OBJECTS		+= addroutines_68k.o
 endif
 
 ifeq ($(host_cpu),ppc)
-# Wishful thinking!
 OBJECTS		+= addroutines_ppc.o
-endif
-
-endif
-
-ifeq ($(VER),PPC)
-OBJECTS		= ppcheader.o dspecho.o mixer.o addroutines_ppc.o
 endif
 
 
@@ -160,25 +130,25 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 	$(INSTALL) --directory $(DEVSDIR)
 
 #	$(MAKE) clean
-#	$(MAKE) bindist-install VER=GEN CPU=68000
+#	$(MAKE) bindist-install CPU=68000
 
 #	$(MAKE) clean
-#	$(MAKE) bindist-install VER=GEN CPU=68020
+#	$(MAKE) bindist-install CPU=68020
 
 	$(MAKE) clean
-	$(MAKE) bindist-install VER=GEN CPU=68030
+	$(MAKE) bindist-install CPU=68030
 
 	$(MAKE) clean
-	$(MAKE) bindist-install VER=GEN CPU=68040
+	$(MAKE) bindist-install CPU=68040
 
 	$(MAKE) clean
-	$(MAKE) bindist-install VER=GEN CPU=68060
+	$(MAKE) bindist-install CPU=68060
 
 	$(MAKE) clean
-	$(MAKE) bindist-install VER=PPC CPU=603
+	$(MAKE) bindist-install CPU=603
 
 	$(MAKE) clean
-	$(MAKE) bindist-install VER=PPC CPU=604
+	$(MAKE) bindist-install CPU=604
 
 
 bindist-install: $(TARGET)
@@ -293,4 +263,3 @@ $(wildcard $(srcdir)/translations/*.ct) $(srcdir)/ahi.ct:	ahi.cd
 
 Makefile.opt:
 	echo CPU = $(CPU) > $@
-	echo VER = $(VER) >> $@

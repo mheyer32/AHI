@@ -24,7 +24,6 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
-#include <powerup/ppclib/memory.h>
 #include <exec/alerts.h>
 #include <utility/utility.h>
 #include <utility/tagitem.h>
@@ -146,9 +145,23 @@ CreateAudioCtrl(struct TagItem *tags)
   struct TagItem *dbtags;
   BOOL   error=TRUE;
 
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+    case MB_MORPHOS:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+  }
+
   audioctrl = AHIAllocVec( sizeof( struct AHIPrivAudioCtrl ),
-                           MEMF_PUBLIC | MEMF_CLEAR |
-                           MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
+                           data_flags );
 
   if( audioctrl != NULL )
   {

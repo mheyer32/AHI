@@ -25,18 +25,18 @@
 
 #include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
 
+#include "ahi_def.h"
 #include "addroutines.h"
 
-ULONG
-InternalSampleFrameSize( ULONG sampletype );
 
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
 
+
 void
 CleanUpMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
+
 
 void
 SelectAddRoutine ( Fixed     VolumeLeft,
@@ -47,37 +47,36 @@ SelectAddRoutine ( Fixed     VolumeLeft,
                    LONG     *ScaleRight,
                    ADDFUNC **AddRoutine );
 
-#if !defined( VERSIONPPC )
 
 void
 MixerFunc( struct Hook*             hook,
            struct AHIPrivAudioCtrl* audioctrl,
            void*                    dst );
 
-#if 0
-void ASMCALL
-MixPowerPC( REG(a0, struct Hook *Hook), 
-            REG(a1, void *dst), 
-            REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
-#endif
+
+void
+Mix( struct Hook*             unused_Hook, 
+     struct AHIPrivAudioCtrl* audioctrl,
+     void*                    dst );
+
+void
+DoMasterVolume ( void *buffer,
+                 struct AHIPrivAudioCtrl *audioctrl );
+
 
 void
 DoOutputBuffer ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl );
 
+
 void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
-#endif /* !defined( VERSIONPPC ) */
 
 LONG
 CalcSamples ( Fixed64 Add,
               ULONG   Type,
               Fixed64 LastOffset,
               Fixed64 Offset );
-
-void
-DoMasterVolume ( void *buffer,
-                 struct AHIPrivAudioCtrl *audioctrl );
 
 #endif /* ahi_mixer_h */
