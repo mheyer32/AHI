@@ -540,9 +540,6 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 // This is the function that the driver calls each time it want more data
 // to play. 
 
-// There is a stub function in asmfuncs.s called Mix() that saves d0-d1/a0-a1
-// and calls MixGeneric. This stub is only assembled if VERSIONGEN is set.
-
 void
 Mix( struct Hook*             unused_Hook, 
      struct AHIPrivAudioCtrl* audioctrl,
