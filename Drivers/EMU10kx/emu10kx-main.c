@@ -673,7 +673,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
       return TRUE;
 
     case AHIDB_MaxRecordSamples:
-      return RECORD_BUFFER_SAMPLES;
+      return RECORD_BUFFER_SAMPLES / 2;
 
     case AHIDB_MinMonitorVolume:
       return 0x00000;
