@@ -35,41 +35,6 @@ AllocEMU10kx( ULONG card_num );
 void
 FreeEMU10kx( struct EMU10kx* driver_data );
 
-void*
-AllocAlignedVec( size_t size, size_t alignment, ULONG req )
-{
-  void* address;
-
-  /* Add 4 bytes (for FreeVec()) and allocate aligned memory */
-
-  address = AllocMem( size + 4 + alignment - 1, req & ~MEMF_CLEAR );
-
-  if( address != NULL )
-  {
-    Forbid();
-    FreeMem( address, size + 4 + alignment - 1 );
-    address = AllocAbs( size + 4,
-			(void*) (((ULONG) ( address + 4 + alignment - 1 )
-				  / alignment * alignment ) - 4 ) );
-    Permit();
-  }
-
-  if( address != NULL )
-  {
-    *(ULONG*) address = size + 4;
-    ++address;
-
-    if( req & MEMF_CLEAR )
-    {
-      memset( address, 0, size );
-    }
-  }
-
-  return address;
-}
-
-
-
 static BOOL
 OpenLibs( void )
 { 
@@ -77,7 +42,7 @@ OpenLibs( void )
 
   if( ppcibase == NULL )
   {
-    Printf( "Unable to open 'powerpci.library' version 1.\n" );
+    printf( "Unable to open 'powerpci.library' version 1.\n" );
     return FALSE;
   }
 
@@ -173,7 +138,7 @@ static void fx_cleanup(struct patch_manager *mgr)
 {
 	int i;
 	for(i = 0; i < mgr->current_pages; i++)
-		FreeVec((void*) mgr->patch[i]);
+		free_page((unsigned long) mgr->patch[i]);
 }
 
 static int fx_init(struct emu10k1_card *card)
@@ -203,9 +168,7 @@ static int fx_init(struct emu10k1_card *card)
 	/* !! The number bellow must equal the number of patches, currently 11 !! */
 	mgr->current_pages = (11 + PATCHES_PER_PAGE - 1) / PATCHES_PER_PAGE;
 	for (i = 0; i < mgr->current_pages; i++) {
-	        mgr->patch[i] = (void *) AllocAlignedVec( PAGE_SIZE,
-							  PAGE_SIZE,
-							  MEMF_PUBLIC );
+	        mgr->patch[i] = (void *)__get_free_page(GFP_KERNEL);
 		if (mgr->patch[i] == NULL) {
 			mgr->current_pages = i;
 			fx_cleanup(mgr);
@@ -636,7 +599,7 @@ static int hw_init(struct emu10k1_card *card)
 		emu10k1_writefn0(card, HCFG, HCFG_AUDIOENABLE  | HCFG_LOCKTANKCACHE_MASK | HCFG_AUTOMUTE | HCFG_JOYENABLE);
 
 	/* Enable Vol_Ctrl irqs */
-//	emu10k1_irq_enable(card, INTE_VOLINCRENABLE | INTE_VOLDECRENABLE | INTE_MUTEENABLE | INTE_FXDSPENABLE);
+	emu10k1_irq_enable(card, INTE_VOLINCRENABLE | INTE_VOLDECRENABLE | INTE_MUTEENABLE | INTE_FXDSPENABLE);
 
 	/* FIXME: TOSLink detection */
 	card->has_toslink = 0;
@@ -766,7 +729,7 @@ AllocEMU10kx( ULONG card_num )
 
   if( dd == NULL )
   {
-    Printf( "Unable to allocate driver structure.\n " );
+    printf( "Unable to allocate driver structure.\n " );
   }
   else
   {
@@ -787,25 +750,25 @@ AllocEMU10kx( ULONG card_num )
 
     if( dd->card.pci_dev == NULL )
     {
-      Printf( "Unable to find EMU10k subsystem.\n" );
+      printf( "Unable to find EMU10k subsystem.\n" );
       goto error;
     }
 
 //  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
 //  {
-//    Printf( "Unable to set DMA mask for card\n." );
+//    printf( "Unable to set DMA mask for card\n." );
 //    goto error;
 //  }
 
     if( pci_request( dd->card.pci_dev, (STRPTR) LibName, NULL ) )
     {
-      Printf( "Unable to claim I/O resources.\n" );
+      printf( "Unable to claim I/O resources.\n" );
       goto error;
     }
 
     if( pci_enable( dd->card.pci_dev ) )
     {
-      Printf( "Unable to enable card.\n" );
+      printf( "Unable to enable card.\n" );
       goto error;
     }
 
@@ -823,8 +786,9 @@ AllocEMU10kx( ULONG card_num )
     
     dd->card.chiprev = pci_read_conf_byte( dd->card.pci_dev, PCI_REVISION_ID );
     dd->card.model   = pci_read_conf_word( dd->card.pci_dev, PCI_SUBSYSTEM_ID );
-    dd->card.isaps   = ( pci_read_conf_long( dd->card.pci_dev, PCI_SUBSYSTEM_VENDOR_ID )
-		      == EMU_APS_SUBID );
+    dd->card.isaps   = ( pci_read_conf_long( dd->card.pci_dev,
+					     PCI_SUBSYSTEM_VENDOR_ID )
+			 == EMU_APS_SUBID );
 
     pci_add_irq( dd->card.pci_dev, &dd->interrupt );
     dd->interrupt_added = TRUE;
@@ -832,26 +796,56 @@ AllocEMU10kx( ULONG card_num )
 #if 0
     ret = emu10k1_audio_init(card);
     if(ret < 0) {
-      Printf( "emu10k1: cannot initialize audio devices\n");
+      printf( "emu10k1: cannot initialize audio devices\n");
       goto error;
     }
 
     ret = emu10k1_mixer_init(card);
     if(ret < 0) {
-      Printf( "emu10k1: cannot initialize AC97 codec\n");
+      printf( "emu10k1: cannot initialize AC97 codec\n");
       goto error;
     }
 
     ret = emu10k1_midi_init(card);
     if (ret < 0) {
-      Printf( "emu10k1: cannot register midi device\n");
+      printf( "emu10k1: cannot register midi device\n");
       goto error;
     }
 #endif
 
+    emu10k1_writeac97( &dd->card, AC97_RESET, 0L);
+	
+    Delay( 1 );
+
+    if (emu10k1_readac97( &dd->card, AC97_RESET ) & 0x8000) {
+      printk( "ac97_codec: ac97 codec not present\n");
+    }
+    else
+    {
+      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x000a );
+      emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
+      emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x000a );
+      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x000a );
+      emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0a0a );
+    }
+	
+    if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
+    {
+      printf( "emu10k1: SBLive! 5.1 &dd->card detected\n"); 
+      sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
+      emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
+    }
+    
+    
     ret = emu10k1_init(&dd->card);
     if (ret < 0) {
-      Printf( "emu10k1: cannot initialize device\n");
+      printf( "emu10k1: cannot initialize device\n");
       goto error;
     }
 
@@ -903,7 +897,7 @@ main( void )
     
     if( dd == NULL )
     {
-      Printf( "No SBLive! card?\n" );
+      printf( "No SBLive! card?\n" );
     }
     else
     {
@@ -923,6 +917,8 @@ main( void )
       {
 	struct emu_voice voice;
 
+	memset( &voice, 0, sizeof( voice ) );
+	
 	if( emu10k1_voice_alloc_buffer( &dd->card,
 					&voice.mem,
 					4096 / PAGE_SIZE ) < 0 )
@@ -932,7 +928,7 @@ main( void )
 	else
 	{
 	  voice.usage = VOICE_USAGE_PLAYBACK;
-	  voice.flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
+	  voice.flags = 0; //VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
 
 	  if( emu10k1_voice_alloc( &dd->card, &voice ) < 0 )
 	  {
@@ -940,13 +936,13 @@ main( void )
 	  }
 	  else
 	  {
-	    voice.initial_pitch = (u16) ( srToPitch( 17640 ) >> 8 );
-	    voice.pitch_target  = samplerate_to_linearpitch( 17640 );
+	    voice.initial_pitch = (u16) ( srToPitch( 8000 ) >> 8 );
+	    voice.pitch_target  = samplerate_to_linearpitch( 8000 );
 
 	    DPD(2, "Initial pitch --> %#x\n", voice.initial_pitch);
 
-	    voice.startloop = (voice.mem.emupageindex << 12) / 4; // bytespervoicesample
-	    voice.endloop = voice.startloop + 4096 / 4;
+	    voice.startloop = (voice.mem.emupageindex << 12) / 1; // bytespervoicesample
+	    voice.endloop = voice.startloop + 4096 / 1;
 	    voice.start = voice.startloop;
 
 	    if( voice.flags & VOICE_FLAGS_STEREO )
@@ -994,11 +990,16 @@ main( void )
 
 	    DPF(2, "emu10k1_waveout_start()\n");
 
-//	    emu10k1_voices_start( &voice, 1, 0 );
-	    
-	    Delay( 50 );
+	    emu10k1_voices_start( &voice, 1, 0 );
 
-//	    emu10k1_voices_stop(&voice, 1);
+	    printf( "Voice is at $%08x\n", &voice );
+	    Delay( 50 );
+	    printf( "hw_pos = %08x\n", sblive_readptr( &dd->card,
+						       CCCA_CURRADDR,
+						       voice.num ) );
+
+	    Delay( 50 );
+	    emu10k1_voices_stop(&voice, 1);
 
 	    emu10k1_voice_free( &voice );
 	  }

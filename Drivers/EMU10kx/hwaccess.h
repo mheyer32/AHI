@@ -71,7 +71,7 @@ struct memhandle
 	u32 size;
 };
 
-#define DEBUG_LEVEL 4
+#define DEBUG_LEVEL 6
 
 #ifdef EMU10K1_DEBUG
 # define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ , y );} while(0)
@@ -247,5 +247,8 @@ void emu10k1_clear_stop_on_loop(struct emu10k1_card *, u32);
 //int emu10k1_mpu_reset(struct emu10k1_card *);
 //int emu10k1_mpu_acquire(struct emu10k1_card *);
 //int emu10k1_mpu_release(struct emu10k1_card *);
+
+u16 emu10k1_readac97(struct emu10k1_card *card, u8 reg);
+void emu10k1_writeac97(struct emu10k1_card *card, u8 reg, u16 value);
 
 #endif  /* _HWACCESS_H */

@@ -21,6 +21,8 @@ typedef unsigned int   dma_addr_t;
 #define spin_unlock_irqrestore(lock,flags) Enable();
 
 #define PAGE_SIZE      4096
+#define GFP_KERNEL     0               // Never used; the value doesn't matter
+
 #define KERN_NOTICE    ""
 #define printk         printf
 
@@ -38,6 +40,31 @@ typedef unsigned int   dma_addr_t;
 
 #define SOUND_MASK_OGAIN     (1 << SOUND_MIXER_OGAIN)
 #define SOUND_MASK_DIGITAL1  (1 << SOUND_MIXER_DIGITAL1)
+
+#define AC97_RESET               0x0000
+#define AC97_MASTER_VOL_STEREO   0x0002
+#define AC97_MASTER_VOL_MONO     0x0006
+#define AC97_PCBEEP_VOL          0x000a
+#define AC97_PHONE_VOL           0x000c
+#define AC97_MIC_VOL             0x000e
+#define AC97_LINEIN_VOL          0x0010
+#define AC97_CD_VOL              0x0012
+#define AC97_AUX_VOL             0x0016
+#define AC97_VIDEO_VOL           0x0014
+#define AC97_PCMOUT_VOL          0x0018
+#define AC97_RECORD_GAIN         0x001c
+
+#define AC97_EXTENDED_ID         0x0028
+#define AC97_SURROUND_MASTER     0x0038
+
+#define AC97_MUTE                0x8000
+
+
+unsigned long
+__get_free_page( unsigned int gfp_mask );
+  
+void
+free_page( unsigned long addr );
 
 void*
 pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle );
@@ -58,8 +85,10 @@ static __inline__ void set_bit(int nr, volatile void * addr)
 
 static __inline__ u32 cpu_to_le32( u32 x )
 {
-  return ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
-	  (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24));
+  u32 res = ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
+	     (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24));
+
+  return res;
 }
 
 #endif /* EMU10kx_pcisupport_h */
