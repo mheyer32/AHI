@@ -61,6 +61,11 @@ struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 
+/* linker can use symbol b for symbol a if a is not defined */
+#define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
+
+ALIAS( __UtilityBase, UtilityBase );
+
 const ULONG			           DriverVersion  = 2;
 const ULONG			           Version        = VERSION;
 const ULONG			           Revision       = REVISION;

@@ -1,7 +1,7 @@
 * $Id$
 
-	IFND    AHI_DSP_I
-AHI_DSP_I	SET	1
+	IFND    _AHI_DSP_I_
+_AHI_DSP_I_	SET	1
 
 	include	exec/types.i
 

@@ -206,11 +206,11 @@ SetVol ( REG(d0, UWORD channel),
 */
 
 ULONG ASMCALL
-SetFreq ( REG(d0, UWORD channel),
-          REG(d1, ULONG freq),
-          REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-          REG(d2, ULONG flags),
-          REG(a6, struct AHIBase *AHIBase) )
+SetFreq ( REG( d0, UWORD channel ),
+          REG( d1, ULONG freq ),
+          REG( a2, struct AHIPrivAudioCtrl *audioctrl ),
+          REG( d2, ULONG flags ),
+          REG( a6, struct AHIBase *AHIBase ) )
 {
   struct AHIChannelData *cd;
   struct Library        *AHIsubBase;
@@ -264,18 +264,34 @@ SetFreq ( REG(d0, UWORD channel),
 
   AHIsub_Disable(&audioctrl->ac);
 
+#ifdef VERSION68K
   cd->cd_NextAdd.I = add >> 16;
   cd->cd_NextAdd.F = (add & 0xffff) << 16;
+#else
+  cd->cd_NextAdd = (Fixed64) add << 16;
+#endif
 
   if(flags & AHISF_IMM)
   {
+#ifdef VERSION68K
     cd->cd_Add.I   = cd->cd_NextAdd.I;
     cd->cd_Add.F   = cd->cd_NextAdd.F;
-    cd->cd_FreqOK = cd->cd_NextFreqOK;
+    cd->cd_FreqOK  = cd->cd_NextFreqOK;
 
-    cd->cd_Samples = CalcSamples(cd->cd_Add.I, cd->cd_Add.F, cd->cd_Type,
-                                 cd->cd_LastOffset.I, cd->cd_LastOffset.F,
-                                 cd->cd_Offset.I, cd->cd_Offset.F);
+    cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
+                                  cd->cd_Type,
+                                  cd->cd_LastOffset.I, cd->cd_LastOffset.F,
+                                  cd->cd_Offset.I, cd->cd_Offset.F );
+#else
+    cd->cd_Add     = cd->cd_NextAdd;
+    cd->cd_FreqOK  = cd->cd_NextFreqOK;
+
+    cd->cd_Samples = CalcSamples( cd->cd_Add,
+                                  cd->cd_Type,
+                                  cd->cd_LastOffset,
+                                  cd->cd_Offset );
+#endif
+
   }
 
   AHIsub_Enable(&audioctrl->ac);
@@ -401,26 +417,44 @@ SetSound ( REG(d0, UWORD channel),
 
     cd->cd_NextDataStart = sd->sd_Addr;
     cd->cd_NextType      = sd->sd_Type;
+#ifdef VERSION68K
     cd->cd_NextOffset.I  = offset;
+#else
+    cd->cd_NextOffset    = (Fixed64) offset << 32 ;
+#endif
 
     cd->cd_NextSoundOK   = TRUE;
 
     if(length < 0)
     {
-      cd->cd_NextType |= AHIST_BW;
-      cd->cd_NextLastOffset.I = offset + length + 1;
-      cd->cd_NextLastOffset.F = 0;
-      cd->cd_NextOffset.F     = 0xffffffff;
+      cd->cd_NextType         |= AHIST_BW;
+
+#ifdef VERSION68K
+      cd->cd_NextLastOffset.I  = offset + length + 1;
+      cd->cd_NextLastOffset.F  = 0;
+      cd->cd_NextOffset.F      = 0xffffffff;
+#else
+      cd->cd_NextLastOffset    = (Fixed64) ( offset + length + 1 ) << 32;
+      cd->cd_NextOffset       |= 0xffffffffLL;
+#endif
+
     }
     else
     {
-      cd->cd_NextLastOffset.I = offset + length - 1;
-      cd->cd_NextLastOffset.F = 0xffffffff;
-      cd->cd_NextOffset.F     = 0;
+#ifdef VERSION68K
+      cd->cd_NextLastOffset.I  = offset + length - 1;
+      cd->cd_NextLastOffset.F  = 0xffffffff;
+      cd->cd_NextOffset.F      = 0;
+#else
+      cd->cd_NextLastOffset    = ( (Fixed64) ( offset + length - 1 ) << 32 )
+                                 | 0xffffffffLL;
+      /* Low cd->cd_NextOffset already 0 */
+#endif
     }
 
     if(flags & AHISF_IMM)
     {
+#ifdef VERSION68K
       cd->cd_Offset.I      = cd->cd_NextOffset.I;
       cd->cd_FirstOffsetI  = cd->cd_NextOffset.I; /* for linear interpol. */
       cd->cd_Offset.F      = cd->cd_NextOffset.F;
@@ -429,14 +463,29 @@ SetSound ( REG(d0, UWORD channel),
       cd->cd_DataStart     = cd->cd_NextDataStart;
       cd->cd_Type          = cd->cd_NextType;
       cd->cd_SoundOK       = cd->cd_NextSoundOK;
+#else
+      cd->cd_Offset        = cd->cd_NextOffset;
+      cd->cd_FirstOffsetI  = cd->cd_NextOffset >> 32; /* for linear interpol. */
+      cd->cd_LastOffset    = cd->cd_NextLastOffset;
+      cd->cd_DataStart     = cd->cd_NextDataStart;
+      cd->cd_Type          = cd->cd_NextType;
+      cd->cd_SoundOK       = cd->cd_NextSoundOK;
+#endif
 
       SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
                        &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
 
-      cd->cd_Samples = CalcSamples(cd->cd_Add.I, cd->cd_Add.F, cd->cd_Type,
-                                   cd->cd_LastOffset.I, cd->cd_LastOffset.F,
-                                   cd->cd_Offset.I, cd->cd_Offset.F);
-
+#ifdef VERSION68K
+      cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
+                                    cd->cd_Type,
+                                    cd->cd_LastOffset.I, cd->cd_LastOffset.F,
+                                    cd->cd_Offset.I, cd->cd_Offset.F);
+#else
+      cd->cd_Samples = CalcSamples( cd->cd_Add,
+                                    cd->cd_Type,
+                                    cd->cd_LastOffset,
+                                    cd->cd_Offset );
+#endif
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
 
       /* Enable anti-click routine */

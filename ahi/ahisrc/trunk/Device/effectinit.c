@@ -10,7 +10,7 @@
 #include "dsp.h"
 #include "dspecho.h"
 #include "effectinit.h"
-#include "asmfuncs.h"
+#include "misc.h"
 #include "mixer.h"
 
 

@@ -1,13 +1,13 @@
 /* $Id$ */
 
-#ifndef DSP_H
-#define DSP_H
+#ifndef _DSP_H_
+#define _DSP_H_
 
 #include <exec/types.h>
 #include "ahi_def.h"
 
 
-#if defined(VERSION68K)
+#ifdef VERSION68K
 
 typedef void ASMCALL (*ECHOFUNC)( REG(a0, struct Echo *),
                                   REG(a1, void *),
@@ -41,4 +41,4 @@ struct Echo
 };
 
 
-#endif /* DSP_H */
+#endif /* _DSP_H_ */

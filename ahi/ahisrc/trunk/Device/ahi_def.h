@@ -1,7 +1,7 @@
 /* $Id$ */
 
-#ifndef AHI_DEF_H
-#define AHI_DEF_H
+#ifndef _AHI_DEF_H_
+#define _AHI_DEF_H_
 
 /*** Debug stuff ***/
 
@@ -61,35 +61,25 @@ struct AHIDevUnit;
 
 extern struct ExecBase		*SysBase;
 extern struct AHIBase		*AHIBase;
-extern struct DosLibrary	*DOSBase;
+extern struct DosLibrary		*DOSBase;
 extern struct Library		*GadToolsBase;
 extern struct GfxBase		*GfxBase;
 extern struct Library		*IFFParseBase;
 extern struct IntuitionBase	*IntuitionBase;
-extern struct LocaleBase	*LocaleBase;
+extern struct LocaleBase		*LocaleBase;
 extern struct Device		*TimerBase;
-extern struct UtilityBase	*UtilityBase;
+extern struct UtilityBase		*UtilityBase;
 
 extern const ULONG		 DriverVersion;
 extern const ULONG		 Version;
 extern const ULONG		 Revision;
-extern const char		 DevName[];
-extern const char		 IDString[];
+extern const char			 DevName[];
+extern const char			 IDString[];
 
 
 /*** Definitions ***/
 
-struct LONGLONG
-{
-	LONG 	high;
-	ULONG	low;
-};
-
-struct ULONGLONG
-{
-	ULONG	high;
-	ULONG	low;
-};
+#ifdef VERSION68K
 
 struct Fixed64
 {
@@ -97,9 +87,13 @@ struct Fixed64
 	ULONG	F;
 };
 
-typedef struct LONGLONG 	LONGLONG;
-typedef struct ULONGLONG 	ULONGLONG;
-typedef struct Fixed64		Fixed64;
+typedef struct Fixed64	Fixed64;
+
+#else /* VERSION68K */
+
+typedef long long int	Fixed64;
+
+#endif /* VERSION68K */
 
 
 #define AHI_UNITS	4	/* Normal units, excluding AHI_NO_UNIT */
@@ -122,7 +116,7 @@ struct AHIBase
 	struct ExecBase		*ahib_SysLib;
 	ULONG			 ahib_SegList;
 	APTR			 ahib_AudioCtrl;
-	struct AHIDevUnit	*ahib_DevUnits[AHI_UNITS];
+	struct AHIDevUnit		*ahib_DevUnits[AHI_UNITS];
 	struct SignalSemaphore	 ahib_Lock;
 	ULONG			 ahib_AudioMode;
 	ULONG			 ahib_Frequency;
@@ -135,8 +129,6 @@ struct AHIBase
 	ULONG		 	 ahib_AntiClickSamples;
 };
 
-
-#define DRIVERNAME_SIZEOF sizeof("DEVS:ahi/                          .audio")
 
 struct Timer
 {
@@ -185,7 +177,7 @@ struct AHIChannelData
 	ULONG	cd_NextType;
 
 	LONG	cd_Samples;		/* Samples left to store (down-counter) */
-        LONG	cd_FirstOffsetI;	/* for linear interpolation routines */
+	LONG	cd_FirstOffsetI;		/* for linear interpolation routines */
 	LONG	cd_LastSampleL;		/* for linear interpolation routines */
 	LONG	cd_TempLastSampleL;	/* for linear interpolation routines */
 	LONG	cd_LastSampleR;		/* for linear interpolation routines */
@@ -199,14 +191,14 @@ struct AHIChannelData
 	LONG	cd_AntiClickCount;
 };
 
-#define AHIACB_NOMIXING	31		/* private ahiac_Flags flag */
+#define AHIACB_NOMIXING	31	/* private ahiac_Flags flag */
 #define AHIACF_NOMIXING	(1L<<31)	/* private ahiac_Flags flag */
-#define AHIACB_NOTIMING	30		/* private ahiac_Flags flag */
+#define AHIACB_NOTIMING	30	/* private ahiac_Flags flag */
 #define AHIACF_NOTIMING	(1L<<30)	/* private ahiac_Flags flag */
-#define AHIACB_POSTPROC 29		/* private ahiac_Flags flag */
+#define AHIACB_POSTPROC	29	/* private ahiac_Flags flag */
 #define AHIACF_POSTPROC	(1L<<29)	/* private ahiac_Flags flag */
-#define AHIACB_CLIPPING 28		/* private ahiac_Flags flag */
-#define AHIACF_CLIPPING (1L<<28)	/* private ahiac_Flags flag */
+#define AHIACB_CLIPPING	28	/* private ahiac_Flags flag */
+#define AHIACF_CLIPPING	(1L<<28)	/* private ahiac_Flags flag */
 
 /* Private AudioCtrl structure */
 
@@ -234,9 +226,9 @@ struct AHIPrivAudioCtrl
 	Fixed			 ahiac_MasterVolume;	/* Real */
 	Fixed			 ahiac_SetMasterVolume;	/* Set by user */
 	Fixed			 ahiac_EchoMasterVolume;/* Set by dspecho */
-	struct AHIEffOutputBuffer *ahiac_EffOutputBufferStruct;
+	struct AHIEffOutputBuffer	*ahiac_EffOutputBufferStruct;
 	struct Echo		*ahiac_EffDSPEchoStruct;
-	struct AHIEffChannelInfo *ahiac_EffChannelInfoStruct;
+	struct AHIEffChannelInfo	*ahiac_EffChannelInfoStruct;
 	struct AHIChannelData	*ahiac_WetList;
 	struct AHIChannelData	*ahiac_DryList;
 	UBYTE			 ahiac_WetOrDry;
@@ -247,9 +239,7 @@ struct AHIPrivAudioCtrl
 	UWORD			 ahiac_Pad;
 	APTR			 ahiac_AntiClickBuffer;
 	ULONG			 ahiac_AntiClickSize;	/* in bytes */
-	char			 ahiac_DriverName[DRIVERNAME_SIZEOF];
+	char			 ahiac_DriverName[ 256 ];
 };
-
-
 
 #endif /* AHI_DEF_H */

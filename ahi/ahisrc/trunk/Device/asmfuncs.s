@@ -19,15 +19,6 @@
 
 	XDEF	_Mix
 
-	XDEF	_Add64p
-	XDEF	_Cmp64p
-;	XDEF	_Divs64p
-;	XDEF	_Divu64p
-;	XDEF	_Muls64p
-;	XDEF	_Mulu64p
-	XDEF	_Neg64p
-	XDEF	_Sub64p
-
 	section	.text,code
 
 ** Sprintf ********************************************************************
@@ -175,115 +166,6 @@ _Mix:
 	rts
 
  ENDC
-
-
-** Math functions *************************************************************
-
-
-;in:
-* a0	LONGLONG *ValueAPtr
-* a1	LONGLONG *ValueBPtr
-;out
-;	longlong *ValueAPtr updated
-_Add64p:
-	addq.l	#LL_SIZEOF,a0
-	addq.l	#LL_SIZEOF,a1
-	move.w	#0,ccr			;clear x
-	addx.l	-(a1),-(a0)
-	addx.l	-(a1),-(a0)
-	rts
-
-;in:
-* a0	LONGLONG *ValueAPtr
-* a1	LONGLONG *ValueBPtr
-;out
-* d0	A<B: -1, A=B: 0, A>B: 1
-_Cmp64p:
-	cmp.l	(a1)+,(a0)+
-	bgt	.aGTb
-	bls	.aLSb
-
-	cmp.l	(a1)+,(a0)+
-	bgt	.aGTb
-	bls	.aLSb
-
-	moveq	#0,d0
-	rts
-
-.aGTb
-	moveq	#1,d0
-	rts
-
-.aLSb
-	moveq	#-1,d0
-	rts
-
-
- IF	0
-
-;in:
-* a0	LONGLONG *ValueAPtr
-* a1	LONGLONG *ValueBPtr
-;out
-;	LONGLONG *ValueAPtr updated
-_Divs64p:
-	rts
-
-;in:
-* a0	ULONGLONG *ValueAPtr
-* a1	ULONGLONG *ValueBPtr
-;out
-;	ULONGLONG *ValueAPtr updated
-_Divu64p:
-	rts
-
-;in:
-* a0	LONGLONG *ValueAPtr
-* a1	LONGLONG *ValueBPtr
-;out
-;	LONGLONG *ValueAPtr updated
-_Muls64p:
-	rts
-
-;in:
-* a0	ULONGLONG *ValueAPtr
-* a1	ULONGLONG *ValueBPtr
-;out
-;	ULONGLONG *ValueAPtr updated
-_Mulu64p:
-	rts
-
- ENDC * IF 0
-
-;in:
-* a0	LONGLONG *ValueAPtr
-;out
-;	LONGLONG *ValueAPtr updated
-_Neg64p:
-	not.l	(a0)+
-	not.l	(a0)+
-	lea	.1,a1
-	move.w	#0,ccr			;clear x
-	addx.l	-(a1),-(a0)
-	addx.l	-(a1),-(a0)
-	rts
-
-	dc.l	0,1
-.1
-
-;in:
-* a0	LONGLONG *ValueAPtr
-* a1	LONGLONG *ValueBPtr
-;out
-;	longlong *ValueAPtr updated
-_Sub64p:
-	addq.l	#LL_SIZEOF,a0
-	addq.l	#LL_SIZEOF,a1
-	move.w	#0,ccr			;clear x
-	subx.l	-(a1),-(a0)
-	subx.l	-(a1),-(a0)
-	rts
-
 
 ** Debug functions ************************************************************
 

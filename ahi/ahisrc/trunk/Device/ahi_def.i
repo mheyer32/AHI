@@ -1,7 +1,7 @@
 * $Id$
 
-	IFND    AHI_DEF_I
-AHI_DEF_I	SET	1
+	IFND    _AHI_DEF_I_
+_AHI_DEF_I_	SET	1
 
 DEBUG_DETAIL	SET	2
 
@@ -25,37 +25,18 @@ HAVE_CLIPPING	EQU	1
 
 *** Definitions ***
 
-	STRUCTURE LONGLONG_STRUCT,0
-	LONG	LL_high
-	ULONG	LL_low
-	LABEL	LL_SIZEOF
-
-	STRUCTURE ULONGLONG_STRUCT,0
-	ULONG	ULL_high
-	ULONG	ULL_low
-	LABEL	ULL_SIZEOF
+ IFD	VERSION68K
 
 	STRUCTURE Fixed64_STRUCT,0
 	LONG	F64_I
 	ULONG	F64_F
 	LABEL	F64_SIZEOF
 
-
-LONGLONG    MACRO
-\1          EQU     SOFFSET
-SOFFSET     SET     SOFFSET+LL_SIZEOF
-            ENDM
-
-ULONGLONG   MACRO
-\1          EQU     SOFFSET
-SOFFSET     SET     SOFFSET+ULL_SIZEOF
-            ENDM
-
 Fixed64     MACRO
 \1          EQU     SOFFSET
 SOFFSET     SET     SOFFSET+F64_SIZEOF
             ENDM
-
+ ENDC
 
 
 AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
@@ -86,11 +67,12 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	LABEL	AHIBase_SIZEOF
 
 
-
 	STRUCTURE Timer,0
 	STRUCT	EntryTime,EV_SIZE
 	STRUCT	ExitTime,EV_SIZE
 	LABEL	Timer_SIZEOF
+
+ IFD	VERSION68K
 
 	STRUCTURE AHISoundData,0
 	ULONG	sd_Type
@@ -100,6 +82,8 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	APTR	sd_InputBuffer1
 	APTR	sd_InputBuffer2
 	LABEL	AHISoundData_SIZEOF
+
+ ENDC
 
 	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
 	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
@@ -145,8 +129,10 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	UWORD	ahiac_Pad
 	APTR	ahiac_AntiClickBuffer
 	ULONG	ahiac_AntiClickSize		* in bytes
-	STRUCT	ahiac_DriverName,41+1		* sizeof("DEVS:ahi/                          .audio")
+	STRUCT	ahiac_DriverName,256
 	LABEL	AHIPrivAudioCtrl_SIZEOF
+
+ IFD	VERSION68K
 
 * AHIChannelData (private)
 	STRUCTURE AHIChannelData,0
@@ -195,5 +181,7 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	LONG	cd_AntiClickCount
 
 	LABEL	AHIChannelData_SIZEOF
+
+ ENDC
 
 	ENDC

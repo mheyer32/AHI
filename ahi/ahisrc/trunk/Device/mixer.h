@@ -54,13 +54,10 @@ MixGeneric ( REG(a0, struct Hook *Hook),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 LONG
-CalcSamples ( LONG  AddI,
-              ULONG AddF,
-              ULONG Type,
-              LONG  LastOffsetI,
-              ULONG LastOffsetF,
-              LONG  OffsetI,
-              ULONG OffsetF );
+CalcSamples ( Fixed64 Add,
+              ULONG   Type,
+              Fixed64 LastOffset,
+              Fixed64 Offset );
 
 
 #else /* VERSION68K */
