@@ -1,10 +1,10 @@
 * $Id$
 * $Log$
+* Revision 1.12  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.11  1997/03/22 18:58:07  lcs
 * --background-- updated + some work on dspecho
-*
-* Revision 1.10  1997/02/20 10:26:13  lcs
-* *** empty log message ***
 *
 * Revision 1.9  1997/02/18 22:26:49  lcs
 * Faster mixing routines for 16 bit samples when using tables.
@@ -46,13 +46,13 @@ DEBUG	EQU	1	;debug when using asmone!
 ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
  ENDC
 
-	incdir	include:
 	include	exec/exec.i
 	include	lvo/exec_lib.i
 	include	devices/ahi.i
 	include	utility/hooks.i
 	include	lvo/utility_lib.i
 	include	ahi_def.i
+	include	dsp.i
 
 	XDEF	initcode
 

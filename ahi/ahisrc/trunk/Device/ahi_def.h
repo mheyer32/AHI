@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.11  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.10  1997/03/15 09:51:52  lcs
 * Dynamic sample loading in the device: No more alignment restrictions.
 *
@@ -50,6 +53,7 @@ extern void KPrintF(char *fmt,...);
 #include <exec/devices.h>
 
 #include "ahi_device.h"
+#include "dsp.h"
 
 extern __far struct AHIBase		*AHIBase;
 extern __far struct DosLibrary		*DOSBase;
@@ -126,9 +130,11 @@ struct AHIPrivAudioCtrl
 	APTR			 ahiac_MultTableU;
 	struct Hook		*ahiac_RecordFunc;	/* AHIA_RecordFunc */
 	ULONG			 ahiac_AudioID;
-	Fixed			 ahiac_MasterVolume;
+	Fixed			 ahiac_MasterVolume;	/* Real */
+	Fixed			 ahiac_SetMasterVolume;	/* Set by user */
+	Fixed			 ahiac_EchoMasterVolume;/* Set by dspecho */
 	struct AHIEffOutputBuffer *ahiac_EffOutputBufferStruct;
-	APTR			*ahiac_EffDSPEchoStruct;
+	struct Echo		*ahiac_EffDSPEchoStruct;
 	struct AHIEffChannelInfo *ahiac_EffChannelInfoStruct;
 	APTR			 ahiac_WetList;
 	APTR			 ahiac_DryList;

@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 1.4  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.3  1997/02/18 22:26:49  lcs
 * Fixed a bug in CMD_READ?
 *
@@ -46,7 +49,6 @@ __asm void asmRecordFunc(
 ** Assembly code **************************************************************
 *******************************************************************************
 
-	incdir	include:
 	include exec/types.i
 	include	macros.i
 

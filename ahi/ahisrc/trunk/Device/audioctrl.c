@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.15  1997/03/24 12:41:51  lcs
+* Echo rewritten
+*
 * Revision 1.14  1997/03/06 22:36:03  lcs
 * Updated doc for Controlaudio(), regarding the timing feature.
 *
@@ -127,6 +130,8 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
       GetTagData(AHIA_MaxPlayerFreq,0,tags);
 
     audioctrl->ahiac_MasterVolume=0x00010000;
+    audioctrl->ahiac_SetMasterVolume=0x00010000;
+    audioctrl->ahiac_EchoMasterVolume=0x00010000;
 
     if(audioctrl->ahiac_AudioID == AHI_DEFAULT_ID)
       audioctrl->ahiac_AudioID = AHIBase->ahib_AudioMode;
