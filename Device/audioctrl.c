@@ -473,6 +473,7 @@ AllocAudioA( struct TagItem* tags,
   audioctrl->ahiac_SubAllocRC = AHISF_ERROR;
   audioctrl->ahiac_SubLib=
   AHIsubBase = OpenLibrary(audioctrl->ahiac_DriverName,DriverVersion);
+//KPrintF("Opened AHIsubBase()\n");
 
   if(!AHIsubBase)
     goto error;
@@ -488,7 +489,7 @@ AllocAudioA( struct TagItem* tags,
   dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID);
   if(dbtags)
     audioctrl->ahiac_SubAllocRC=AHIsub_AllocAudio(dbtags,(struct AHIAudioCtrlDrv *)audioctrl);
-
+//KPrintF("Called AHIsub_AllocAudio()\n");
   UnlockDatabase(audiodb);
 
   if(!dbtags)
@@ -683,6 +684,7 @@ FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
     {
       if(!(audioctrl->ahiac_SubAllocRC & AHISF_ERROR))
       {
+//KPrintF("Called AHIsub_Stop(play|record)\n");
         AHIsub_Stop(AHISF_PLAY|AHISF_RECORD,(struct AHIAudioCtrlDrv *)audioctrl);
 
         for(i=audioctrl->ac.ahiac_Sounds-1;i>=0;i--)
@@ -690,7 +692,9 @@ FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
           AHI_UnloadSound(i,(struct AHIAudioCtrl *)audioctrl);
         }
       }
+//KPrintF("Called AHIsub_FreeAudio()\n");
       AHIsub_FreeAudio((struct AHIAudioCtrlDrv *) audioctrl);
+//KPrintF("Closed AHIsubbase\n");
       CloseLibrary(AHIsubBase);
     }
 
@@ -952,6 +956,7 @@ ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
     case AHIC_Input:
     case AHIC_Output:
       AHIsub_HardwareControl(tag->ti_Tag, tag->ti_Data, (struct AHIAudioCtrlDrv *)audioctrl);
+//KPrintF("Called AHIsub_HardwareControl(%08lx:%08lx)\n",tag->ti_Tag, tag->ti_Data);
       break;
     case AHIC_MonitorVolume_Query:
     case AHIC_InputGain_Query:
@@ -959,6 +964,7 @@ ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
     case AHIC_Input_Query:
     case AHIC_Output_Query:
       *ptr=AHIsub_HardwareControl(tag->ti_Tag, NULL, (struct AHIAudioCtrlDrv *)audioctrl);
+//KPrintF("Called AHIsub_HardwareControl(%08lx:NULL)\n",tag->ti_Tag);
       break;
     }
   }
@@ -967,16 +973,19 @@ ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
   if(update)
   {
     AHIsub_Update(NULL,(struct AHIAudioCtrlDrv *)audioctrl);
+//KPrintF("Called AHIsub_Update()\n");
   }
   
   if(playflags)
   {
     rc=AHIsub_Start(playflags,(struct AHIAudioCtrlDrv *)audioctrl);
+//KPrintF("Called AHIsub_Start(%08lx)=>%ld\n",playflags,rc);
   }
   
   if(stopflags)
   {
     AHIsub_Stop(stopflags,(struct AHIAudioCtrlDrv *)audioctrl);
+//KPrintF("Called AHIsub_Stop(%08lx)\n",stopflags);
   }
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
