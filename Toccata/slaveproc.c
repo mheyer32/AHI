@@ -1,6 +1,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  1997/07/27 22:07:32  lcs
+ * Last check-in, Leviticus signing off... ;)
+ *
  * Revision 1.1  1997/06/29 03:04:02  lcs
  * Initial revision
  *
@@ -10,15 +13,20 @@
 #include <dos/dos.h>
 #include <dos/dostags.h>
 #include <exec/exec.h>
+#include <libraries/iffparse.h>
+#include <libraries/maud.h>
 
 #include <proto/ahi.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
+#include <proto/iffparse.h>
 #include <proto/utility.h>
 #include <clib/toccata_protos.h>
 #include <pragmas/toccata_pragmas.h>
 
 #include <math.h>
+#include <limits.h>
+#include <string.h>
 #include "toccata.h"
 
 
@@ -31,6 +39,9 @@ static ASM ULONG RecordFunc(REG(a0) struct Hook *hook,
                             REG(a2) struct AHIAudioCtrl *audioctrl,
                             REG(a1) struct AHIRecordMessage *msg);
 ASM void RawReply(void);
+
+ASM LONG ReadMAUD(REG(a0) UBYTE *buffer, REG(d0) ULONG length, REG(a1) ULONG unused);
+
 static BOOL AllocAudio(void);
 static void FreeAudio(void);
 static BOOL TuneAudio(void);
@@ -39,6 +50,12 @@ static BOOL ControlAudio(void);
 static void Pause(ULONG pause);
 static void Stop(ULONG flags);
 static BOOL RawPlayback(struct TagItem *tags);
+static BOOL Playback(struct TagItem *tags);
+
+
+struct Process *IOProcess = NULL;
+BOOL IOInitialized = FALSE;
+
 
 
 /* Some flags */
@@ -69,6 +86,35 @@ ULONG             RawBufferLength;  /* RawBufferSize / samplesize */
 ULONG             RawChunckLength;  /* RawIrqSize / samplesize */
 BOOL              NextBufferOK;
 LONG              ByteSkipCounter;
+
+/* Playback variables */
+
+struct Task      *EndTask;
+ULONG             EndMask;
+struct Window    *Window;
+BYTE              IoPri;
+ULONG             BufferSize;
+ASM LONG          (*Load)(REG(a0) UBYTE *, REG(d0) ULONG, REG(a1) ULONG);
+ULONG             LoadParam;
+STRPTR            FileName;
+LONG              Length;
+BOOL              SmartPlay;
+UWORD             PreBlocks;
+UWORD             PlayBlocks;
+ULONG             Flags;
+
+struct IFFHandle *iff;
+BOOL              iffopened;
+BYTE             *Buffer1, *Buffer2;
+UWORD             BuffersLoaded;
+struct List       BufferList;
+WORD              BufferFlag;
+
+struct Buffer {
+  struct Node     Node;
+  LONG            Size;
+  BYTE           *Buffer;
+};
 
 /* Audio stuff */
 
@@ -110,6 +156,8 @@ static ASM ULONG SoundFunc(REG(a0) struct Hook *hook,
 
   RawBufferOffset += RawChunckLength;
 
+//  kprintf("%ld\n",RawBufferOffset);
+
   if(RawBufferOffset >= RawBufferLength) {
 
     if(SoundFlag == 0) {
@@ -125,7 +173,12 @@ static ASM ULONG SoundFunc(REG(a0) struct Hook *hook,
 
     if(!NextBufferOK && (ErrorTask != NULL)) {
       Signal(ErrorTask, ErrorMask);
-      Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_D);
+      if(IOProcess != NULL) {
+        Signal((struct Task *) IOProcess, SIGBREAKF_CTRL_E);
+      }
+      else {
+        Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_E);
+      }
     }
 
     if(RawInt != NULL) {
@@ -181,6 +234,7 @@ ASM void RawReply(void) {
 
 /*
  *  SlaveTask(): The slave process
+ *  CTRL_C terminates, CTRL_E stops playing/recording (error signal)
  */
 
 void ASM SlaveTask(void) {
@@ -211,15 +265,14 @@ void ASM SlaveTask(void) {
       struct slavemessage *msg;
 
       signals = Wait((1L << me->pr_MsgPort.mp_SigBit) |
-                     SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D);
+                     SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_E);
 
       if(signals & SIGBREAKF_CTRL_C) {
         break;
       }
 
-      if(signals & SIGBREAKF_CTRL_D) {
-        Playing = Recording = FALSE;
-        ControlAudio();
+      if(signals & SIGBREAKF_CTRL_E) {
+        Stop(0);
       }
 
       if(signals & (1L << me->pr_MsgPort.mp_SigBit)) {
@@ -237,13 +290,12 @@ void ASM SlaveTask(void) {
               msg->Data = (APTR) RawPlayback(msg->Data);
               break;
             case MSG_PLAY:
-              kprintf("play\n");
+              msg->Data = (APTR) Playback(msg->Data);
               break;
             case MSG_RECORD:
               kprintf("record\n");
               break;
             case MSG_STOP:
-              //kprintf("got stop!\n");
               Stop(*((ULONG *) msg->Data));
               break;
             case MSG_PAUSE:
@@ -267,6 +319,7 @@ void ASM SlaveTask(void) {
 
   SlaveInitialized = FALSE;
 
+  Stop(0);
   FreeAudio();
 
   AHIBase = NULL;
@@ -281,6 +334,229 @@ void ASM SlaveTask(void) {
   SlaveProcess = NULL;
 }
 
+
+/*
+ *  IOTask(): The play/record process
+ *  CTRL_C terminates, CTRL_D rawsignal, CTRL_E error signal
+ */
+
+void ASM IOTask(void) {
+  struct Process    *me;
+  BOOL rc = FALSE;
+
+  me = (struct Process *) FindTask(NULL);
+
+  BuffersLoaded = 0;
+  NewList(&BufferList);
+
+  iff = NULL;
+  iffopened = FALSE;
+
+
+  /* Open MAUD file for reading */
+
+  if(FileName != NULL) {
+    iff = AllocIFF();
+    if(iff) {
+      iff->iff_Stream = Open(FileName, MODE_OLDFILE);
+      if(iff->iff_Stream) {
+        InitIFFasDOS(iff);
+        if(!OpenIFF(iff, IFFF_READ)) {
+          iffopened = TRUE;
+          if(!StopChunk(iff, ID_MAUD, ID_MDAT)) {
+            while(TRUE) {
+              LONG error = ParseIFF(iff,IFFPARSE_SCAN);
+              struct ContextNode *cn;
+
+              if(error == IFFERR_EOC) continue;
+              if(error) break;
+              
+              cn = CurrentChunk(iff);
+              
+              if(cn && (cn->cn_Type == ID_MAUD) && (cn->cn_ID == ID_MDAT)) {
+                rc = TRUE;
+                break;
+              }
+            } /* while */
+          }
+        }
+      }
+    }
+  }
+  else rc = TRUE; /* Not an error! */
+
+
+  /* Fill the two play buffers with data */
+
+  memset(Buffer1, 0, BufferSize);
+  Load(Buffer1, BufferSize, LoadParam);
+
+  memset(Buffer2, 0, BufferSize);
+  Load(Buffer2, BufferSize, LoadParam);
+
+  BufferFlag = 0;
+
+  /* Now prefill some more */
+
+  if(rc) {
+    while(BuffersLoaded < (PreBlocks - 2)) {
+      struct Buffer *buffer;
+    
+      buffer = (struct Buffer *) AllocVec(sizeof (struct Buffer), MEMF_CLEAR);
+      if(buffer == NULL) {
+        break;
+      }
+
+      buffer->Buffer = AllocVec(BufferSize, MEMF_PUBLIC | MEMF_CLEAR);
+      if(buffer->Buffer) {
+        buffer->Size = Load(buffer->Buffer, BufferSize, LoadParam);
+        AddTail(&BufferList, (struct Node *) buffer);
+        BuffersLoaded++;
+      }
+      else {
+        FreeVec(buffer);
+        break;
+      }
+    }
+
+    IOInitialized = TRUE;
+
+    kprintf("iotask initialized\n");
+  }
+
+  while(rc) {
+    ULONG signals;
+
+    signals = SetSignal(0,0);
+    
+    if(signals & SIGBREAKF_CTRL_C) {
+      kprintf("iotask got break\n");
+      break;
+    }
+
+    if(SIGBREAKF_CTRL_D) {
+      struct Buffer *buffer;
+      LONG size = 0;
+
+      kprintf("iotask swapped buffer!\n");
+
+      buffer = (struct Buffer *) RemHead(&BufferList);
+      if(buffer) {
+        BuffersLoaded--;
+        size = buffer->Size;
+        memcpy((BufferFlag == 0 ? Buffer1 : Buffer2) , buffer->Buffer,
+               buffer->Size);
+      }
+
+      /* Clear the rest of the block */
+      if((BufferSize - size) > 0) {
+        memset((BufferFlag == 0 ? Buffer1 : Buffer2) + size, 0,
+               BufferSize - size);
+      }
+
+      if(BufferFlag == 0) {
+        BufferFlag = 1;
+      }
+      else {
+        BufferFlag = 0;
+      }
+
+      RawReply();
+
+    }
+
+    if(SIGBREAKF_CTRL_E) {
+      kprintf("iotask got error\n");
+      if(!SmartPlay) {
+        /* Ask him to stop and kill us */
+        Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_E);
+      }
+    }
+
+
+    /* If there are no signals pending, lets load some data! */
+
+    while((signals & ((1L << me->pr_MsgPort.mp_SigBit) |
+                   SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E)) == 0) {
+
+      if(BuffersLoaded < PlayBlocks) {
+        struct Buffer *buffer;
+    
+        buffer = AllocVec(sizeof (struct Buffer), MEMF_CLEAR);
+        if(buffer == NULL) {
+          break;
+        }
+
+        buffer->Buffer = AllocVec(BufferSize, MEMF_PUBLIC | MEMF_CLEAR);
+        if(buffer->Buffer) {
+          buffer->Size = Load(buffer->Buffer, BufferSize, LoadParam);
+          AddTail(&BufferList, (struct Node *) buffer);
+          BuffersLoaded++;
+        }
+        else {
+          FreeVec(buffer);
+          break;
+        }
+      }
+      else {
+        /* Wait */
+        signals = Wait((1L << me->pr_MsgPort.mp_SigBit) |
+                       SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_D | SIGBREAKF_CTRL_E);
+      }
+    }
+
+
+
+
+  }
+
+  kprintf("iotask terminating\n");
+
+  if(iff) {
+
+    if(iffopened) {
+      CloseIFF(iff);
+    }
+
+    if(iff->iff_Stream) {
+      Close(iff->iff_Stream);
+    }
+
+    FreeIFF(iff);
+  }
+
+  iff = NULL;
+
+
+  /* Free buffers if any left */
+  {
+    struct Buffer *buffer;
+
+    while(buffer = (struct Buffer *) RemHead(&BufferList)) {
+      FreeVec(buffer->Buffer);
+      FreeVec(buffer);
+    }
+  }
+
+  FreeVec(Buffer1);
+  Buffer1 = NULL;
+  FreeVec(Buffer2);
+  Buffer2 = NULL;
+
+  Forbid();
+  IOProcess = NULL;
+}
+
+
+/*
+ *  ReadMAUD(): Used as callback function when playing
+ */
+
+ASM LONG ReadMAUD(REG(a0) UBYTE *buffer, REG(d0) ULONG length,
+                  REG(a1) ULONG unused) {
+
+  return ReadChunkBytes(iff, buffer, length);
+}
 
 /*
  *  AllocAudio(): Allocate the audio hardware
@@ -343,17 +619,17 @@ static void FreeAudio(void) {
 
   kprintf("(FreeAudio())...\n");
 
-  if(audioctrl != NULL) {
-    AHI_ControlAudio(audioctrl,
-        AHIC_Play,   FALSE,
-        AHIC_Record, FALSE,
-        TAG_DONE);
+  Playing = FALSE;
+  Recording = FALSE;
 
+  ControlAudio();
+
+  if(audioctrl != NULL) {
     AHI_FreeAudio(audioctrl);
   }
+
   audioctrl = NULL;
   AudioInitialized = FALSE;
-  kprintf("ok!\n");
 }
 
 
@@ -426,8 +702,9 @@ static BOOL ControlAudio(void) {
 
   if(audioctrl) {
     rc = AHI_ControlAudio(audioctrl,
-        AHIC_Play,   (Playing && !Pausing),
-        AHIC_Record, (Recording && !Pausing),
+        AHIC_Play,        (Playing && !Pausing),
+        AHIC_Record,      (Recording && !Pausing),
+        AHIA_PlayerFreq,  (RawInt ? tprefs.Frequency / RawIrqSize : PLAYERFREQ),
         TAG_DONE);
   }
 
@@ -437,7 +714,7 @@ static BOOL ControlAudio(void) {
 
 
 /*
- *  Pause(): Take care of the T_Pause() unctionf
+ *  Pause(): Take care of the T_Pause() function
  */
 
 static void Pause(ULONG pause) {
@@ -458,6 +735,7 @@ static void Stop(ULONG flags) {
 
   Playing = FALSE;
   Recording = FALSE;
+
   ControlAudio();
 
   if(Sound0Loaded) {
@@ -469,6 +747,27 @@ static void Stop(ULONG flags) {
   }
 
   Sound0Loaded = Sound1Loaded = FALSE;
+
+  /* Fill defaults */
+
+  ErrorTask       =
+  RawTask         =
+  SigTask         = NULL;
+  RawInt          = NULL;
+  RawBuffer1      =
+  RawBuffer2      = NULL;
+  RawBufferSize   = 32768;
+  RawIrqSize      = 512;
+  ByteCount       = NULL;
+  ByteSkip        =
+  ByteSkipCounter = 2048;
+
+  if(IOProcess) {
+    Signal((struct Task *)IOProcess, SIGBREAKF_CTRL_C);
+    while(IOProcess) {
+      Delay(1);
+    }
+  }
 
   if((flags & TSF_DONTSAVECACHE) == 0) {
     /* Save cache here... */
@@ -491,31 +790,18 @@ static BOOL RawPlayback(struct TagItem *tags) {
 
   kprintf("RawPlayback()...\n");
 
+  /* Is this correct?? */
+
   if(Playing || Recording) {
     return FALSE;
   }
-
-  /* Fill defaults */
-
-  ErrorTask       =
-  RawTask         =
-  SigTask         = NULL;
-  RawInt          = NULL;
-  RawBuffer1      =
-  RawBuffer2      = NULL;
-  RawBufferSize   = 32768;
-  RawIrqSize      = 512;
-  ByteCount       = NULL;
-  ByteSkip        =
-  ByteSkipCounter = 2048;
-
 
   /* Check arguments */
 
   tstate = tags;
 
   while (tag = NextTagItem(&tstate)) {
-    //kprintf("%ld, 0x%08lx,\n", tag->ti_Tag - TT_Min, tag->ti_Data);
+    kprintf("%ld, 0x%08lx,\n", tag->ti_Tag - TT_Min, tag->ti_Data);
     switch (tag->ti_Tag) {
 
       case TT_IrqPri:
@@ -599,6 +885,8 @@ static BOOL RawPlayback(struct TagItem *tags) {
     } /* switch */
   } /* while */
 
+  kprintf("<<%ld\n", rc);
+
   if((ErrorTask == NULL) ||
      ((RawTask == NULL) && (RawInt == NULL)) ||
      (RawBuffer1 == NULL) ||
@@ -607,13 +895,13 @@ static BOOL RawPlayback(struct TagItem *tags) {
     rc = FALSE;
   }
 
-  Stop(0);
-
+  kprintf("<<%ld\n", rc);
   if(rc && (newmode || !AudioInitialized)) {
     FreeAudio();
     rc = AllocAudio();
   }
 
+  kprintf("<<%ld\n", rc);
 
   if(rc) {
     ULONG sampletype = AHIST_NOTYPE;
@@ -646,6 +934,7 @@ static BOOL RawPlayback(struct TagItem *tags) {
           rc = FALSE;
     }
 
+  kprintf("<<%ld\n", rc);
     if(sampletype != AHIST_NOTYPE) {
 
       s0.ahisi_Type    =
@@ -672,6 +961,7 @@ static BOOL RawPlayback(struct TagItem *tags) {
     }
   }
 
+  kprintf("<<%ld\n", rc);
   if(rc) {
     Playing         = TRUE;
     SoundFlag       = 0;
@@ -693,5 +983,267 @@ static BOOL RawPlayback(struct TagItem *tags) {
   }
 
   kprintf("ok %ld\n", rc);
+  return rc;
+}
+
+
+static BOOL Playback(struct TagItem *tags) {
+  BOOL rc = TRUE;
+  struct TagItem *tstate;
+  struct TagItem *tag;
+
+  kprintf("Playback()...\n");
+
+  Stop(0);
+
+  /* Fill defaults */
+
+  EndTask     = NULL;
+  EndMask     = 0;
+  Window      = NULL;
+  IoPri       = tprefs.PlaybackIoPri;
+  BufferSize  = tprefs.PlaybackBlockSize;
+  Load        = NULL;
+  LoadParam   = 0;
+  FileName    = NULL;
+  Length      = LONG_MAX;
+  SmartPlay   = FALSE;
+  PreBlocks   = tprefs.PlaybackStartBlocks;
+  PlayBlocks  = tprefs.PlaybackBlocks;
+  Flags       = NULL;
+
+  Buffer1 = Buffer2 = NULL;
+
+  /* Check arguments */
+
+  FileName = (STRPTR) GetTagData(TT_FileName, NULL, tags);
+  
+  if(FileName != NULL) {
+    struct IFFHandle *iff;
+    struct StoredProperty *sp;
+    BOOL gotheader = FALSE;
+
+    Load = ReadMAUD;
+
+    iff = AllocIFF();
+
+    if(iff) {
+
+      iff->iff_Stream = Open(FileName, MODE_OLDFILE);
+
+      if(iff->iff_Stream) {
+
+        InitIFFasDOS(iff);
+
+        if(!OpenIFF(iff, IFFF_READ)) {
+
+          if(!(PropChunk(iff, ID_MAUD, ID_MHDR)
+            || StopOnExit(iff,ID_MAUD, ID_FORM))) {
+
+            while(ParseIFF(iff,IFFPARSE_SCAN) == IFFERR_EOC) {
+
+              sp = FindProp(iff, ID_MAUD, ID_MHDR);
+
+              if(sp) {
+                struct MaudHeader *mhdr = (struct MaudHeader *) sp->sp_Data;
+
+                gotheader = TRUE;
+
+                Length = mhdr->mhdr_Samples * mhdr->mhdr_SampleSizeU / 8;
+
+                tprefs.Frequency = mhdr->mhdr_RateSource / mhdr->mhdr_RateDevide;
+
+                switch(mhdr->mhdr_Compression) {
+
+                  case MCOMP_NONE:
+                    if(mhdr->mhdr_SampleSizeU == 8) {
+                      tprefs.Mode = TMODE_LINEAR_8;
+                    }
+                    else if(mhdr->mhdr_SampleSizeU == 16) {
+                      tprefs.Mode = TMODE_LINEAR_16;
+                    }
+                    else rc = FALSE;
+                    break;
+
+                  case MCOMP_ALAW:
+                    tprefs.Mode = TMODE_ALAW;
+                    break;
+
+                  case MCOMP_ULAW:
+                    tprefs.Mode = TMODE_ULAW;
+                    break;
+                } /* swicth */
+
+                if(mhdr->mhdr_ChannelInfo == MCI_STEREO) {
+                  tprefs.Mode |= TMODEF_STEREO;
+                }
+                else if(mhdr->mhdr_ChannelInfo != MCI_MONO) {
+                  rc = FALSE;
+                } 
+
+                FreeAudio();
+                AllocAudio();
+                break; /* We have what we want, no need to loop futher */
+              }
+            }
+          }
+          CloseIFF(iff);
+        }
+        Close(iff->iff_Stream);
+      }
+      FreeIFF(iff);
+    }
+
+    if(!gotheader) {
+      rc = FALSE;
+    }
+  }
+
+  tstate = tags;
+
+  while (rc && (tag = NextTagItem(&tstate))) {
+    //kprintf("%ld, 0x%08lx,\n", tag->ti_Tag - TT_Min, tag->ti_Data);
+    switch (tag->ti_Tag) {
+
+      case TT_Window:
+        Window = (struct Window *) tag->ti_Data;
+        break;
+
+      case TT_IoPri:
+        IoPri = tag->ti_Data;
+        break;
+
+      case TT_IrqPri:
+        break;
+
+      case TT_BufferSize:
+        BufferSize = tag->ti_Data;
+        break;
+
+      case TT_Load:
+        Load = (ASM LONG (*)(REG(a0) UBYTE *, REG(d0) ULONG, REG(a1) ULONG)) tag->ti_Data;
+        break;
+
+      case TT_CBParamA1:
+        LoadParam = tag->ti_Data;
+        break;
+
+      case TT_Mode:
+      case TT_Frequency:
+        break;
+
+/* Already handled above!
+      case TT_FileName:
+        FileName = (STRPTR) tag->ti_Data;
+        break;
+*/
+
+      case TT_Length:
+        Length = tag->ti_Data;
+        break;
+
+      case TT_ErrorTask:
+      case TT_ErrorMask:
+        break;
+
+      case TT_SmartPlay:
+        SmartPlay = tag->ti_Data;
+        break;
+
+      case TT_PreBlocks:
+        PreBlocks = tag->ti_Data;
+        break;
+
+      case TT_PlayBlocks:
+        PlayBlocks = tag->ti_Data;
+        break;
+
+      case TT_Flags:
+        Flags = tag->ti_Data;
+        break;
+
+      case TT_EndTask:
+        EndTask = (struct Task *) tag->ti_Data;
+
+      case TT_EndMask:
+        EndMask = tag->ti_Data;
+        break;
+
+      case TT_MSList:
+      case TT_StartOffset:
+      case TT_FieldsPerSecond:
+        rc = FALSE;
+        break;
+
+      /* RawPlayback takes care of these */
+      case TT_ByteCount:
+      case TT_ByteSkip:
+      case TT_SigTask:
+      case TT_SigMask:
+        break;
+
+    } /* switch */
+  } /* while */
+  
+  if((Load == 0) && (FileName == NULL)) {
+    rc = FALSE;
+  }
+
+  if(rc) {
+    Forbid();
+    if(IOProcess = CreateNewProcTags(
+        NP_Entry,     IOTaskEntry,
+        NP_Name,      _LibName,
+        NP_Priority,  IoPri,
+        NP_WindowPtr, Window,
+        TAG_DONE)) {
+      IOProcess->pr_Task.tc_UserData = ToccataBase;
+    }
+    Permit();
+
+    if(IOProcess == NULL) {
+      rc = FALSE;
+    }
+  }
+
+  if(rc) {
+    struct TagItem rawtags[] = {
+      TT_RawTask,     0, /* IOProcess */
+      TT_RawMask,     SIGBREAKF_CTRL_D,
+      TT_RawBuffer1,  0, /* Buffer1 */
+      TT_RawBuffer2,  0, /* Buffer2 */
+      TT_BufferSize,  0, /* BufferSize */
+      TT_ErrorTask,   0, /* IOProcess -- Can be overridded by users errortask */
+      TT_ErrorMask,   SIGBREAKF_CTRL_E,
+      TAG_MORE,       0, /* tags */
+      TAG_DONE
+    };
+
+    Buffer1 = AllocVec(BufferSize, MEMF_PUBLIC);
+    Buffer2 = AllocVec(BufferSize, MEMF_PUBLIC);
+
+    rawtags[0].ti_Data = (ULONG) IOProcess;
+    rawtags[2].ti_Data = (ULONG) Buffer1;
+    rawtags[3].ti_Data = (ULONG) Buffer2;
+    rawtags[4].ti_Data = (ULONG) BufferSize;
+    rawtags[5].ti_Data = (ULONG) IOProcess;
+    rawtags[7].ti_Data = (ULONG) tags;
+
+    /* Make sure all buffers are preloaded */
+    while((IOProcess != NULL) && !IOInitialized) {
+      Delay(1);
+    }
+
+    if(IOProcess == NULL) {
+      rc = FALSE;
+    }
+
+    if(rc) {
+      rc = RawPlayback((struct TagItem *) &rawtags);
+    }
+
+  }
+
+
   return rc;
 }

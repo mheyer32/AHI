@@ -1,6 +1,9 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  1997/07/27 22:07:32  lcs
+ * Last check-in, Leviticus signing off... ;)
+ *
  * Revision 1.1  1997/06/29 03:04:02  lcs
  * Initial revision
  *
@@ -105,6 +108,7 @@ extern ULONG error;
 void kprintf(char *, ...);
 
 ASM void SlaveTaskEntry(void);
+ASM void IOTaskEntry(void);
 ASM void HookLoad(void);
 ASM ULONG GetRawReply(REG(a0) struct ToccataBase *);
 
