@@ -1,0 +1,48 @@
+#
+# $Id$
+# $Log$
+# Revision 1.1  1997/06/25 19:45:09  lcs
+# Initial revision
+#
+#
+
+DEST	= LIBS:toccata.library
+OBJECTS	= libinit.o toccata.o stubs.o 
+RCSFILES= libinit.c smakefile stubs.a toccata.c
+
+CFLAGS	= CPU=68030 SAVEDS\
+PARAMS=REGISTER LIBCODE NOSTACKCHECK DEBUG=FULL STRINGMERGE\
+DATA=NEAR NOVERSION UTILITYLIB #OPTIMIZE OPTTIME OPTSCHED
+
+AFLAGS  = SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD INCPATH=Include:
+
+LFLAGS	= \
+LIBFD FD:toccata_lib.fd NOICONS SMALLDATA SMALLCODE \
+LIBVERSION 12 LIBREVISION 0 \
+LIBID "toccata.library 12.0 (25.6.97) ©1997 Martin Blom. Emulation library using AHI."
+
+all:		$(DEST)
+
+$(DEST):	$(OBJECTS)
+	slink $(LFLAGS) TO $@ FROM lib:libent.o $(OBJECTS) \
+		LIB LIB:sc.lib LIB:debug.lib LIB:amiga.lib
+	--flushlib toccata.library
+
+.c.o:
+	sc $(CFLAGS) $*.c
+
+.a.o:
+	phxass $(AFLAGS) $*.a
+
+libinit.o:	libinit.c
+	sc $(CFLAGS) DEF ONE_GLOBAL_SECTION $<
+
+toccata.o:	toccata.c
+stubs.o:	stubs.a
+
+ci:
+	ci -l $(RCSFILES)
+
+clean:
+	--delete \#?.o \#?.tmp \#?.info QUIET
+
