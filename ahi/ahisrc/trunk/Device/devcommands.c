@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/01/05 13:38:01  lcs
+* Fixed a bug (attaching a iorequest to a silent one) in NewWriter()
+*
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
 * CMD_WRITE seem to work as supposed now
@@ -675,22 +678,24 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
       ioreq->ahir_Link = NULL;
       Enqueue((struct List *) &iounit->WaitingList,(struct Node *) ioreq);
 
-      // Attach the request to the currently playing one
+      if(channel != NOCHANNEL)
+      {
+        // Attach the request to the currently playing one
 
-      iounit->Voices[channel].QueuedRequest = ioreq;
-      iounit->Voices[channel].NextOffset  = PLAY;
-      iounit->Voices[channel].NextRequest = NULL;
-      AHI_Play(iounit->AudioCtrl,
-          AHIP_BeginChannel,  channel,
-          AHIP_LoopFreq,      ioreq->ahir_Frequency,
-          AHIP_LoopVol,       ioreq->ahir_Volume,
-          AHIP_LoopPan,       ioreq->ahir_Position,
-          AHIP_LoopSound,     type2snd[ioreq->ahir_Type],
-          AHIP_LoopOffset,    (ULONG) ioreq->ahir_Std.io_Data + ioreq->ahir_Std.io_Actual,
-          AHIP_LoopLength,    ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual,
-          AHIP_EndChannel,    NULL,
-          TAG_DONE);
-
+        iounit->Voices[channel].QueuedRequest = ioreq;
+        iounit->Voices[channel].NextOffset  = PLAY;
+        iounit->Voices[channel].NextRequest = NULL;
+        AHI_Play(iounit->AudioCtrl,
+            AHIP_BeginChannel,  channel,
+            AHIP_LoopFreq,      ioreq->ahir_Frequency,
+            AHIP_LoopVol,       ioreq->ahir_Volume,
+            AHIP_LoopPan,       ioreq->ahir_Position,
+            AHIP_LoopSound,     type2snd[ioreq->ahir_Type],
+            AHIP_LoopOffset,    (ULONG) ioreq->ahir_Std.io_Data + ioreq->ahir_Std.io_Actual,
+            AHIP_LoopLength,    ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual,
+            AHIP_EndChannel,    NULL,
+            TAG_DONE);
+      }
     }
     else
     { // She tried to add more than one requeste to unother
