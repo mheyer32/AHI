@@ -1093,7 +1093,7 @@ UnloadSound( UWORD                    sound,
 *           sound. If this tag is present, AHIP_Length MUST be present too!
 *
 *       AHIP_Length (LONG) - Specifies how many samples that should be
-*           player.
+*           played.
 *
 *       AHIP_LoopFreq (ULONG)
 *       AHIP_LoopVol (Fixed)
