@@ -26,24 +26,52 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
-#include "mixer.h"
 
-LONG AddByteMVH( ADDARGS );
-LONG AddByteSVPH( ADDARGS );
-LONG AddBytesMVH( ADDARGS );
-LONG AddBytesSVPH( ADDARGS );
-LONG AddWordMVH( ADDARGS );
-LONG AddWordSVPH( ADDARGS );
-LONG AddWordsMVH( ADDARGS );
-LONG AddWordsSVPH( ADDARGS );
+/*
+** Samples          Number of samples to calculate.
+** ScaleLeft        Left volume multiplier.
+** ScaleRight       Right volume multiplier (not used for mono sounds).
+** StartPointLeft   Sample value from last session, for interpolation. Update!
+** StartPointRight  Sample value from last session, for interpolation. Update!
+** Src              Pointer to source samples.
+** Dst              Pointer to pointer to destination buffer. Update!
+** FirstOffsetI     The offset value of the first sample (when StartPoint* 
+**                  should be used).
+** Offset           The offset (fix-point). Update!
+** Add              Add value (fix-point).
+** StopAtZero       If true, abort at next zero-crossing.
+*/
 
-LONG AddByteMVHB( ADDARGS );
-LONG AddByteSVPHB( ADDARGS );
-LONG AddBytesMVHB( ADDARGS );
-LONG AddBytesSVPHB( ADDARGS );
-LONG AddWordMVHB( ADDARGS );
-LONG AddWordSVPHB( ADDARGS );
-LONG AddWordsMVHB( ADDARGS );
-LONG AddWordsSVPHB( ADDARGS );
+#define ADDARGS LONG      Samples,\
+                LONG      ScaleLeft,\
+                LONG      ScaleRight,\
+                LONG	 *StartPointLeft,\
+                LONG	 *StartPointRight,\
+                void     *Src,\
+                void    **Dst,\
+                LONG	  FirstOffsetI,\
+                Fixed64   Add,\
+                Fixed64  *Offset,\
+                BOOL      StopAtZero
+
+typedef LONG (ADDFUNC)(ADDARGS);
+
+LONG AddByteMono( ADDARGS );
+LONG AddByteStereo( ADDARGS );
+LONG AddBytesMono( ADDARGS );
+LONG AddBytesStereo( ADDARGS );
+LONG AddWordMono( ADDARGS );
+LONG AddWordStereo( ADDARGS );
+LONG AddWordsMono( ADDARGS );
+LONG AddWordsStereo( ADDARGS );
+
+LONG AddByteMonoB( ADDARGS );
+LONG AddByteStereoB( ADDARGS );
+LONG AddBytesMonoB( ADDARGS );
+LONG AddBytesStereoB( ADDARGS );
+LONG AddWordMonoB( ADDARGS );
+LONG AddWordStereoB( ADDARGS );
+LONG AddWordsMonoB( ADDARGS );
+LONG AddWordsStereoB( ADDARGS );
 
 #endif /* _ADDROUTINES_H_ */

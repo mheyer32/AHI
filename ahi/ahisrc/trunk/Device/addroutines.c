@@ -30,14 +30,16 @@
 
 /*
 ** LONG      Samples
-** Fixed     ScaleLeft
-** Fixed     ScaleRight (Not used in all routines)
-** Fixed64  *Offset
-** Fixed64   Add
-** struct    AHIPrivAudioCtrl *audioctrl
+** LONG      ScaleLeft
+** LONG      ScaleRight
+** LONG	    *StartPointLeft
+** LONG	    *StartPointRight
 ** void     *Src
 ** void    **Dst
-** struct    AHIChannelData *cd
+** LONG	     FirstOffsetI
+** Fixed64  *Offset
+** Fixed64   Add
+** BOOL      StopAtZero
 */
 
 /*
@@ -61,22 +63,21 @@ into two loops in order to eliminate the FirstOffsetI test in the second loop.
 #define offsetf ( (long) ( (unsigned long) ( offset & 0xffffffffULL ) >> 17) )
 
 LONG
-AddByteMVH( ADDARGS )
+AddByteMono( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -101,7 +102,7 @@ AddByteMVH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -111,22 +112,21 @@ AddByteMVH( ADDARGS )
 
 
 LONG
-AddByteSVPH( ADDARGS )
+AddByteStereo( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -152,7 +152,7 @@ AddByteSVPH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -162,24 +162,22 @@ AddByteSVPH( ADDARGS )
 
 
 LONG
-AddBytesMVH( ADDARGS )
+AddBytesMono( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -210,8 +208,8 @@ AddBytesMVH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -221,24 +219,22 @@ AddBytesMVH( ADDARGS )
 
 
 LONG
-AddBytesSVPH( ADDARGS )
+AddBytesStereo( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -270,8 +266,8 @@ AddBytesSVPH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -281,22 +277,21 @@ AddBytesSVPH( ADDARGS )
 
 
 LONG
-AddWordMVH( ADDARGS )
+AddWordMono( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -321,7 +316,7 @@ AddWordMVH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -331,22 +326,21 @@ AddWordMVH( ADDARGS )
 
 
 LONG
-AddWordSVPH( ADDARGS )
+AddWordStereo( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -372,7 +366,7 @@ AddWordSVPH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -381,24 +375,22 @@ AddWordSVPH( ADDARGS )
 }
 
 LONG
-AddWordsMVH( ADDARGS )
+AddWordsMono( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -429,8 +421,8 @@ AddWordsMVH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -440,24 +432,22 @@ AddWordsMVH( ADDARGS )
 
 
 LONG
-AddWordsSVPH( ADDARGS )
+AddWordsStereo( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -489,8 +479,8 @@ AddWordsSVPH( ADDARGS )
     offset += Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -507,22 +497,21 @@ AddWordsSVPH( ADDARGS )
 #define offsetf ( (long) ( 32768 - ( (unsigned long) ( offset & 0xffffffffULL ) >> 17 ) ) )
 
 LONG
-AddByteMVHB( ADDARGS )
+AddByteMonoB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -547,7 +536,7 @@ AddByteMVHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -557,22 +546,21 @@ AddByteMVHB( ADDARGS )
 
 
 LONG
-AddByteSVPHB( ADDARGS )
+AddByteStereoB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -598,7 +586,7 @@ AddByteSVPHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -608,24 +596,22 @@ AddByteSVPHB( ADDARGS )
 
 
 LONG
-AddBytesMVHB( ADDARGS )
+AddBytesMonoB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -656,8 +642,8 @@ AddBytesMVHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -667,24 +653,22 @@ AddBytesMVHB( ADDARGS )
 
 
 LONG
-AddBytesSVPHB( ADDARGS )
+AddBytesStereoB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -716,8 +700,8 @@ AddBytesSVPHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -727,22 +711,21 @@ AddBytesSVPHB( ADDARGS )
 
 
 LONG
-AddWordMVHB( ADDARGS )
+AddWordMonoB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -767,7 +750,7 @@ AddWordMVHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -777,22 +760,21 @@ AddWordMVHB( ADDARGS )
 
 
 LONG
-AddWordSVPHB( ADDARGS )
+AddWordStereoB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpoint, endpoint;
+  LONG     startpoint, endpoint = 0; // Make compiler happy
   LONG     lastpoint;
 
-  endpoint  = cd->cd_TempStartPointL;
   lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpoint = cd->cd_StartPointL;
+    if( offseti == FirstOffsetI ) {
+      startpoint = *StartPointLeft;
     }
     else
     {
@@ -818,7 +800,7 @@ AddWordSVPHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpoint;
+  *StartPointLeft = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -828,24 +810,22 @@ AddWordSVPHB( ADDARGS )
 
 
 LONG
-AddWordsMVHB( ADDARGS )
+AddWordsMonoB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -876,8 +856,8 @@ AddWordsMVHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -887,24 +867,22 @@ AddWordsMVHB( ADDARGS )
 
 
 LONG
-AddWordsSVPHB( ADDARGS )
+AddWordsStereoB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     startpointL, startpointR, endpointL = 0, endpointR = 0; // Make compiler happy
   LONG     lastpointL, lastpointR;
 
-  endpointL  = cd->cd_TempStartPointL;
-  endpointR  = cd->cd_TempStartPointR;
   lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
-    if( offseti == cd->cd_FirstOffsetI) {
-      startpointL = cd->cd_StartPointL;
-      startpointR = cd->cd_StartPointR;
+    if( offseti == FirstOffsetI ) {
+      startpointL = *StartPointLeft;
+      startpointR = *StartPointRight;
     }
     else
     {
@@ -936,8 +914,8 @@ AddWordsSVPHB( ADDARGS )
     offset -= Add;
   }
 
-  cd->cd_TempStartPointL = endpointL;
-  cd->cd_TempStartPointR = endpointR;
+  *StartPointLeft = endpointL;
+  *StartPointRight = endpointR;
 
   *Dst    = dst;
   *Offset = offset;

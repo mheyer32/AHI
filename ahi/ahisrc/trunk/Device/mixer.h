@@ -26,21 +26,9 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
+#include "addroutines.h"
 
 #ifndef VERSION68K
-
-#define ADDARGS LONG      Samples,\
-                Fixed     ScaleLeft,\
-                Fixed     ScaleRight,\
-                Fixed64  *Offset,\
-                Fixed64   Add,\
-                struct    AHIPrivAudioCtrl *audioctrl,\
-                void     *Src,\
-                void    **Dst,\
-                struct    AHIChannelData *cd, \
-                BOOL      StopAtZero
-
-typedef LONG (ADDFUNC)(ADDARGS);
 
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
