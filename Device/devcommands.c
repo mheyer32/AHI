@@ -132,8 +132,9 @@ DevAbortIO( struct AHIRequest* ioreq,
   }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
-  
+
   ObtainSemaphore(&iounit->Lock);
+
   if(ioreq->ahir_Std.io_Message.mn_Node.ln_Type != NT_REPLYMSG)
   {
     switch(ioreq->ahir_Std.io_Command)
@@ -210,6 +211,7 @@ DevAbortIO( struct AHIRequest* ioreq,
         break;
     }
   }
+
   ReleaseSemaphore(&iounit->Lock);
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
@@ -243,15 +245,17 @@ TermIO ( struct AHIRequest *ioreq,
 
   if(ioreq->ahir_Extras != NULL)
   {
-    int sound = GetExtras(ioreq)->Sound;
+    int  sound  = GetExtras(ioreq)->Sound;
+    APTR extras = (APTR) ioreq->ahir_Extras;
 
     if((sound != AHI_NOSOUND) && (sound < MAXSOUNDS))
     {
       AHI_UnloadSound(sound, iounit->AudioCtrl);
       iounit->Sounds[sound] = SOUND_FREE;
     }
-    FreeVec((APTR *)ioreq->ahir_Extras);
+
     ioreq->ahir_Extras = NULL;
+    FreeVec( extras );
   }
 
   if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
@@ -309,7 +313,6 @@ PerformIO ( struct AHIRequest *ioreq,
       }
 
       ReleaseSemaphore(&iounit->Lock);
-
       break;
 
     case CMD_STOP:
@@ -480,7 +483,9 @@ StopCmd ( struct AHIRequest *ioreq,
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
   ObtainSemaphore(&iounit->Lock);
+
   iounit->StopCnt++;
+
   ReleaseSemaphore(&iounit->Lock);
 
   TermIO(ioreq,AHIBase);
@@ -994,7 +999,6 @@ StartCmd ( struct AHIRequest *ioreq,
   ReleaseSemaphore(&iounit->Lock);
 
   TermIO(ioreq,AHIBase);
-
 }
 
 
@@ -1339,11 +1343,19 @@ AddWriter ( struct AHIRequest *ioreq,
     struct AHIRequest *ioreq2;
 
     // No free channel found. Check if we can kick the last one out...
-    // There is at least on node in the list, and the last one has lowest priority.
+    // The last one, if it exists, has lowest priority.
+    //
+    // Note that it is quite possible that there is no request in the list,
+    // even though there was no free sound channel. This can happen if
+    // AbortIO() has been called, and marked the channel MUTE, but the
+    // SoundFunc() has yet not been called to move the chennel into the
+    // FREE state.
 
     ioreq2 = (struct AHIRequest *) iounit->PlayingList.mlh_TailPred; 
-    if(ioreq->ahir_Std.io_Message.mn_Node.ln_Pri
-        > ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri)
+
+    if( ( iounit->PlayingList.mlh_Head->mln_Succ != NULL ) &&
+        ( ioreq->ahir_Std.io_Message.mn_Node.ln_Pri >
+          ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri ) )
     {
       // Let's steal his place!
 
@@ -1357,7 +1369,6 @@ AddWriter ( struct AHIRequest *ioreq,
     else
     {
       // Let's be quiet for a while.
-
       GetExtras(ioreq)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
     }
@@ -1446,8 +1457,8 @@ PlayRequest ( int channel,
 ** RethinkPlayers *************************************************************
 ******************************************************************************/
 
-// When a playing sample has reached it's end, this function is called.
-// It finds and terminates all finished requests, and moves their 'childs'
+// When a playing sample has reached the end, this function is called.
+// It finds and terminates all finished requests, and moves their 'children'
 // from the waiting list.
 // Then it tries to restart all silent sounds.
 
@@ -1496,6 +1507,7 @@ RemPlayers ( struct List *list,
   struct AHIRequest *ioreq, *node;
 
   node = (struct AHIRequest *) list->lh_Head;
+
   while(node->ahir_Std.io_Message.mn_Node.ln_Succ)
   {
     ioreq = node;

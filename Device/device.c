@@ -266,6 +266,7 @@ DevOpen ( ULONG              unit,
   }
 
   AHIBase->ahib_Library.lib_OpenCnt++;
+
   ObtainSemaphore(&AHIBase->ahib_Lock);
 
   if( ! (flags & AHIDF_NOMODESCAN))
@@ -307,7 +308,9 @@ DevOpen ( ULONG              unit,
     ioreq->ahir_Std.io_Device=(struct Device *) -1;
     ioreq->ahir_Std.io_Unit=(struct Unit *) -1;
   }
+
   ReleaseSemaphore(&AHIBase->ahib_Lock);
+
   AHIBase->ahib_Library.lib_OpenCnt--;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
@@ -885,7 +888,9 @@ DevProc( void )
       if(signals & (1L << iounit->PlaySignal))
       {
         ObtainSemaphore(&iounit->Lock);
+
         UpdateSilentPlayers(iounit,AHIBase);
+
         ReleaseSemaphore(&iounit->Lock);
       }
 
@@ -970,16 +975,24 @@ SoundFunc( struct Hook*            hook,
            struct AHIAudioCtrl*    actrl,
            struct AHISoundMessage* sndmsg )
 {
-  struct AHIDevUnit *iounit;
-  struct Voice *voice;  
+  struct AHIDevUnit* iounit;
+  struct Voice*      voice;  
+  struct AHIRequest* playreq;
 
   iounit = (struct AHIDevUnit *) hook->h_Data;
   voice = &iounit->Voices[(WORD)sndmsg->ahism_Channel];
 
-  if(voice->PlayingRequest)
+  Disable();    // Not needed?
+
+  playreq = voice->PlayingRequest;
+
+  if( playreq != NULL )
   {
-    voice->PlayingRequest->ahir_Std.io_Command = AHICMD_WRITTEN;
+    playreq->ahir_Std.io_Command = AHICMD_WRITTEN;
   }
+
+  Enable();
+
   voice->PlayingRequest = voice->QueuedRequest;
   voice->Flags |= VF_STARTED;
   voice->QueuedRequest  = NULL;
@@ -1041,16 +1054,25 @@ ChannelInfoFunc( struct Hook*              hook,
   int i;
 
   Disable();    // Not needed?
+
   voice = iounit->Voices;
+
   for(i = 0; i < iounit->Channels; i++)
   {
-    if(voice->PlayingRequest)
+    struct AHIRequest* playreq;
+
+    playreq = voice->PlayingRequest;
+
+    if( playreq != NULL )
     {
-      voice->PlayingRequest->ahir_Std.io_Actual = *offsets;
+      playreq->ahir_Std.io_Actual = *offsets;
     }
+
     voice++;
     offsets++;
   }
+
   Enable();
+
   return;
 }

@@ -1,9 +1,27 @@
+2001-09-29  Martin Blom  <martin@blom.org>
+
+	* I tweaked the build environment somewhat:  makedepend is out; gcc
+	-MM is in, even in AmigaOS.  "make all" now aborts on errors, as it
+	should. All automatically generated files (version.h, localize.*)
+	are now build before the dependencies are created.
+
+	* ahi.device:  Haha!  I found the race condition in question!  It
+	was in AddWriter(), which assumed that no free channel
+	automatically implied that PlayingList was non-empty.  Not so!
+	[Stephan Rupprecht and Harald Frank]
+
+	* ahi.device:  Fixed yet another potential race condition (in
+	SoundFunc()).  Sooner or later I *will* find the real one, won't I?
+
+	* ahi.device:  Fixed a bug in TermIO (ioreq->ahir_Extras is now set
+	to NULL before its FreeVec'ed, not after).
+
 2001-09-28  Martin Blom  <martin@blom.org>
 
 	* Released paula.audio version 4.27.
 
 	* paula.audio:  I broke the DMA playback mode in the last update.
-	Fixed now.
+	Fixed now. [Sigbjørn Skjæret]
 
 2001-09-24  Martin Blom  <martin@blom.org>
 
@@ -11,7 +29,8 @@
 	IOERR_NOCMD on CMD_WRITE requests.
 
 	* ahi.device:  Fixed a non-fatal race condition in DevAbortIO().
-	It just made the source code look prettier ... :)
+	It just made the source code look prettier ...  :) Now if I could
+	only find the one that makes AHI crash in AMIthlon ...
 
 2001-09-16  Martin Blom  <martin@blom.org>
 
@@ -43,18 +62,18 @@
 
 2001-04-22  Martin Blom  <martin@blom.org>
 
-        * When using a filter hook with the audio mode requester, and
-	AHIR_DoDefaultMode was TRUE, the hook would receive AHI_INVALID_ID
-	instead of the user-selected default mode ID.
+        * ahi.device:  When using a filter hook with the audio mode
+	requester, and AHIR_DoDefaultMode was TRUE, the hook would receive
+	AHI_INVALID_ID instead of the user-selected default mode ID.
 
 2001-04-21  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.7.
 
-	* The default PlayerFunc (which is used unless the application
-	provides one) did not have an m68k wrapper when the device was
-	compiled for ppc, making ReqAttack (and many other programs, I
-	guess) crash. [Jaca/D-CAPS]
+	* ahi.device The default PlayerFunc (which is used unless the
+	application provides one) did not have an m68k wrapper when the
+	device was compiled for ppc, making ReqAttack (and many other
+	programs, I guess) crash. [Jaca/D-CAPS]
 
 2001-04-12  Martin Blom  <martin@blom.org>
 
@@ -64,26 +83,27 @@
 
         * Released ahi.device 5.6.
 
-	* Fixed a bug in the mixing routine that, when using "anti-click",
-	caused notes to be lost in rare cases. Credits to Jaca/D-CAPS for
-	spotting it and sending me an example that reproduced the bug!
+	* ahi.device:  Fixed a bug in the mixing routine that, when using
+	"anti-click", caused notes to be lost in rare cases.  Credits to
+	Jaca/D-CAPS for spotting it and sending me an example that
+	reproduced the bug!
 
 2001-03-11  Martin Blom  <martin@blom.org>
 
         * Released ahi.device 5.5.
 
-	* Nuked one more m68k assembler source file and moved the code
-	to C.
+	* ahi.device:  Nuked one more m68k assembler source file and moved
+	the code to C.
 
-	* Stopped using dprintf in MorphOS.
+	* ahi.device: Stopped using dprintf in MorphOS.
 
 2001-03-04  Martin Blom  <martin@blom.org>
 
         * Released ahi.device 5.4.
 
-	* Fixed a bug that caused clicks on every new sound start,
-	if an end-of-sound had been reached and the last sample in that
-	sound was not 0.
+	* ahi.device Fixed a bug that caused clicks on every new sound
+	start, if an end-of-sound had been reached and the last sample in
+	that sound was not 0.
 
 2000-11-28  Martin Blom  <martin@blom.org>
 
