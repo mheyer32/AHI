@@ -34,33 +34,33 @@ namespace AHI {
       enum {
 
 	/* Enable low-pass filtering when downsampling. (BOOL) */
-	_AHIA(_P, LowPass,	(_AHIA_Dummy+111)),	/* OM_NEW,
+	_AHIA(_P, LowPass,	(_AHIA_Dummy+113)),	/* OM_NEW,
 							   OM_GET */
 
 	/* Enable linear interpolation of FIR tables. (BOOL) */
-	_AHIA(_P, Interpolate,	(_AHIA_Dummy+112)),	/* OM_NEW,
+	_AHIA(_P, Interpolate,	(_AHIA_Dummy+114)),	/* OM_NEW,
 							   OM_GET */
 
 	/* The number of taps in the FIR filter (equals the number of
 	 * multiplications per sample if not interpolating, else half
 	 * the number of multiplications per sample). (ULONG) */
-	_AHIA(_P, Taps,		(_AHIA_Dummy+113))	/* OM_NEW,
+	_AHIA(_P, Taps,		(_AHIA_Dummy+115))	/* OM_NEW,
 							   OM_GET */
 
 	/* The number of bits used when calculating fractional
 	 * offsets. The FIR table size equals Taps*(2^Accuracy);
 	 * double it if interpolation is used. (ULONG, suggested
 	 * range is 8-12) */
-	_AHIA(_P, Accuracy,	(_AHIA_Dummy+114))	/* OM_NEW,
+	_AHIA(_P, Accuracy,	(_AHIA_Dummy+116))	/* OM_NEW,
 							   OM_GET */
 
 	/* The low-pass filters normalized cutoff frequency. (Fixed,
 	 * range is 0.0-1.0) */
-	_AHIA(_P, CutOff,	(_AHIA_Dummy+115))	/* OM_NEW,
+	_AHIA(_P, CutOff,	(_AHIA_Dummy+117))	/* OM_NEW,
 							   OM_GET */
 	
 	/* The quality of the resampling. (ULONG) */
-	_AHIA(_P, Quality,	(_AHIA_Dummy+116))	/* OM_NEW,
+	_AHIA(_P, Quality,	(_AHIA_Dummy+118))	/* OM_NEW,
 							   OM_GET */
       };
 
