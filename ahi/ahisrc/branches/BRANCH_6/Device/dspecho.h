@@ -46,4 +46,9 @@ do_DSPEchoStereo32( struct Echo *es,
                     void *buf,
                     struct AHIPrivAudioCtrl *audioctrl );
 
+void
+do_DSPEchoMulti32( struct Echo *es,
+		   void *buf,
+		   struct AHIPrivAudioCtrl *audioctrl );
+
 #endif /* ahi_dspecho_h */

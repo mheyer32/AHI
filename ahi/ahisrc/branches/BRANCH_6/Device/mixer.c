@@ -1145,12 +1145,17 @@ DoMasterVolume( void *buffer,
       cnt *= 2;
       break;
 
+    case AHIST_L7_1:
+      cnt *= 8;
+      break;
+      
     default:
       return; // Panic
   }
 
   if( audioctrl->ac.ahiac_BuffType == AHIST_M32S
-      || audioctrl->ac.ahiac_BuffType == AHIST_S32S )
+      || audioctrl->ac.ahiac_BuffType == AHIST_S32S
+      || audioctrl->ac.ahiac_BuffType == AHIST_L7_1 )
   {
     LONG *dst = buffer;
 
