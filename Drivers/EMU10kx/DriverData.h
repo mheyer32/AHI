@@ -110,6 +110,9 @@ struct DriverData
 
     /** The DMA handle for the record buffer */
     dma_addr_t          record_dma_handle;
+
+    /** Were (inside the recording buffer) the current data is */
+    APTR                current_record_buffer;
     
     /** Analog mixer variables ************************************************/
 

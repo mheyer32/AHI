@@ -929,14 +929,9 @@ LibStart( REG( d0, ULONG flags ),
     
     /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
     
-    if( ! dd->is_recording )
-    {
-      emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / TIMER_INTERRUPT_FREQUENCY );
-      emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
-    }
-    
-    dd->is_playing = TRUE;
-    
+    emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / TIMER_INTERRUPT_FREQUENCY );
+    emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
+
     emu10k1_voices_start( &dd->voice, 1, 0 );    
   }
 
@@ -1008,15 +1003,11 @@ LibStart( REG( d0, ULONG flags ),
     sblive_writeptr( &dd->card, ADCBS, 0, RECORD_BUFFER_SIZE_VALUE );
     sblive_writeptr( &dd->card, ADCCR, 0, adcctl );
     
-    /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
+    dd->record_interrupt_enabled = TRUE;
+
+    /* Enable ADC interrupts  */
     
-    if( ! dd->is_playing )
-    {
-      emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / TIMER_INTERRUPT_FREQUENCY );
-      emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
-    }
-    
-    dd->is_recording = TRUE;
+    emu10k1_irq_enable( &dd->card, INTE_ADCBUFENABLE );
   }
 
   return AHIE_OK;
@@ -1060,13 +1051,8 @@ LibStop( REG( d0, ULONG flags ),
   {
     if( dd->voice_started )
     {
-      if( ! dd->is_recording )
-      {
-	emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
-      }
+      emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
 
-      dd->is_playing = FALSE;
-      
       sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 0 );
       emu10k1_voices_stop( &dd->voice, 1 );
       dd->voice_started = FALSE;
@@ -1097,20 +1083,19 @@ LibStop( REG( d0, ULONG flags ),
 
   if( flags & AHISF_RECORD )
   {
+    emu10k1_irq_disable( &dd->card, INTE_ADCBUFENABLE );
+    
     sblive_writeptr( &dd->card, ADCCR, 0, 0 );
     sblive_writeptr( &dd->card, ADCBS, 0, ADCBS_BUFSIZE_NONE );
-    
-    if( ! dd->is_playing )
-    {
-      emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
-    }
 
-    dd->is_recording = FALSE;
-      
-    pci_free_consistent( dd->card.pci_dev,
-			 RECORD_BUFFER_SAMPLES * 4,
-			 dd->record_buffer,
-			 dd->record_dma_handle );
+    if( dd->record_buffer != NULL )
+    {
+      pci_free_consistent( dd->card.pci_dev,
+			   RECORD_BUFFER_SAMPLES * 4,
+			   dd->record_buffer,
+			   dd->record_dma_handle );
+    }
+    
     dd->record_buffer = NULL;
     dd->record_dma_handle = NULL;
   }
@@ -1409,8 +1394,6 @@ EMU10kxInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 	diff += audioctrl->ahiac_MaxBuffSamples * 2;
       }
 
-      KPrintF( "*** %ld\n", sblive_readptr( &dd->card, ADCIDX_IDX, 0 ) );
-      
 //      KPrintF( ">>> hw_pos = %08lx; current_pos = %08lx; diff=%ld <<<\n",
 //	       hw, dd->current_position, diff );
 
@@ -1423,6 +1406,27 @@ EMU10kxInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 	  dd->playback_interrupt_enabled = FALSE;
 	  Cause( &dd->playback_interrupt );
 	}
+      }
+    }
+
+    if( intreq & ( IPR_ADCBUFHALFFULL | IPR_ADCBUFFULL ) )
+    {
+      if( intreq & IPR_ADCBUFHALFFULL )
+      {
+	dd->current_record_buffer = dd->record_buffer;
+      }
+      else
+      {
+	dd->current_record_buffer = ( dd->record_buffer +
+				      RECORD_BUFFER_SAMPLES * 4 / 2 );
+      }
+
+      if( dd->record_interrupt_enabled )
+      {
+	/* Invoke softint to convert and feed AHI with the new sample data */
+	
+	dd->record_interrupt_enabled = FALSE;
+	Cause( &dd->record_interrupt );
       }
     }
 
@@ -1546,7 +1550,28 @@ RecordInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
 
-  KPrintF( "R" );
+  
+  struct AHIRecordMessage rm =
+  {
+    AHIST_S16S,
+    dd->current_record_buffer,
+    RECORD_BUFFER_SAMPLES / 2
+  };
+
+  int   i   = 0;
+  WORD* ptr = dd->current_record_buffer;
+
+  while( i < RECORD_BUFFER_SAMPLES / 2 * 2 )
+  {
+    *ptr = ( ( *ptr & 0xff ) << 8 ) | ( ( *ptr & 0xff00 ) >> 8 );
+    
+    ++i;
+    ++ptr;
+  }
+
+  CallHookA( audioctrl->ahiac_SamplerFunc, (Object*) audioctrl, &rm );  
+  
+  dd->record_interrupt_enabled = TRUE;
 }
 
 /******************************************************************************
