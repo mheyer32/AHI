@@ -17,11 +17,11 @@ Manual installation is easy. Here is a list of files in the archive
 and where they are supposed to be copied:
 
 User/C/AddAudioModes                    C:AddAudioModes
-User/Catalogs/<lang>/ahi.catalog        LOCALE:Catalogs/svenska/ahi.catalog
-User/Catalogs/<lang>/ahiprefs.catalog   LOCALE:Catalogs/svenska/ahiprefs.catalog
+User/Catalogs/<lang>/ahi.catalog        LOCALE:Catalogs/<lang>/ahi.catalog
+User/Catalogs/<lang>/ahiprefs.catalog   LOCALE:Catalogs/<lang>/ahiprefs.catalog
 User/Devs/ahi.device                    DEVS:ahi.device
 User/Devs/AHI/<driver>.audio            DEVS:AHI/<driver>.audio
-User/Devs/AudioModes/<AUDIOMODE>        DEVS:AudioModes/<AUDIOMODE>
+User/Devs/AudioModes/<DRIVER>           DEVS:AudioModes/<DRIVER>
 User/Devs/DOSDrivers/AUDIO              DEVS:DosDrivers/AUDIO or
                                         SYS:Storage/DosDrivers/AUDIO
 User/Devs/DOSDrivers/AUDIO.info         DEVS:DosDrivers/AUDIO.info or
