@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.7  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.6  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -36,6 +39,7 @@
 #include "requester_protos.h"
 #endif
 
+#include "asmfuncs_protos.h"
 #include "modeinfo_protos.h"
 #include "debug_protos.h"
 #endif
@@ -142,10 +146,13 @@ static struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 #define FREQTEXT2     "%lu Hz"
 #define FREQLEN2      (5+3) // 5 digits + space + "Hz"
 
-static __stdargs __saveds LONG IndexToFrequency( struct Gadget *gad, WORD level)
+static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
 {
   LONG  freq = 0;
-  ULONG id   = ((struct AHIAudioModeRequesterExt *)gad->UserData)->tempAudioID;
+  ULONG id;
+
+  id = ((struct AHIAudioModeRequesterExt *)gad->UserData)->tempAudioID;
+
   if(id != AHI_DEFAULT_ID)
   {
     AHI_GetAudioAttrs(id, NULL,
@@ -285,7 +292,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
   LONG   fontwidth,buttonheight,buttonwidth,pixels;
   struct IntuiText intuitext = {1,0,JAM1,0,0,NULL,NULL,NULL};
   LONG  sliderlevels,sliderlevel;
-  ULONG  selected;
+  LONG  selected;
 
   selected=GetSelected(req);
   GetSliderAttrs(req,&sliderlevels,&sliderlevel);
@@ -307,14 +314,14 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
     RefreshWindowFrame(req->Window);
   }
   req->Gadgets=NULL;
-  if(gad=CreateContext(&req->Gadgets))
+  if((gad=CreateContext(&req->Gadgets)))
   {
     if(TextAttr)
       gadtextattr=TextAttr;
     else
       gadtextattr=req->Window->WScreen->Font;
 
-    if(font=OpenFont(gadtextattr))
+    if((font=OpenFont(gadtextattr)))
     {
       fontwidth=font->tf_XSize;
       CloseFont(font);
@@ -434,7 +441,7 @@ static void StripIntuiMessages( struct MsgPort *mp, struct Window *win )
 
     msg = (struct IntuiMessage *) mp->mp_MsgList.lh_Head;
 
-    while( succ =  msg->ExecMessage.mn_Node.ln_Succ ) {
+    while((succ =  msg->ExecMessage.mn_Node.ln_Succ)) {
 
         if( msg->IDCMPWindow ==  win ) {
 
@@ -731,7 +738,7 @@ static void OpenInfoWindow( struct AHIAudioModeRequesterExt *req )
       req->InfoWindow->UserPort = req->Window->UserPort;
       ModifyIDCMP(req->InfoWindow, MY_INFOIDCMPS);
 
-      if(gad = CreateContext(&req->InfoGadgets))
+      if((gad = CreateContext(&req->InfoGadgets)))
       {
         ng.ng_TextAttr    = req->TextAttr;
         ng.ng_VisualInfo  = req->vi;
@@ -909,7 +916,7 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
 *
 */
 
-ASMCALL struct AHIAudioModeRequester *
+struct AHIAudioModeRequester * ASMCALL
 AllocAudioRequestA( REG(a0, struct TagItem *tags),
                     REG(a6, struct AHIBase *AHIBase) )
 {
@@ -920,7 +927,7 @@ AllocAudioRequestA( REG(a0, struct TagItem *tags),
     Debug_AllocAudioRequestA(tags);
   }
 
-  if(req=AllocVec(sizeof(struct AHIAudioModeRequesterExt),MEMF_CLEAR))
+  if((req=AllocVec(sizeof(struct AHIAudioModeRequesterExt),MEMF_CLEAR)))
   {
 // Fill in defaults
     req->Req.ahiam_LeftEdge   = 30;
@@ -1127,7 +1134,7 @@ AllocAudioRequestA( REG(a0, struct TagItem *tags),
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL 
 AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
                REG(a1, struct TagItem *tags ),
                REG(a6, struct AHIBase *AHIBase) )
@@ -1182,7 +1189,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
       if(!CallHookPkt(req->FilterFunc,req,(APTR)id))
         continue;
     // Add mode to list
-    if(node=AllocVec(sizeof(struct IDnode),MEMF_ANY))
+    if((node=AllocVec(sizeof(struct IDnode),MEMF_ANY)))
     {
       node->node.ln_Type=NT_USER;
       node->node.ln_Pri=0;
@@ -1212,7 +1219,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
       if(!CallHookPkt(req->FilterFunc,req,(APTR)id))
         continue;
 
-    if(node=AllocVec(sizeof(struct IDnode),MEMF_ANY))
+    if((node=AllocVec(sizeof(struct IDnode),MEMF_ANY)))
     {
       node->node.ln_Type=NT_USER;
       node->node.ln_Pri=0;
@@ -1298,7 +1305,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
       (req->Window->BorderTop+2)+(5*8+6)+2+(8+6)+2+(8+6)+(req->Window->BorderBottom+2),
       0,0);
 
-    if(req->vi=GetVisualInfoA(req->Window->WScreen, NULL))
+    if((req->vi=GetVisualInfoA(req->Window->WScreen, NULL)))
     {
       if(!(LayOutReq(req,req->TextAttr)))
         if(!(LayOutReq(req,&Topaz80)))
@@ -1319,7 +1326,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
           {  NM_ITEM, NULL        , 0 ,0,0,(APTR) CANCELITEM,   },
           {   NM_END, NULL        , 0 ,0,0,(APTR) 0,            },
         };
-        const static APTR strings[] =
+        static const APTR strings[] =
         {
           msgMenuControl,
           msgMenuLastMode,
@@ -1364,10 +1371,10 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
         }
         
         // Add menus
-        if(req->Menu=CreateMenus(reqnewmenu, 
+        if((req->Menu=CreateMenus(reqnewmenu, 
             GTMN_FullMenu, TRUE,
             GTMN_NewLookMenus, TRUE,
-            TAG_DONE ))
+            TAG_DONE )))
         {
           if(LayoutMenus(req->Menu,req->vi, TAG_DONE))
           {
@@ -1420,7 +1427,6 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
     req->vi=NULL;
     FreeGadgets(req->Gadgets);
     req->Gadgets=NULL;
-    while(node=(struct IDnode *) RemHead((struct List *)req->list))
       FreeVec(node);
   }
   else // no window
@@ -1480,7 +1486,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
 *
 */
 
-ASMCALL void
+void ASMCALL 
 FreeAudioRequest( REG(a0, struct AHIAudioModeRequester *req),
                   REG(a6, struct AHIBase *AHIBase) )
 {

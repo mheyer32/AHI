@@ -2,6 +2,9 @@
 
 /* $Id$
 * $Log$
+* Revision 4.5  1998/01/12 20:07:28  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.4  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -23,17 +26,33 @@
 #define DSP_H
 
 #include <exec/types.h>
+#include "ahi_def.h"
+
+
+#if defined(VERSION68K)
+
+typedef void ASMCALL (*ECHOFUNC)( REG(a0, struct Echo *),
+                                  REG(a1, void *),
+                                  REG(a2, struct AHIPrivAudioCtrl *) );
+
+#else
+
+typedef void (*ECHOFUNC)( struct Echo *,
+                          void *,
+                          struct AHIPrivAudioCtrl * );
+
+#endif
 
 struct Echo
 {
 	ULONG	ahiecho_Delay;
-	void	(*ahiecho_Code)(void);	// The echo routine
-	LONG	ahiecho_FeedbackDS;	// Delayed signal to same channel
-	LONG	ahiecho_FeedbackDO;	// Delayed signal to other channel
-	LONG	ahiecho_FeedbackNS;	// Normal signal to same channel
-	LONG	ahiecho_FeedbackNO;	// Normal signal to other channel
-	LONG	ahiecho_MixN;		// Normal signal
-	LONG	ahiecho_MixD;		// Delayed signal
+	ECHOFUNC ahiecho_Code;		// The echo routine
+	Fixed	ahiecho_FeedbackDS;	// Delayed signal to same channel
+	Fixed	ahiecho_FeedbackDO;	// Delayed signal to other channel
+	Fixed	ahiecho_FeedbackNS;	// Normal signal to same channel
+	Fixed	ahiecho_FeedbackNO;	// Normal signal to other channel
+	Fixed	ahiecho_MixN;		// Normal signal
+	Fixed	ahiecho_MixD;		// Delayed signal
 	ULONG	ahiecho_Offset;		// (&Buffer-&SrcPtr)/sizeof(ahiecho_Buffer[0])
 	APTR	ahiecho_SrcPtr;		// Pointer to &Buffer
 	APTR	ahiecho_DstPtr;		// Pointer to &(Buffer[Delay])
@@ -42,5 +61,6 @@ struct Echo
 	ULONG	ahiecho_BufferSize;	// Delay buffer size in bytes
 	BYTE	ahiecho_Buffer[0];	// Delay buffer
 };
+
 
 #endif /* DSP_H */

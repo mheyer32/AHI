@@ -1,5 +1,8 @@
-* $Id$
+;/* $Id$
 * $Log$
+* Revision 4.7  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.6  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -10,6 +13,40 @@
 * Revision 4.4  1997/08/02 16:32:39  lcs
 * Fixed a memory trashing error. Will change it yet again now...
 *
+
+	IF	0
+
+*******************************************************************************
+** C function prototypes ******************************************************
+*******************************************************************************
+
+*/
+
+#include <CompilerSpecific.h>
+#include "ahi_def.h"
+
+#define REGS REG(a0, struct Echo *es),\
+             REG(a1, void *buf),\
+             REG(a2, struct AHIPrivAudioCtrl *audioctrl)
+
+void ASMCALL do_DSPEchoMono16 ( REGS ) {}
+void ASMCALL do_DSPEchoMono16Fast ( REGS ) {}
+void ASMCALL do_DSPEchoStereo16 ( REGS ) {}
+void ASMCALL do_DSPEchoStereo16Fast ( REGS ) {}
+void ASMCALL do_DSPEchoMono32 ( REGS ) {}
+void ASMCALL do_DSPEchoStereo32 ( REGS ) {}
+void ASMCALL do_DSPEchoMono16NCFM ( REGS ) {}
+void ASMCALL do_DSPEchoStereo16NCFM ( REGS ) {}
+void ASMCALL do_DSPEchoMono16NCFMFast ( REGS ) {}
+void ASMCALL do_DSPEchoStereo16NCFMFast ( REGS ) {}
+
+;/*     Comment terminated at the end of the file!
+
+	ENDC	* IF 0
+
+*******************************************************************************
+** Assembly code **************************************************************
+*******************************************************************************
 
 
 	include	exec/types.i
@@ -179,17 +216,17 @@
 *
 
 ;in:
+* a0	struct Echo *
 * a1	Buffer pointer
 * a2	audioctrl
-;Don't trash a1, a2, a4
+
+* All registers scratch
 
 *******************************************************************************
 
 DSPECHO_PRE	MACRO
 LOCALSIZE	SET	4
 	subq.l	#LOCALSIZE,sp			;Local variable
-
-	move.l	ahiac_EffDSPEchoStruct(a2),a0
 
 	move.l	ahiac_BuffSamples(a2),(sp)	;Looped
 	move.l	ahiecho_Offset(a0),d6
@@ -231,7 +268,7 @@ LOCALSIZE	SET	4
 .echo
 	sub.l	d7,(sp)
 	bpl	.loopsleft_ok
-	add.l	(sp),d7				;Gives Max((sp),d7)
+	add.l	(sp),d7				;Gives min((sp),d7)
 	clr.l	(sp)
 .loopsleft_ok
 	add.l	d7,d6
@@ -757,3 +794,5 @@ _do_DSPEchoStereo16NCFMFast:
 	dbf	d7,.echoloop
 	DSPECHO_POST
  ENDC
+
+;	C comment terminating here... */

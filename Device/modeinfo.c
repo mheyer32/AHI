@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.1  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -57,8 +60,8 @@ BOOL TestAudioID(ULONG id, struct TagItem *tags )
 
 Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 {
-  LONG volume=0,stereo=0,panning=0,hifi=0,pingpong=0,record=0,realtime=0,
-       fullduplex=0,bits=0,channels=0,minmix=0,maxmix=0;
+  ULONG volume=0,stereo=0,panning=0,hifi=0,pingpong=0,record=0,realtime=0,
+        fullduplex=0,bits=0,channels=0,minmix=0,maxmix=0;
   ULONG total=0,hits=0;
   struct TagItem *tstate, *tag;
   
@@ -89,7 +92,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 
   tstate = tags;
 
-  while (tag = NextTagItem(&tstate))
+  while ((tag = NextTagItem(&tstate)))
   {
     switch (tag->ti_Tag)
     {
@@ -376,7 +379,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 *
 */
 
-ASMCALL ULONG 
+ULONG ASMCALL 
 GetAudioAttrsA( REG(d0, ULONG id),
                 REG(a2, struct AHIAudioCtrlDrv *actrl),
                 REG(a1, struct TagItem *tags),
@@ -389,14 +392,14 @@ GetAudioAttrsA( REG(d0, ULONG id),
   struct Library *AHIsubBase=NULL;
   struct AHIAudioCtrlDrv *audioctrl=NULL;
   BOOL rc=TRUE; // TRUE == _everything_ went well
-  struct TagItem idtag[2] = { AHIA_AudioID, 0, TAG_DONE };
+  struct TagItem idtag[2] = { {AHIA_AudioID, 0} , {TAG_DONE, 0} };
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     Debug_GetAudioAttrsA(id, actrl, tags);
   }
 
-  if(audiodb=LockDatabase())
+  if((audiodb=LockDatabase()))
   {
     if(id == AHI_INVALID_ID)
     {
@@ -413,19 +416,19 @@ GetAudioAttrsA( REG(d0, ULONG id),
 
     if(audioctrl && rc )
     {
-      if(dbtags=GetDBTagList(audiodb, idtag[0].ti_Data))
+      if((dbtags=GetDBTagList(audiodb, idtag[0].ti_Data)))
       {
         stringlen=GetTagData(AHIDB_BufferLen,0,tags);
-        if(AHIsubBase=OpenLibrary(((struct AHIPrivAudioCtrl *)audioctrl)->ahiac_DriverName,DriverVersion))
+        if((AHIsubBase=OpenLibrary(((struct AHIPrivAudioCtrl *)audioctrl)->ahiac_DriverName,DriverVersion)))
         {
-          while(tag1=NextTagItem(&tstate))
+          while((tag1=NextTagItem(&tstate)))
           {
             ptr=(ULONG *)tag1->ti_Data;
             switch(tag1->ti_Tag)
             {
             case AHIDB_Driver:
             case AHIDB_Name:
-              if(tag2=FindTagItem(tag1->ti_Tag,dbtags))
+              if((tag2=FindTagItem(tag1->ti_Tag,dbtags)))
                 stccpy((char *)tag1->ti_Data,(char *)tag2->ti_Data,stringlen);
               break;
 // Skip these!
@@ -508,7 +511,7 @@ GetAudioAttrsA( REG(d0, ULONG id),
               break;
 // Tags from the database.
             default:
-              if(tag2=FindTagItem(tag1->ti_Tag,dbtags))
+              if((tag2=FindTagItem(tag1->ti_Tag,dbtags)))
                 *ptr=tag2->ti_Data;
               break;
             }
@@ -638,27 +641,27 @@ GetAudioAttrsA( REG(d0, ULONG id),
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL 
 BestAudioIDA( REG(a1, struct TagItem *tags),
               REG(a6, struct AHIBase *AHIBase) )
 {
   ULONG id = AHI_INVALID_ID, bestid = 0;
   Fixed score, bestscore = 0;
   struct TagItem *dizzytags;
-  const static struct TagItem defdizzy[] =
+  static const struct TagItem defdizzy[] =
   {
     // Default is off for performance reasons..
-    AHIDB_Volume,     FALSE,
-    AHIDB_Stereo,     FALSE,
-    AHIDB_Panning,    FALSE,
-    AHIDB_HiFi,       FALSE,
-    AHIDB_PingPong,   FALSE,
+    { AHIDB_Volume,     FALSE },
+    { AHIDB_Stereo,     FALSE },
+    { AHIDB_Panning,    FALSE },
+    { AHIDB_HiFi,       FALSE },
+    { AHIDB_PingPong,   FALSE },
     // Default is on, 'cause they won't hurt performance (?)
-    AHIDB_Record,     TRUE,
-    AHIDB_Realtime,   TRUE,
-    AHIDB_FullDuplex, TRUE,
+    { AHIDB_Record,     TRUE  },
+    { AHIDB_Realtime,   TRUE  },
+    { AHIDB_FullDuplex, TRUE  },
     // And we don't care about the rest...
-    TAG_DONE
+    { TAG_DONE,         0     }
   };
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.4  1998/01/12 20:07:28  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.3  1997/08/02 17:11:59  lcs
 * Right. Now echo should work!
 *
@@ -22,12 +25,12 @@ AHI_DSP_I	SET	1
 	STRUCTURE Echo,0
 	ULONG	ahiecho_Delay
 	FPTR	ahiecho_Code		;The echo routine
-	LONG	ahiecho_FeedbackDS	;Delayed signal to same channel
-	LONG	ahiecho_FeedbackDO	;Delayed signal to other channel
-	LONG	ahiecho_FeedbackNS	;Normal signal to same channel
-	LONG	ahiecho_FeedbackNO	;Normal signal to other channel
-	LONG	ahiecho_MixN		;Normal signal
-	LONG	ahiecho_MixD		;Delayed signal
+	Fixed	ahiecho_FeedbackDS	;Delayed signal to same channel
+	Fixed	ahiecho_FeedbackDO	;Delayed signal to other channel
+	Fixed	ahiecho_FeedbackNS	;Normal signal to same channel
+	Fixed	ahiecho_FeedbackNO	;Normal signal to other channel
+	Fixed	ahiecho_MixN		;Normal signal
+	Fixed	ahiecho_MixD		;Delayed signal
 	ULONG	ahiecho_Offset		;(&Buffer-&SrcPtr)/sizeof(ahiecho_Buffer[0])
 	APTR	ahiecho_SrcPtr		;Pointer to &Buffer
 	APTR	ahiecho_DstPtr		;Pointer to &(Buffer[Delay])

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.17  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.16  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 * Renamed from cfuncs.c to audioctrl.c.
@@ -56,6 +59,56 @@
 
 
 /******************************************************************************
+** RecalcBuff *****************************************************************
+******************************************************************************/
+
+// Calculates how many samples to mix each mixer pass. The result it 
+// both returned and stored in ahiac_BuffSamples.
+// ahiac_BuffSizeNow will also be updated (For mixing routine)
+
+static ULONG
+RecalcBuff ( Fixed freq, struct AHIPrivAudioCtrl *audioctrl )
+{
+  int length;
+
+  // If ULONG, convert to Fixed
+  if(freq < 65536) freq <<= 16;
+
+  // Sanity check
+  if(freq == 0) return 0;
+
+  audioctrl->ac.ahiac_BuffSamples = (audioctrl->ac.ahiac_MixFreq << 8) /
+                                    (freq >> 8);
+
+  // ahiac_BuffSamples *must* fit a WORD according to the driver autodocs!
+  if(audioctrl->ac.ahiac_BuffSamples > 65535)
+  {
+    audioctrl->ac.ahiac_BuffSamples = 65535;
+  }
+
+  // Now, calculate the required mixing buffer size.
+
+  length = audioctrl->ac.ahiac_BuffSamples * 
+           AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
+
+  if(audioctrl->ac.ahiac_Flags & AHIACF_POSTPROC)
+  {
+    length <<= 1;  // 2 buffers
+  }
+
+  // Pad to even 8 and add some more (because of an old Mungwall hit, but I
+  // think that bug was fixed a long, long time ago..?
+
+  length = ((length + 7) & (~7) ) + 80;
+
+  audioctrl->ahiac_BuffSizeNow = length;
+
+  return audioctrl->ac.ahiac_BuffSamples;
+
+}
+
+
+/******************************************************************************
 ** CreateAudioCtrl & UpdateAudioCtrl ******************************************
 ******************************************************************************/
 
@@ -66,7 +119,7 @@ ULONG DummyHook()
   return 0;
 }
 
-struct Hook DefPlayerHook = {0, 0, DummyHook, 0, 0};
+struct Hook DefPlayerHook = {{0, 0}, DummyHook, 0, 0};
 
 static struct TagItem boolmap[] =
 {
@@ -89,7 +142,7 @@ CreateAudioCtrl(struct TagItem *tags)
   struct TagItem *dbtags;
   BOOL   error=TRUE;
 
-  if(audioctrl=AllocVec(sizeof(struct AHIPrivAudioCtrl),MEMF_PUBLIC|MEMF_CLEAR))
+  if((audioctrl=AllocVec(sizeof(struct AHIPrivAudioCtrl),MEMF_PUBLIC|MEMF_CLEAR)))
   {
     audioctrl->ac.ahiac_AudioCtrl.ahiac_UserData =
       (APTR)GetTagData(AHIA_UserData,NULL,tags);
@@ -141,9 +194,9 @@ CreateAudioCtrl(struct TagItem *tags)
     if(audioctrl->ac.ahiac_MaxPlayerFreq < 65536)
       audioctrl->ac.ahiac_MaxPlayerFreq <<= 16;
 
-    if(audiodb=LockDatabase())
+    if((audiodb=LockDatabase()))
     {
-      if(dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID))
+      if((dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID)))
       {
         audioctrl->ac.ahiac_Flags=PackBoolTags(GetTagData(AHIDB_Flags,NULL,dbtags),dbtags,boolmap);
 #ifdef _M68020
@@ -197,10 +250,10 @@ UpdateAudioCtrl(struct AHIPrivAudioCtrl *audioctrl)
 ** Sampler ********************************************************************
 ******************************************************************************/
 
-ASMCALL INTERRUPT static 
-void Sampler ( REG(a0, struct Hook *hook),
-               REG(a2, struct AHIPrivAudioCtrl *actrl),
-               REG(a1, struct AHIRecordMessage *recmsg) )
+static void ASMCALL INTERRUPT 
+Sampler ( REG(a0, struct Hook *hook),
+          REG(a2, struct AHIPrivAudioCtrl *actrl),
+          REG(a1, struct AHIRecordMessage *recmsg) )
 {
   if(actrl->ahiac_InputRecordPtr)
   {
@@ -391,7 +444,7 @@ void Sampler ( REG(a0, struct Hook *hook),
 *
 */
 
-ASMCALL struct AHIAudioCtrl *
+struct AHIAudioCtrl * ASMCALL
 AllocAudioA( REG(a1, struct TagItem *tags),
              REG(a6, struct AHIBase *AHIBase) )
 {
@@ -529,18 +582,18 @@ AllocAudioA( REG(a1, struct TagItem *tags),
       goto error;
 
 
-    audioctrl->ac.ahiac_MixerFunc->h_Entry = (ULONG (*)()) Mix;
+    audioctrl->ac.ahiac_MixerFunc->h_Entry = (HOOKFUNC) Mix;
 
     if((AHIBase->ahib_MaxCPU >= 0x10000) || (AHIBase->ahib_MaxCPU <= 0x0))
     {
-      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)()) DummyPreTimer;
-      audioctrl->ac.ahiac_PostTimer = (void (*)()) DummyPostTimer;
+      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) DummyPreTimer;
+      audioctrl->ac.ahiac_PostTimer = (void (*)(void)) DummyPostTimer;
     }
     else
     {
       audioctrl->ahiac_MaxCPU       = AHIBase->ahib_MaxCPU >> 8;
-      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)()) PreTimer;
-      audioctrl->ac.ahiac_PostTimer = (void (*)()) PostTimer;
+      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) PreTimer;
+      audioctrl->ac.ahiac_PostTimer = (void (*)(void)) PostTimer;
     }
   }
 
@@ -548,7 +601,7 @@ AllocAudioA( REG(a1, struct TagItem *tags),
       MEMF_PUBLIC|MEMF_CLEAR);
   if(!audioctrl->ac.ahiac_SamplerFunc)
     goto error;
-  audioctrl->ac.ahiac_SamplerFunc->h_Entry = (ULONG (* )()) Sampler;
+  audioctrl->ac.ahiac_SamplerFunc->h_Entry = (HOOKFUNC) Sampler;
 
   /* Set default hardware properties, only if AHI_DEFAULT_ID was used!*/
   if(GetTagData(AHIA_AudioID, AHI_DEFAULT_ID, tags) == AHI_DEFAULT_ID)
@@ -615,7 +668,7 @@ error:
 *
 */
 
-ASMCALL ULONG 
+ULONG ASMCALL
 FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
            REG(a6, struct AHIBase *AHIBase) )
 {
@@ -629,7 +682,7 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
 
   if(audioctrl)
   {
-    if(AHIsubBase=audioctrl->ahiac_SubLib)
+    if((AHIsubBase=audioctrl->ahiac_SubLib))
     {
       if(!(audioctrl->ahiac_SubAllocRC & AHISF_ERROR))
       {
@@ -701,7 +754,7 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL
 KillAudio( REG(a6, struct AHIBase *AHIBase) )
 {
   UWORD i;
@@ -825,7 +878,7 @@ KillAudio( REG(a6, struct AHIBase *AHIBase) )
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL
 ControlAudioA( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                REG(a1, struct TagItem *tags),
                REG(a6, struct AHIBase *AHIBase) )
@@ -840,7 +893,7 @@ ControlAudioA( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
     Debug_ControlAudioA(audioctrl,tags);
   }
 
-  while(tag=NextTagItem(&tstate))
+  while((tag=NextTagItem(&tstate)))
   {
     ptr=(ULONG *)tag->ti_Data;  // For ..._Query tags
     switch(tag->ti_Tag)

@@ -2,6 +2,9 @@
 
 /* $Id$
 * $Log$
+* Revision 4.6  1998/01/12 20:07:28  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.5  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -21,6 +24,8 @@ extern void kprintf(char *fmt,...);
 
 /*** AHI include files ***/
 
+#include <CompilerSpecific.h>
+
 #include <devices/ahi.h>
 #include <devices/timer.h>
 #include <libraries/ahi_sub.h>
@@ -36,27 +41,36 @@ extern void kprintf(char *fmt,...);
 #include "ahi_device.h"
 #include "dsp.h"
 
-extern __far struct AHIBase		*AHIBase;
-extern __far struct DosLibrary		*DOSBase;
-extern __far struct Library		*GadToolsBase;
-extern __far struct GfxBase		*GfxBase;
-extern __far struct Library		*IFFParseBase;
-extern __far struct IntuitionBase	*IntuitionBase;
-extern __far struct Library		*LocaleBase;
-extern __far struct Library		*TimerBase;
-extern __far struct Library		*UtilityBase;
 
-extern __far ULONG			 DriverVersion;
-extern __far ULONG			 Version;
-extern __far ULONG			 Revision;
-extern __far UBYTE			*DevName;
-extern __far UBYTE			*IDString;
+/*** Globals ***/
 
-extern __far ULONG			 AHIChannelData_SIZEOF;
-extern __far ULONG			 AHISoundData_SIZEOF;
+extern struct AHIBase		*AHIBase;
+extern struct DosLibrary	*DOSBase;
+extern struct Library		*GadToolsBase;
+extern struct GfxBase		*GfxBase;
+extern struct Library		*IFFParseBase;
+extern struct IntuitionBase	*IntuitionBase;
+extern struct Library		*LocaleBase;
+extern struct Library		*TimerBase;
+extern struct Library		*UtilityBase;
+
+extern ULONG			 DriverVersion;
+extern ULONG			 Version;
+extern ULONG			 Revision;
+extern UBYTE			*DevName;
+extern UBYTE			*IDString;
 
 
-extern __stdargs char *Sprintf(char *, const char *, ...);
+/*** Definitions ***/
+
+struct longlong
+{
+	long high;
+	long low;
+};
+
+typedef struct longlong *	longlong;
+
 
 #define AHI_UNITS	4	/* Normal units, excluding AHI_NO_UNIT */
 

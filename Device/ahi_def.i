@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.5  1998/01/12 20:07:28  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.4  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -18,6 +21,13 @@ DEBUG_DETAIL	SET	2
 	include devices/timer.i
 	include	libraries/ahi_sub.i
 	include	macros.i
+
+*** Definitions ***
+
+	STRUCTURE longlong,0
+	LONG	ll_high
+	LONG	ll_low
+	LABEL	ll_SIZEOF
 
 AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 

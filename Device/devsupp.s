@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 4.4  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.3  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -27,7 +30,7 @@
 
 */
 
-#include <CompilerSpecials.h>
+#include <CompilerSpecific.h>
 #include <devices/ahi.h>
 
 #define RecArgs REG(d0, ULONG size),    \
@@ -36,16 +39,16 @@
                 REG(a2, ULONG *offset), \
                 REG(a3, void **dest)
 
-ASMCALL void  RecM8S( RecArgs ) {}
-ASMCALL void  RecS8S( RecArgs ) {}
-ASMCALL void RecM16S( RecArgs ) {}
-ASMCALL void RecS16S( RecArgs ) {}
-ASMCALL void RecM32S( RecArgs ) {}
-ASMCALL void RecS32S( RecArgs ) {}
+void ASMCALL  RecM8S( RecArgs ) {}
+void ASMCALL  RecS8S( RecArgs ) {}
+void ASMCALL RecM16S( RecArgs ) {}
+void ASMCALL RecS16S( RecArgs ) {}
+void ASMCALL RecM32S( RecArgs ) {}
+void ASMCALL RecS32S( RecArgs ) {}
 
-ASMCALL ULONG MultFixed ( REG(d0, ULONG a),
+ULONG ASMCALL MultFixed ( REG(d0, ULONG a),
                           REG(d1, Fixed b) ) {}
-ASMCALL void asmRecordFunc ( REG(d0, ULONG samples),
+void ASMCALL asmRecordFunc ( REG(d0, ULONG samples),
                              REG(a0, void *data),
                              REG(a1, void *buffer) ) {}
 
