@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.12  1997/02/12 15:43:30  lcs
+* Added autodocs for CMD_START and CMD_STOP
+*
 * Revision 1.11  1997/02/12 15:32:45  lcs
 * Moved each autodoc header to the file where the function is
 *
@@ -395,6 +398,46 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /******************************************************************************
 ** StopCmd ********************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CMD_STOP ************************************************
+*
+*   NAME
+*       CMD_STOP -- stop device processing (like ^S) (V3)
+*
+*   FUNCTION
+*       Stops all CMD_WRITE processing. All writes will be queued, and
+*       are not processed until CMD_START. This is useful for syncronizing
+*       two or more CMD_WRITE's.
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_STOP
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, number of requests actually
+*                       flushed.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       This command affects ALL writes, even those sent by other
+*       applications. Make sure the code between CMD_STOP and CMD_START
+*       runs as fast as possible!
+*
+*   BUGS
+*
+*   SEE ALSO
+*       CMD_START, <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
@@ -844,6 +887,42 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /******************************************************************************
 ** StartCmd *******************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CMD_START ************************************************
+*
+*   NAME
+*       CMD_START -- start device processing (like ^Q) (V3)
+*
+*   FUNCTION
+*       All CMD_WRITE's that has been sent to the device since CMD_STOP
+*       will be started at once, syncronized.
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_START
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, number of requests actually
+*                       flushed.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*       CMD_STOP, <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
