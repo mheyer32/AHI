@@ -1,3 +1,11 @@
+2001-03-29  Martin Blom  <martin@blom.org>
+
+        * Released ahi.device 5.6.
+
+	* Fixed a bug in the mixing routine that, when using "anti-click",
+	caused notes to be lost in rare cases. Credits to Jaca/D-CAPS for
+	spotting it and sending me an example that reproduced the bug!
+
 2001-03-11  Martin Blom  <martin@blom.org>
 
         * Released ahi.device 5.5.
