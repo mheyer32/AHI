@@ -12,8 +12,8 @@
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
-prefix		= @prefix@
-bindir		= ${prefix}/User/C
+DISTDIR		= @DISTDIR@
+CDIR		= ${DISTDIR}/User/C
 
 build_os	= @build_os@
 
@@ -41,7 +41,7 @@ TARGET		= AddAudioModes
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean install
+.PHONY:		all clean distclean maintainer-clean bindist
 
 all:		$(TARGET)
 
@@ -53,9 +53,9 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-install:	$(TARGET)
-	$(INSTALL) --directory $(bindir)
-	$(INSTALL_PROGRAM) --strip $(TARGET) $(bindir)/$(TARGET)
+bindist:	$(TARGET)
+	$(INSTALL) --directory $(CDIR)
+	$(INSTALL_PROGRAM) --strip $(TARGET) $(CDIR)/$(TARGET)
 
 version.h:	AddAudioModes.c
 	@echo Creating $@

@@ -11,8 +11,8 @@
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
-prefix		= @prefix@
-catdir		= ${prefix}/User/Catalogs
+DISTDIR		= @DISTDIR@
+CATDIR		= ${DISTDIR}/User/Catalogs
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -29,7 +29,7 @@ VPATH		= @srcdir@
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean install revup
+.PHONY:		all clean distclean maintainer-clean bindist revup
 
 SUBDIRS		= AHI AddAudioModes Device Docs
 
@@ -50,10 +50,10 @@ maintainer-clean:
 	$(RM) config.log config.cache config.status config.h\
 	      stamp-h stamp-h.in Makefile configure config.h.in
 
-install:
-	$(INSTALL) --directory $(catdir)
-	$(INSTALL_DATA) README.ATO $(catdir)
-	$(INSTALL_DATA) README.TRANSLATIONS $(catdir)
+bindist:
+	$(INSTALL) --directory $(CATDIR)
+	$(INSTALL_DATA) README.ATO $(CATDIR)
+	$(INSTALL_DATA) README.TRANSLATIONS $(CATDIR)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 revup:

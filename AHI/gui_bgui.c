@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.9  1999/01/12 02:24:30  lcs
+ * *** empty log message ***
+ *
  * Revision 4.8  1999/01/09 23:14:08  lcs
  * Switched from SAS/C to gcc
  *
@@ -23,7 +26,7 @@
  *
  */
 
-#define NO_INLINE_STDARG
+//#define NO_INLINE_STDARG
 
 #include <config.h>
 #include <CompilerSpecific.h>
