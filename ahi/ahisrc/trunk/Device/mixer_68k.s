@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 4.11  1997/11/23 13:03:06  lcs
+* Fixed a bug in SelectAddRoutine() that caused distortion when both
+* HiFi and Tables was selected.
+*
 * Revision 4.10  1997/10/11 15:54:59  lcs
 * Bug fixes in the HiFi routines. There was also debug code left (!),
 * that disabled stereo.
@@ -640,6 +644,10 @@ SelectAddRoutine:
 	bmi	.no_tables
 	tst.l	d1
 	bmi	.no_tables
+
+	move.l	d2,d5
+	and.l	#HIFI,d5
+	bne	.no_tables		;No tables in HiFi mode
 
 	tst.l	ahiac_MultTableS(a2)
 	beq	.no_tables
