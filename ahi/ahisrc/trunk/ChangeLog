@@ -1,3 +1,8 @@
+2001-12-19  Martin Blom  <martin@blom.org>
+
+	* If the device's init routine failed, the device memory was not
+	freed and the libraries that had been opened were not closed.
+
 2001-12-14  Martin Blom  <martin@blom.org>
 
 	* Release AHI preferences 5.2.
