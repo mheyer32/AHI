@@ -2,11 +2,11 @@
 #define DEVICES_AHI_H
 
 /*
-**	$VER: ahi.h 5.0 (30.8.99)
+**	$VER: ahi.h 5.1 (3.6.00)
 **
 **	ahi.device definitions
 **
-**	(C) Copyright 1994-1999 Martin Blom
+**	(C) Copyright 1994-2000 Martin Blom
 **	All Rights Reserved.
 **
 ** (TAB SIZE: 8)
@@ -89,7 +89,9 @@ struct AHIAudioModeRequester
 	WORD	ahiam_InfoWidth;
 	WORD	ahiam_InfoHeight;
 
-	APTR	ahiam_UserData;			/* You can store your own data here */
+	UWORD	ahiam_ObsoleteUserData[2];
+	UWORD	ahiam_Pad;
+	APTR	ahiam_UserData;			/* You can store your own data here (V5) */
 	/* Lots of private data follows! */
 };
 
@@ -255,7 +257,8 @@ struct AHIEffChannelInfo
 #define AHIR_PrivateIDCMP	(AHI_TagBase+203)	/* Allocate private IDCMP? */
 #define AHIR_IntuiMsgFunc	(AHI_TagBase+204)	/* Function to handle IntuiMessages */
 #define AHIR_SleepWindow	(AHI_TagBase+205)	/* Block input in AHIR_Window? */
-#define AHIR_UserData		(AHI_TagBase+206)	/* What to put in ahiam_UserData */
+#define AHIR_ObsoleteUserData	(AHI_TagBase+206)	/* V4 UserData */
+#define AHIR_UserData		(AHI_TagBase+207)	/* What to put in ahiam_UserData (V5) */
 	/* Text display */
 #define AHIR_TextAttr		(AHI_TagBase+220)	/* Text font to use for gadget text */
 #define AHIR_Locale		(AHI_TagBase+221)	/* Locale to use for text */
@@ -375,7 +378,8 @@ struct AHIGlobalPrefs
 	BOOL	ahigp_FastEcho;
 	Fixed	ahigp_MaxCPU;
 	BOOL	ahigp_ClipMasterVolume;
-	Fixed	ahigp_AntiClickTime;			/* (V5) */
+	UWORD	ahigp_Pad;
+	Fixed	ahigp_AntiClickTime;			/* In seconds (V5) */
 };
 
  /* Debug levels */
