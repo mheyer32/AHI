@@ -2,7 +2,9 @@
 #define AHI_Drivers_Common_library_h
 
 #include <exec/types.h>
-#include "DriverBase.h"
+#include <proto/exec.h>
+
+#include "DriverData.h"
 
 extern const char  LibName[];
 extern const char  LibIDString[];
@@ -16,6 +18,17 @@ ReqA( const char*        text,
 
 #define Req(a0, args...) \
         ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args, AHIsubBase);})
+
+void
+MyKPrintFArgs( UBYTE*           fmt, 
+	       ULONG*           args,
+	       struct DriverBase* AHIsubBase );
+
+#define KPrintF( fmt, ... )        \
+({                                 \
+  ULONG _args[] = { __VA_ARGS__ }; \
+  MyKPrintFArgs( (fmt), _args, AHIsubBase ); \
+})
 
 
 #if defined(__morphos__) || defined(__MORPHOS__)
