@@ -10,6 +10,7 @@
 
 @SET_MAKE@
 
+top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 prefix		= @prefix@
 exec_prefix	= @exec_prefix@
@@ -17,8 +18,9 @@ bindir		= @bindir@
 
 CC		= @CC@
 INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 
-CPPFLAGS	= @CPPFLAGS@
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
 
@@ -47,18 +49,16 @@ clean:
 	$(RM) $(TARGET) version.h *.o *~ \#*\# core Makefile.dep
 
 distclean:	clean
-	$(RM) config.log config.cache config.status config.h\
-	      stamp-h stamp-h.in Makefile
+	$(RM) Makefile
 
 maintainer-clean: distclean
-	$(RM) configure config.h.in
 
 install:	$(TARGET)
 	$(INSTALL) --directory $(bindir)
-	$(INSTALL) --mode=755 --strip $(TARGET) $(bindir)/$(TARGET)
+	$(INSTALL_PROGRAM) --strip $(TARGET) $(bindir)/$(TARGET)
 
 version.h:	AddAudioModes.c
-	@echo $@
+	@echo Creating $@
 	@grep '$$Id' AddAudioModes.c | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
 
 
@@ -66,24 +66,8 @@ version.h:	AddAudioModes.c
 # Auto-remake autoconf stuff
 ########################################
 
-${srcdir}/configure: configure.in
-	cd ${srcdir} && autoconf
-
-# autoheader might not change config.h.in, so touch a stamp file.
-${srcdir}/config.h.in: stamp-h.in
-${srcdir}/stamp-h.in: configure.in
-	cd ${srcdir} && autoheader
-	echo timestamp > ${srcdir}/stamp-h.in
-
-config.h: stamp-h
-stamp-h: config.h.in config.status
-	./config.status
-
-Makefile: Makefile.in config.status
-	./config.status
-
-config.status: configure
-	./config.status --recheck
+Makefile: Makefile.in ../config.status
+	(cd .. && ./config.status)
 
 
 #

@@ -10,7 +10,6 @@
 
 @SET_MAKE@
 
-subdirs		= @subdirs@
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 prefix		= @prefix@
@@ -31,24 +30,27 @@ VPATH		= @srcdir@
 
 .PHONY:		all clean distclean maintainer-clean install
 
+SUBDIRS		= AHI AddAudioModes Device Docs
+
+
 all:
-	@for i in $(subdirs); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 clean:
-	@for i in $(subdirs); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 distclean:
 	$(RM) config.log config.cache config.status config.h\
 	      stamp-h stamp-h.in Makefile
-	@for i in $(subdirs); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 maintainer-clean:
 	$(RM) config.log config.cache config.status config.h\
 	      stamp-h stamp-h.in Makefile configure config.h.in
-	@for i in $(subdirs); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 install:
-	@for i in $(subdirs); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 
 #
