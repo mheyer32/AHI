@@ -1,3 +1,10 @@
+2004-10-31  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.22.
+
+	* emu10kx.audio: Merged the AROS port by Georg Steger. Thanks
+	Georg!
+
 2004-10-29  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.21.
@@ -10,9 +17,9 @@
 	* Released emu10kx.audio 5.20.
 
 	* emu10kx.audio: Added front channel downmix to center and LFE
-	when playing mono or stereo sounds, just like the driver used to
-	do for Audigy cards before. This is disabled in multichannel
-	mode. [Marcin 'Morgoth' Kurek]
+	when playing mono or stereo sounds (-3 dB), just like the driver
+	used to do for Audigy cards before. This is disabled in
+	multichannel mode. [Marcin 'Morgoth' Kurek]
 
 	* emu10kx.audio: Boosted AHI output by 12 dB (!).
 
