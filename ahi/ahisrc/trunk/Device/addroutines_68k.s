@@ -168,16 +168,20 @@ Lgot_sample:
 
 	subq.l	#1,d0
 	bne.b	Lnext_sample
+	bra.b	Lexit
 
-Lexit:
-	add.w	d6,d4
-	addx.l	d5,d3
 Labort:
+	moveq	#0,d5				/* Prevent the last add */
+	moveq	#0,d6
+Lexit:
 	move.b	(0,a0,d3.l),d7			/* Fetch last endpoint */
 	lsl.w	#8,d7
 	ext.l	d7
 	move.l	d7,([StartPointLeft,sp])
-	
+
+	add.w	d6,d4
+	addx.l	d5,d3
+
 	move.l	d3,([Offset,sp],0)		/* Integer offset */
 	move.w	d4,([Offset,sp],4)		/* Fraction offset (16 bit) */
 
