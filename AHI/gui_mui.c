@@ -651,12 +651,12 @@ BOOL BuildGUI(char *screenname)
       MUIA_Window_ID   , MAKE_ID('M','A','I','N'),
       MUIA_HelpNode, "AHI",
       WindowContents, VGroup,
-        Child, RegisterGroup(PageNames),
-          MUIA_CycleChain, 1,
-          Child, page1,
-          Child, page2,
-        End,
-        Child, HGroup,
+       Child, RegisterGroup(PageNames),
+         MUIA_CycleChain, 1,
+         Child, page1,
+         Child, page2,
+       End,
+       Child, HGroup,
           Child, MUISave = SimpleButton(msgButtonSave),
           Child, MUIUse = SimpleButton(msgButtonUse),
           Child, MUICancel = SimpleButton(msgButtonCancel),
@@ -735,13 +735,14 @@ void CloseGUI(void)
 
 void EventLoop(void)
 {
+  ULONG sigs = 0UL;
+
   while (1)
   {
-    ULONG sigs = 0UL;
+    ULONG rc = DoMethod(MUIApp, MUIM_Application_NewInput, &sigs);
 
-    switch(DoMethod(MUIApp, MUIM_Application_NewInput, &sigs))
+    switch(rc)
     {
-
       case MUIV_Application_ReturnID_Quit:
         return;
 
@@ -952,15 +953,13 @@ void EventLoop(void)
 
         break;
       }
+    }
 
-      default:
-        if (sigs)
-        {
-          sigs = Wait(sigs | SIGBREAKF_CTRL_C);
-          if (sigs & SIGBREAKF_CTRL_C)
-          return;
-        }
-        break;
+    if (sigs)
+    {
+      sigs = Wait(sigs | SIGBREAKF_CTRL_C);
+      if (sigs & SIGBREAKF_CTRL_C)
+	return;
     }
   }
 }
