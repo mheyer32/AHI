@@ -1,6 +1,11 @@
 2004-11-03  Martin Blom  <martin@blom.org>
 
-	* * Released ahi.device 5.53.
+ 	* Released AHI-Handler 5.4.
+
+	* AHI-Handler: Fixed bad struct alignment for non-m68k
+	builds. [Stefan Haubenthal]
+
+	* Released ahi.device 5.53.
 
 	* ahi.device: 16 bit samples were broken in 7.1 mode. [Marcin
 	'Morgoth' Kurek]
