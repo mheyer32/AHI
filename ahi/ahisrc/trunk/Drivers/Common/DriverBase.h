@@ -7,14 +7,14 @@
 
 struct DriverBase
 {
-    struct Library         library;
-    struct SignalSemaphore opensemaphore;
-    BPTR                   seglist;
+    struct Library  library;
+    UWORD           pad;
+    BPTR            seglist;
 #ifndef DRIVER_NEED_GLOBAL_EXECBASE
-    struct Library*        execbase;
+    struct Library* execbase;
 #endif
-    struct Library*        intuitionbase;
-    struct Library*        utilitybase;
+    struct Library* intuitionbase;
+    struct Library* utilitybase;
 };
 
 #ifndef DRIVER_NEED_GLOBAL_EXECBASE
