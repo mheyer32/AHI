@@ -50,13 +50,13 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 
 #if !defined( VERSIONPOWERUP )
 void ASMCALL
-MixGeneric ( REG(a0, struct Hook *Hook), 
-             REG(a1, void *dst), 
+MixGeneric ( REG(a0, struct Hook *Hook),
+             REG(a1, void *dst),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 #else
 void
-MixPowerUp ( struct Hook *Hook, 
-             void *dst, 
+MixGeneric ( struct Hook *Hook,
+             void *dst,
              struct AHIPrivAudioCtrl *audioctrl );
 #endif
 

@@ -126,6 +126,8 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	UWORD	ahiac_Channels2
 	STRUCT	ahiac_Timer,Timer_SIZEOF
 	UWORD	ahiac_UsedCPU
+	UWORD	ahiac_Com			* PPC communication variable
+	UWORD	ahiac_ChannelNo			* PPC communication variable
 	UWORD	ahiac_Pad
 	APTR	ahiac_AntiClickBuffer
 	ULONG	ahiac_AntiClickSize		* in bytes

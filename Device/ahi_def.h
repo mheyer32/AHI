@@ -219,9 +219,9 @@ struct AHIPrivAudioCtrl
 	Fixed			 ahiac_MasterVolume;	/* Real */
 	Fixed			 ahiac_SetMasterVolume;	/* Set by user */
 	Fixed			 ahiac_EchoMasterVolume;/* Set by dspecho */
-	struct AHIEffOutputBuffer	*ahiac_EffOutputBufferStruct;
+	struct AHIEffOutputBuffer *ahiac_EffOutputBufferStruct;
 	struct Echo		*ahiac_EffDSPEchoStruct;
-	struct AHIEffChannelInfo	*ahiac_EffChannelInfoStruct;
+	struct AHIEffChannelInfo *ahiac_EffChannelInfoStruct;
 	struct AHIChannelData	*ahiac_WetList;
 	struct AHIChannelData	*ahiac_DryList;
 	UBYTE			 ahiac_WetOrDry;
@@ -229,10 +229,18 @@ struct AHIPrivAudioCtrl
 	UWORD			 ahiac_Channels2;	/* Max virtual channels/hw channel */
 	struct Timer		 ahiac_Timer;
 	UWORD			 ahiac_UsedCPU;
+	UWORD			 ahiac_Com;		/* PPC communication variable */
+	UWORD			 ahiac_ChannelNo;	/* PPC communication variable */
 	UWORD			 ahiac_Pad;
 	APTR			 ahiac_AntiClickBuffer;
 	ULONG			 ahiac_AntiClickSize;	/* in bytes */
 	char			 ahiac_DriverName[ 256 ];
 };
+
+#define AHIAC_COM_NONE		0
+#define AHIAC_COM_ACK		1
+#define AHIAC_COM_INIT		2
+#define AHIAC_COM_SOUNDFUNC	3
+#define AHIAC_COM_QUIT		4
 
 #endif /* AHI_DEF_H_ */
