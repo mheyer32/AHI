@@ -50,6 +50,7 @@ case $host in
  ;;
  powerpc-unknown-morphos)
   : ${CPU="603"}
+  AC_DEFINE(USE_INLINE_STDARG)
   linkerflags="-noixemul"
   optflags="-mcpu=${CPU} -O2"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"

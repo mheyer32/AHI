@@ -309,6 +309,7 @@ AHIDB_OutputArg		EQU AHI_TagBase+140	* ti_Data is input index
 AHIDB_Output		EQU AHI_TagBase+141
 * --- New for V4, they will be ignored by V2 and earlier ---
 AHIDB_Data		EQU AHI_TagBaseR+142	; Private!
+AHIDB_DriverBaseName	EQU AHI_TagBaseR+143	; Private!
 
  ; AHI_BestAudioIDA tags
 * --- New for V4, they will be ignored by V2 and earlier ---

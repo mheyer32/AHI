@@ -244,6 +244,7 @@ struct AHIEffChannelInfo
 #define AHIDB_Output		(AHI_TagBase+141)
 /* --- New for V4, they will be ignored by V2 and earlier --- */
 #define AHIDB_Data		(AHI_TagBaseR+142)	/* Private! */
+#define AHIDB_DriverBaseName	(AHI_TagBaseR+143)	/* Private! */
 
  /* AHI_BestAudioIDA tags */
 /* --- New for V4, they will be ignored by V2 and earlier --- */

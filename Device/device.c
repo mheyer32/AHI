@@ -273,8 +273,22 @@ DevOpen ( ULONG              unit,
   {
     // Load database if not already loaded
 
-    if(AHI_NextAudioID(AHI_INVALID_ID) == AHI_INVALID_ID)
+    if(AHI_NextAudioID(AHI_INVALID_ID) == (ULONG) AHI_INVALID_ID)
     {
+
+#ifdef __MORPHOS__
+      // Be quiet here. - Piru
+      {
+        struct Process *Self = (struct Process *) FindTask(NULL);
+        APTR oldwindowptr = Self->pr_WindowPtr;
+        Self->pr_WindowPtr = (APTR) -1;
+
+        AHI_LoadModeFile("MOSSYS:DEVS/AudioModes");
+
+        Self->pr_WindowPtr = oldwindowptr;
+      }
+#endif
+
       AHI_LoadModeFile("DEVS:AudioModes");
     }
   }
@@ -680,14 +694,14 @@ ReadConfig ( struct AHIDevUnit *iounit,
 
   if(iounit)
   {
-    if(iounit->AudioMode == AHI_INVALID_ID)
+    if(iounit->AudioMode == (ULONG) AHI_INVALID_ID)
     {
       iounit->AudioMode = AHI_BestAudioID(AHIDB_Realtime, TRUE, TAG_DONE);
     }
   }
   else
   {
-    if(AHIBase->ahib_AudioMode == AHI_INVALID_ID)
+    if(AHIBase->ahib_AudioMode == (ULONG) AHI_INVALID_ID)
     {
       AHIBase->ahib_AudioMode = AHI_BestAudioID( AHIDB_Realtime, TRUE, TAG_DONE);
     }

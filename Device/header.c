@@ -64,7 +64,8 @@ _start( void )
 }
 
 #if defined( __morphos__ ) || defined( __MORPHOS__ )
-ULONG   __amigappc__=1;
+ULONG   __abox__=1;
+ULONG   __amigappc__=1;  // deprecated
 #endif
 
 /******************************************************************************
@@ -162,7 +163,7 @@ const char DevName[]   = AHINAME;
 const char IDString[]  = AHINAME " " VERS "\r\n";
 
 static const char VersTag[] =
- "$VER: " AHINAME " " VERS " ©1994-2001 Martin Blom. "
+ "$VER: " AHINAME " " VERS " ©1994-2002 Martin Blom. "
  CPU 
  " version.\r\n";
 

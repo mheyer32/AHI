@@ -1,3 +1,15 @@
+2002-12-14  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.30.
+
+	* ahi.device: Now looks into MOSSYS:DEVS/AudioModes and
+	MOSSYS:DEVS/AHI in MorphOS build. [Harry Sintonen]
+
+	* Released AddAudioModes 5.3.
+
+	* AddAudioModes: Now looks into MOSSYS:DEVS/AudioModes in
+	MorphOS build. [Harry Sintonen]
+
 2002-11-20  Martin Blom  <martin@blom.org>
 
 	* Released toccata.audio 4.6.

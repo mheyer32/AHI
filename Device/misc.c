@@ -258,7 +258,7 @@ AHIAttemptSemaphore( struct SignalSemaphore* sigSem )
   sigSem->ss_QueueCount++;
   if( sigSem->ss_QueueCount == 0 )
   {
-    sigSem->ss_Owner = ~0;
+    sigSem->ss_Owner = (APTR) ~0;
     sigSem->ss_NestCount++;
     rc = TRUE;
   }
