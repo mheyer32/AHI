@@ -82,6 +82,7 @@
  *********************************************************************/
 
 #include "linuxsupport.h"
+#include <string.h>
 
 #include <errno.h>
 #include "8010.h"

@@ -23,6 +23,7 @@
 #include <proto/powerpci.h>
 
 #include "linuxsupport.h"
+#include <string.h>
 
 static void*
 AllocPages( size_t size, ULONG req )

@@ -32,6 +32,7 @@
 
 //#include <asm/io.h>
 #include "linuxsupport.h"
+#include <stdarg.h>
 
 #include "hwaccess.h"
 #include "8010.h"
