@@ -1,5 +1,10 @@
 /* $Id$
 * $Log$
+* Revision 4.5  1997/06/21 18:13:43  lcs
+* Fixed some problems in AHI_BestAudioIDA(), like Dizzytags for example.
+*
+* Changed BOOL return values to ULONG in ordet to set all 32 bits.
+*
 * Revision 4.4  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -1259,7 +1264,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *
 */
 
-__asm BOOL GetAudioAttrsA( register __d0 ULONG id,
+__asm ULONG GetAudioAttrsA( register __d0 ULONG id,
     register __a2 struct AHIAudioCtrlDrv *actrl,
     register __a1 struct TagItem *tags)
 {
@@ -1417,7 +1422,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
     KPrintF("=>%s\n", rc ? "TRUE" : "FALSE" );
   }
 
-  return rc;
+  return (ULONG) rc;
 }
 
 
@@ -1725,7 +1730,9 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
 
           /* AHI_FreeAudio() will deallocate...  */
 
-          if(initUnsignedTable(audioctrl, AHIBase))
+          if(/* ((audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0) && 
+                  Breaks the AHI-Noteplayer for delitracker! :-( */
+              initUnsignedTable(audioctrl, AHIBase))
           {
             audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
             audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
