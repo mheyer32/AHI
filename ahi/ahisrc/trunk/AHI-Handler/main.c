@@ -1,6 +1,9 @@
 /* $Id$
  * $Log$
- * Revision 1.6  1997/02/01 14:10:08  lcs
+ * Revision 1.7  1997/03/26 13:32:43  lcs
+ * Added UNIT to the template, and set taskpri to 5.
+ *
+ * Revision 1.6  1997/02/01  14:10:08  lcs
  * A couple of bugs fixed.
  *
  * Revision 1.5  1997/01/29  15:44:49  lcs
@@ -27,53 +30,6 @@
  *
  * Done by Martin Blom 1997. Public Domain.
  *
- * Usage:  Open AUDIO: for reading, or writing. Options can be given like
- *        this: "AUDIO:PRIORITY=1 VOLUME=50". All slashes (/) in the
- *        'file' name will be translated to spaces. The removes the need
- *        for quotes: AUDIO:PRIORITY/1/VOLUME/50.
- *
- *
- *         The full template for reading is:
- *        B=BITS/K/N,C=CHANNELS/K/N,F=FREQUENCY/K/N,T=TYPE/K,
- *        L=LENGTH/K/N,S=SECONDS/K/N,BUF=BUFFER/K/N
- *
- *         The full template for writing is:
- *        B=BITS/K/N,C=CHANNELS/K/N,F=FREQUENCY/K/N,T=TYPE/K,
- *        V=VOLUME/K/N,P=POSITION/K/N,PRI=PRIORITY/K/N,L=LENGTH/K/N,
- *        S=SECONDS/K/N,BUF=BUFFER/K/N"
- *
- *
- *         BITS can be one of 8, 16 or 32. CHANNELS can be either 1 or 2.
- *        The FREQUENCY is in Herz, TYPE is one of SIGNED, AIFF or AIFC.
- *        VOLUME ranges from 0 (silence) to 100 (full volume), and POSITION
- *        ranges from -100 (far left) via 0 (center) to 100 (far right).
- *        The PRIORITY is only used when writing, and can be from -128 to
- *        127 (unstoppable). LENGTH is how many bytes you wish to read or
- *        write, and SECONDS is the same, but in seconds instead of bytes.
- *        The BUFFER size is specified in bytes. Note that two buffers are
- *        always used, which means that the memory usage will be 2×BUFFER.
- *
- *
- *         The default options for reading:
- *        BITS=8 CHANNELS=1 FREQUENCY=8000 TYPE=SIGNED LENGTH=very-very-much
- *        BUFFER=32768.
- *
- *         The default options for reading:
- *        BITS=8 CHANNELS=1 FREQUENCY=8000 TYPE=<none> VOLUME=100 POSITION=0
- *        PRIORITY=0 LENGTH=very-very-much BUFFER=32768.
- *
- *         If TYPE is not specified, the default behavour is to identify the
- *        data stream as IFF-AIFF or IFF-AIFC. If so, the default values of
- *        BITS, CHANNELS, FREQUENCY and LENGTH will be changed. You can still
- *        override them if you wish. If the stream could not be identified,
- *        the data format is assumed to be SIGNED.
- *
- *
- *         Both when reading and writing the sample rate will be converted
- *        on the fly to what the underlying hardware is configured to.
- *        Normally this is not a big problem when writing, but the quality
- *        when reading leaves quite a lot to wish for, since no low-pass
- *        filters are used.
  */
 
 
@@ -112,7 +68,7 @@ void ulong2extended (ULONG, extended *);
 void FillAIFFheader(struct HandlerData *);
 void FillAIFCheader(struct HandlerData *);
 LONG ReadCOMMchunk(struct HandlerData *, UBYTE *, LONG);
-long AllocAudio(void);
+long AllocAudio(int);
 void FreeAudio(void);
 long ParseArgs(struct HandlerData *, char *);
 long InitHData(struct HandlerData *);
@@ -145,7 +101,7 @@ void kprintf(char *, ...);
  *  Global variables
  */
 
-const static char ID[] = "$VER: AHI-Handler 1.6 (1.2.96)\r\n";
+const static char ID[] = "$VER: AHI-Handler 1.7 (12.3.97)\r\n";
 
 struct List        HanList;
 struct DeviceNode *DevNode;
@@ -202,6 +158,9 @@ void _main ()
   struct DosPacket *packet;
   struct Process *proc = (struct Process *) FindTask (NULL);
 
+  /* Boost our priority */
+  
+  SetTaskPri(FindTask(NULL), 5);
 
   PktPort = &proc->pr_MsgPort;
   NewList (&HanList);
@@ -254,6 +213,7 @@ void _main ()
         int len = *base;
         char buf[128];
         struct HandlerData *data;
+        int unit = AHI_DEFAULT_UNIT;
 
         // Skip volume name and ':'
 
@@ -293,7 +253,11 @@ void _main ()
           break;
         }
 
-        if(packet->dp_Res2 = AllocAudio()) {
+        if(data->args.unit) {
+          unit = *data->args.unit;
+        }
+
+        if(packet->dp_Res2 = AllocAudio(unit)) {
           FreeAudio();
           FreeHData(data);
           break;
@@ -836,14 +800,14 @@ LONG ReadCOMMchunk(struct HandlerData *data, UBYTE *buffer, LONG length) {
  *  If the device isn't already open, open it now
  */
 
-long AllocAudio(void) {
+long AllocAudio(int unit) {
   long rc = 0;
 
   if(++AllocCnt == 1) {
     if(AHImp=CreateMsgPort()) {
       if(AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest))) {
         AHIio->ahir_Version=3;
-        AHIDevice=OpenDevice(AHINAME,0,(struct IORequest *)AHIio,NULL);
+        AHIDevice=OpenDevice(AHINAME,unit,(struct IORequest *)AHIio,NULL);
       }
     }
 
@@ -869,7 +833,7 @@ long AllocAudio(void) {
 void FreeAudio(void)
 {
   if(--AllocCnt == 0) {
-    if(!AHIDevice)
+    if(AHIDevice == 0)
       CloseDevice((struct IORequest *)AHIio);
     AHIDevice = -1;
     DeleteIORequest((struct IORequest *)AHIio);
@@ -901,7 +865,7 @@ long ParseArgs(struct HandlerData *data, char *initstring) {
 
     data->rdargs2 = ReadArgs(
       "B=BITS/K/N,C=CHANNELS/K/N,F=FREQUENCY/K/N,T=TYPE/K,V=VOLUME/K/N,P=POSITION/K/N,"
-      "PRI=PRIORITY/K/N,L=LENGTH/K/N,S=SECONDS/K/N,BUF=BUFFER/K/N",
+      "PRI=PRIORITY/K/N,L=LENGTH/K/N,S=SECONDS/K/N,BUF=BUFFER/K/N,UNIT/K/N",
       (LONG *) &data->args, data->rdargs);
 
     if(data->rdargs2 != NULL) {
