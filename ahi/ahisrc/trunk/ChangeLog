@@ -1,5 +1,15 @@
 2002-07-06  Martin Blom  <martin@blom.org>
 
+	* ahi.device: The sample pointer would drift 1/(2^32) samples for
+	each interrupt. No big deal, since it would take about 3 years
+	until it actually caused a sample frame to be skipped, but a bug
+	is a bug and deserves to die.
+
+	* ahi.device: In addition to this, due to a (m68k) compiler bug,
+	the sound would be *1.0* sample off for each interrupt. Ouch! This
+	should fix that "50 Hz click bug" (50 Hz is the default buffer
+	"size"). [Przemyslaw 'SENSEI' Gruchala, Bernd Roesch]
+
 	* ahi.device: Removed checks for unused (since v5) speed-up flags
 	(surround, echo and clipping).
 
