@@ -1,3 +1,8 @@
+2005-01-11  Martin Blom  <martin@blom.org>
+
+	* Applied more patches (mainly gcc 3.x-related but also
+	C_c_noauto.sd and gas stab) from Gunther Nikl. Thanks!
+
 2005-01-09  Martin Blom  <martin@blom.org>
 
 	* Released AHI 5.15b (ix86be only).
