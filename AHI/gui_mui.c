@@ -1,5 +1,9 @@
 /* $Id$
  * $Log$
+ * Revision 4.3  1997/05/06 15:15:46  lcs
+ * Can now which pages with the keyboard.
+ * Fixed a bug in the mode properties code.
+ *
  * Revision 4.2  1997/05/04 22:13:29  lcs
  * Keyboard shortcuts and more.
  *
@@ -9,14 +13,14 @@
  *
  */
 
+#include <exec/memory.h>
 #include <libraries/asl.h>
-
-#include <libraries/mui.h>
 #include <libraries/gadtools.h>
-#include <proto/muimaster.h>
+#include <libraries/mui.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
+#include <proto/muimaster.h>
 #include <proto/utility.h>
 #include <math.h>
 #include <string.h>
@@ -242,7 +246,9 @@ static void GUINewMode(void)
   infoargs[4] = getDriver();
   infoargs[5] = getVersion();
 
-  if(buffer = AllocVec(strlen(infoargs[0]) + strlen(infoargs[1]) + strlen(infoargs[2]) + strlen(infoargs[3]) + strlen(infoargs[4]) + strlen(infoargs[5]) + 128, 0))
+  if(buffer = AllocVec(strlen(infoargs[1]) + strlen(infoargs[2]) +
+                       strlen(infoargs[3]) + strlen(infoargs[4]) +
+                       strlen(infoargs[5]) + 128, MEMF_ANY))
   {
     SPrintfA(buffer,"0x%08lx\n%s\n%s\n%s\nDevs:AHI/%s.audio\n%s", (APTR)infoargs);
     set(MUIInfos, MUIA_Text_Contents, buffer);
@@ -537,6 +543,7 @@ BOOL BuildGUI(char *screenname)
       MUIA_HelpNode, "AHI",
       WindowContents, VGroup,
         Child, RegisterGroup(PageNames),
+          MUIA_CycleChain, 1,
           Child, page1,
           Child, page2,
         End,
@@ -602,9 +609,9 @@ BOOL BuildGUI(char *screenname)
 void CloseGUI(void)
 {
   if (MUIApp)
-  MUI_DisposeObject(MUIApp);
+    MUI_DisposeObject(MUIApp);
   if (MUIMasterBase)
-  CloseLibrary(MUIMasterBase);
+    CloseLibrary(MUIMasterBase);
 }
 
 
@@ -801,3 +808,4 @@ void EventLoop(void)
     }
   }
 }
+
