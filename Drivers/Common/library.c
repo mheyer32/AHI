@@ -44,7 +44,8 @@ BPTR
 _LibExpunge( struct DriverBase* AHIsubBase );
 
 struct DriverBase*
-_LibOpen( struct DriverBase* AHIsubBase );
+_LibOpen( ULONG              version,
+	  struct DriverBase* AHIsubBase );
 
 BPTR
 _LibClose( struct DriverBase* AHIsubBase );
@@ -331,7 +332,8 @@ _LibExpunge( struct DriverBase* AHIsubBase )
 ******************************************************************************/
 
 struct DriverBase*
-_LibOpen( struct DriverBase* AHIsubBase )
+_LibOpen( ULONG              version,
+	  struct DriverBase* AHIsubBase )
 {
   AHIsubBase->library.lib_Flags &= ~LIBF_DELEXP;
   AHIsubBase->library.lib_OpenCnt++;
