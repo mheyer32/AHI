@@ -1,0 +1,114 @@
+2001-09-29  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.17.
+
+	* I tweaked the build environment somewhat:  makedepend is out; gcc
+	-MM is in, even in AmigaOS.  "make all" now aborts on errors, as it
+	should. All automatically generated files (version.h, localize.*)
+	are now build before the dependencies are created.
+
+	* ahi.device:  Haha!  I found the race condition in question!  It
+	was in AddWriter(), which assumed that no free channel
+	automatically implied that PlayingList was non-empty.  Not so!
+	[Stephan Rupprecht and Harald Frank]
+
+	* ahi.device:  Fixed yet another potential race condition (in
+	SoundFunc()).  Sooner or later I *will* find the real one, won't I?
+
+	* ahi.device:  Fixed a bug in TermIO (ioreq->ahir_Extras is now set
+	to NULL before its FreeVec'ed, not after).
+
+2001-09-28  Martin Blom  <martin@blom.org>
+
+	* Released paula.audio version 4.27.
+
+	* paula.audio:  I broke the DMA playback mode in the last update.
+	Fixed now. [Sigbjørn Skjæret]
+
+2001-09-24  Martin Blom  <martin@blom.org>
+
+	* ahi.device:  A missing 'break' statment made AbortIO() return
+	IOERR_NOCMD on CMD_WRITE requests.
+
+	* ahi.device:  Fixed a non-fatal race condition in DevAbortIO().
+	It just made the source code look prettier ...  :) Now if I could
+	only find the one that makes AHI crash in AMIthlon ...
+
+2001-09-16  Martin Blom  <martin@blom.org>
+
+	* Released paula.audio version 4.26.
+
+	* Released ahi.device 5.8.
+
+2001-09-09  Martin Blom  <martin@blom.org>
+
+	* paula.audio:  The fixed CMD_STOP/CMD_START in ahi.device
+	triggered a bug that could make the driver lose track of the
+	AHIsub_Disable and AHIsub_Enable nesting.  Also, these functions
+	was not "thread safe" (they are not actually called from a thread
+	but rather an interrupt).
+
+2001-09-04  Martin Blom  <martin@blom.org>
+
+	* ahi.device:  Hopefully, CMD_STOP/CMD_START actually work now.
+
+	* ahi.device:  Fixed a dead-lock problem that could happen when
+	more than one double-buffered sound was played using the device
+	API.
+
+2001-07-29  Martin Blom  <martin@blom.org>
+
+        * ahi.device:  If a file in Devs:AudioModes is not a legal mode
+	file, the scanning code would just stop.  Now, such errors are
+	silently ignored.
+
+2001-04-22  Martin Blom  <martin@blom.org>
+
+        * ahi.device:  When using a filter hook with the audio mode
+	requester, and AHIR_DoDefaultMode was TRUE, the hook would receive
+	AHI_INVALID_ID instead of the user-selected default mode ID.
+
+2001-04-21  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.7.
+
+	* ahi.device The default PlayerFunc (which is used unless the
+	application provides one) did not have an m68k wrapper when the
+	device was compiled for ppc, making ReqAttack (and many other
+	programs, I guess) crash. [Jaca/D-CAPS]
+
+2001-04-12  Martin Blom  <martin@blom.org>
+
+	* PAULA: Always use calibration tables for 14-bit output.
+
+2001-03-29  Martin Blom  <martin@blom.org>
+
+        * Released ahi.device 5.6.
+
+	* ahi.device:  Fixed a bug in the mixing routine that, when using
+	"anti-click", caused notes to be lost in rare cases.  Credits to
+	Jaca/D-CAPS for spotting it and sending me an example that
+	reproduced the bug!
+
+2001-03-11  Martin Blom  <martin@blom.org>
+
+        * Released ahi.device 5.5.
+
+	* ahi.device:  Nuked one more m68k assembler source file and moved
+	the code to C.
+
+	* ahi.device: Stopped using dprintf in MorphOS.
+
+2001-03-04  Martin Blom  <martin@blom.org>
+
+        * Released ahi.device 5.4.
+
+	* ahi.device Fixed a bug that caused clicks on every new sound
+	start, if an end-of-sound had been reached and the last sample in
+	that sound was not 0.
+
+2000-11-28  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.1.
+
+	* Last-minute bugfixing for AmigsOS 3.9 CD.

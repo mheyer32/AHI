@@ -1,0 +1,25 @@
+ID	Driver		Author			E-Mail
+
+01	Filesave	Martin Blom		<martin@blom.org>
+02	Paula		Martin Blom		<martin@blom.org>
+03	Device		Martin Blom		<martin@blom.org>
+05	Siamese		Martin Blom		<martin@blom.org>
+06	Melody MPEG	Thorsten Hansen		<hansen_t@informatik.fh-hamburg.de>
+07	Concierto (PIV)	Olaf Barthel		<olsen@sourcery.han.de>
+08	Wavetools	Johan Nyblom		<nyblom@mother.ludd.luth.se>
+09	ESS Solo1/GREX	Frank Mariak		<F.Mariak@t-online.de>
+0A	Toccata		Martin Blom		<martin@blom.org>
+0B	VSS		Valenta Ferenc		<vf@elte.hu>
+0C	Prelude		Thomas Wenzel		<wenzel@unixserv.rz.fh-hannover.de>
+0D	RePulse		Stefan Sommerfeld	<zerocom@cs.tu-berlin.de>
+0E	Maestro Pro	Richard Koerber		<shred@chessy.aworld.de>
+0F	Silicon Studio	Simon N Goodwin		<simon@studio.woden.com>
+10	Delfina		Teemu Suikki		<zuikkis@zuikkis.pp.sci.fi>
+11	Sunrize		Kenneth Nilsen		<kenny@bgnett.no>
+12	FM 801/GREX	Frank Mariak		<F.Mariak@t-online.de>
+13	AXL		Markus Pöllmann		<m.poellmann@haage-partner.com>
+14	SB128/Mediator	Pawel Stypula		PawelS@elbox.com
+15	SBLive/Mediator	Pawel Stypula		PawelS@elbox.com
+16	AC97/AMIthlon	Thorsten Hansen		<hansen_t@informatik.fh-hamburg.de>
+17	SB128/AMIthlon	Thorsten Hansen		<hansen_t@informatik.fh-hamburg.de>
+1F      (Experimental)
