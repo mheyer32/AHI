@@ -68,6 +68,19 @@ namespace AHI {
 	dBFixed		Gain;
       };
 
+      /* Just some utility constants for dBFixed */
+      enum {
+	_AHIV(_P, Tenth_dBAmplitude,		(-1310720)),
+	_AHIV(_P, Tenth_dBPower,		(-655360)),
+	_AHIV(_P, Half_dBAmplitude,		(-394566)),
+	_AHIV(_P, Half_dBPower,			(-197273)),
+	_AHIV(_P, Unity_dB,			(0)),
+	_AHIV(_P, Double_dBPower,		(+197273)),
+	_AHIV(_P, Double_dBAmplitude,		(+394566)),
+	_AHIV(_P, Tenfold_dBPower,		(+655360)),
+	_AHIV(_P, Tenfold_dBAmplitude,		(+1310720))
+      };
+
 /*****************************************************************************/
 
       enum {
