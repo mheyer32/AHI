@@ -2,7 +2,7 @@
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename ahi.guide
-@settitle @sc{Ahi}{} User's Guide, version @value{ahiver}
+@settitle @sc{Ahi}{} User's Guide
 @setchapternewpage odd
 @iftex
 @afourpaper
@@ -17,39 +17,10 @@
 
 @c *** Variables ***
 
-@set ahiver 4.10
+@c @set ahiver 4.5
 
-@c *** Version history ***
-
-@c $Id$
-@c $Log$
-@c Revision 4.10  1997/09/30 13:11:09  lcs
-@c Added reasons why "Fast" or "Hifi" modes should be used.
-@c
-@c Revision 4.9  1997/09/28 04:31:56  lcs
-@c Added notes about Maestor Pro and Melody MPEG. Added Thorsten Hansen
-@c to the contributors section. And some other minor things.
-@c
-@c Revision 4.8  1997/09/18 00:51:00  lcs
-@c Added Maestro Pro stuff.
-@c
-@c Revision 4.7  1997/08/10 15:38:57  lcs
-@c Minor changes. added @ahi macro!
-@c
-@c Revision 4.6  1997/08/03 22:48:26  lcs
-@c Added Concierto to list of supported sound cards.
-@c Added Christian Buchner to the Acknowledgments section.
-@c Changed Teemu Suikki's email address.
-@c
-@c Revision 4.5  1997/07/27 19:04:10  lcs
-@c Added description of the AHIpaulaSwapChannels env. variable.
-@c
-@c Revision 4.4  1997/07/15 00:50:40  lcs
-@c This is the second bugfix release of AHI 4.
-@c
-@c Revision 4.3  1997/05/04 15:52:58  lcs
-@c Initial revision.
-@c
+@c Set ahiver to current release version
+@include version.texinfo
 
 
 @c Part 2: Summary Description and Copyright
@@ -67,17 +38,52 @@ Permission is granted to make and distribute verbatim
 copies of this manual provided the copyright notice and
 this permission notice are preserved on all copies.
 
-THIS PUBLICATION IS PROVIDED BY THE AUTHOR ``AS IS'' AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-ARE DISCLAIMED.  IN NO EVENT SHALL THE AUTHOR BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
-OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
-HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
-OUT OF THE USE OF THIS PUBLICATION, EVEN IF ADVISED OF THE POSSIBILITY OF
-SUCH DAMAGE.
+@sc{This publication is provided by the author ``as is'' and any express or
+implied warranties, including, but not limited to, the implied warranties
+of merchantability and fitness for a particular purpose are disclaimed.  In
+no event shall the author be liable for any direct, indirect, incidental,
+special, exemplary, or consequential damages (including, but not limited
+to, procurement of substitute goods or services; loss of use, data, or
+profits; or business interruption) however caused and on any theory of
+liability, whether in contract, strict liability, or tort (including
+negligence or otherwise) arising in any way out of the use of this
+publication, even if advised of the possibility of such damage.}
+
+@example
+
+$Id$
+$Log$
+Revision 4.11  1997/10/21 01:33:40  lcs
+The version number is now the AHI release version, not the documents version.
+
+Revision 4.10  1997/09/30 13:11:09  lcs
+Added reasons why "Fast" or "Hifi" modes should be used.
+
+Revision 4.9  1997/09/28 04:31:56  lcs
+Added notes about Maestor Pro and Melody MPEG. Added Thorsten Hansen
+to the contributors section. And some other minor things.
+
+Revision 4.8  1997/09/18 00:51:00  lcs
+Added Maestro Pro stuff.
+
+Revision 4.7  1997/08/10 15:38:57  lcs
+Minor changes. added @ahi macro!
+
+Revision 4.6  1997/08/03 22:48:26  lcs
+Added Concierto to list of supported sound cards.
+Added Christian Buchner to the Acknowledgments section.
+Changed Teemu Suikki's email address.
+
+Revision 4.5  1997/07/27 19:04:10  lcs
+Added description of the AHIpaulaSwapChannels env. variable.
+
+Revision 4.4  1997/07/15 00:50:40  lcs
+This is the second bugfix release of AHI 4.
+
+Revision 4.3  1997/05/04 15:52:58  lcs
+Initial revision.
+
+@end example
 
 @end ifinfo
 

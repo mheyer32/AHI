@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.4  1997/10/21 01:33:40  lcs
+# The version number is now the AHI release version, not the documents version.
+#
 # Revision 4.3  1997/07/27 11:42:40  lcs
 # Added the ability to add what has changed since last release
 # in the .readme files.
@@ -48,17 +51,20 @@ readme:
 ##
 ###############################################################################
 
+version.texinfo: hyperdoc
+
 hyperdoc:
+        echo "@set ahiver 4." NOLINE > version.texinfo
+        type Projekt:AHI/rev >> version.texinfo
 	makeinfo --amiga --output AHI:User/Help/ahi.guide ahiusr.texinfo
 	makeinfo --amiga --output AHI:Developer/docs/devguide.guide ahidev.texinfo
-
 
 ##
 ## Build printed documentation
 ##
 ###############################################################################
 
-printeddoc:
+printeddoc: version.texinfo
 	execute MakeManual
 
 
@@ -77,7 +83,7 @@ ci:
 ###############################################################################
 
 clean:
-	@echo "Nothing to do!"
+	--delete version.texinfo
 
 allclean:
 	smake clean
