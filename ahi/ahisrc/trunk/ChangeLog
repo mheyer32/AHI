@@ -1,5 +1,7 @@
 2003-05-01  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.38.
+
 	* ahi.device: Fixed an interpolation bug in the mixing routines
 	for 32 bit samples that appeared when 32 bit samples were used
 	with other sample types.
