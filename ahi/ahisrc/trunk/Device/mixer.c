@@ -23,15 +23,11 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-#include <exec/interrupts.h>
-#include <hardware/intbits.h>
-
 #if !defined( VERSIONPPC )
 # include <string.h>
 # include <stddef.h>
 
 # include <exec/memory.h>
-# include <exec/execbase.h>
 # include <powerup/ppclib/memory.h>
 
 # include <proto/exec.h>
@@ -53,17 +49,17 @@
 ** Prototypes *****************************************************************
 ******************************************************************************/
 
-static void
+void
 DoMasterVolume ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl );
 
 #if !defined( VERSIONPPC )
 
-static void
+void
 DoOutputBuffer ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl );
 
-static void
+void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
 #endif /* !defined( VERSIONPPC ) */
@@ -107,6 +103,7 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
+/*
 static inline void
 CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
@@ -115,6 +112,7 @@ CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
+*/
 
 static void*
 memset( void* s, int c, unsigned int n )
@@ -134,7 +132,7 @@ memset( void* s, int c, unsigned int n )
 
 /* M68k code *****************************************************************/
 
-static inline void
+void
 CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                void* arg )
 {
@@ -143,12 +141,13 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                arg );
 }
 
+/*
 static void
 CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
   kprintf( "%lx ", value );
 }
-
+*/
 
 
 void ASMCALL
@@ -932,7 +931,7 @@ Mix( struct Hook*             unused_Hook,
 ** number of bits to 20 and then scale and compare.
 */
 
-static void
+void
 DoMasterVolume ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl )
 {
@@ -1005,7 +1004,7 @@ DoMasterVolume ( void *buffer,
 
 #if !defined( VERSIONPPC )
 
-static void
+void
 DoOutputBuffer ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl )
 {
@@ -1025,7 +1024,7 @@ DoOutputBuffer ( void *buffer,
   }
 }
 
-static void
+void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl )
 {
   struct AHIEffChannelInfo *ci;

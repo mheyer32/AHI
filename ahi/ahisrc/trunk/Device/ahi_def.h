@@ -207,7 +207,7 @@ struct AHIChannelData
 
 /* Private AudioCtrl structure */
 
-struct WarpUpContext;
+struct PowerPCContext;
 
 struct AHIPrivAudioCtrl
 {
@@ -233,25 +233,9 @@ struct AHIPrivAudioCtrl
   UWORD                      ahiac_Channels2;       /* Max virtual channels/hw channel */
   struct Timer               ahiac_Timer;
   UWORD                      ahiac_UsedCPU;
-  volatile UWORD             ahiac_PPCCommand;
-  volatile void             *ahiac_PPCArgument;
-  APTR                       ahiac_PPCMixBuffer;
-  struct Interrupt          *ahiac_PPCMixInterrupt;
-  struct PowerUpContext     *ahiac_PPCPowerUpContext;
-  struct WarpUpContext      *ahiac_PPCWarpUpContext;
-  APTR                       ahiac_M68KPort;
-  APTR                       ahiac_PPCStartupMsg;
-  APTR                       ahiac_PPCTask;
+  struct PowerPCContext     *ahiac_PowerPCContext;
   char                       ahiac_DriverName[ 256 ];
 };
 
-#define AHIAC_COM_NONE          0
-#define AHIAC_COM_START         1
-#define AHIAC_COM_ACK           2
-#define AHIAC_COM_INIT          3
-#define AHIAC_COM_SOUNDFUNC     4
-#define AHIAC_COM_QUIT          5
-#define AHIAC_COM_DEBUG         6
-#define AHIAC_COM_FINISHED      7
 
 #endif /* AHI_DEF_H_ */

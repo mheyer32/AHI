@@ -47,22 +47,40 @@ SelectAddRoutine ( Fixed     VolumeLeft,
                    LONG     *ScaleRight,
                    ADDFUNC **AddRoutine );
 
-#if !defined( VERSIONPPC )
 void ASMCALL
-MixGeneric ( REG(a0, struct Hook *Hook),
+MixM68K ( REG(a0, struct Hook *Hook),
              REG(a1, void *dst),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
-#else
+
+void ASMCALL
+MixPowerPC( REG(a0, struct Hook *Hook), 
+            REG(a1, void *dst), 
+            REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
+
 void
-MixGeneric ( struct Hook *Hook,
-             void *dst,
-             struct AHIPrivAudioCtrl *audioctrl );
-#endif
+Mix( struct Hook *Hook,
+     void *dst,
+     struct AHIPrivAudioCtrl *audioctrl );
 
 LONG
 CalcSamples ( Fixed64 Add,
               ULONG   Type,
               Fixed64 LastOffset,
               Fixed64 Offset );
+
+void
+DoMasterVolume ( void *buffer,
+                 struct AHIPrivAudioCtrl *audioctrl );
+
+#if !defined( VERSIONPPC )
+
+void
+DoOutputBuffer ( void *buffer,
+                 struct AHIPrivAudioCtrl *audioctrl );
+
+void
+DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
+
+#endif /* !defined( VERSIONPPC ) */
 
 #endif /* _MIXER_H_ */
