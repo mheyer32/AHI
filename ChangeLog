@@ -1,3 +1,14 @@
+2002-10-16  Martin Blom  <martin@blom.org>
+
+	* ahi.device/paula.audio: The distorsion bug reported by Sensei
+	(see 2002-07-06) turned out not to be the 50 Hz bug. In fact, it
+	turned out not to be a bug at all. It was just paula.audio that
+	couldn't play at 44100 Hz and instead using 44336 Hz, causing AHI
+	to resample all sounds that should play at 44100 Hz. Haha, I knew
+	it. Not my fault, not my fault, not my fault!! (See the
+	documentation for the AHIpaulaFakeMixFreq environmant variable for
+	more information.)
+	
 2002-09-30  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.29.
