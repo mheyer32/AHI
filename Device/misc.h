@@ -40,7 +40,7 @@ int
 Fixed2Shift( Fixed f );
 
 void
-Req( const char* text );
+Req( const char* text, ... );
 
 APTR
 AHIAllocVec( ULONG byteSize, ULONG requirements );

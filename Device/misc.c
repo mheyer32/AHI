@@ -23,6 +23,8 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
+#include <stdarg.h>
+
 #include <exec/lists.h>
 #include <exec/nodes.h>
 #include <powerup/ppclib/memory.h>
@@ -93,7 +95,7 @@ Fixed2Shift( Fixed f )
 ******************************************************************************/
 
 void
-Req( const char* text )
+Req( const char* text, ... )
 {
   struct EasyStruct es = 
   {
@@ -104,7 +106,13 @@ Req( const char* text )
     "OK"
   };
 
-  EasyRequest( NULL, &es, NULL );
+  va_list ap;
+
+  va_start( ap, &text );
+
+  EasyRequestArgs( NULL, &es, NULL, ap );
+  
+  va_end( ap );
 }
 
 /******************************************************************************
