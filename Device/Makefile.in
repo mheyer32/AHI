@@ -46,7 +46,7 @@ RANLIB		= ppc-amigaos-ranlib
 CFLAGS		= @CFLAGS@ -O3 -mcpu=$(CPU) -DCPU=\"$(CPU)\"
 ASFLAGS		= @ASFLAGS@ -m$(CPU) -mregnames --defsym CPU=$(CPU)
 LDFLAGS		= -nostartfiles -nostdlib -r 
-LIBS		=
+LIBS		= -lgcc
 
 TARGET		= ahi.elf.$(CPU)
 

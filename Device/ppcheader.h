@@ -35,6 +35,8 @@ struct WarpUpContext
   void*               XLock;
   struct Hook*        Hook;
   void*	              Dst;
+  void*               MixBuffer;
+  int                 MixLongWords;
 };
 
 #endif /* _PPCHEADER_H_ */
