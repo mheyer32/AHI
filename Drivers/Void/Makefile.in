@@ -133,12 +133,12 @@ gatestubs1.o:	gatestubs1.c
 
 gatestubs2.c:	lib.fd lib_protos.h
 	$(FD2INLINE) --mode=gatestubs --gateprefix=gw --libprefix=_ \
-	             --local $(FD2INLINE_TARGET) \
+	             $(FD2INLINE_TARGET) \
 	             $^ -o $@
 
 gatestubs2.h:	lib.fd lib_protos.h
 	$(FD2INLINE) --mode=gateproto --gateprefix=gw --libprefix=_ \
-	             --local $(FD2INLINE_TARGET) \
+	             $(FD2INLINE_TARGET) \
 	             $^ -o $@
 
 version.h:	version.rev version.date
