@@ -343,6 +343,16 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddLongsMonoPtr;
             break;
 
+          case AHIST_L7_1:
+          case AHIST_BW|AHIST_L7_1:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = Add71MonoBPtr;
+            else
+              *AddRoutine = Add71MonoPtr;
+            break;
+
           default:
             *ScaleLeft  = 0;
             *ScaleRight = 0;
@@ -415,6 +425,16 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddLongsStereoBPtr;
             else
               *AddRoutine = AddLongsStereoPtr;
+            break;
+
+          case AHIST_L7_1:
+          case AHIST_BW|AHIST_L7_1:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = Add71StereoBPtr;
+            else
+              *AddRoutine = Add71StereoPtr;
             break;
 
           default:

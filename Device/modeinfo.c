@@ -549,7 +549,9 @@ _AHI_GetAudioAttrsA( ULONG                    id,
               break;
 // Booleans that defaults to TRUE
             case AHIDB_PingPong:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,TRUE,dbtags,audioctrl);
+              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,
+				  audioctrl->ahiac_BuffType != AHIST_L7_1,
+				  dbtags,audioctrl);
               break;
 // Tags from the database.
             default:
