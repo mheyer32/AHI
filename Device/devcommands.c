@@ -125,7 +125,7 @@ ULONG
 DevAbortIO( struct AHIRequest* ioreq,
             struct AHIBase*    AHIBase )
 {
-  ULONG rc = NULL;
+  ULONG rc = 0;
   struct AHIDevUnit *iounit;
   
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
@@ -245,7 +245,7 @@ TermIO ( struct AHIRequest *ioreq,
     KPrintF("Terminating IO Request 0x%08lx", (ULONG) ioreq);
   }
 
-  if(ioreq->ahir_Extras != NULL)
+  if(ioreq->ahir_Extras != 0)
   {
     int  sound  = GetExtras(ioreq)->Sound;
     APTR extras = (APTR) ioreq->ahir_Extras;
@@ -256,7 +256,7 @@ TermIO ( struct AHIRequest *ioreq,
       iounit->Sounds[sound] = SOUND_FREE;
     }
 
-    ioreq->ahir_Extras = NULL;
+    ioreq->ahir_Extras = 0;
     FreeVec( extras );
   }
 
@@ -295,7 +295,7 @@ PerformIO ( struct AHIRequest *ioreq,
   ioreq->ahir_Std.io_Error = 0;
 
   // Just to make sure TermIO won't free a bad address
-  ioreq->ahir_Extras = NULL;
+  ioreq->ahir_Extras = 0;
 
   switch(ioreq->ahir_Std.io_Command)
   {
@@ -405,7 +405,7 @@ commandlist[] =
   CMD_STOP,
   CMD_START,
   CMD_FLUSH,
-  NULL
+  0
 };
 
 static void
@@ -865,7 +865,7 @@ WriteCmd ( struct AHIRequest *ioreq,
 
   ioreq->ahir_Extras = (ULONG) AllocVec(sizeof(struct Extras), MEMF_PUBLIC|MEMF_CLEAR);
 
-  if(ioreq->ahir_Extras == NULL)
+  if(ioreq->ahir_Extras == 0)
   {
     error = AHIE_NOMEM;
   }
@@ -1258,7 +1258,7 @@ NewWriter ( struct AHIRequest *ioreq,
                   AHIP_LoopOffset,    ioreq->ahir_Std.io_Actual,
                   AHIP_LoopLength,    ioreq->ahir_Std.io_Length - 
                                       ioreq->ahir_Std.io_Actual,
-                  AHIP_EndChannel,    NULL,
+                  AHIP_EndChannel,    0,
                   TAG_DONE);
             }
             else
@@ -1434,7 +1434,7 @@ PlayRequest ( int channel,
       AHIP_Sound,         GetExtras(ioreq)->Sound,
       AHIP_Offset,        ioreq->ahir_Std.io_Actual,
       AHIP_Length,        ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual,
-      AHIP_EndChannel,    NULL,
+      AHIP_EndChannel,    0,
       TAG_DONE);
 
   AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);

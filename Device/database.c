@@ -578,7 +578,7 @@ LoadModeFile( UBYTE*          name,
     Debug_LoadModeFile(name);
   }
 
-  SetIoErr(NULL);
+  SetIoErr(0);
 
   fib = AllocDosObject(DOS_FIB, TAG_DONE);
 
@@ -618,7 +618,7 @@ LoadModeFile( UBYTE*          name,
           }
           if(IoErr() == ERROR_NO_MORE_ENTRIES)
           {
-            SetIoErr(NULL);
+            SetIoErr(0);
           }
 
           CurrentDir(thisdir);
