@@ -289,7 +289,8 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   }
   else
   {
-    CausePPCInterrupt();
+//kprintf( "." );
+//    CausePPCInterrupt();
   }
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
@@ -451,13 +452,13 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
             { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
           };
 
-          if( AHIGetELFSymbol( "WarpInit", args.PP_Code ) )
+          if( AHIGetELFSymbol( "WarpInit", &args.PP_Code ) )
           {
             int status;
 
-            status = RunPPC( &args );
+//            status = RunPPC( &args );
             
-            if( status == PPERR_SUCCESS )
+//            if( status == PPERR_SUCCESS )
             {
               rc = TRUE;
             }
