@@ -47,7 +47,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 # Files
 ########################################
 
-OBJECTS		+= library.o gatestubs1.o gatestubs2.o
+OBJECTS		+= library.o gatestubs.o
 
 
 #
@@ -64,7 +64,7 @@ mostlyclean:
 	$(RM) $(DRIVER) $(MODEFILE) *.o *.a *.bak *~ \#*\# core Makefile.dep
 
 clean:		mostlyclean
-	$(RM) version.h gatestubs1.c gatestubs1.h gatestubs2.c gatestubs2.h
+	$(RM) version.h gatestubs.c gatestubs.h
 
 distclean:	clean
 	$(RM) Makefile
@@ -114,24 +114,16 @@ $(MODEFILE):	$(MODEFILE).o
 $(MODEFILE).o:	MODEFILE.s $(MODEFILE).s
 	gasp  $^ | $(AS) $(ASFLAGS) -o $@
 
-gatestubs1.c:	$(top_srcdir)/Include/SFD/ahi_sub_lib.sfd
+gatestubs.c:	$(top_srcdir)/Include/SFD/ahi_sub_lib.sfd
 	$(SFDC) --mode=gatestubs --gateprefix=gw --libprefix=_ --libarg=last \
-	        --target=$(host) $^ -o $@
+	        --addvectors=library --target=$(host) $^ -o $@
 
-gatestubs1.h:	$(top_srcdir)/Include/SFD/ahi_sub_lib.sfd
+gatestubs.h:	$(top_srcdir)/Include/SFD/ahi_sub_lib.sfd
 	$(SFDC) --mode=gateproto --gateprefix=gw --libprefix=_ --libarg=last \
-	        --target=$(host) $^ -o $@
+	        --addvectors=library --target=$(host) $^ -o $@
 
-gatestubs1.o:	gatestubs1.c
+gatestubs.o:	gatestubs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)
-
-gatestubs2.c:	lib.sfd
-	$(SFDC) --mode=gatestubs --gateprefix=gw --libprefix=_ --libarg=last \
-	        --target=$(host) $^ -o $@
-
-gatestubs2.h:	lib.sfd
-	$(SFDC) --mode=gateproto --gateprefix=gw --libprefix=_ --libarg=last \
-	        --target=$(host) $^ -o $@
 
 camdstubs.c:	camd_drv.sfd
 	$(SFDC) --mode=gatestubs --gateprefix=gw --libprefix=_ --libarg=last \
@@ -170,7 +162,7 @@ depend:
 	$(MAKE) Makefile.dep
 
 Makefile.dep:	$(DEPENDENCIES) version.h \
-		gatestubs1.c gatestubs2.c gatestubs1.h gatestubs2.h
+		gatestubs.c gatestubs.h
 	@echo Making $@
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 
