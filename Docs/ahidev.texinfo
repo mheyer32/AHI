@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.0  2000/11/28 00:16:18  lcs
+Bumped CVS revision to 5.0.
+
 Revision 4.15  1999/09/19 14:05:03  lcs
 Some polishing.
 

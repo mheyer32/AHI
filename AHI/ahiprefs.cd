@@ -3,6 +3,9 @@
 ;
 ; $Id$
 ; $Log$
+; Revision 5.0  2000/11/28 00:13:23  lcs
+; Bumped CVS revision to 5.0.
+;
 ; Revision 4.6  1999/08/29 23:43:49  lcs
 ; Added support for ahigp_AntiClickTime.
 ;

@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.0  2000/11/28 00:13:23  lcs
+ * Bumped CVS revision to 5.0.
+ *
  * Revision 4.12  2000/06/05 20:28:36  lcs
  * Fixed configure problems with separate build directories.
  *

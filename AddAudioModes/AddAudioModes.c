@@ -19,6 +19,9 @@
 
 /* $Id$
 * $Log$
+* Revision 5.0  2000/11/28 00:14:39  lcs
+* Bumped CVS revision to 5.0.
+*
 * Revision 4.6  1999/04/22 19:41:29  lcs
 * Removed SAS/C smakefile.
 * I had the copyright date screwed up: Changed to 1996-1999 (which is only
