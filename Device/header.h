@@ -25,10 +25,21 @@
 
 #include <exec/types.h>
 
+enum MixBackend_t
+{
+  MB_NATIVE,
+  MB_POWERUP,
+  MB_WARPUP
+};
+
+
 extern const ULONG		 DriverVersion;
 extern const ULONG		 Version;
 extern const ULONG		 Revision;
 extern const char		 DevName[];
 extern const char		 IDString[];
+
+extern enum MixBackend_t	 MixBackend;
+extern void			*PPCObject;
 
 #endif /* _HEADER_H_ */

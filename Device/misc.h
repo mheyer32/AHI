@@ -52,7 +52,7 @@ void*
 AHILoadObject( const char* objname );
 
 void
-AHIUnLoadObject( void* obj );
+AHIUnloadObject( void* obj );
 
 BOOL
 AHIGetELFSymbol( const char* name,

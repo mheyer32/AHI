@@ -122,33 +122,38 @@ Req( const char* text, ... )
 APTR
 AHIAllocVec( ULONG byteSize, ULONG requirements )
 {
-  if( PPCLibBase != NULL )
+  switch( MixBackend )
   {
-    return PPCAllocVec( byteSize, requirements );
-  }
-  else if( PowerPCBase != NULL )
-  {
-    ULONG new_requirements;
+    case MB_NATIVE:
+      return AllocVec( byteSize, requirements & ~MEMF_PPCMASK );
 
-    new_requirements = requirements & ~MEMF_PPCMASK;
+    case MB_POWERUP:
+      return PPCAllocVec( byteSize, requirements );
 
-    if( requirements & MEMF_WRITETHROUGHPPC )
-      new_requirements |= MEMF_WRITETHROUGH;
+    case MB_WARPUP:
+    {
+      ULONG new_requirements;
 
-    if( requirements & MEMF_NOCACHEPPC )
-      new_requirements |= MEMF_CACHEOFF;
+      new_requirements = requirements & ~MEMF_PPCMASK;
+
+      if( requirements & MEMF_WRITETHROUGHPPC )
+        new_requirements |= MEMF_WRITETHROUGH;
+
+      if( requirements & MEMF_NOCACHEPPC )
+        new_requirements |= MEMF_CACHEOFF;
       
-    if( requirements & MEMF_NOCACHESYNCPPC )
-      new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED );
+      if( requirements & MEMF_NOCACHESYNCPPC )
+        new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED );
 
-    if( requirements & MEMF_NOCACHESYNCM68K )
-      new_requirements |= MEMF_CHIP;            // Sucks!
+      if( requirements & MEMF_NOCACHESYNCM68K )
+        new_requirements |= MEMF_CHIP;            // Sucks!
 
-    return AllocVec32( byteSize, new_requirements );
-  }
-  else
-  {
-    return AllocVec( byteSize, requirements & ~MEMF_PPCMASK );
+      return AllocVec32( byteSize, new_requirements );
+    }
+
+    default:
+      Req( "Internal error: Unknown MixBackend in AHIAllocVec()." );
+      return NULL;
   }
 }
 
@@ -159,17 +164,23 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
 void
 AHIFreeVec( APTR memoryBlock )
 {
-  if( PPCLibBase != NULL )
+  switch( MixBackend )
   {
-    PPCFreeVec( memoryBlock );
-  }
-  else if( PowerPCBase != NULL )
-  {
-    FreeVec32( memoryBlock );
-  }
-  else
-  {
-    FreeVec( memoryBlock );
+    case MB_NATIVE:
+      FreeVec( memoryBlock );
+      break;
+
+    case MB_POWERUP:
+      PPCFreeVec( memoryBlock );
+      break;
+
+    case MB_WARPUP:
+      FreeVec32( memoryBlock );
+      break;
+
+    default:
+      Req( "Internal error: Unknown MixBackend in AHIFreeVec()." );
+      break;
   }
 }
 
@@ -181,19 +192,29 @@ AHIFreeVec( APTR memoryBlock )
 void*
 AHILoadObject( const char* objname )
 {
-  if( PPCLibBase != NULL )
+  switch( MixBackend )
   {
-    return PPCLoadObject( (char*) objname );
-  }
-  else
-  {
-    void* o;
+    case MB_NATIVE:
+      Req( "Internal error: Illegal MixBackend in AHILoadObject()" );
+      return NULL;
 
-    o = ELFLoadObject( objname );
-    CacheClearU();
+    case MB_POWERUP:
+      return PPCLoadObject( (char*) objname );
 
-    return o;
-  }
+    case MB_WARPUP:
+    {
+      void* o;
+
+      o = ELFLoadObject( objname );
+      CacheClearU();
+
+      return o;
+    }
+
+    default:
+      Req( "Internal error: Unknown MixBackend in AHILoadObject()." );
+      return NULL;
+  }    
 }
 
 /******************************************************************************
@@ -201,15 +222,25 @@ AHILoadObject( const char* objname )
 ******************************************************************************/
 
 void
-AHIUnLoadObject( void* obj )
+AHIUnloadObject( void* obj )
 {
-  if( PPCLibBase != NULL )
+  switch( MixBackend )
   {
-    PPCUnLoadObject( obj );
-  }
-  else
-  {
-    ELFUnLoadObject( obj );
+    case MB_NATIVE:
+      Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
+      break;
+
+    case MB_POWERUP:
+      PPCUnLoadObject( obj );
+      break;
+
+    case MB_WARPUP:
+      ELFUnLoadObject( obj );
+      break;
+
+    default:
+      Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
+      break;
   }
 }
 
@@ -223,30 +254,44 @@ AHIGetELFSymbol( const char* name,
 {
   BOOL rc = FALSE;
 
-  if( PPCLibBase != NULL )
+  switch( MixBackend )
   {
-    struct PPCObjectInfo oi =
-    {
-      0,
-      NULL,
-      PPCELFINFOTYPE_SYMBOL,
-      STT_SECTION,
-      STB_GLOBAL,
-      0
-    };
+    case MB_NATIVE:
+      Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
+      rc = FALSE;
+      break;
 
-    struct TagItem tag_done =
+    case MB_POWERUP:
     {
-      TAG_DONE, 0
-    };
+      struct PPCObjectInfo oi =
+      {
+        0,
+        NULL,
+        PPCELFINFOTYPE_SYMBOL,
+        STT_SECTION,
+        STB_GLOBAL,
+        0
+      };
 
-    oi.Name = (char*) name;
-    rc = PPCGetObjectAttrs( PPCObject, &oi, &tag_done );
-    *ptr = (void*) oi.Address;
-  }
-  else
-  {
-    rc = ELFGetSymbol( PPCObject, name, ptr );
+      struct TagItem tag_done =
+      {
+        TAG_DONE, 0
+      };
+
+      oi.Name = (char*) name;
+      rc = PPCGetObjectAttrs( PPCObject, &oi, &tag_done );
+      *ptr = (void*) oi.Address;
+      
+      break;
+    }
+
+    case MB_WARPUP:
+      rc = ELFGetSymbol( PPCObject, name, ptr );
+      break;
+
+    default:
+      Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
+
   }
 
   return rc;

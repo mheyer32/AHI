@@ -34,10 +34,12 @@
 #include <proto/ppc.h>
 
 #include "ahi_def.h"
-#include "version.h"
+#include "header.h"
 #include "device.h"
 #include "localize.h"
 #include "misc.h"
+
+#include "version.h"
 
 static BOOL
 OpenLibs ( void );
@@ -108,13 +110,15 @@ const ULONG			           Version        = VERSION;
 const ULONG			           Revision       = REVISION;
 
 const char DevName[]   = AHINAME;
-const char IDString[]  = "ahi.device " VERS "\r\n";
+const char IDString[]  = AHINAME " " VERS "\r\n";
+
 static const char VersTag[] =
- "$VER: ahi.device " VERS " ©1994-1999 Martin Blom. "
+ "$VER: " AHINAME " " VERS " ©1994-1999 Martin Blom. "
  CPU 
  "/PPC"
  " version.\r\n";
 
+enum MixBackend_t          MixBackend     = MB_NATIVE;
 
 /******************************************************************************
 ** Device code ****************************************************************
@@ -367,6 +371,7 @@ OpenLibs ( void )
     return FALSE;
   }
 
+  MixBackend = MB_NATIVE;
 
   /* PPC/PowerPC library loading
 
@@ -400,7 +405,6 @@ OpenLibs ( void )
                                              "ppc.library" );
   Permit();
 
-
   if( PowerPCBase != NULL 
       || ( PowerPCBase == NULL && PPCLibBase == NULL ) )
   {
@@ -423,6 +427,16 @@ OpenLibs ( void )
   {
     Req( "Need at least version 46.26 of 'ppc.library'." );
     return FALSE;
+  }
+
+  if( PPCLibBase != NULL )
+  {
+    MixBackend  = MB_POWERUP;
+  }
+  
+  if( PowerPCBase != NULL )
+  {
+    MixBackend  = MB_WARPUP;
   }
 
   if( PPCLibBase != NULL || PowerPCBase != NULL )
@@ -496,7 +510,7 @@ CloseLibs ( void )
 
   if( PPCObject != NULL )
   {
-    AHIUnLoadObject( PPCObject );
+    AHIUnloadObject( PPCObject );
   }
 
   CloseLibrary( PPCLibBase );
