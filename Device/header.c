@@ -937,7 +937,7 @@ CloseLibs ( void )
   FreeVec( TimerIO );
 
 
-  #ifdef __AMIGAOS4__
+#ifdef __AMIGAOS4__
   if (IIntuition)
   {
        DropInterface((struct Interface *) IIntuition );
@@ -982,7 +982,7 @@ CloseLibs ( void )
   {
        DropInterface((struct Interface *) IUtility );
   }
-  #endif
+#endif
 
 
   CloseLibrary( (struct Library *) LocaleBase );

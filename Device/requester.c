@@ -40,9 +40,11 @@ struct VSPrite;
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
+#endif
 #include <proto/ahi_sub.h>
 
 #include <math.h>
@@ -631,7 +633,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
  * (note that we don't rely on the ln_Succ pointer
  *  of a message after we have replied it)
  */
-static void StripIntuiMessages( struct MsgPort *mp, struct Window *win )
+static void StripIntuiMessagesAHI( struct MsgPort *mp, struct Window *win )
 {
     struct IntuiMessage *msg;
     struct Node *succ;
@@ -662,7 +664,7 @@ static void CloseWindowSafely( struct Window *win )
     /* send back any messages for this window 
      * that have not yet been processed
      */
-    StripIntuiMessages( win->UserPort, win );
+    StripIntuiMessagesAHI( win->UserPort, win );
 
     /* clear UserPort so Intuition will not free it */
     win->UserPort = NULL;
@@ -1380,7 +1382,6 @@ _AHI_AudioRequestA( struct AHIAudioModeRequester* req_in,
 
 
 // Scan audio database for modes and create list
-
   req->list=&list;
   NewList((struct List *)req->list);
   while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
@@ -1399,7 +1400,9 @@ _AHI_AudioRequestA( struct AHIAudioModeRequester* req_in,
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID=id;
+#ifndef __AMIGAOS4__
       Sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
+#endif
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
           AHIDB_Name, (ULONG) node->node.ln_Name,

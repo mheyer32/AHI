@@ -28,9 +28,11 @@
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
+#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
+#endif
 #include <proto/ahi_sub.h>
 
 #include "ahi_def.h"
@@ -447,6 +449,12 @@ _AHI_GetAudioAttrsA( ULONG                    id,
         stringlen=GetTagData(AHIDB_BufferLen,0,tags);
         if((AHIsubBase=OpenLibrary(((struct AHIPrivAudioCtrl *)audioctrl)->ahiac_DriverName,DriverVersion)))
         {
+#ifdef __AMIGAOS4__
+          struct AHIsubIFace *IAHIsub;
+          if ((IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) != NULL)
+          {
+#endif
+
           while((tag1=NextTagItem(&tstate)))
           {
             ptr=(ULONG *)tag1->ti_Data;
@@ -542,6 +550,14 @@ _AHI_GetAudioAttrsA( ULONG                    id,
               break;
             }
           }
+#ifdef __AMIGAOS4__
+          if (IAHIsub) {
+             DropInterface((struct Interface *) IAHIsub);
+             IAHIsub = NULL;
+             }
+          }
+#endif
+
         }
         else // no AHIsubBase
           rc=FALSE;

@@ -475,6 +475,7 @@ PrintTagList(struct TagItem *tags)
 ** Send debug to serial port **************************************************
 ******************************************************************************/
 
+#ifndef __AMIGAOS4__
 #if defined( __AROS__ ) && !defined( __mc68000__ )
 
 #include <aros/asmcall.h>
@@ -506,6 +507,7 @@ KPrintFArgs( UBYTE* fmt,
 {
   RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
 }
+#endif
 
 
 /******************************************************************************
