@@ -1,5 +1,7 @@
 2003-07-24  Martin Blom  <martin@blom.org>
 
+	* Nuked files that are now auto-generated (FD and clib includes).
+
 	* No separate SAS/C and Storm C files anymore. The proto and
 	pragma files work for all compilers now.
 
