@@ -26,6 +26,7 @@
 #include <config.h>
 
 #include <exec/types.h>
+#include <dos/dos.h>
 #include "addroutines.h"
 
 struct AHIBase;
