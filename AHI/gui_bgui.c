@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.4  1997/04/27 16:16:06  lcs
+ * Added "Mastervolume with(out) clipping".
+ *
  * Revision 4.3  1997/04/09 03:00:06  lcs
  * Fixed globaloptions and "Restore"
  *
@@ -57,7 +60,9 @@ enum actionIDs {
   SHOWID_FREQ, SHOWID_CHANNELS, SHOWID_OUTVOL, SHOWID_MONVOL, SHOWID_GAIN,
   SHOWID_INPUT, SHOWID_OUTPUT,
 
-  ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CPULIMIT, SHOWID_CPULIMIT,
+  ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CLIPMV,
+  ACTID_CPULIMIT, SHOWID_CPULIMIT,
+  
 
   ACTID_COUNT
 };
@@ -133,6 +138,12 @@ static char * SurroundLabels[] = {
   NULL
 };
 
+static char * ClipMVLabels[] = {
+  NULL,  /* Without clipping */
+  NULL,  /* With clipping */
+  NULL
+};
+
 /***** Local function to update the strings above ****************************/
 
 static void UpdateStrings(void) {
@@ -186,9 +197,8 @@ static void UpdateStrings(void) {
   EchoLabels[2] = (char *) msgEchoDisabled;
   SurroundLabels[0] = (char *) msgSurroundEnabled;
   SurroundLabels[1] = (char *) msgSurroundDisabled;
-
-
-
+  ClipMVLabels[0] = (char *) msgMVNoClip;
+  ClipMVLabels[1] = (char *) msgMVClip;
 
 }
 
@@ -253,6 +263,8 @@ static void GUINewSettings(void) {
   SetGadgetAttrs((struct Gadget *) Window_Objs[ACTID_ECHO], window, NULL,
       CYC_Active, (globalprefs.ahigp_DisableEcho ? 2 : 0) | 
                   (globalprefs.ahigp_FastEcho    ? 1 : 0),     TAG_DONE);
+  SetGadgetAttrs((struct Gadget *) Window_Objs[ACTID_CLIPMV], window, NULL,
+      CYC_Active, globalprefs.ahigp_ClipMasterVolume, TAG_DONE);
   SetGadgetAttrs((struct Gadget *) Window_Objs[ACTID_CPULIMIT], window, NULL,
       SLIDER_Level, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16, TAG_DONE);
 
@@ -850,19 +862,25 @@ BOOL BuildGUI(char *screenname) {
                 LAB_Place,      PLACE_LEFT,
                 CYC_Labels,     SurroundLabels,
                 CYC_Active,     globalprefs.ahigp_DisableSurround,
-//                CYC_PopActive,  PopUpMenus,
-//                CYC_Popup,      PopUpMenus,
                 GA_ID,          ACTID_SURROUND,
               EndObject, FixMinHeight, EndMember,
 
-                StartMember, ar[ACTID_CPULIMIT] = SliderObject,
-                  LAB_Label,    (char *) msgGlobOptCPULimit,
-                  SLIDER_Min,   0,
-                  SLIDER_Max,   100,
-                  SLIDER_Level, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16,
-                  PGA_NewLook, TRUE,
-                  GA_ID, ACTID_CPULIMIT,
-                EndObject, EndMember,
+              StartMember, ar[ACTID_CLIPMV] = CycleObject,
+                LAB_Label,      (char *) msgGlobOptMasterVol,
+                LAB_Place,      PLACE_LEFT,
+                CYC_Labels,     ClipMVLabels,
+                CYC_Active,     globalprefs.ahigp_ClipMasterVolume,
+                GA_ID,          ACTID_CLIPMV,
+              EndObject, FixMinHeight, EndMember,
+
+              StartMember, ar[ACTID_CPULIMIT] = SliderObject,
+                LAB_Label,    (char *) msgGlobOptCPULimit,
+                SLIDER_Min,   0,
+                SLIDER_Max,   100,
+                SLIDER_Level, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16,
+                PGA_NewLook, TRUE,
+                GA_ID, ACTID_CPULIMIT,
+              EndObject, EndMember,
 
               EndObject /* vgroup */, EndMember,
 
@@ -1172,12 +1190,15 @@ void EventLoop(void) {
           case ACTID_SURROUND:
           case ACTID_ECHO:
           case ACTID_CPULIMIT:
+          case ACTID_CLIPMV:
           {
             ULONG debug = AHI_DEBUG_NONE, surround = FALSE, echo = 0, cpu = 90;
+            ULONG clip = FALSE;
 
             GetAttr( CYC_Active,   Window_Objs[ACTID_DEBUG],    &debug);
             GetAttr( CYC_Active,   Window_Objs[ACTID_SURROUND], &surround);
             GetAttr( CYC_Active,   Window_Objs[ACTID_ECHO],     &echo);
+            GetAttr( CYC_Active,   Window_Objs[ACTID_CLIPMV],   &clip);
             GetAttr( SLIDER_Level, Window_Objs[ACTID_CPULIMIT], &cpu);
 
             globalprefs.ahigp_DebugLevel      = debug;
@@ -1185,6 +1206,8 @@ void EventLoop(void) {
             globalprefs.ahigp_DisableEcho     = (echo == 2);
             globalprefs.ahigp_FastEcho        = (echo == 1);
             globalprefs.ahigp_MaxCPU = (cpu << 16) / 100;
+            globalprefs.ahigp_ClipMasterVolume= clip;
+
             break;
           }
         }

@@ -3,6 +3,9 @@
 ;
 ; $Id$
 ; $Log$
+; Revision 4.5  1997/04/27 16:16:06  lcs
+; Added "Mastervolume with(out) clipping".
+;
 ; Revision 4.4  1997/04/23 21:08:31  lcs
 ; Removed (Disabled)
 ;
@@ -210,3 +213,14 @@ Unable to find `%s'!
 ;
 msgTextNoOpen (//)
 Unable to open `%s´ version %ld.
+;
+; *** Additions
+;
+msgGlobOptMasterVol (//)
+_Master volume
+;
+msgMVNoClip (//)
+Without clipping
+;
+msgMVClip (//)
+With clipping
