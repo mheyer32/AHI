@@ -132,3 +132,9 @@ Felvétel duplexben
 msgReqInfoMultiChannel
 
 ; 7.1 multichannel
+msgFreqFmt
+
+; %lu Hz
+;
+; ***NEW***
+;

@@ -328,3 +328,15 @@ msgSM6dB
 
 ; -6 dB
 ;
+msgFreqFmt
+
+; %ld Hz
+;
+msgChanFmt
+
+; %ld
+;
+msgVolFmt
+
+; %+4.1f dB
+;

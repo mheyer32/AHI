@@ -79,5 +79,7 @@ extern const APTR _msgReqInfoRecordFull;
 #define msgReqInfoRecordFull ((APTR) &_msgReqInfoRecordFull)
 extern const APTR _msgReqInfoMultiChannel;
 #define msgReqInfoMultiChannel ((APTR) &_msgReqInfoMultiChannel)
+extern const APTR _msgFreqFmt;
+#define msgFreqFmt ((APTR) &_msgFreqFmt)
 
 #endif /*   !ahi_CAT_H  */

@@ -1,5 +1,11 @@
 2005-01-12  Martin Blom  <martin@blom.org>
 
+	* Added 'FILL' switch to FlexCat when generating the catalogs in
+	order to make missing strings use the built-in English defaults
+	instead of nothing. [Pierre Giroux]
+
+	* Localized Hz, dB and the number of channels. [Michael Malyshev]
+
 	* Only try to build emu10kx.audio for AROS if <asm/io.h> is found.
 
 2005-01-11  Martin Blom  <martin@blom.org>

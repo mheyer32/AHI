@@ -31,7 +31,7 @@ struct FC_String {
     LONG id;
 };
 
-extern struct FC_String ahiprefs_Strings[70];
+extern struct FC_String ahiprefs_Strings[73];
 
 #define msgMenuProject (ahiprefs_Strings[0].msg)
 #define _msgMenuProject (ahiprefs_Strings+0)
@@ -173,5 +173,11 @@ extern struct FC_String ahiprefs_Strings[70];
 #define _msgSM3dB (ahiprefs_Strings+68)
 #define msgSM6dB (ahiprefs_Strings[69].msg)
 #define _msgSM6dB (ahiprefs_Strings+69)
+#define msgFreqFmt (ahiprefs_Strings[70].msg)
+#define _msgFreqFmt (ahiprefs_Strings+70)
+#define msgChanFmt (ahiprefs_Strings[71].msg)
+#define _msgChanFmt (ahiprefs_Strings+71)
+#define msgVolFmt (ahiprefs_Strings[72].msg)
+#define _msgVolFmt (ahiprefs_Strings+72)
 
 #endif
