@@ -30,9 +30,7 @@ to play, like Gianna Sisters, Rally Speedway and Commando?
 
 Things still to do before the full release
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
- · Write the hifi mixing routines for the m68k.
  · Write assembler echo and master volume (m68k and ppc).
- · Write echo in non-hifi modes.
  · Add non-mixing modes for so-called "serious" music software and fast
    streaming.
  · Finish the packaging.  This includes installer script, updated
