@@ -159,7 +159,7 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 
 
 bindist-install: $(TARGET)
-	$(INSTALL_PROGRAM) $(TARGET) $(DEVSDIR)/$(TARGET)
+	$(INSTALL_PROGRAM) --strip $(TARGET) $(DEVSDIR)/$(TARGET)
 
 
 install:	$(TARGET)

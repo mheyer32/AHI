@@ -157,7 +157,7 @@ SetVol ( REG(d0, UWORD channel),
 
   AHIsub_Disable(&audioctrl->ac);
 
-  cd->cd_NextVolumeLeft  = ((volume >> 1) * ((0x10000 - pan) >> 1)) >> (16 - 2);
+  cd->cd_NextVolumeLeft  = ((volume >> 1) * ((0x10000 - abs(pan)) >> 1)) >> (16 - 2);
   cd->cd_NextVolumeRight = ((volume >> 1) * (pan >> 1)) >> (16 - 2);
 
   if(flags & AHISF_IMM)
