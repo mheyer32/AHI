@@ -53,9 +53,9 @@ CloseLibs ( void );
 ******************************************************************************/
 
 #if defined( __amithlon__ )
-__asm( "
-         .text;
-         .byte 0x4e, 0xfa, 0x00, 0x03
+__asm( "\
+         .text;\
+         .byte 0x4e, 0xfa, 0x00, 0x03\
          jmp _start" );
 #endif
 
