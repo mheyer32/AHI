@@ -41,6 +41,7 @@ extern const UWORD InputBits[];
 /* Public functions in main.c */
 int emu10k1_init(struct emu10k1_card *card);
 void emu10k1_cleanup(struct emu10k1_card *card);
+void AddResetHandler(struct EMU10kxData* dd);
 
 /******************************************************************************
 ** DriverData allocation ******************************************************
@@ -181,7 +182,6 @@ AllocDriverData( struct pci_dev*    dev,
 
   // No attenuation and natural tone for all outputs
   emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-  emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
   emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
   emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
 
@@ -202,8 +202,17 @@ AllocDriverData( struct pci_dev*    dev,
   if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
   {
     sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
+
+    // Disable center/LFE to front speakers (Not headphone; it's actially surround mix.)
+    emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL, AC97_MUTE | 0x0808 ); 
+
+    // No attenuation for center/LFE
     emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
   }
+  
+#ifdef __AMIGAOS4__
+  AddResetHandler(dd);
+#endif
   
   return dd;
 }
@@ -434,3 +443,28 @@ SamplerateToLinearPitch( ULONG samplingrate )
   samplingrate = (samplingrate << 8) / 375;
   return (samplingrate >> 1) + (samplingrate & 1);
 }
+
+
+#ifdef __AMIGAOS4__
+static ULONG ResetHandler(struct ExceptionContext *ctx, struct ExecBase *pExecBase, struct EMU10kxData* dd)
+{
+    emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
+    emu10k1_voices_stop( dd->voices, dd->voices_started );
+
+    return 0UL;
+}
+
+
+void AddResetHandler(struct EMU10kxData* dd)
+{
+    static struct Interrupt interrupt;
+
+    interrupt.is_Code = (void (*)())ResetHandler;
+    interrupt.is_Data = (APTR) dd;
+    interrupt.is_Node.ln_Pri  = 0;
+    interrupt.is_Node.ln_Type = NT_EXTINTERRUPT;
+    interrupt.is_Node.ln_Name = "reset handler";
+
+    AddResetCallback( &interrupt );
+}
+#endif

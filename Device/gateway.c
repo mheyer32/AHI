@@ -260,7 +260,9 @@ m68k_IndexToFrequency( struct Gadget *gad, WORD level )
 AROS_UFH0( void,
 	   m68k_DevProc )
 {
+  AROS_USERFUNC_INIT
   DevProc();
+  AROS_USERFUNC_EXIT
 }
 
 
@@ -313,7 +315,7 @@ m68k_DevProc( void )
 
 /* m68k_PreTimer  ************************************************************/
 
-BOOL ASMCALL
+BOOL
 m68k_PreTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
 {
   return PreTimer( audioctrl );

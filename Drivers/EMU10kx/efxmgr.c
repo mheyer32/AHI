@@ -91,12 +91,14 @@ void emu10k1_set_control_gpr(struct emu10k1_card *card, int addr, s32 val, int f
 	if (card->is_audigy) {
 		sblive_writeptr(card, A_GPR_BASE + addr, 0, val);
 	} else {
+#ifndef AHI
 		if (flag)
 			val += sblive_readptr(card, GPR_BASE + addr, 0);
 		if (val > mgr->gpr[addr].max)
 			val = mgr->gpr[addr].max;
 		else if (val < mgr->gpr[addr].min)
 			val = mgr->gpr[addr].min;
+#endif
 		sblive_writeptr(card, GPR_BASE + addr, 0, val);
 	}
 	
