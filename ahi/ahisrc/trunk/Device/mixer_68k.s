@@ -1,5 +1,9 @@
-* $Id$
+;/* $Id$
 * $Log$
+* Revision 4.12  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+* Renamed from addroutines.a.
+*
 * Revision 4.11  1997/11/23 13:03:06  lcs
 * Fixed a bug in SelectAddRoutine() that caused distortion when both
 * HiFi and Tables was selected.
@@ -8,81 +12,43 @@
 * Bug fixes in the HiFi routines. There was also debug code left (!),
 * that disabled stereo.
 *
-* Revision 4.9  1997/07/30 00:04:15  lcs
-* Removed distortion when playing sounds backwards in HiFi mode.
-*
-* Revision 4.8  1997/07/27 18:07:52  lcs
-* Fixed an overflow error in the HiFi-routines.
-*
-* Revision 4.7  1997/07/15 00:52:05  lcs
-* This is the second bugfix release of AHI 4.
-*
-* Revision 4.6  1997/06/22 18:41:59  lcs
-* Bug fixes in the "normal" mixing routines (not fast or hifi).
-* Much faster HiFi routines.
-*
-* Revision 4.5  1997/06/02 18:15:02  lcs
-* Added optional clipping when using master volume > 100%.
-*
-* Revision 4.4  1997/04/22 01:35:21  lcs
-* This is release 4! Finally.
-*
-* Revision 4.3  1997/04/14 01:50:39  lcs
-* AHIST_INPUT still doesn't work...
-*
-* Revision 4.2  1997/04/09 02:43:15  lcs
-* Bug in mixing routines fixed (playing stereo words on mono channel)
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.14  1997/03/25 22:27:49  lcs
-* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
-*
-* Revision 1.13  1997/03/24 18:03:10  lcs
-* First steps for AHIST_INPUT
-*
-* Revision 1.11  1997/03/22 18:58:07  lcs
-* --background-- updated + some work on dspecho
-*
-* Revision 1.9  1997/02/18 22:26:49  lcs
-* Faster mixing routines for 16 bit samples when using tables.
-*
-* Revision 1.8  1997/02/01 21:54:53  lcs
-* Max freq. for AHI_SetFreq() uncreased to more than one million! ;)
-*
-* Revision 1.7  1997/02/01 19:44:18  lcs
-* Added stereo samples
-*
-* Revision 1.6  1997/01/27 01:37:17  lcs
-* Even more bugs in the 16 bit routines found (68k version this time).
-*
-* Revision 1.5  1997/01/27 00:27:02  lcs
-* Fixed a bug in the 16 bit routines (was lsr instead of asr)
-*
-* Revision 1.4  1997/01/15 14:59:50  lcs
-* Removed most of the unsigned addroutines
-*
-* Revision 1.3  1997/01/04 20:25:02  lcs
-* ...I forgot: AHIET_CHANNELINFO effect added
-*
-* Revision 1.2  1997/01/04 20:19:56  lcs
-* Changed the AHI_DEBUG levels
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
-*
 
+	IF	0
+
+*******************************************************************************
+** C function prototypes ******************************************************
+*******************************************************************************
+
+*/
+
+#include <CompilerSpecific.h>
+#include "ahi_def.h"
+
+ASMCALL void initcode ( REG(a6, struct ExecBase *SysBase) ) {}
+ASMCALL BOOL InitMixroutine ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
+ASMCALL void calcMasterVolumeTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+ASMCALL BOOL initSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+ASMCALL void calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+ASMCALL BOOL initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+ASMCALL void calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+
+ASMCALL void SelectAddRoutine ( REG(d0, Fixed VolumeLeft), REG(d1, Fixed VolumeRight), REG(d2, ULONG SampleType), REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a0, ULONG *ScaleLeft), REG(a1, ULONG *ScaleRight), REG(a3, APTR AddRoutine) ) {}
+
+ASMCALL void Mix ( void ) {}
+ASMCALL ULONG CalcSamples ( REG(d0, ULONG AddI), REG(d1, UWORD AddF ), REG(d2, ULONG Type), REG(d3, ULONG LastOffsetI), REG(d4, UWORD LastOffsetF), REG(d5, ULONG OffsetI), REG(d6, UWORD OffsetF) ) {}
+
+;/*     Comment terminated at the end of the file!
+
+	ENDC	* IF 0
+
+*******************************************************************************
+** Assembly code **************************************************************
+*******************************************************************************
 
  IFD	_PHXASS_
 
 DEBUG	EQU	0	;no debug 
 ALIGN	EQU	0	;move code to even 128 bit boundary
-
- ELSE
-
-DEBUG	EQU	1	;debug when using asmone!
-ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
  ENDC
 
 	include	exec/exec.i
@@ -93,16 +59,18 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 	include	ahi_def.i
 	include	dsp.i
 
-	XDEF	initcode
+	XDEF	_initcode
 
-	XDEF	calcMasterVolumeTable
+	XDEF	_InitMixroutine
+
+	XDEF	_calcMasterVolumeTable
 	XDEF	_initSignedTable
-	XDEF	calcSignedTable
+	XDEF	_calcSignedTable
 	XDEF	_initUnsignedTable
-	XDEF	calcUnsignedTable
-	XDEF	SelectAddRoutine
+	XDEF	_calcUnsignedTable
+	XDEF	_SelectAddRoutine
 	XDEF	_Mix
-	XDEF	CalcSamples
+	XDEF	_CalcSamples
 
 	XREF	_UtilityBase
 	XREF	_Fixed2Shift
@@ -113,231 +81,9 @@ TABLESHIFT	EQU	11	(TABLEMAXVOL<<TABLESHIFT == 0x10000)
 
 ;-----------------------------------------
 
- IFNE	DEBUG
-SAMPLES	=30
-BUFFER	=(SAMPLES*2+7)&(~8)
-
- 	include	devices/timer.i
- 	include	lvo/timer_lib.i
-J:
- 	base	exec
-	bsr	initcode
-	call	CacheClearU
-
-	lea	audioctrl(pc),a2
-	move.l	#AHIACF_STEREO|AHIACF_HIFI,ahiac_Flags(a2)
-	move.w	#1,ahiac_Channels(a2)
-	move.w	ahiac_Channels(a2),ahiac_Channels2(a2)
-	move.l	#SAMPLES,ahiac_BuffSamples(a2)
-	move.l	#BUFFER,ahiac_BuffSize(a2)
-	move.l	ahiac_BuffSize(a2),ahiac_BuffSizeNow(a2)
-	move.l	#$10000,ahiac_MasterVolume(a2)
-	move.l	#channeldatas,ahiac_ChannelDatas(a2)
-	move.l	#soundfunc,ahiac_SoundFunc(a2)
-	bsr	_initSignedTable
-	bsr	_initUnsignedTable
-
-	move.l	ahiac_ChannelDatas(a2),a5
-
-	move.l	cd_AddI(a5),d0
-	move.w	cd_AddF(a5),d1
-	move.l	cd_Type(a5),d2
-	move.l	cd_LastOffsetI(a5),d3
-	move.w	cd_LastOffsetF(a5),d4
-	move.l	cd_OffsetI(a5),d5
-	move.w	cd_OffsetF(a5),d6
-	bsr	CalcSamples
-	move.l	d0,cd_Samples(a5)
-
-;	lea	buffer(pc),a1
-;	bsr	Mix
-
-;	move.l	#$10000,d0
-;	move.l	#$10000,d1
-;	lea	audioctrl(pc),a2
-;;	bsr	FixVolWordSVPH
-;;	add.w	(a0),a0
-;	move.l	#AHIST_M8S,d2
-;	bsr	SelectAddRoutine
-;	move.l	d2,a0
-;
-;	move.l	d1,d2
-;	move.l	d0,d1
-;	move.l	#SAMPLES,d0
-;	moveq	#0,d3
-;	moveq	#0,d4
-;	moveq	#0,d5
-;	move.l	#$4000,d6
-;	lea	audioctrl(pc),a2
-;	lea	sample(pc),a3
-;	lea	buffer(pc),a4
-;
-;	base	exec
-;	call	Disable
-;
-;	pushm	d0-d1
-;	bsr	ReadEClock
-;	move.l	d0,eclock1
-;	popm	d0-d1
-;
-;	jsr	(a0)
-;
-;	bsr	ReadEClock
-;	move.l	d0,eclock2
-;
-;	base	exec
-;	call	Enable
-
-exit:
-	base	exec
-
-	lea	audioctrl(pc),a2
-	move.l	ahiac_MultTableS(a2),a1
-	clr.l	ahiac_MultTableS(a2)
-	call	FreeVec
-
-	move.l	ahiac_MultTableU(a2),a1
-	clr.l	ahiac_MultTableU(a2)
-	call	FreeVec
-	move.l	eclock1,d0
-	sub.l	eclock2,d0
-	bpl.b	.ok
-	add.l	#65536,d0
-.ok
-	lsr.l	#4,d0
-	rts
-
-audioctrl:
-	blk.l	AHIPrivAudioCtrl_SIZEOF,0
-eclock1	dc.l	0
-eclock2	dc.l	0
-
-ReadEClock:
-	moveq	#0,d0
-	move.b	$bfe701,d0
-	move.b	$bfe601,d1
-	cmp.b	$bfe701,d0
-	bne.b	ReadEClock
-	lsl.w	#8,d0
-	move.b	d1,d0
-	rts
-
-soundfunc:
-	dc.l	0,0
-	dc.l	.func
-	dc.l	0,0
-.func
-	rts
-
-BACK=1
-* AHIChannelData (private)
-channeldatas:
- IFEQ BACK
-	dc.w	0		;UWORD	cd_EOS
-	dc.b	$ff		;UBYTE	cd_FreqOK
-	dc.b	$ff		;UBYTE	cd_SoundOK
-	dc.l	0		;ULONG	cd_OffsetI
-	dc.w	0		;UWORD	cd_Pad1
-	dc.w	0		;UWORD	cd_OffsetF
-	dc.l	0		;ULONG	cd_AddI
-	dc.w	0		;UWORD	cd_Pad2
-	dc.w	$8000		;UWORD	cd_AddF
-	dc.l	sample		;APTR	cd_DataStart
-	dc.l	sample_len-1	;ULONG	cd_LastOffsetI
-	dc.w	0		;UWORD	cd_Pad3
-	dc.w	$ffff		;UWORD	cd_LastOffsetF
-	dc.l	256		;ULONG	cd_ScaleLeft
-	dc.l	0		;ULONG	cd_ScaleRight
-	dc.l	AddByteMV	;FPTR	cd_AddRoutine
-	dc.l	$10000		;LONG	cd_VolumeLeft
-	dc.l	0		;LONG	cd_VolumeRight
-	dc.l	AHIST_M8S	;ULONG	cd_Type
-
-	dc.w	0		;UWORD	cd_NextEOS
-	dc.b	$ff		;UBYTE	cd_NextFreqOK
-	dc.b	$ff		;UBYTE	cd_NextSoundOK
-	dc.l	0		;ULONG	cd_NextOffsetI
-	dc.w	0		;UWORD	cd_NextPad1
-	dc.w	0		;UWORD	cd_NextOffsetF
-	dc.l	0		;ULONG	cd_NextAddI
-	dc.w	0		;UWORD	cd_NextPad2
-	dc.w	$8000		;UWORD	cd_NextAddF
-	dc.l	sample		;APTR	cd_NextDataStart
-	dc.l	sample_len-1	;ULONG	cd_NextLastOffsetI
-	dc.w	0		;UWORD	cd_NextPad3
-	dc.w	$ffff		;UWORD	cd_NextLastOffsetF
-	dc.l	256		;ULONG	cd_NextScaleLeft
-	dc.l	0		;ULONG	cd_NextScaleRight
-	dc.l	AddByteMV	;FPTR	cd_NextAddRoutine
-	dc.l	$10000		;LONG	cd_NextVolumeLeft
-	dc.l	0		;LONG	cd_NextVolumeRight
-	dc.l	AHIST_M8S	;ULONG	cd_NextType
-
-	dc.l	0		;ULONG	cd_LCommand
-	dc.l	0		;ULONG	cd_LAddress
-	dc.l	0		;ULONG	cd_Samples
-	dc.l	0		;ULONG	cd_FirstOffsetI
-	dc.w	0		;WORD	cd_LastSampleL
-	dc.w	0		;WORD	cd_TempLastSampleL
-	dc.w	0		;WORD	cd_LastSampleR
-	dc.w	0		;WORD	cd_TempLastSampleR
- ELSE
-	dc.w	0		;UWORD	cd_EOS
-	dc.b	$ff		;UBYTE	cd_FreqOK
-	dc.b	$ff		;UBYTE	cd_SoundOK
-	dc.l	sample_len-1	;ULONG	cd_OffsetI
-	dc.w	0		;UWORD	cd_Pad1
-	dc.w	$ffff		;UWORD	cd_OffsetF
-	dc.l	0		;ULONG	cd_AddI
-	dc.w	0		;UWORD	cd_Pad2
-	dc.w	$8000		;UWORD	cd_AddF
-	dc.l	sample		;APTR	cd_DataStart
-	dc.l	0		;ULONG	cd_LastOffsetI
-	dc.w	0		;UWORD	cd_Pad3
-	dc.w	0		;UWORD	cd_LastOffsetF
-	dc.l	256		;ULONG	cd_ScaleLeft
-	dc.l	0		;ULONG	cd_ScaleRight
-	dc.l	AddByteBMV	;FPTR	cd_AddRoutine
-	dc.l	$10000		;LONG	cd_VolumeLeft
-	dc.l	0		;LONG	cd_VolumeRight
-	dc.l	AHIST_BW|AHIST_M8S	;ULONG	cd_Type
-
-	dc.w	0		;UWORD	cd_NextEOS
-	dc.b	$ff		;UBYTE	cd_NextFreqOK
-	dc.b	$ff		;UBYTE	cd_NextSoundOK
-	dc.l	sample_len-1	;ULONG	cd_NextOffsetI
-	dc.w	0		;UWORD	cd_NextPad1
-	dc.w	$ffff		;UWORD	cd_NextOffsetF
-	dc.l	0		;ULONG	cd_NextAddI
-	dc.w	0		;UWORD	cd_NextPad2
-	dc.w	$8000		;UWORD	cd_NextAddF
-	dc.l	sample		;APTR	cd_NextDataStart
-	dc.l	0		;ULONG	cd_NextLastOffsetI
-	dc.w	0		;UWORD	cd_NextPad3
-	dc.w	0		;UWORD	cd_NextLastOffsetF
-	dc.l	256		;ULONG	cd_NextScaleLeft
-	dc.l	0		;ULONG	cd_NextScaleRight
-	dc.l	AddByteBMV	;FPTR	cd_NextAddRoutine
-	dc.l	$10000		;LONG	cd_NextVolumeLeft
-	dc.l	0		;LONG	cd_NextVolumeRight
-	dc.l	AHIST_BW|AHIST_M8S	;ULONG	cd_NextType
-
-	dc.l	0		;ULONG	cd_LCommand
-	dc.l	0		;ULONG	cd_LAddress
-	dc.l	0		;ULONG	cd_Samples
-	dc.l	0		;ULONG	cd_FirstOffsetI
-	dc.w	0		;WORD	cd_LastSampleL
-	dc.w	0		;WORD	cd_TempLastSampleL
-	dc.w	0		;WORD	cd_LastSampleR
-	dc.w	0		;WORD	cd_TempLastSampleR
- ENDC * BACK 
- ENDC
-
-;-----------------------------------------
-
 ;in:
 * a6	ExecBase
-initcode:
+_initcode:
  IFNE	ALIGN
 * Align Add#? routines to even 16-byte address
 	lea	AlignStart(pc),a0
@@ -363,10 +109,65 @@ initcode:
  ENDC
 	rts
 
+
+;in:
+* a2	ptr to AHIAudioCtrl
+;out:
+* d0	TRUE on success
+_InitMixroutine:
+	pushm	d1-a6
+	move.l	4.w,a6
+	move.w	ahiac_Channels(a2),d0
+	mulu.w	#AHIChannelData_SIZEOF,d0
+	move.l	#MEMF_PUBLIC!MEMF_CLEAR,d1	;may be accessed from interrupts!
+	call	AllocVec
+	move.l	d0,ahiac_ChannelDatas(a2)
+	beq	.error
+
+	clr.l	ahiac_DryList(a2)
+	move.l	ahiac_ChannelDatas(a2),a0
+	move.l	a0,ahiac_WetList(a2)
+
+*** Update the ChannelData structures (cd_ChannelNo and cd_Succ)
+	moveq	#0,d0
+.updateCDloop
+	move.w	d0,cd_ChannelNo(a0)
+	lea	AHIChannelData_SIZEOF(a0),a1
+	move.l	a1,cd_Succ(a0)
+	add.w	#AHIChannelData_SIZEOF,a0
+	addq.w	#1,d0
+	cmp.w	ahiac_Channels(a2),d0
+	blo	.updateCDloop
+	clr.l	-AHIChannelData_SIZEOF+cd_Succ(a0)
+
+	move.w	ahiac_Sounds(a2),d0
+	mulu.w	#AHISoundData_SIZEOF,d0
+	move.l	#MEMF_PUBLIC!MEMF_CLEAR,d1	;may be accessed from interrupts!
+	call	AllocVec
+	move.l	d0,ahiac_SoundDatas(a2)
+	beq	.error
+
+*** Update the SoundData structure
+	move.l	d0,a0
+	move.w	ahiac_Sounds(a2),d0
+	subq.w	#1,d0
+.updateSDloop
+	move.l	#AHIST_NOTYPE,sd_Type(a0)
+	add.w	#AHISoundData_SIZEOF,a0
+	dbf	d0,.updateSDloop
+
+	moveq	#TRUE,d0
+.exit	
+	popm	d1-a6
+	rts
+.error
+	moveq	#FALSE,d0
+	bra	.exit
+
 ;in:
 * a2	AHIAudioCtrl
 * a5	AHIBase
-calcMasterVolumeTable:
+_calcMasterVolumeTable:
 	pushm	std
 
 	btst.b	#AHIACB_CLIPPING-24,ahiac_Flags(a2)
@@ -422,17 +223,13 @@ _initSignedTable:
 	tst.l	ahiac_MultTableS(a2)
 	bne.b	.notable			;there is already a table!
 
- IFEQ	DEBUG
 	move.l	ahib_SysLib(a5),a6
- ELSE
- 	base	exec
- ENDC
 	move.l	#256*(TABLEMAXVOL+1)*4,d0	;include highest volume, too!
 	moveq	#MEMF_PUBLIC,d1			;may be accessed from interrupts
 	call	AllocVec
 	move.l	d0,ahiac_MultTableS(a2)
 	beq.b	.error
-	bsr.b	calcSignedTable
+	bsr.b	_calcSignedTable
 .notable
 	moveq	#TRUE,d0
 .exit
@@ -460,7 +257,7 @@ _initSignedTable:
 *
 *        d1 is unsigned byte with bits 8-15 cleared:
 *        move.w  2(a0,d1.w*4),d2		;d2 is unsigned!
-calcSignedTable:
+_calcSignedTable:
 	pushm	d0-d4/a0
 	move.l	ahiac_MultTableS(a2),d0
 	beq.b	.notable
@@ -510,19 +307,14 @@ _initUnsignedTable:
 	tst.l	ahiac_MultTableU(a2)
 	bne.b	.notable			;there is already a table!
 
- IFEQ	DEBUG
 	move.l	ahib_SysLib(a5),a6
- ELSE
- 	base	exec
- ENDC
-
 	move.l	#256*(TABLEMAXVOL+1)*4,d0	;incude highest volume, too!
 						;*4 => Look like the signed table!
 	moveq	#MEMF_PUBLIC,d1			;may be accessed from interrupts
 	call	AllocVec
 	move.l	d0,ahiac_MultTableU(a2)
 	beq.b	.error
-	bsr.b	calcUnsignedTable
+	bsr.b	_calcUnsignedTable
 .notable
 	moveq	#TRUE,d0
 .exit
@@ -540,7 +332,7 @@ _initUnsignedTable:
 *
 *        d1 is unsigned byte with bits 8-15 cleared:
 *        move.w  0(a0,d1.w*4),d2		;d2 is signed!
-calcUnsignedTable:
+_calcUnsignedTable:
 	pushm	d0-d4/a0
 	move.l	ahiac_MultTableU(a2),d0
 	beq.b	.notable
@@ -575,12 +367,10 @@ calcUnsignedTable:
 * d0	VolumeLeft (Fixed)
 * d1	VolumeRight (Fixed)
 * d2	SampleType
+* a0	ULONG *ScaleLeft
+* a1	ULONG *ScaleRight
 * a2	AudioCtrl
-;out:
-* d0	ScaleLeft
-* d1	ScaleRight
-* d2	AddRoutine
-
+* a3	void *AddRoutine
 
 RIGHTVOLUME	EQU	1
 LEFTVOLUME	EQU	2
@@ -611,8 +401,14 @@ typeconversion:
 	dc.l	-1
 	dc.l	-1
 
-SelectAddRoutine:
-	pushm	d3-a6
+_SelectAddRoutine:
+	pushm	d2-a6
+
+;	PRINTF	0,"SelectAddRoutine(%ld, %ld, %08lx)",d0, d1, d2
+
+	move.l	a0,a4
+	move.l	a1,a5
+	move.l	a3,a6
 
 	move.l	d2,d3
 	move.l	ahiac_Flags(a2),d4
@@ -713,6 +509,7 @@ SelectAddRoutine:
 .not_volume
 	lsl.l	#2,d2
 	move.l	(functionstable,pc,d2.l),a0
+;	PRINTF	0,"Func: 0x%08lx", a0
 	jsr	(a0)		;returns d0, d1 and a0
 
 	and.l	#AHIST_BW,d3
@@ -722,8 +519,11 @@ SelectAddRoutine:
 
 	add.w	(a0),a0
 .exit:
-	move.l	a0,d2
-	popm	d3-a6
+	move.l	d0,(a4)
+	move.l	d1,(a5)
+	move.l	a0,(a6)
+;	PRINTF	0, "SAR: %ld, %ld, 0x%08lx",(a4), (a5), (a6)
+	popm	d2-a6
 	rts
 .error
 	lea	.dummy(pc),a0
@@ -760,9 +560,10 @@ sar_unsigned:
 
 	add.w	(a0),a0
 
-
-	move.l	a0,d2
-	popm	d3-a6
+	move.l	d0,(a4)
+	move.l	d1,(a5)
+	move.l	a0,(a6)
+	popm	d2-a6
 	rts
 
 functionstable:
@@ -911,6 +712,7 @@ functionstable:
 _Mix:
 	pushm	d0-a6
 
+;	PRINTF	0,"Mix!"
 * Clear the buffer
 	move.l	ahiac_BuffSizeNow(a2),d0
 	lsr.l	#3,d0
@@ -1037,7 +839,7 @@ _Mix:
 					;AddI/AddF,LastOffsetI/LastOffsetF ok
 	move.l	a6,d2			;Type
 	movem.l	cd_OffsetI(a5),d5/d6	;cd_OffsetI/cd_OffsetF
-	bsr	CalcSamples
+	bsr	_CalcSamples
 	move.l	d0,cd_Samples(a5)
 
 	pop	d0
@@ -1214,7 +1016,7 @@ DoMasterVolume
 * d6.w	OffsetF
 ;ut:
 * d0	Samples
-CalcSamples:
+_CalcSamples:
 * Calc how many loops the addroutines should run (Times=Length/Rate)
 
 ;	and.l	#AHIST_BW|AHIST_INPUT,d2
@@ -5394,13 +5196,4 @@ AddWordsSVPTB:
 ;------------------------------------------------------------------------------
 AlignEnd
 
- IFNE	DEBUG
-sample
-;	dc.b	$5,$10,$5,0,-$5,-$10,-$5,0
-	dc.b	$AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
-sample_len=*-sample
-
-	blk.w	SAMPLES,$5555
-buffer		blk.b	BUFFER,'*'
-end
- ENDC
+;	C comment terminating here... */
