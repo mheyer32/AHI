@@ -228,27 +228,20 @@ _UDivMod64:
 _Mix:
 
  IFD	VERSION68K
+
 	XREF	_Mix68k
 
 	jmp	_Mix68k
- ENDC
 
- IFD	VERSIONPPC
-	XREF	_MixPPC
+ ELSE
 
-	pushm	d0-d1/a0-a1
-	jsr	_MixPPC
-	popm	d0-d1/a0-a1
-	rts
- ENDC
-
- IFD	VERSIONGEN
 	XREF	_MixGeneric
 
 	pushm	d0-d1/a0-a1
 	jsr	_MixGeneric
 	popm	d0-d1/a0-a1
 	rts
+
  ENDC
 
 
