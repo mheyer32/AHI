@@ -37,6 +37,10 @@
 #include "effectinit.h"
 #include "mixer.h"
 
+#define VOL_DELAYED
+#define FREQ_DELAYED
+#define SOUND_DELAYED
+
 /******************************************************************************
 ** AHI_SetVol *****************************************************************
 ******************************************************************************/
@@ -182,9 +186,21 @@ SetVol ( REG(d0, UWORD channel),
                      &cd->cd_ScaleRight, 
          (ADDFUNC**) &cd->cd_AddRoutine );
 #else
+#ifndef VOL_DELAYED
+    cd->cd_VolumeLeft  = cd->cd_NextVolumeLeft;
+    cd->cd_VolumeRight = cd->cd_NextVolumeRight;
+    
+    SelectAddRoutine( cd->cd_VolumeLeft,
+                      cd->cd_VolumeRight, 
+                      cd->cd_Type, 
+                      audioctrl,
+                     &cd->cd_ScaleLeft,
+                     &cd->cd_ScaleRight, 
+         (ADDFUNC**) &cd->cd_AddRoutine );
+#else
     cd->cd_DelayedVolumeLeft  = cd->cd_NextVolumeLeft;
     cd->cd_DelayedVolumeRight = cd->cd_NextVolumeRight;
-    
+
     SelectAddRoutine( cd->cd_DelayedVolumeLeft,
                       cd->cd_DelayedVolumeRight, 
                       cd->cd_DelayedType, 
@@ -195,19 +211,23 @@ SetVol ( REG(d0, UWORD channel),
 
     /* Enable anti-click routine */
     cd->cd_AntiClickCount = audioctrl->ac.ahiac_AntiClickSamples;
-
-    if( ( flags & AHISF_NODELAY ) || 
-        ( cd->cd_AntiClickCount == 0 ) )
+      if( ( flags & AHISF_NODELAY ) || 
+          ( cd->cd_AntiClickCount == 0 ) ||
+           !cd->cd_FreqOK || !cd->cd_SoundOK )
     {
       cd->cd_VolumeLeft  = cd->cd_DelayedVolumeLeft;
       cd->cd_VolumeRight = cd->cd_DelayedVolumeRight;
       cd->cd_ScaleLeft   = cd->cd_DelayedScaleLeft;
       cd->cd_ScaleRight  = cd->cd_DelayedScaleRight;
       cd->cd_AddRoutine  = cd->cd_DelayedAddRoutine;
-    
+
       cd->cd_AntiClickCount = 0;
     }
-
+    else
+    {
+      cd->cd_VolDelayed = TRUE;
+    }
+#endif // 0
 #endif
   }
 
@@ -346,8 +366,19 @@ SetFreq ( REG( d0, UWORD channel ),
                                   cd->cd_LastOffset.I, cd->cd_LastOffset.F,
                                   cd->cd_Offset.I, cd->cd_Offset.F );
 #else
+#ifndef FREQ_DELAYED
+    cd->cd_Add     = cd->cd_NextAdd;
+    cd->cd_FreqOK  = cd->cd_NextFreqOK;
+
+    cd->cd_Samples = CalcSamples( cd->cd_Add,
+                                  cd->cd_Type,
+                                  cd->cd_LastOffset,
+                                  cd->cd_Offset );
+#else
     cd->cd_DelayedAdd     = cd->cd_NextAdd;
     cd->cd_DelayedFreqOK  = cd->cd_NextFreqOK;
+
+    // cd->cd_Samples is also calculated when it actually happens...
 
     cd->cd_DelayedSamples = CalcSamples( cd->cd_DelayedAdd,
                                          cd->cd_DelayedType,
@@ -367,7 +398,11 @@ SetFreq ( REG( d0, UWORD channel ),
 
       cd->cd_AntiClickCount = 0;
     }
-
+    else
+    {
+      cd->cd_FreqDelayed = TRUE;
+    }
+#endif
 #endif
 
   }
@@ -556,12 +591,34 @@ SetSound ( REG(d0, UWORD channel),
                         audioctrl,
                        &cd->cd_ScaleLeft,
                        &cd->cd_ScaleRight,
-           (ADDFUNC**) &cd->cd_DelayedAddRoutine );
+           (ADDFUNC**) &cd->cd_AddRoutine );
 
       cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
                                     cd->cd_Type,
                                     cd->cd_LastOffset.I, cd->cd_LastOffset.F,
                                     cd->cd_Offset.I, cd->cd_Offset.F);
+#else
+#ifndef SOUND_DELAYED
+      cd->cd_Offset        = cd->cd_NextOffset;
+      cd->cd_FirstOffsetI  = cd->cd_NextOffset >> 32; /* for linear interpol. */
+      cd->cd_LastOffset    = cd->cd_NextLastOffset;
+      cd->cd_DataStart     = cd->cd_NextDataStart;
+      cd->cd_Type          = cd->cd_NextType;
+      cd->cd_SoundOK       = cd->cd_NextSoundOK;
+
+      SelectAddRoutine( cd->cd_VolumeLeft,
+                        cd->cd_VolumeRight,
+                        cd->cd_Type,
+                        audioctrl,
+                       &cd->cd_ScaleLeft,
+                       &cd->cd_ScaleRight,
+           (ADDFUNC**) &cd->cd_AddRoutine );
+
+      cd->cd_Samples = CalcSamples( cd->cd_Add,
+                                    cd->cd_Type,
+                                    cd->cd_LastOffset,
+                                    cd->cd_Offset );
+
 #else
       cd->cd_DelayedOffset        = cd->cd_NextOffset;
       cd->cd_DelayedFirstOffsetI  = cd->cd_NextOffset >> 32; /* for linear interpol. */
@@ -596,14 +653,18 @@ SetSound ( REG(d0, UWORD channel),
         cd->cd_DataStart     = cd->cd_DelayedDataStart;
         cd->cd_Type          = cd->cd_DelayedType;
         cd->cd_SoundOK       = cd->cd_DelayedSoundOK;
-        cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
-        cd->cd_Samples       = cd->cd_DelayedSamples;
         cd->cd_ScaleLeft     = cd->cd_DelayedScaleLeft;
         cd->cd_ScaleRight    = cd->cd_DelayedScaleRight;
         cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
+        cd->cd_Samples       = cd->cd_DelayedSamples;
 
         cd->cd_AntiClickCount = 0;
       }
+    else
+    {
+      cd->cd_SoundDelayed = TRUE;
+    }
+#endif // 0
 #endif
 
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
@@ -1073,11 +1134,7 @@ LoadSound ( REG(d0, UWORD sound),
           audioctrl->ahiac_InputBuffer[2] = AllocVec(
               audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
               MEMF_PUBLIC|MEMF_CLEAR);
-/*
-          KPrintF("Buffer0: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[0], audioctrl->ahiac_InputLength);
-          KPrintF("Buffer1: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[1], audioctrl->ahiac_InputLength);
-          KPrintF("Buffer2: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[2], audioctrl->ahiac_InputLength);
-*/
+
           if((audioctrl->ahiac_InputBuffer[0] != NULL) &&
              (audioctrl->ahiac_InputBuffer[1] != NULL) &&
              (audioctrl->ahiac_InputBuffer[2] != NULL))

@@ -112,14 +112,6 @@ ADDFUNC* AddWordSVPHBPtr  = NULL;
 ADDFUNC* AddWordsMVHBPtr  = NULL;
 ADDFUNC* AddWordsSVPHBPtr = NULL;
 
-/******************************************************************************
-** PowerUp Support code *******************************************************
-******************************************************************************/
-
-#if defined( VERSIONPPC )
-
-/* PPC code ******************************************************************/
-
 static const UBYTE type2bytes[]=
 {
   1,    // AHIST_M8S  (0)
@@ -135,16 +127,26 @@ static const UBYTE type2bytes[]=
   8     // AHIST_S32S (10)
 };
 
-static ULONG
-AHI_SampleFrameSize( ULONG sampletype )
+inline static ULONG
+SampleFrameSize( ULONG sampletype )
 {
   return type2bytes[sampletype];
 }
 
+/******************************************************************************
+** PowerUp Support code *******************************************************
+******************************************************************************/
+
+#if defined( VERSIONPPC )
+
+/* PPC code ******************************************************************/
+
 static void
-CallSoundHook( struct AHIPrivAudioCtrl *audioctrl )
+CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
+               void* arg )
 {
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_SOUNDFUNC;
+  audioctrl->ahiac_PPCCommand  = AHIAC_COM_SOUNDFUNC;
+  audioctrl->ahiac_PPCArgument = arg;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
@@ -152,8 +154,8 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl )
 static void
 CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
-  audioctrl->ahiac_PPCArgument = (void*) value;
   audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
+  audioctrl->ahiac_PPCArgument = (void*) value;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
@@ -161,6 +163,15 @@ CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 #else
 
 /* M68k code *****************************************************************/
+
+static void
+CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
+               void* arg )
+{
+  CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
+               audioctrl,
+               arg );
+}
 
 static void
 CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
@@ -241,7 +252,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     IF_CACHEFLUSHNO | IF_ASYNC, 0, 0,
 
     (ULONG) Hook, (ULONG) audioctrl->ahiac_PPCMixBuffer, (ULONG) audioctrl,
-    0, 0, 0, 0,
+    0, 0, 0, 0, 0,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
 
@@ -803,14 +814,7 @@ MixGeneric ( struct Hook *Hook,
           cd->cd_EOS = FALSE;
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
-#if defined( VERSIONPPC )
-            audioctrl->ahiac_PPCArgument = &cd->cd_ChannelNo;
-            CallSoundHook( audioctrl );
-#else
-            CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
-                         audioctrl,
-                         &cd->cd_ChannelNo);
-#endif
+            CallSoundHook( audioctrl, &cd->cd_ChannelNo );
           }
         }
 
@@ -825,7 +829,7 @@ MixGeneric ( struct Hook *Hook,
           samples     = min( samplesleft, cd->cd_Samples );
           try_samples = min( samples, cd->cd_AntiClickCount );
 
-kprintf("<search %ld> ",try_samples );
+//kprintf("<search %ld = min( %ld, %ld )> ",try_samples, samples, cd->cd_AntiClickCount );
           processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
                                                        cd->cd_ScaleLeft,
                                                        cd->cd_ScaleRight,
@@ -836,9 +840,9 @@ kprintf("<search %ld> ",try_samples );
                                                       &dstptr,
                                                        cd,
                                                        TRUE );
-kprintf("<searched %ld>", processed);
           cd->cd_Samples -= processed;
           samplesleft    -= processed;
+//kprintf("<searched %ld> ", processed);
 
           if( try_samples == cd->cd_AntiClickCount ||
               processed != samples )
@@ -853,27 +857,61 @@ kprintf("<searched %ld>", processed);
 
             // Now start the delayed sound.
 
-            cd->cd_FreqOK      = cd->cd_DelayedFreqOK;
-            cd->cd_SoundOK     = cd->cd_DelayedSoundOK;
-            cd->cd_DataStart   = cd->cd_DelayedDataStart;
-            cd->cd_Offset      = cd->cd_DelayedOffset;
-            cd->cd_Add         = cd->cd_DelayedAdd;
-            cd->cd_LastOffset  = cd->cd_DelayedLastOffset;
-            cd->cd_ScaleLeft   = cd->cd_DelayedScaleLeft;
-            cd->cd_ScaleRight  = cd->cd_DelayedScaleRight;
-            cd->cd_VolumeLeft  = cd->cd_DelayedVolumeLeft;
-            cd->cd_VolumeRight = cd->cd_DelayedVolumeRight;
-            cd->cd_AddRoutine  = cd->cd_DelayedAddRoutine;
-            cd->cd_Type        = cd->cd_DelayedType;
+            if( cd->cd_VolDelayed )
+            {
+              cd->cd_VolDelayed = FALSE;
+//kprintf("<vol> ");
+              cd->cd_VolumeLeft  = cd->cd_DelayedVolumeLeft;
+              cd->cd_VolumeRight = cd->cd_DelayedVolumeRight;
+              cd->cd_ScaleLeft   = cd->cd_DelayedScaleLeft;
+              cd->cd_ScaleRight  = cd->cd_DelayedScaleRight;
+              cd->cd_AddRoutine  = cd->cd_DelayedAddRoutine;
+            }
 
-            cd->cd_Samples     = cd->cd_DelayedSamples;
+            if( cd->cd_FreqDelayed )
+            {
+              cd->cd_FreqDelayed = FALSE;
+//kprintf("<freq> ");
+              cd->cd_FreqOK      = cd->cd_DelayedFreqOK;
+              cd->cd_Add         = cd->cd_DelayedAdd;
+              
+              // Since we have advanced, cd_Samples must be recalculated!
+              cd->cd_Samples     = CalcSamples( cd->cd_Add,
+                                                cd->cd_Type,
+                                                cd->cd_LastOffset,
+                                                cd->cd_Offset );
+            }
 
-            cd->cd_AntiClickCount = 0;
+            if( cd->cd_SoundDelayed )
+            {
+              cd->cd_SoundDelayed = FALSE;
+//kprintf("<sound> ");
+              cd->cd_Offset        = cd->cd_DelayedOffset;
+              cd->cd_FirstOffsetI  = cd->cd_DelayedFirstOffsetI;
+              cd->cd_LastOffset    = cd->cd_DelayedLastOffset;
+              cd->cd_DataStart     = cd->cd_DelayedDataStart;
+              cd->cd_Type          = cd->cd_DelayedType;
+              cd->cd_SoundOK       = cd->cd_DelayedSoundOK;
+              cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
+              cd->cd_Samples       = cd->cd_DelayedSamples;
+              cd->cd_ScaleLeft     = cd->cd_DelayedScaleLeft;
+              cd->cd_ScaleRight    = cd->cd_DelayedScaleRight;
+              cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
+            }
+
+//            cd->cd_AntiClickCount = 0;
+//kprintf("<new %ld %ld> ", cd->cd_Samples, cd->cd_AntiClickCount );
           }
-          else
+
+          if( cd->cd_VolDelayed || cd->cd_FreqDelayed || cd->cd_SoundDelayed )
           {
             cd->cd_AntiClickCount -= processed;
           }
+          else
+          {
+            cd->cd_AntiClickCount = 0;
+          }
+//kprintf("acc: %ld\n",cd->cd_AntiClickCount);
         }
 
         if( cd->cd_FreqOK && cd->cd_SoundOK )
@@ -901,8 +939,8 @@ kprintf("<searched %ld>", processed);
           {
             /* Linear interpol. stuff */
 
-            cd->cd_LastSampleL = cd->cd_TempLastSampleL;
-            cd->cd_LastSampleR = cd->cd_TempLastSampleR;
+            cd->cd_StartPointL = cd->cd_TempStartPointL;
+            cd->cd_StartPointR = cd->cd_TempStartPointR;
 //kprintf("1 ");
             /*
             ** Offset always points OUTSIDE the sample after this
@@ -967,6 +1005,24 @@ kprintf("<searched %ld>", processed);
                                           cd->cd_LastOffset,
                                           cd->cd_Offset );
 
+            /* Also update all cd_Delayed#? stuff */
+
+            cd->cd_DelayedFreqOK        = cd->cd_NextFreqOK;
+            cd->cd_DelayedSoundOK       = cd->cd_NextSoundOK;
+            cd->cd_DelayedDataStart     = cd->cd_NextDataStart;
+            cd->cd_DelayedOffset        = cd->cd_NextOffset;
+            cd->cd_DelayedAdd           = cd->cd_NextAdd;
+            cd->cd_DelayedLastOffset    = cd->cd_NextLastOffset;
+            cd->cd_DelayedScaleLeft     = cd->cd_NextScaleLeft;
+            cd->cd_DelayedScaleRight    = cd->cd_NextScaleRight;
+            cd->cd_DelayedVolumeLeft    = cd->cd_NextVolumeLeft;
+            cd->cd_DelayedVolumeRight   = cd->cd_NextVolumeRight;
+            cd->cd_DelayedAddRoutine    = cd->cd_NextAddRoutine;
+            cd->cd_DelayedType          = cd->cd_NextType;
+
+            cd->cd_DelayedSamples       = cd->cd_Samples;
+            cd->cd_DelayedFirstOffsetI  = cd->cd_FirstOffsetI;
+
             cd->cd_EOS = TRUE;      // signal End-Of-Sample
             continue;               // .contchannel (same channel, new sound)
           }
@@ -1005,7 +1061,7 @@ kprintf("<searched %ld>", processed);
         */
 
         dst = (char *) dst + audioctrl->ac.ahiac_BuffSamples * 
-                             AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
+                             SampleFrameSize(audioctrl->ac.ahiac_BuffType);
       }
 
       continue; /* while(TRUE) */
@@ -1194,7 +1250,7 @@ AddSilence ( ADDARGS )
 
   *Offset += Samples * Add;
 
-  *Dst    = (char *) *Dst + Samples * AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
+  *Dst    = (char *) *Dst + Samples * SampleFrameSize(audioctrl->ac.ahiac_BuffType);
   
   return Samples;
 }
@@ -1208,7 +1264,7 @@ AddSilenceB ( ADDARGS )
 
   *Offset -= Samples * Add;
 
-  *Dst    = (char *) *Dst + Samples * AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
+  *Dst    = (char *) *Dst + Samples * SampleFrameSize(audioctrl->ac.ahiac_BuffType);
   
   return Samples;
 }
@@ -1243,41 +1299,41 @@ AddByteMVH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ] << 8;
+      startpoint = src[ offseti - 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    endpoint = src[ offseti ] << 8;
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
-    
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
+
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
-    
-    lastsample += difference;
 
-    *dst++ += ScaleLeft * lastsample;
+    lastpoint = startpoint;
+
+    *dst++ += ScaleLeft * startpoint;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1293,42 +1349,42 @@ AddByteSVPH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ] << 8;
+      startpoint = src[ offseti - 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    endpoint = src[ offseti ] << 8;
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    *dst++ += ScaleLeft * startpoint;
+    *dst++ += ScaleRight * startpoint;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1344,51 +1400,50 @@ AddBytesMVH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 - 2 ] << 8;
-      lastsampleR = src[ offseti * 2 + 1 - 2 ] << 8;
+      startpointL = src[ offseti * 2 + 0 - 2 ] << 8;
+      startpointR = src[ offseti * 2 + 1 - 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ] << 8;
-    currentsampleR = src[ offseti * 2 + 1 ] << 8;
+    endpointL = src[ offseti * 2 + 0 ] << 8;
+    endpointR = src[ offseti * 2 + 1 ] << 8;
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL + ScaleRight * startpointR;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1404,52 +1459,51 @@ AddBytesSVPH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 - 2 ] << 8;
-      lastsampleR = src[ offseti * 2 + 1 - 2 ] << 8;
+      startpointL = src[ offseti * 2 + 0 - 2 ] << 8;
+      startpointR = src[ offseti * 2 + 1 - 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ] << 8;
-    currentsampleR = src[ offseti * 2 + 1 ] << 8;
+    endpointL = src[ offseti * 2 + 0 ] << 8;
+    endpointR = src[ offseti * 2 + 1 ] << 8;
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL;
+    *dst++ += ScaleRight * startpointR;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1457,7 +1511,7 @@ AddBytesSVPH ( ADDARGS )
   return i;
 }
 
-
+/**************************************************************************/
 LONG
 AddWordMVH ( ADDARGS )
 {
@@ -1465,47 +1519,48 @@ AddWordMVH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ];
+      startpoint = src[ offseti - 1 ];
     }
 
-    currentsample = src[ offseti ];
+    endpoint = src[ offseti ];
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
+    *dst++ += ScaleLeft * startpoint;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
 
   return i;
 }
+/**************************************************************************/
 
 LONG
 AddWordSVPH ( ADDARGS )
@@ -1514,44 +1569,42 @@ AddWordSVPH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
-//kprintf("dst=%ld ", dst);
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
+
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
-//kprintf("i=%ld ",i);
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ];
+      startpoint = src[ offseti - 1 ];
     }
 
-    currentsample = src[ offseti ];
+    endpoint = src[ offseti ];
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    *dst++ += ScaleLeft * startpoint;
+    *dst++ += ScaleRight * startpoint;
 
     offset += Add;
   }
-//kprintf("done ");
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1566,51 +1619,50 @@ AddWordsMVH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 - 2 ];
-      lastsampleR = src[ offseti * 2 + 1 - 2 ];
+      startpointL = src[ offseti * 2 + 0 - 2 ];
+      startpointR = src[ offseti * 2 + 1 - 2 ];
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ];
-    currentsampleR = src[ offseti * 2 + 1 ];
+    endpointL = src[ offseti * 2 + 0 ];
+    endpointR = src[ offseti * 2 + 1 ];
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL + ScaleRight * startpointR;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1626,52 +1678,51 @@ AddWordsSVPH ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 - 2 ];
-      lastsampleR = src[ offseti * 2 + 1 - 2 ];
+      startpointL = src[ offseti * 2 + 0 - 2 ];
+      startpointR = src[ offseti * 2 + 1 - 2 ];
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ];
-    currentsampleR = src[ offseti * 2 + 1 ];
+    endpointL = src[ offseti * 2 + 0 ];
+    endpointR = src[ offseti * 2 + 1 ];
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL;
+    *dst++ += ScaleRight * startpointR;
 
     offset += Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1694,41 +1745,41 @@ AddByteMVHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ] << 8;
+      startpoint = src[ offseti + 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    endpoint = src[ offseti ] << 8;
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
+    *dst++ += ScaleLeft * startpoint;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1744,42 +1795,42 @@ AddByteSVPHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ] << 8;
+      startpoint = src[ offseti + 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    endpoint = src[ offseti ] << 8;
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    *dst++ += ScaleLeft * startpoint;
+    *dst++ += ScaleRight * startpoint;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1795,51 +1846,50 @@ AddBytesMVHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 + 2 ] << 8;
-      lastsampleR = src[ offseti * 2 + 1 + 2 ] << 8;
+      startpointL = src[ offseti * 2 + 0 + 2 ] << 8;
+      startpointR = src[ offseti * 2 + 1 + 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ] << 8;
-    currentsampleR = src[ offseti * 2 + 1 ] << 8;
+    endpointL = src[ offseti * 2 + 0 ] << 8;
+    endpointR = src[ offseti * 2 + 1 ] << 8;
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL + ScaleRight * startpointR;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1855,52 +1905,51 @@ AddBytesSVPHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 + 2 ] << 8;
-      lastsampleR = src[ offseti * 2 + 1 + 2 ] << 8;
+      startpointL = src[ offseti * 2 + 0 + 2 ] << 8;
+      startpointR = src[ offseti * 2 + 1 + 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ] << 8;
-    currentsampleR = src[ offseti * 2 + 1 ] << 8;
+    endpointL = src[ offseti * 2 + 0 ] << 8;
+    endpointR = src[ offseti * 2 + 1 ] << 8;
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL;
+    *dst++ += ScaleRight * startpointR;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1916,41 +1965,41 @@ AddWordMVHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ];
+      startpoint = src[ offseti + 1 ];
     }
 
-    currentsample = src[ offseti ];
+    endpoint = src[ offseti ];
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
+    *dst++ += ScaleLeft * startpoint;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -1966,42 +2015,42 @@ AddWordSVPHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsample, currentsample;
-  LONG     difference;
+  LONG     startpoint, endpoint;
+  LONG     lastpoint;
 
-  lastsample = currentsample = cd->cd_TempLastSampleL;
+  endpoint  = cd->cd_TempStartPointL;
+  lastpoint = 0;                      // 0 doesn't affect the StopAtZero code
   
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsample = cd->cd_LastSampleL;
+      startpoint = cd->cd_StartPointL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ];
+      startpoint = src[ offseti + 1 ];
     }
 
-    currentsample = src[ offseti ];
+    endpoint = src[ offseti ];
 
-    difference = (((currentsample - lastsample) * offsetf ) >> 15);
+    startpoint += (((endpoint - startpoint) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsample == 0 ) ||
-          ( lastsample < 0 && -difference < lastsample ) ||
-          ( lastsample > 0 && -difference > lastsample ) ) )
+        ( ( lastpoint < 0 && startpoint >= 0 ) ||
+          ( lastpoint > 0 && startpoint <= 0 ) ) )
     {
       break;
     }
 
-    lastsample += difference;
+    lastpoint = startpoint;
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    *dst++ += ScaleLeft * startpoint;
+    *dst++ += ScaleRight * startpoint;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_TempStartPointL = endpoint;
 
   *Dst    = dst;
   *Offset = offset;
@@ -2017,51 +2066,50 @@ AddWordsMVHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 + 2 ];
-      lastsampleR = src[ offseti * 2 + 1 + 2 ];
+      startpointL = src[ offseti * 2 + 0 + 2 ];
+      startpointR = src[ offseti * 2 + 1 + 2 ];
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ];
-    currentsampleR = src[ offseti * 2 + 1 ];
+    endpointL = src[ offseti * 2 + 0 ];
+    endpointR = src[ offseti * 2 + 1 ];
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL + ScaleRight * startpointR;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
@@ -2077,52 +2125,51 @@ AddWordsSVPHB ( ADDARGS )
   LONG    *dst    = *Dst;
   Fixed64  offset = *Offset;
   int      i;
-  LONG     lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  LONG     differenceL, differenceR;
+  LONG     startpointL, startpointR, endpointL, endpointR;
+  LONG     lastpointL, lastpointR;
 
-  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
-  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
+  endpointL  = cd->cd_TempStartPointL;
+  endpointR  = cd->cd_TempStartPointR;
+  lastpointL = lastpointR = 0;        // 0 doesn't affect the StopAtZero code
 
   for( i = 0; i < Samples; i++)
   {
     if( offseti == cd->cd_FirstOffsetI) {
-      lastsampleL = cd->cd_LastSampleL;
-      lastsampleR = cd->cd_LastSampleR;
+      startpointL = cd->cd_StartPointL;
+      startpointR = cd->cd_StartPointR;
     }
     else
     {
-      lastsampleL = src[ offseti * 2 + 0 + 2 ];
-      lastsampleR = src[ offseti * 2 + 1 + 2 ];
+      startpointL = src[ offseti * 2 + 0 + 2 ];
+      startpointR = src[ offseti * 2 + 1 + 2 ];
     }
 
-    currentsampleL = src[ offseti * 2 + 0 ];
-    currentsampleR = src[ offseti * 2 + 1 ];
+    endpointL = src[ offseti * 2 + 0 ];
+    endpointR = src[ offseti * 2 + 1 ];
 
-    differenceL = (((currentsampleL - lastsampleL) * offsetf ) >> 15);
-    differenceR = (((currentsampleR - lastsampleR) * offsetf ) >> 15);
+    startpointL += (((endpointL - startpointL) * offsetf ) >> 15);
+    startpointR += (((endpointR - startpointR) * offsetf ) >> 15);
 
     if( StopAtZero &&
-        ( ( lastsampleL == 0 ) || 
-          ( lastsampleR == 0 ) ||
-          ( lastsampleL < 0 && -differenceL < lastsampleL ) ||
-          ( lastsampleR < 0 && -differenceR < lastsampleR ) ||
-          ( lastsampleL > 0 && -differenceL > lastsampleL ) ||
-          ( lastsampleR > 0 && -differenceR > lastsampleR ) ) )
+        ( ( lastpointL < 0 && startpointL >= 0 ) ||
+          ( lastpointR < 0 && startpointR >= 0 ) ||
+          ( lastpointL > 0 && startpointL <= 0 ) ||
+          ( lastpointR > 0 && startpointR <= 0 ) ) )
     {
       break;
     }
 
-    lastsampleL += differenceL;
-    lastsampleR += differenceR;
+    lastpointL = startpointL;
+    lastpointR = startpointR;
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    *dst++ += ScaleLeft * startpointL;
+    *dst++ += ScaleRight * startpointR;
 
     offset -= Add;
   }
 
-  cd->cd_TempLastSampleL = currentsampleL;
-  cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_TempStartPointL = endpointL;
+  cd->cd_TempStartPointR = endpointR;
 
   *Dst    = dst;
   *Offset = offset;
