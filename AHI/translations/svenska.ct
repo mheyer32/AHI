@@ -1,26 +1,11 @@
-## version $VER: ahiprefs.catalog 4.5 (27.4.97)
+## version $VER: ahiprefs.catalog 4.5 (29.11.2000)
 ## language svenska
 ## codeset 0
 ;
-## chunk AUTH Translated by Martin Blom <lcs@lysator.liu.se>
+## chunk AUTH Translated by Martin Blom <martin@blom.org>
 ;
+; The .ct file is generated from
 ; $Id$
-; $Log$
-; Revision 5.0  2000/11/28 00:13:30  lcs
-; Bumped CVS revision to 5.0.
-;
-; Revision 1.4  1999/08/29 23:44:12  lcs
-; Added support for ahigp_AntiClickTime.
-;
-; Revision 4.5  1997/04/27 16:16:06  lcs
-; Added "Mastervolume with(out) clipping".
-;
-; Revision 4.4  1997/04/23 21:08:31  lcs
-; Removed (Disabled)
-;
-; Revision 4.2  1997/04/07 01:36:51  lcs
-; Localized it, bug fixes
-;
 ;
 ; *** Menus ***
 ;
@@ -297,7 +282,6 @@ Med klippning
 ;With clipping
 ;
 msgGlobOptACTime
-
-;Anti-click time (ms)
-; ***NEW***
+Maximal antiklick-fördröjning
+;Default anti-click time
 ;

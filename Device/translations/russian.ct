@@ -1,9 +1,10 @@
-## version $VER: ahi.catalog 4.2 (3.8.98) © Computer Bug (Ami1251)
+## version $VER: ahi.catalog 4.3 (29.11.2000)
 ## language russian
 ## codeset 0
 ;
-## chunk AUTH Translated by Michael Malyshev <cbug@cch.pmc.ru>
+## chunk AUTH Translated by Alex Plotnicov <wcat@mail.ru> and Michael Malyshev <cbug@cch.pmc.ru>
 ;
+; The .ct file was generated from
 ; $Id$
 ;
 ;    AHI - Hardware independent audio subsystem
@@ -24,72 +25,71 @@
 ;    Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
 ;    MA 02139, USA.
 ;
-;
 ; Input and Output connector name
 ;
 msgDefault
-По умолчанию
+Стaндaртные
 ;Default
 ;
 ; The requesters menu
 msgMenuControl
-\0\0Управление
+\0Упрaвление
 ;\000\000Control
 ;
 msgMenuLastMode
-L\0Последний режим
+L\0Последний Режим
 ;L\000Last Mode
 ;
 msgMenuNextMode
-N\0Следующий режим
+N\0Следующий Режим
 ;N\000Next Mode
 ;
 msgMenuPropertyList
-?\0Список...
+?\0Список Хaрaктеристик...
 ;?\000Property List...
 ;
 msgMenuRestore
-R\0Восстановить
+R\0Восстaновить
 ;R\000Restore
 ;
 msgMenuOK
-O\0Ok
+O\0О'кей
 ;O\000OK
 ;
 msgMenuCancel
-C\0Отменить
+C\0Отменa
 ;C\000Cancel
 ;
 ; Mode name in requester whose driver cannot be opened
 ;
 msgUnknown
-Неизвестный звуковой ID: 0x%08lx
+НЕИЗВЕСТНО:Звук ID 0x%08lx
 ;UNKNOWN:Audio ID 0x%08lx
 ;
 ; The requester gadgets
 ;
 msgReqOK
-Ok
+О'кей
 ;OK
 ;
 msgReqCancel
-Отменить
+Отменa
 ;Cancel
 ;
 msgReqFrequency
-Частота
+Чaстотa
 ;Frequency
 ;
 ; Name of default mode in requester
 ;
 msgDefaultMode
-Звуковой рeжим по умолчанию
+Обычный звуковой режим
 ;Default audio mode
 ;
 ; The requester's info-winodow
 ;
 msgReqInfoTitle
-Режим
+Свойствa Режимa
 ;Mode Properties
 ;
 msgReqInfoAudioID
@@ -97,7 +97,7 @@ msgReqInfoAudioID
 ;Audio mode ID: 0x%08lx
 ;
 msgReqInfoResolution
-Разрешение: %ld bit %s
+Резрешение: %ld бит %s
 ;Resolution: %ld bit %s
 ;
 msgReqInfoMono
@@ -109,25 +109,25 @@ msgReqInfoStereo
 ;stereo
 ;
 msgReqInfoStereoPan
-стерео с паннингом
+объёмное звучaние
 ;stereo with panning
 ;
 msgReqInfoChannels
-Каналов: %ld
+Кaнaлы: %ld
 ;Channels: %ld
 ;
 msgReqInfoMixrate
-Частота звука: %ld-%ld Hz
+Микшировaние: %ld-%ld Гц
 ;Mixing rates: %ld-%ld Hz
 ;
 msgReqInfoHiFi
-HiFi качество
+HiFi-микшировaние
 ;HiFi mixing
 ;
 msgReqInfoRecordHalf
-Записывать в половину дуплекса
+Полудуплекснaя зaпись
 ;Record in half duplex
 ;
 msgReqInfoRecordFull
-Записывать в полном дуплексе
+Дуплекcнaя зaпиcь
 ;Record in full duplex

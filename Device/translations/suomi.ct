@@ -5,6 +5,7 @@
 ## chunk AUTH Translated by Pauli Porkka <pporkka@iki.fi>, \
 Proofread by Petteri Kallio <k140734@cs.tut.fi>
 ;
+; The .ct file was generated from
 ; $Id$
 ;
 ;    AHI - Hardware independent audio subsystem
@@ -24,7 +25,6 @@ Proofread by Petteri Kallio <k140734@cs.tut.fi>
 ;    License along with this library; if not, write to the
 ;    Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
 ;    MA 02139, USA.
-;
 ;
 ; Input and Output connector name
 ;
