@@ -81,7 +81,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	}
 	else {
 	  SetSuperAttrs(class, object,
-			AHIA_Error, AHIE_GainProcessor_InvalidSampleType,
+			AHIA_Error, AHIE_MyProcessor_InvalidSampleType,
 			TAG_DONE);
 	}
 
@@ -179,7 +179,6 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 	ULONG  s;
 	ULONG  i;
 	float* data = AHIClassData->data;
-	float* gain = AHIClassData->gains;
 
 	for (s = 0, i = 0; s < AHIClassData->length; ++s) {
 	  for (c = 0; c < AHIClassData->channels; ++c, ++i) {
