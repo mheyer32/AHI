@@ -1,5 +1,15 @@
 2003-07-05  Martin Blom  <martin@blom.org>
 
+	* Released AHI preferences 5.10.
+
+	* AHI preferences: Added annotation to the properties box.
+
+	* Released emu10kx.audio 5.5.
+	
+	* Released void.audio 5.5.
+	
+	* Released filesave.audio 5.2.
+
 	* Drivers/Common/library.c: Fixed init code for MorphOS and
 	Amithlon.
 
