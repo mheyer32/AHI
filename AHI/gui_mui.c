@@ -271,6 +271,7 @@ LONG xget(Object * obj, ULONG attribute)
 
 static void GUINewSettings(void)
 {
+  set(MUIUnit,MUIA_Cycle_Entries,Units);
   set(MUIUnit,MUIA_Cycle_Active,state.UnitSelected);
   set(MUIDebug, MUIA_Cycle_Active, globalprefs.ahigp_DebugLevel);
   set(MUIEcho, MUIA_Cycle_Active, (globalprefs.ahigp_DisableEcho ? 2 : 0)|(globalprefs.ahigp_FastEcho    ? 1 : 0));

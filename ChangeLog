@@ -1,3 +1,9 @@
+2005-02-02  Martin Blom  <martin@blom.org>
+
+	* AHI preferences: Update the strings in the unit cycle gadget
+	when loading new prefs from disk or restoring to the
+	defaults. [Gunther Nikl]
+
 2005-01-28  Martin Blom  <martin@blom.org>
 
 	* Updated the docs and .readme files a bit.
