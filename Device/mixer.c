@@ -23,10 +23,13 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-# include <exec/interrupts.h>
-# include <hardware/intbits.h>
+#include <exec/interrupts.h>
+#include <hardware/intbits.h>
 
 #if !defined( VERSIONPPC )
+# include <string.h>
+# include <stddef.h>
+
 # include <exec/memory.h>
 # include <exec/execbase.h>
 # include <powerup/ppclib/memory.h>
@@ -41,9 +44,6 @@
 # include <clib/ahi_protos.h>
 # include <inline/ahi.h>
 #endif
-
-#include <string.h>
-#include <stddef.h>
 
 #include "ahi_def.h"
 #include "dsp.h"
@@ -182,7 +182,7 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
 {
   audioctrl->ahiac_PPCCommand  = AHIAC_COM_SOUNDFUNC;
   audioctrl->ahiac_PPCArgument = arg;
-//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
@@ -191,8 +191,22 @@ CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
   audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
   audioctrl->ahiac_PPCArgument = (void*) value;
-//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+}
+
+static void*
+memset( void* s, int c, unsigned int n )
+{
+  char* dst = s;
+
+  while( n > 0 )
+  {
+    *dst++ = c;
+    n--;
+  }
+
+  return s;
 }
 
 #else
@@ -238,8 +252,8 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
 
         case AHIAC_COM_ACK:
-          // Keep looping
-//          asm( "stop #(1<<13) | (2<<8)" : );
+          // Keep looping, try not to waste to much memory bandwidth...
+          asm( "stop #(1<<13) | (2<<8)" : );
           break;
 
         case AHIAC_COM_SOUNDFUNC:
@@ -287,8 +301,9 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     IF_CACHEFLUSHNO, 0, 0,
     IF_CACHEFLUSHNO | IF_ASYNC, 0, 0,
 
+    0xC0DECAFE,
     (ULONG) Hook, (ULONG) audioctrl->ahiac_PPCMixBuffer, (ULONG) audioctrl,
-    0, 0, 0, 0, 0,
+    0, 0, 0, 0,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
 

@@ -43,9 +43,9 @@ CC		= ppc-amigaos-gcc
 AS		= ppc-amigaos-as
 AR		= ppc-amigaos-ar
 RANLIB		= ppc-amigaos-ranlib
-CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -O3 -mcpu=$(CPU) -DCPU=\"$(CPU)\"
+CFLAGS		= @CFLAGS@ -O3 -mcpu=$(CPU) -DCPU=\"$(CPU)\"
 ASFLAGS		= @ASFLAGS@ -m$(CPU) -mregnames --defsym CPU=$(CPU)
-LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
+LDFLAGS		= -nostartfiles -nostdlib -r 
 LIBS		=
 
 TARGET		= ahi.elf.$(CPU)

@@ -201,13 +201,13 @@ AHILoadObject( const char* objname )
 void
 AHIUnLoadObject( void* obj )
 {
+//kprintf( "unloading elf object\n" );
   if( PPCLibBase != NULL )
   {
     PPCUnLoadObject( obj );
   }
   else
   {
-//kprintf( "unloading elf object\n" );
     ELFUnLoadObject( obj );
   }
 }
