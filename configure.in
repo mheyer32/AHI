@@ -16,7 +16,7 @@ AC_CONFIG_HEADER( config.h )
 
 : ${CFLAGS='-g -I. -O2 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
 : ${CPPFLAGS='-I/gg/os-include'}
-: ${ASFLAGS='--register-prefix-optional'}
+dnl : ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}
 
 : ${DISTDIR='/tmp/ahi'}
