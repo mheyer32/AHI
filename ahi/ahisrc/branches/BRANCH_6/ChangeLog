@@ -1,3 +1,10 @@
+2004-10-29  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.21.
+	
+	* emu10kx.audio: Made the +12 dB boost work on Audigy too. [Marcin
+	'Morgoth' Kurek]
+
 2004-10-28  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.20.
