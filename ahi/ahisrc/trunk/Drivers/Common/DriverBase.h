@@ -11,10 +11,12 @@ struct DriverBase
     struct Library  library;
     UWORD           pad;
     BPTR            seglist;
+    struct Library* execbase;
     struct Library* intuitionbase;
     struct Library* utilitybase;
 };
 
+#define SysBase       ((struct ExecBase*)      AHIsubBase->execbase)
 #define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)
 #define UtilityBase   ((struct UtilityBase*)   AHIsubBase->utilitybase)
 

@@ -25,7 +25,7 @@
 
 #define dd ((struct FilesaveData*) AudioCtrl->ahiac_DriverData)
 
-extern void SlaveEntry(void);
+extern void PlaySlaveEntry(void);
 extern void RecSlaveEntry(void);
 
 
@@ -289,11 +289,11 @@ ULONG _AHIsub_Start(
     {
       struct TagItem proctags[] =
       {
-	{ NP_Entry,     (ULONG) SlaveEntry },
-	{ NP_Name,      (ULONG) LibName    },
-	{ NP_Priority,  -1                 }, // It's a number cruncher...
-	{ NP_StackSize, 10000,             },
-	{ TAG_DONE,     0                  }
+	{ NP_Entry,     (ULONG) PlaySlaveEntry },
+	{ NP_Name,      (ULONG) LibName        },
+	{ NP_Priority,  -1                     }, // It's a number cruncher...
+	{ NP_StackSize, 10000,                 },
+	{ TAG_DONE,     0                      }
       };
 
       Forbid();
