@@ -591,12 +591,17 @@ LoadModeFile( UBYTE*          name,
             }
             else
             {
+#if 0
               rc = AddModeFile(fib->fib_FileName);
 
               if(!rc)
               {
                 break;
               }
+#else
+              // Try to load. Just continue if failing.
+              AddModeFile(fib->fib_FileName);
+#endif
             }
           }
           if(IoErr() == ERROR_NO_MORE_ENTRIES)
