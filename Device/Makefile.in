@@ -10,7 +10,7 @@ CPU	= 68060
 
 #Can be VERSION68K, VERSIONGEN, VERSIONPOWERUP or VERSIONWARPUP:
 
-VER	= VERSION68K
+VER	= 68K
 
 include Makefile.opt
 
@@ -92,7 +92,7 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 ########################################
 
 .PHONY:		all mostlyclean clean distclean maintainer-clean\
-		bindist ahidev install 000 030 040 060 603 604 revup
+		bindist ahidev install revup
 
 
 all:		$(TARGET) ahi.ct $(CATALOGS)

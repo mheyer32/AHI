@@ -19,4 +19,14 @@ FindNode ( struct List *list,
 int
 Fixed2Shift( Fixed f );
 
+void
+Req( const char* text );
+
+APTR
+AHIAllocVec( ULONG byteSize, ULONG requirements );
+
+void
+AHIFreeVec( APTR memoryBlock );
+
+
 #endif /* _MISC_H_ */

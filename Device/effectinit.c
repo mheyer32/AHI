@@ -4,6 +4,7 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
+#include <powerup/ppclib/memory.h>
 #include <proto/exec.h>
 #include <clib/ahi_protos.h>
 #include <pragmas/ahi_pragmas.h>
@@ -116,7 +117,9 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
   size = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
 
-  es = AllocVec(sizeof(struct Echo) + size, MEMF_PUBLIC|MEMF_CLEAR);
+  es = AHIAllocVec( sizeof(struct Echo) + size,
+                    MEMF_PUBLIC | MEMF_CLEAR |
+                    MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
   
   if(es)
   {
@@ -222,7 +225,7 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
       // Should not happen!
       default:
-        FreeVec(es);
+        AHIFreeVec(es);
         return FALSE;
     }
 
@@ -311,7 +314,7 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
       // Should not happen!
       default:
-        FreeVec(es);
+        AHIFreeVec(es);
         return FALSE;
     }
 
@@ -335,7 +338,7 @@ free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl )
 
   // Hide it from mixing routine before freeing it!
   audioctrl->ahiac_EffDSPEchoStruct = NULL;
-  FreeVec(p);
+  AHIFreeVec(p);
 
   audioctrl->ahiac_EchoMasterVolume = 0x10000;
   update_MasterVolume( audioctrl );

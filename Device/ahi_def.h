@@ -69,12 +69,6 @@ extern struct UtilityBase	*UtilityBase;
 extern struct Library           *PPCLibBase;
 extern void                     *AHIPPCObject;
 
-extern const ULONG		 DriverVersion;
-extern const ULONG		 Version;
-extern const ULONG		 Revision;
-extern const char			 DevName[];
-extern const char			 IDString[];
-
 
 /*** Definitions ***/
 
@@ -241,4 +235,4 @@ struct AHIPrivAudioCtrl
 	char			 ahiac_DriverName[ 256 ];
 };
 
-#endif /* AHI_DEF_H */
+#endif /* AHI_DEF_H_ */

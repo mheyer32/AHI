@@ -151,12 +151,6 @@ struct AHIDevUnit
 };
 
 BOOL
-OpenLibs ( void );
-
-void
-CloseLibs ( void );
-
-BOOL
 ReadConfig ( struct AHIDevUnit *iounit,
              struct AHIBase *AHIBase );
 

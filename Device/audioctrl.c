@@ -4,9 +4,11 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
+#include <powerup/ppclib/memory.h>
 #include <exec/alerts.h>
 #include <utility/utility.h>
 #include <utility/tagitem.h>
+
 #include <proto/exec.h>
 #include <proto/utility.h>
 #include <clib/ahi_protos.h>
@@ -20,6 +22,8 @@
 #include "asmfuncs.h"
 #include "database.h"
 #include "debug.h"
+#include "misc.h"
+#include "header.h"
 
 
 // Makes 'in' fit the given bounds.
@@ -67,7 +71,7 @@ RecalcBuff ( Fixed freq, struct AHIPrivAudioCtrl *audioctrl )
   }
 
   // Pad to even 8 and add some more (because of an old Mungwall hit, but I
-  // think that bug was fixed a long, long time ago..?
+  // think that bug was fixed a long, long time ago..?)
 
   length = ((length + 7) & (~7) ) + 80;
 
@@ -121,7 +125,11 @@ CreateAudioCtrl(struct TagItem *tags)
   struct TagItem *dbtags;
   BOOL   error=TRUE;
 
-  if((audioctrl=AllocVec(sizeof(struct AHIPrivAudioCtrl),MEMF_PUBLIC|MEMF_CLEAR)))
+  audioctrl = AHIAllocVec( sizeof( struct AHIPrivAudioCtrl ),
+                           MEMF_PUBLIC | MEMF_CLEAR |
+                           MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
+
+  if( audioctrl != NULL )
   {
     audioctrl->ac.ahiac_AudioCtrl.ahiac_UserData =
       (APTR)GetTagData(AHIA_UserData,NULL,tags);
@@ -204,7 +212,7 @@ CreateAudioCtrl(struct TagItem *tags)
 
   if(error)
   {
-    FreeVec(audioctrl);
+    AHIFreeVec(audioctrl);
     return NULL;
   }
   else
@@ -447,7 +455,7 @@ AllocAudioA( REG(a1, struct TagItem *tags),
     Debug_AllocAudioA(tags);
   }
 
-  audioctrl=CreateAudioCtrl(tags);
+  audioctrl = CreateAudioCtrl( tags );
   if(!audioctrl)
     goto error;
 
@@ -686,19 +694,19 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
       CloseLibrary(AHIsubBase);
     }
 
-    FreeVec(audioctrl->ahiac_InputBuffer[0]);
-    FreeVec(audioctrl->ahiac_InputBuffer[1]);
-    FreeVec(audioctrl->ahiac_InputBuffer[2]);
-    FreeVec(audioctrl->ahiac_MasterVolumeTable);
-    FreeVec(audioctrl->ahiac_MultTableS);
-    FreeVec(audioctrl->ahiac_MultTableU);
-    FreeVec(audioctrl->ac.ahiac_SamplerFunc);
-    FreeVec(audioctrl->ac.ahiac_MixerFunc);
-    FreeVec(audioctrl->ahiac_AntiClickBuffer);
-    FreeVec(audioctrl->ahiac_SoundDatas);
-    FreeVec(audioctrl->ahiac_ChannelDatas);
+    FreeVec( audioctrl->ahiac_InputBuffer[0] );
+    FreeVec( audioctrl->ahiac_InputBuffer[1] );
+    FreeVec( audioctrl->ahiac_InputBuffer[2] );
+    FreeVec( audioctrl->ahiac_MasterVolumeTable );
+    FreeVec( audioctrl->ahiac_MultTableS );
+    FreeVec( audioctrl->ahiac_MultTableU );
+    FreeVec( audioctrl->ac.ahiac_SamplerFunc );
+    FreeVec( audioctrl->ac.ahiac_MixerFunc );
+    AHIFreeVec( audioctrl->ahiac_AntiClickBuffer );
+    AHIFreeVec( audioctrl->ahiac_SoundDatas );
+    AHIFreeVec( audioctrl->ahiac_ChannelDatas );
 
-    FreeVec(audioctrl);
+    AHIFreeVec( audioctrl );
   }
   return NULL;
 }
