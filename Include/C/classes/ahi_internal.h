@@ -12,6 +12,8 @@
 ** (TAB SIZE: 8)
 */
 
+#define _AHI_INCLUDE_VERSION		7
+
 /*****************************************************************************/
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
