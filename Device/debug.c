@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -133,6 +131,7 @@ GetTagName( Tag tag )
     case AHIDB_Outputs: return "AHIDB_Outputs";
     case AHIDB_OutputArg: return "AHIDB_OutputArg";
     case AHIDB_Output: return "AHIDB_Output";
+    case AHIDB_MultiChannel: return "AHIDB_MultiChannel";
 //    case AHIDB_OutputArray: return "AHIDB_OutputArray";
 //    case AHIDB_MonitorVolumesLeft: return "AHIDB_MonitorVolumesLeft";
 //    case AHIDB_MonitorVolumeLeftArg: return "AHIDB_MonitorVolumeLeftArg";
@@ -327,6 +326,7 @@ GetDatatype( Tag tag )
     case AHIDB_Outputs: return dt_Hex;
     case AHIDB_OutputArg: return dt_Dec;
     case AHIDB_Output: return dt_Hex;
+    case AHIDB_MultiChannel: return dt_Hex;
 //    case AHIDB_OutputArray: return dt_Hex;
 //    case AHIDB_MonitorVolumesLeft: return dt_Hex;
 //    case AHIDB_MonitorVolumeLeftArg: return dt_Dec;
@@ -492,7 +492,7 @@ AROS_UFH2( void,
 
 #else
 
-static UWORD rawputchar_m68k[] = 
+static const UWORD rawputchar_m68k[] = 
 {
   0x2C4B,             // MOVEA.L A3,A6
   0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
