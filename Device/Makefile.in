@@ -70,7 +70,7 @@ ifeq ($(host_cpu),m68k)
 OBJECTS		+= addroutines_68k.o dspechofuncs_68k.o
 endif
 
-ifeq ($(host_cpu),ppc)
+ifeq ($(host_cpu),powerpc)
 OBJECTS		+= addroutines_ppc.o
 endif
 

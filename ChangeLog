@@ -1,3 +1,9 @@
+2003-07-24  Martin Blom  <martin@blom.org>
+
+	* ahi.device: More embarrassing bugs fixed: Due to a type in the
+	Makefile, the powerpc assembler optimized mixing routines were
+	never included!!
+
 2003-07-23  Martin Blom  <martin@blom.org>
 
 	* ahi.device: The linear interpolation code was like totally
