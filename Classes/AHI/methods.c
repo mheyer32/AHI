@@ -1,130 +1,323 @@
 
 #include <classes/ahi.h>
+#include <intuition/icclass.h>
+
 #include <clib/alib_protos.h>
-#include <string.h>
+#include <proto/dos.h>
+#include <proto/intuition.h>
 
 #include "ahiclass.h"
 #include "util.h"
-
-#define HASH 2654435761UL
-#define BINS 16
-
-struct DispatcherEntry {
-    ULONG  id;
-    struct DispatcherEntry* next;
-    Class* class;
-    ULONG  (*func)(Class* cl, Object* obj, Msg msg);
-};
-
-struct DispatcherData {
-    ULONG                   methods;
-    ULONG                   gets;
-    ULONG                   sets;
-    struct DispatcherEntry* bins[BINS];
-    struct DispatcherEntry  entries[0];
-};
-
-static ULONG
-dispatcher(Class* class, Object* object, struct AHIP_NewDispatcher* msg) {
-  return 0;
-}
+#include "version.h"
 
 
-ULONG
-MethodNewDispatcher(Class* class, Object* object, struct AHIP_NewDispatcher* msg) {
+/******************************************************************************
+** MethodNew ******************************************************************
+******************************************************************************/
+
+LONG
+MethodNew(Class* class, Object* object, struct opSet* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct DispatcherData*  data;
-  struct DispatcherData*  parent = NULL;
-  struct DispatcherEntry* entry;
-  ULONG entries = 0;
-  ULONG methods = 0;
-  ULONG gets    = 0;
-  ULONG sets    = 0;
-  int i;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  if (class->cl_Super->cl_Dispatcher.h_Entry == HookEntry &&
-      class->cl_Super->cl_Dispatcher.h_SubEntry == dispatcher) {
-    parent = (struct DispatcherData*) class->cl_Super->cl_Dispatcher.h_Data;
+  struct TagItem model_tags[] = {
+    { ICA_TARGET,     0 },
+    { ICA_MAP,        0 },
+    { ICSPECIAL_CODE, 0 },
+    { TAG_DONE,       0 }
+  };
+  
+  struct TagItem* tag;
+  struct TagItem* tstate = msg->ops_AttrList;
 
-    methods = parent->methods;
-    gets    = parent->gets;
-    sets    = parent->sets;
+  while ((tag = NextTagItem(&tstate))) {
+    switch (tag->ti_Tag) {
+      case AHIA_Locale:
+	AHIClassData->locale = (struct Locale*) tag->ti_Data;
+	break;
+
+      case AHIA_Owner:
+	AHIClassData->owner = (Object*) tag->ti_Data;
+	break;
+
+      case AHIA_InterruptSafe:
+	AHIClassData->interrupt_safe = tag->ti_Data;
+	break;
+
+      case AHIA_UserData:
+	AHIClassData->user_data = tag->ti_Data;
+	break;
+
+      case ICA_TARGET:
+	model_tags[0].ti_Data = tag->ti_Data;
+	break;
+
+      case ICA_MAP:
+	model_tags[1].ti_Data = tag->ti_Data;
+	break;
+
+      case ICSPECIAL_CODE:
+	model_tags[2].ti_Data = tag->ti_Data;
+	break;
+
+      default:
+	KPrintF("Unknown NEW attribute in " _AHI_CLASS_NAME ": %08lx, %08lx\n",
+		tag->ti_Tag, tag->ti_Data);
+	break;
+    }
   }
 
-  KPrintF("Parent: %ld methods, %ld gets, %ld sets\n", methods, gets, sets);
-  
-  for (i = 0; msg->Methods[i].FunctionPtr != NULL; ++i);
-  entries += i;
-  methods += i;
+  // The owner dictates the InterruptSafe flag
+  if (AHIClassData->owner != NULL) {
+    GetAttr(AHIA_InterruptSafe, AHIClassData->owner,
+	    &AHIClassData->interrupt_safe);
+  }
+    
+  AHIClassData->model_class = NewObjectA(NULL, MODELCLASS, model_tags);
 
-  for (i = 0; msg->SetAttributes[i].FunctionPtr != NULL; ++i);
-  entries += i;
-  sets += i;
-
-  for (i = 0; msg->GetAttributes[i].FunctionPtr != NULL; ++i);
-  entries += i;
-  gets += i;
-  
-  KPrintF("Data: %ld methods, %ld gets, %ld sets\n", methods, gets, sets);
-
-  data = AllocVec(sizeof (*data) + entries * sizeof (data->entries[0]),
-		  MEMF_PUBLIC);
-
-  if (data == NULL) {
+  if (AHIClassData->model_class == NULL) {
     return ERROR_NO_FREE_STORE;
   }
 
-  // Splash in parent's hash table
-  if (parent != NULL) {
-    bcopy(parent->bins, data->bins, sizeof (data->bins));
-  }
-
-  // Now add our own entries before parent's.
-  entry = data->entries;
-  for (i = 0; msg->Methods[i].FunctionPtr != NULL; ++i) {
-    ULONG bin = (msg->Methods[i].ID * HASH & (BINS-1));
-
-    entry->id    = msg->Methods[i].ID;
-    entry->next  = data->bins[bin];
-    entry->class = msg->Class;
-    entry->func  = msg->Methods[i].FunctionPtr;
-
-    data->bins[bin] = entry;
-
-    ++entry;
-  }
-
-  msg->Class->cl_Dispatcher.h_Entry    = HookEntry;
-  msg->Class->cl_Dispatcher.h_SubEntry = dispatcher;
-  msg->Class->cl_Dispatcher.h_Data     = data;
-  
-  return 0;
-}
-
-void
-MethodDisposeDispatcher(Class* class, Object* object,
-			struct AHIP_DisposeDispatcher* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-
-  FreeVec(class->cl_Dispatcher.h_Data);
-  class->cl_Dispatcher.h_Entry    = NULL;
-  class->cl_Dispatcher.h_SubEntry = NULL;
-  class->cl_Dispatcher.h_Data     = NULL;
-}
-
-LONG
-MethodNew(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  InitSemaphore(&AHIClassData->semaphore);
 
   return 0;
 }
 
+
+/******************************************************************************
+** MethodDispose **************************************************************
+******************************************************************************/
+
 void
-MethodDispose(Class*  class,
-	      Object* object,
-	      Msg     msg) {
+MethodDispose(Class* class, Object* object, Msg msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
+  DisposeObject(AHIClassData->model_class);
+}
+
+
+/******************************************************************************
+** MethodSet ******************************************************************
+******************************************************************************/
+
+static void
+notify(Object* object, struct opUpdate* msg, ULONG tag, ULONG data) {
+  struct TagItem tl[] = {
+    { tag,      data },
+    { TAG_DONE, 0    }
+  };
+
+  DoMethod(object, OM_NOTIFY, (ULONG) tl, (ULONG) msg->opu_GInfo,
+	   msg->MethodID == OM_UPDATE ? msg->opu_Flags : 0 );
+}
+
+ULONG
+MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
+{
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+
+  struct TagItem* tstate = msg->opu_AttrList;
+  struct TagItem* tag;
+
+  while ((tag = NextTagItem(&tstate))) {
+    switch (tag->ti_Tag) {
+      case AHIA_Locale:
+	AHIClassData->locale = (struct Locale*) tag->ti_Data;
+	break;
+
+      case AHIA_Owner:
+	AHIClassData->owner = (Object*) tag->ti_Data;
+
+	// The owner dictates the InterruptSafe flag
+	if (AHIClassData->owner != NULL) {
+	  GetAttr(AHIA_InterruptSafe, AHIClassData->owner,
+		  &AHIClassData->interrupt_safe);
+	}
+	
+	break;
+
+      case AHIA_InterruptSafe:
+	if (AHIClassData->owner == NULL) {
+	  AHIClassData->interrupt_safe = tag->ti_Data;
+	}
+	break;
+ 
+      case AHIA_Error:
+	AHIClassData->error = tag->ti_Data;
+	notify(object, msg, tag->ti_Tag, tag->ti_Data);
+	break;
+
+      case AHIA_UserData:
+	AHIClassData->user_data = tag->ti_Data;
+	notify(object, msg, tag->ti_Tag, tag->ti_Data);
+	break;
+
+      case ICA_TARGET:
+      case ICA_MAP:
+      case ICSPECIAL_CODE: {
+	struct TagItem tl[] = {
+	  { tag->ti_Tag, tag->ti_Data },
+	  { TAG_DONE,    0            }
+	};
+	
+	DoMethod(AHIClassData->model_class, msg->MethodID,
+		 (ULONG) tl, (ULONG) msg->opu_GInfo,
+		 msg->MethodID == OM_UPDATE ? msg->opu_Flags : 0 );
+	break;
+      }
+
+      default:
+	KPrintF("Unknown SET attribute in " _AHI_CLASS_NAME ": %08lx, %08lx\n",
+		tag->ti_Tag, tag->ti_Data);
+	break;
+    }
+  }
+
+  return 0;
+}
+
+
+/******************************************************************************
+** MethodGet ******************************************************************
+******************************************************************************/
+
+BOOL
+MethodGet(Class* class, Object* object, struct opGet* msg)
+{
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+
+  switch (msg->opg_AttrID)
+  {
+    case AHIA_Title:
+      *msg->opg_Storage = (ULONG) "AHI Root Class";
+      break;
+
+    case AHIA_Description:
+      *msg->opg_Storage = (ULONG) "The mother of all AHI classes.";
+      break;
+      
+    case AHIA_DescriptionURL:
+      *msg->opg_Storage = (ULONG) "http://www.lysator.liu.se/ahi/";
+      break;
+      
+    case AHIA_Author:
+      *msg->opg_Storage = (ULONG) "Martin Blom";
+      break;
+      
+    case AHIA_Copyright:
+      *msg->opg_Storage = (ULONG) "©2004 Martin Blom";
+      break;
+      
+    case AHIA_Version:
+      *msg->opg_Storage = (ULONG) VERS;
+      break;
+      
+    case AHIA_Annotation:
+      *msg->opg_Storage = 0;
+      break;
+
+    case AHIA_Locale:
+      *msg->opg_Storage = (ULONG) AHIClassData->locale;
+      break;
+
+    case AHIA_Owner:
+      *msg->opg_Storage = (ULONG) AHIClassData->owner;
+      break;
+
+    case AHIA_InterruptSafe:
+      *msg->opg_Storage = AHIClassData->interrupt_safe;
+      break;
+
+    case AHIA_Error:
+      *msg->opg_Storage = AHIClassData->error;
+      break;
+
+    case AHIA_ErrorMessage:
+      switch (AHIClassData->error) {
+	case 0:
+	  *msg->opg_Storage = (ULONG) "No error";
+	  break;
+	  
+	default:
+	  if (Fault(AHIClassData->error,
+		    NULL,
+		    AHIClassData->error_message,
+		    sizeof (AHIClassData->error_message)) > 0) {
+	    *msg->opg_Storage = (ULONG) AHIClassData->error_message;
+	  }
+	  else {
+	    *msg->opg_Storage = (ULONG) "Unknown error";
+	  }
+	  break;
+      }
+      break;
+      
+    case AHIA_UserData:
+      *msg->opg_Storage = AHIClassData->user_data;
+      break;
+
+    case AHIA_ParameterArray:
+    case AHIA_Parameters:
+      *msg->opg_Storage = 0;
+      break;
+      
+    case ICA_TARGET:
+    case ICA_MAP:
+    case ICSPECIAL_CODE:
+      GetAttr(msg->opg_AttrID, AHIClassData->model_class, msg->opg_Storage);
+      break;
+	
+    default:
+      return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+/******************************************************************************
+** MethodLock *****************************************************************
+******************************************************************************/
+
+void
+MethodLock(Class* class, Object* object, Msg msg)
+{
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+
+  if (AHIClassData->interrupt_safe) {
+    Disable();
+  }
+  else if (AHIClassData->owner != NULL) {
+    DoMethodA(AHIClassData->owner, msg);
+  }
+  else {
+    ObtainSemaphore(&AHIClassData->semaphore);
+  }
+}
+
+
+/******************************************************************************
+** MethodUnlock ***************************************************************
+******************************************************************************/
+
+void
+MethodUnlock(Class* class, Object* object, Msg msg)
+{
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+
+  if (AHIClassData->interrupt_safe) {
+    Enable();
+  }
+  else if (AHIClassData->owner != NULL) {
+    DoMethodA(AHIClassData->owner, msg);
+  }
+  else {
+    ReleaseSemaphore(&AHIClassData->semaphore);
+  }
 }
