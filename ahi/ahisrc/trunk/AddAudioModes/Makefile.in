@@ -54,8 +54,8 @@ install:	$(TARGET)
 	$(INSTALL) --directory $(bindir)
 	$(INSTALL) --mode=755 --strip $(TARGET) $(bindir)/$(TARGET)
 
-version.h:
-	echo version.h
+version.h:	AddAudioModes.c
+	@echo $@
 	@grep '$$Id' AddAudioModes.c | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
 
 #
