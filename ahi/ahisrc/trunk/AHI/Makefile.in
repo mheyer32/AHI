@@ -6,7 +6,7 @@
 FLEXCAT		= @FLEXCAT@
 
 ifeq ($(strip $(FLEXCAT)),)
-FLEXCAT		= @echo 'FlexCat not found, cannot make $@!'; false \#
+FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
 endif
 
 
