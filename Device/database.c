@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.4  1997/01/29 23:34:38  lcs
+* *** empty log message ***
+*
 * Revision 1.3  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
 *
@@ -25,8 +28,10 @@
 #include <proto/iffparse.h>
 #include <proto/utility.h>
 
+#ifndef  noprotos
 #ifndef _GENPROTO
 #include "database_protos.h"
+#endif
 #endif
 
 /******************************************************************************

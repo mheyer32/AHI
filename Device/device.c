@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.7  1997/01/29 23:34:38  lcs
+* *** empty log message ***
+*
 * Revision 1.6  1997/01/15 14:59:50  lcs
 * Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
 *
@@ -37,11 +40,13 @@
 #include <proto/dos.h>
 #include <proto/iffparse.h>
 
+#ifndef  noprotos
 #ifndef _GENPROTO
 #include "device_protos.h"
 #endif
 
 #include "devcommands_protos.h"
+#endif
 
 static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase );
 static void ExpungeUnit(struct AHIDevUnit *iounit, struct AHIBase *AHIBase );
@@ -710,6 +715,10 @@ static __asm __interrupt void SoundFunc(
 
   iounit = (struct AHIDevUnit *) hook->h_Data;
   voice = &iounit->Voices[(WORD)sndmsg->ahism_Channel];
+
+#ifdef DEBUG
+  KPrintF("Playing on channel %ld: 0x%08lx\n", sndmsg->ahism_Channel, voice->PlayingRequest);
+#endif
 
   if(voice->PlayingRequest)
   {

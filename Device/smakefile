@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.6  1997/01/29 23:36:14  lcs
+# *** empty log message ***
+#
 # Revision 1.5  1997/01/21 22:20:08  lcs
 # Tried to make "makdedepend" work (both the ADE and Meixner's
 # version), but none of them accepted assembler sources (quite
@@ -30,7 +33,7 @@ TARGET	= AHI:User/Devs/ahi.device
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
 device.c devsupp.a footer.a header.a requester.c
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h Makefile
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile
 
 OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
 device.o devsupp.o footer.o header.o requester.o
@@ -46,6 +49,7 @@ AFLAGS	= SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
 LINKER	= SC:c/slink
 LFLAGS	= ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
 DEBUG	= LIB:debug.lib LIB:amiga.lib
+
 
 ##
 ## Target
@@ -129,33 +133,25 @@ requester_protos.h: requester.c
 
 includes:
 	# Assembler library offsets
-	Programmering:DevKit/lvo ahi EQUATES > AHI:Developer/Include/Asm/lvo/ahi_lib.i
-	Programmering:DevKit/lvo ahi_sub EQUATES > AHI:Developer/Include/Asm/lvo/ahi_sub_lib.i
+	fd2pragma AHIINC:FD/ahi_lib.fd      9 TO AHIINC:Asm/lvo/ahi_lib.i
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd  9 TO AHIINC:Asm/lvo/ahi_sub_lib.i
 	# Storm pragma & proto
-	fd2pragma AHI:Developer/include/FD/ahi_lib.fd COMMENT 5\
-	       TO AHI:Developer/include/Storm/pragma/ahi_lib.h
-	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd COMMENT 5\
-	       TO AHI:Developer/include/Storm/pragma/ahi_sub_lib.h
-	fd2pragma AHI:Developer/include/FD/ahi_lib.fd 15\
-	       TO AHI:Developer/include/Storm/proto/ahi.h
-	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd 15\
-	       TO AHI:Developer/include/Storm/proto/ahi_sub.h
+	fd2pragma AHIINC:FD/ahi_lib.fd      5 TO AHIINC:Storm/pragma/ahi_lib.h COMMENT
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd  5 TO AHIINC:Storm/pragma/ahi_sub_lib.h COMMENT
+	fd2pragma AHIINC:FD/ahi_lib.fd     15 TO AHIINC:Storm/proto/ahi.h
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd 15 TO AHIINC:Storm/proto/ahi_sub.h
 	# SAS/C pragmas & proto
-	fd2pragma AHI:Developer/include/FD/ahi_lib.fd COMMENT 3\
-	       TO AHI:Developer/include/SAS/pragmas/ahi_pragmas.h
-	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd COMMENT 3\
-	       TO AHI:Developer/include/SAS/pragmas/ahi_sub_pragmas.h
-	fd2pragma AHI:Developer/include/FD/ahi_lib.fd 18\
-	       TO AHI:Developer/include/SAS/proto/ahi.h
-	fd2pragma AHI:Developer/include/FD/ahi_sub_lib.fd 18\
-	       TO AHI:Developer/include/SAS/proto/ahi_sub.h
+	fd2pragma AHIINC:FD/ahi_lib.fd      3 TO AHIINC:SAS/pragmas/ahi_pragmas.h COMMENT
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd  3 TO AHIINC:SAS/pragmas/ahi_sub_pragmas.h COMMENT
+	fd2pragma AHIINC:FD/ahi_lib.fd     18 TO AHIINC:SAS/proto/ahi.h
+	fd2pragma AHIINC:FD/ahi_sub_lib.fd 18 TO AHIINC:SAS/proto/ahi_sub.h
 	# ADE gcc inlines
-	fd2inline AHI:Developer/include/FD/ahi_lib.fd\
-	          AHI:Developer/include/C/clib/ahi_protos.h\
-	       -o AHI:Developer/include/ADE/inline/ahi.h
-	fd2inline AHI:Developer/include/FD/ahi_sub_lib.fd\
-	          AHI:Developer/include/C/clib/ahi_sub_protos.h\
-	       -o AHI:Developer/include/ADE/inline/ahi_sub.h
+	fd2inline AHIINC:FD/ahi_lib.fd\
+	          AHIINC:C/clib/ahi_protos.h\
+	       -o AHIINC:ADE/inline/ahi.h
+	fd2inline AHIINC:FD/ahi_sub_lib.fd\
+	          AHIINC:C/clib/ahi_sub_protos.h\
+	       -o AHIINC:ADE/inline/ahi_sub.h
 
 ##
 ## Build autodoc files

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/01/29 23:34:38  lcs
+* *** empty log message ***
+*
 * Revision 1.4  1997/01/15 18:35:07  lcs
 * AHIB_Dizzy has a better implementation and definition now.
 * (Was BOOL, now pointer to a second tag list)
@@ -28,11 +31,12 @@
 #include <proto/utility.h>
 #include <strings.h>
 
+#ifndef  noprotos
 #include "database_protos.h"
 #ifndef _GENPROTO
 #include "cfuncs_protos.h"
 #endif
-
+#endif
 // Makes 'in' fit the given bounds.
 
 #define inbounds(in,min,max) \
@@ -803,7 +807,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
 
 __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 {
-  ULONG id, bestid = 0;
+  ULONG id = AHI_INVALID_ID, bestid = 0;
   Fixed score, bestscore = 0;
   struct TagItem *dizzytags;
 
@@ -812,7 +816,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
     KPrintF("AHI_BestAudioIDA(0x%08lx)",tags);
   }
 
-  dizzytags = GetTagData(AHIB_Dizzy,NULL,tags))
+  dizzytags = (struct TagItem *) GetTagData(AHIB_Dizzy,NULL,tags);
 
   while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
   {
