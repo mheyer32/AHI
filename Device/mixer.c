@@ -51,6 +51,7 @@
 #include "addroutines.h"
 #include "misc.h"
 #include "header.h"
+#include "ppcheader.h"
 
 #define GetSymbol( name ) AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
@@ -315,10 +316,12 @@ kprintf("M");
 
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
        flush the cache before mixing starts. :( */
-
+/*
     SetCache68K( CACHE_DCACHEFLUSH,
                  audioctrl->ahiac_PPCMixBuffer,
                  audioctrl->ahiac_BuffSizeNow );
+*/
+
   }
 
 
@@ -333,8 +336,10 @@ kprintf("M");
       break;
 
     case MB_WARPUP:
-//    kprintf( "." );
-//    CausePPCInterrupt();
+      kprintf("C");
+      audioctrl->ahiac_PPCWarpUpContext->Active = TRUE;
+      CausePPCInterrupt();
+      kprintf("c");
       break;
 
     default:
@@ -521,23 +526,44 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
               { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
             };
 
-            if( AHIGetELFSymbol( "WarpInit", &args.PP_Code ) )
-            {
-              int status;
+            audioctrl->ahiac_PPCWarpUpContext = 
+                AllocVec32( sizeof( struct WarpUpContext ), 
+                            MEMF_CLEAR | MEMF_CHIP );
 
-//            status = RunPPC( &args );
-            
-//            if( status == PPERR_SUCCESS )
+            if( audioctrl->ahiac_PPCWarpUpContext != NULL )
+            {
+              audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
+              audioctrl->ahiac_PPCWarpUpContext->AudioCtrl   = 
+                  (struct AudioCtrl*) audioctrl;
+
+              args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
+
+              if( AHIGetELFSymbol( "InitWarpUp", &args.PP_Code ) )
               {
-                rc = TRUE;
+                if( RunPPC( &args ) == PPERR_SUCCESS )
+                {
+                  rc = TRUE;
+                }
+                else
+                {
+                  Req( "Call to InitWarpUp() failed." );
+                }
+              }
+              else
+              {
+                Req( "Unable to fetch symbol 'InitWarpUp'." );
               }
             }
-            
+            else
+            {
+              Req( "Out of memory in InitMixroutine()." );
+            }
+
             break;
           }
 
           default:
-            Req( "Internal error: Unknown MixBackend in InitMixroutine()" );
+            Req( "Internal error: Unknown MixBackend in InitMixroutine()." );
             break;
         }
       }
@@ -601,14 +627,68 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+    case MB_POWERUP:
+      break;
+
+    case MB_WARPUP:
+    {
+      // Clean up the WarpUp side
+      
+      struct PPCArgs args = 
+      {
+        NULL,
+        0,
+        0,
+        NULL,
+        0,
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+      };
+
+      if( audioctrl->ahiac_PPCWarpUpContext != NULL )
+      {
+        args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
+        
+        if( AHIGetELFSymbol( "CleanUpWarpUp", &args.PP_Code ) )
+        {
+          RunPPC( &args );
+        }
+        else
+        {
+          Req( "Unable to fetch symbol 'CleanUpWarpUp'." );
+        }
+
+        FreeVec32( audioctrl->ahiac_PPCWarpUpContext );
+        audioctrl->ahiac_PPCWarpUpContext = NULL;
+      }
+
+      break;
+    }
+
+    default:
+      Req( "Internal error: Unknown MixBackend in CleanUpMixroutine()." );
+      break;
+  }
+
   if( audioctrl->ahiac_PPCMixInterrupt != NULL )
   {
     RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
   }
+
   FreeVec( audioctrl->ahiac_PPCMixInterrupt );
+  audioctrl->ahiac_PPCMixInterrupt = NULL;
+
   AHIFreeVec( audioctrl->ahiac_PPCMixBuffer );
+  audioctrl->ahiac_PPCMixBuffer = NULL;
+
   AHIFreeVec( audioctrl->ahiac_SoundDatas );
+  audioctrl->ahiac_SoundDatas = NULL;
+
   AHIFreeVec( audioctrl->ahiac_ChannelDatas );
+  audioctrl->ahiac_ChannelDatas = NULL;
 }
 
 /******************************************************************************

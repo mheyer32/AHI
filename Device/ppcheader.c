@@ -26,7 +26,6 @@
 #include <exec/types.h>
 #include <hardware/intbits.h>
 #include <powerup/ppclib/tasks.h>
-//#include <powerup/gcclib/powerup_protos.h>
 #include <powerpc/powerpc.h>
 
 #include "version.h"
@@ -38,10 +37,10 @@
 ******************************************************************************/
 
 int
-CallMixroutine( unsigned int magic,
-                struct Hook *Hook, 
-                void *dst, 
-                struct AHIPrivAudioCtrl *audioctrl );
+CallMixroutine( unsigned int             magic,
+                struct Hook*             Hook, 
+                void*                    dst, 
+                struct AHIPrivAudioCtrl* audioctrl );
 
 void
 FlushCache( void* address, unsigned long length );
@@ -151,7 +150,7 @@ CallMixroutine( unsigned int magic,
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
-  MixGeneric( Hook, dst, audioctrl );
+  //MixGeneric( Hook, dst, audioctrl );
 
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
 
@@ -246,9 +245,8 @@ InvalidateCache:
 ** WarpUp stuff ***************************************************************
 ******************************************************************************/
 
-static void* blinkbase = 0xbfe001;
-
-static void* _PowerPCBase = NULL;
+static void* blinkbase = (void*) 0xbfe001;
+static ULONG magic     = 0xC0DECAFE;
 
 static char IntName[] = "AHI/WarpUp Exception Handler";
 
@@ -272,13 +270,23 @@ _LVOClearExcMMU   = -582
 
 EXCRETURN_ABORT   = 1
 
-/*     r3 = struct PowerPCBase*
- *     r4 = struct AudioCtrl*
- */
+# struct WarpUpContext
+
+wc_Active        = 0
+wc_AudioCtrl     = 4
+wc_PowerPCBase   = 8
+wc_XLock         = 12
+wc_Hook          = 16
+wc_Dst           = 20
+
+/* InitWarpUp ****************************************************************/
 
         .align  2
         .globl  InitWarpUp
         .type   InitWarpUp,@function
+
+/*     r3 = struct WarpUpContext*
+ */
 
 InitWarpUp:
         mflr    0
@@ -287,17 +295,11 @@ InitWarpUp:
         stw     0,4(1)
         stw     13,-4(1)
         subi    13,1,4
-        stwu    1,-(28+14*4)(1)
+        stwu    1,-(28+14*4+1*4)(1)
 
-        mr      8,3                         # Save _PowerPCBase in r8
-        mr      9,4                         # Save AHIAudioCtrl in r9
+        stw     14,-4(13)
 
-
-# Store _PowerPCBase for IntHandler
-
-        lis     4,_PowerPCBase@ha
-        addi    4,4,_PowerPCBase@l
-        stw     3,0(4)
+        mr      14,3                        # Save WarpUpContext in r14
 
 # Build the tag list on the stack
 
@@ -314,15 +316,19 @@ InitWarpUp:
         stwu    6,4(5)
         bne     1b
 
-        stw     9,28+3*4(1)                 # Store AHIAudioCtrl in tag list
+        stw     14,28+3*4(1)                # Store WarpUpContext in tag list
 
 # Register the exception handler
 
-        mr      3,8
+        lwz     3,wc_PowerPCBase(14)
         addi    4,1,28
         lwz     0,_LVOSetExcHandler+2(3)
         mtlr    0
         blrl
+
+        stw     3,wc_XLock(14)
+
+        lwz     14,-4(13)
 
         lwz     1,0(1)
         lwz     13,-4(1)
@@ -332,6 +338,8 @@ InitWarpUp:
         mtlr    0
         blr
 
+
+/* WarpUpInt *****************************************************************/
 
         .align  2
         .globl  WarpUpInt
@@ -344,38 +352,59 @@ WarpUpInt:
         stw     0,4(1)
         stw     13,-4(1)
         subi    13,1,4
-        stwu    1,-(28+2*4)(1)
+        stwu    1,-(28+1*4)(1)
 
-        stw     14,28(1)
-        stw     15,32(1)
+        stw     14,-4(13)
 
-        mr      14,3
-        lis     15,_PowerPCBase@ha
-        addi    15,15,_PowerPCBase@l
-        lwz     15,0(15)
+        mr      14,2
 
-        mr      3,15
+        lwz     3,wc_PowerPCBase(14)
         lwz     0,_LVOSetExcMMU+2(3)
         mtlr    0
         blrl
 
-        lis     3,blinkbase@ha
-        addi    3,3,blinkbase@l
+# Test and clear
+        lwz     3,wc_Active(14)
+        li      4,0
+1:
+        lwarx   5,0,3
+        stwcx.  4,0,3
+        bne-    1b
+
+        cmpwi   0,5,0
+        beq     2f
+
+        lis     4,blinkbase@ha
+        addi    4,4,blinkbase@l
+        lwz     4,0(4)
+
+        lbz     3,0(4)
+        xori    3,3,2
+        stb     3,0(4)
+
+# Call the CallMixroutine (V.4 ABI)
+        stwu    1,-8(1)
+
+        lis     3,magic@ha
+        addi    3,3,magic@l
         lwz     3,0(3)
+        lwz     4,wc_Hook(14)
+        lwz     5,wc_Dst(14)
+        lwz     6,wc_AudioCtrl(14)
 
-        lbz     4,0(3)
-        xor     4,4,2
-        stb     4,0(3)
+        bl      CallMixroutine
 
-        mr      3,15
+        addi    1,1,8
+
+2:
+        lwz     3,wc_PowerPCBase(14)
         lwz     0,_LVOClearExcMMU+2(3)
         mtlr    0
         blrl
 
         li      3,EXCRETURN_ABORT
 
-        lwz     14,28(1)
-        lwz     15,32(1)
+        lwz     14,-4(13)
 
         lwz     1,0(1)
         lwz     13,-4(1)
@@ -385,12 +414,13 @@ WarpUpInt:
         mtlr    0
         blr
 
+/* CleanUpWarpUp *************************************************************/
+
         .align  2
         .globl  CleanUpWarpUp
         .type   CleanUpWarpUp,@function
 
-/*     r3 = struct PowerPCBase*
- *     r4 = void* XLock
+/*     r3 = struct WarpUpContext*
  */
 
 CleanUpWarpUp:
@@ -404,7 +434,9 @@ CleanUpWarpUp:
 
 # Unregister the exception handler
 
-        lwz     0,_LVORemExcHandler+2(3)  # Arguments are already set up
+        lwz     4,wc_XLock(3)
+        lwz     3,wc_PowerPCBase(3)
+        lwz     0,_LVORemExcHandler+2(3)
         mtlr    0
         blrl
 

@@ -212,6 +212,8 @@ struct AHIChannelData
 
 /* Private AudioCtrl structure */
 
+struct WarpUpContext;
+
 struct AHIPrivAudioCtrl
 {
   struct  AHIAudioCtrlDrv    ac;
@@ -243,6 +245,7 @@ struct AHIPrivAudioCtrl
   volatile void             *ahiac_PPCArgument;
   APTR                       ahiac_PPCMixBuffer;
   struct Interrupt          *ahiac_PPCMixInterrupt;
+  struct WarpUpContext      *ahiac_PPCWarpUpContext;
   APTR                       ahiac_M68KPort;
   APTR                       ahiac_PPCStartupMsg;
   APTR                       ahiac_PPCTask;
