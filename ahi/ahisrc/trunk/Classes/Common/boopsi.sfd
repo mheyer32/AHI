@@ -1,0 +1,10 @@
+==id $Id$
+==include <exec/types.h>
+==include <exec/execbase.h>
+==include <exec/libraries.h>
+==include <dos/dos.h>
+==include <intuition/classes.h>
+==include "ahiclass.h"
+==base _AHIClassBase
+==libname ahi.class
+==basetype struct AHIClassBase*

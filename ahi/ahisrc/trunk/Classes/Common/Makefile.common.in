@@ -1,0 +1,142 @@
+#  $Id$
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+top_srcdir	= @top_srcdir@
+common_srcdir	= ${top_srcdir}/Classes/Common
+PREFIX		= @prefix@
+DISTDIR		= @DISTDIR@
+CLASSDIR	= ${DISTDIR}/User/Classes
+
+VPATH		+= ${common_srcdir}
+
+host		= @host@
+
+CC		= @CC@
+AS		= @AS@
+AR              = @AR@
+RANLIB          = @RANLIB@
+STRIP		= @STRIP@ @STRIPFLAGS@
+OBJCOPY		= @OBJCOPY@
+
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${common_srcdir} -I${srcdir} \
+		  -D_AHI_CLASS_NAME="\"${AHI_CLASS_NAME}\""
+CFLAGS		= @CFLAGS@
+ASFLAGS		= @ASFLAGS@
+LDFLAGS		= @LDFLAGS@ -nostartfiles
+ARFLAGS         = @ARFLAGS@
+
+SFDC		= @SFDC@
+SFDCFLAGS	= --gateprefix=gw --libprefix=_ --libarg=last --target=$(host) 
+
+LIBS		= @LIBS@
+
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
+
+#
+# Files
+########################################
+
+OBJECTS		:= boopsi.o boopsi-stubs.o util.o $(OBJECTS)
+
+
+#
+# Targets
+########################################
+
+.PHONY:		all mostlyclean clean distclean maintainer-clean \
+		install revup
+
+
+all:		$(AHI_CLASS_NAME)
+
+mostlyclean:
+	$(RM) $(AHI_CLASS_NAME) $(OBJECTS) Makefile.dep
+
+clean:		mostlyclean
+	$(RM) version.h boopsi-stubs.c boopsi-stubs.h boopsi-impl.h
+
+distclean:	clean
+	$(RM) Makefile
+
+maintainer-clean: distclean
+
+install:	all
+	$(INSTALL) --directory $(PREFIX)/Classes/AHI
+	$(INSTALL_PROGRAM) $(AHI_CLASS_NAME) $(PREFIX)/AHI
+
+bindist:	all
+	$(INSTALL) --directory $(CLASSDIR)
+	$(INSTALL_PROGRAM) $(AHI_CLASS_NAME) $(CLASSDIR)
+	$(STRIP) $(CLASSDIR)/$(AHI_CLASS_NAME)
+
+revup:
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%d.%m.%y > $(srcdir)/version.date
+	@echo -n "New revision: "
+	@cat $(srcdir)/version.rev
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in Makefile.common.in ../../config.status
+	(cd ../.. && ./config.status)
+
+
+#
+# Rules
+########################################
+
+%.o:			%.s
+	$(AS) $(ASFLAGS) $^ -o $@
+
+$(AHI_CLASS_NAME):		$(OBJECTS)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+boopsi-stubs.c:	boopsi.sfd
+	$(SFDC) $(SFDCFLAGS) --mode=gatestubs --addvectors=boopsi $^ -o $@
+
+boopsi-stubs.h:	boopsi.sfd
+	$(SFDC) $(SFDCFLAGS) --mode=gateproto --addvectors=boopsi $^ -o $@
+
+boopsi-impl.h:	boopsi.sfd
+	$(SFDC) $(SFDCFLAGS) --mode=libproto --addvectors=boopsi $^ -o $@
+
+version.h:	version.rev version.date
+	@echo Creating $@
+	@ver=`cat $(top_srcdir)/version.ver` \
+	 rev=`cat $(srcdir)/version.rev` \
+	 date=`cat $(srcdir)/version.date` && \
+	 echo "#define VERSION $$ver" > $@ && \
+	 echo "#define REVISION $$rev" >> $@ && \
+	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
+
+
+#
+# Dependencies
+########################################
+
+SOURCES		= $(wildcard $(common_srcdir)/*.c) $(wildcard $(srcdir)/*.c) 
+HEADERS		= $(wildcard $(common_srcdir)/*.h) $(wildcard $(srcdir)/*.h)
+
+#DEPENDENCIES	= $(SOURCES) $(HEADERS)
+
+.PHONY:	depend
+
+depend:
+	$(RM) Makefile.dep
+	$(MAKE) Makefile.dep
+
+Makefile.dep:	$(DEPENDENCIES) version.h \
+		boopsi-stubs.c boopsi-stubs.h boopsi-impl.h
+	@echo Making $@
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -M $(SOURCES) > $@
+
+include Makefile.dep
