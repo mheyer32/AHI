@@ -22,7 +22,7 @@
 #define BUFFERSIZE 20000
 
 struct MsgPort    *AHImp     = NULL;
-struct AHIRequest *AHIios[2] = NULL;
+struct AHIRequest *AHIios[2] = {NULL,NULL};
 struct AHIRequest *AHIio     = NULL;
 APTR               AHIiocopy = NULL;
 BYTE               AHIDevice = -1;
