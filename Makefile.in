@@ -32,7 +32,7 @@ VPATH		= @srcdir@
 
 .PHONY:		all clean distclean maintainer-clean bindist revup
 
-SUBDIRS		= AHI AHI-Handler AddAudioModes Device Docs Examples Include
+SUBDIRS		= AHI AHI-Handler AddAudioModes Device Docs Drivers Examples Include
 
 
 all:
