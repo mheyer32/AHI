@@ -54,6 +54,18 @@
                 Fixed64  *Offset,\
                 BOOL      StopAtZero
 
+#define ADDARGS71 LONG      Samples,\
+                LONG      ScaleLeft,\
+                LONG      ScaleRight,\
+                LONG	 *StartPoints,\
+                LONG	 *Unused,\
+                void     *Src,\
+                void    **Dst,\
+                LONG	  FirstOffsetI,\
+                Fixed64   Add,\
+                Fixed64  *Offset,\
+                BOOL      StopAtZero
+
 typedef LONG (ADDFUNC)(ADDARGS);
 
 LONG AddByteMono( ADDARGS );
@@ -68,6 +80,14 @@ LONG AddLongMono( ADDARGS );
 LONG AddLongStereo( ADDARGS );
 LONG AddLongsMono( ADDARGS );
 LONG AddLongsStereo( ADDARGS );
+
+LONG AddByte71( ADDARGS );
+LONG AddBytes71( ADDARGS );
+LONG AddWord71( ADDARGS );
+LONG AddWords71( ADDARGS );
+LONG AddLong71( ADDARGS );
+LONG AddLongs71( ADDARGS );
+LONG Add7171( ADDARGS71 );
 
 LONG AddByteMonoB( ADDARGS );
 LONG AddByteStereoB( ADDARGS );

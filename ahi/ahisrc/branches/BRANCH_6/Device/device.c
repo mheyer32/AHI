@@ -128,14 +128,15 @@ ChannelInfoFunc( struct Hook*              hook,
 *  
 *       * Fast, powerful mixing routines (yeah, right... haha)
 *  
-*       The device's mixing routines mix 8- or 16-bit signed samples, both
-*       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
-*       (with stereo panning if desired) data, using any number of channels
-*       (as long as 'any' means less than 128).  Tables can be used speed
-*       the mixing up (especially when using 8-bit samples).  The samples can
-*       have any length (including odd) and can have any number of loops.
-*       There are also so-called HiFi mixing routines that can be used, that
-*       use linear interpolation and gives 32 bit output.
+*       The device's mixing routines mix 8- or 16-bit signed samples,
+*       both mono, stereo and 7.1, located in Fast-RAM and outputs
+*       16-bit mono or stereo (with stereo panning if desired) data,
+*       using any number of channels (as long as 'any' means less than
+*       128).  Tables can be used speed the mixing up (especially when
+*       using 8-bit samples).  The samples can have any length
+*       (including odd) and can have any number of loops.  There are
+*       also so-called HiFi mixing routines that can be used, that use
+*       linear interpolation and gives 32 bit output.
 *       
 *       * Support for non-realtime mixing
 *  

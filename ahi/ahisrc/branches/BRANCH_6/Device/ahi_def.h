@@ -160,6 +160,29 @@ struct AHIChannelData
   LONG    cd_StartPointR;         /* for linear interpolation routines */
   LONG    cd_TempStartPointR;     /* for linear interpolation routines */
 
+  // NOTE!! These must follow directly after cd_TempStartPointR ...
+  LONG    cd_StartPointRL;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointRL;    /* for linear interpolation routines */
+  LONG    cd_StartPointRR;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointRR;    /* for linear interpolation routines */
+  LONG    cd_StartPointSL;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointSL;    /* for linear interpolation routines */
+  LONG    cd_StartPointSR;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointSR;    /* for linear interpolation routines */
+  LONG    cd_StartPointC;         /* for linear interpolation routines */
+  LONG    cd_TempStartPointC;     /* for linear interpolation routines */
+  LONG    cd_StartPointLFE;       /* for linear interpolation routines */
+  LONG    cd_TempStartPointLFE;   /* for linear interpolation routines */
+
+#define CD_L			0
+#define CD_R			2
+#define CD_RL			4
+#define CD_RR			6
+#define CD_SL			8
+#define CD_SR			10
+#define CD_C			12
+#define CD_LFE			14
+    
   struct AHIChannelData *cd_Succ; /* For the wet and dry lists */
   UWORD   cd_ChannelNo;
   UWORD   cd_Pad3;
