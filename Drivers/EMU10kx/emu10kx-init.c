@@ -19,11 +19,14 @@
 
 #include <config.h>
 
-#include <dos/dos.h>
+#include <exec/memory.h>
+#include <libraries/openpci.h>
 #include <proto/exec.h>
 #include <proto/openpci.h>
 
 #include "library.h"
+#include "emu10kx-misc.h"
+
 
 /* We use global library bases instead of storing them in DriverBase, since
    I don't want to modify the original sources more than necessary. */
@@ -33,6 +36,7 @@ struct DosLibrary* DOSBase;
 struct Library*    OpenPciBase;
 struct DriverBase* AHIsubBase;
 
+
 /******************************************************************************
 ** Custom driver init *********************************************************
 ******************************************************************************/
@@ -41,6 +45,8 @@ BOOL
 DriverInit( struct DriverBase* ahisubbase )
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) ahisubbase;
+  struct pci_dev*     dev;
+  int                 card_no;
 
   AHIsubBase = ahisubbase;
   
@@ -60,16 +66,45 @@ DriverInit( struct DriverBase* ahisubbase )
   }
 
   InitSemaphore( &EMU10kxBase->semaphore );
+
+  EMU10kxBase->cards_found = 0;
+  dev = NULL;
+
+  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				  dev ) ) != NULL )
+  {
+    ++EMU10kxBase->cards_found;
+  }
   
   // Fail if no hardware (prevents the audio modes form being added to
   // the database if the driver cannot be used).
 
-  if( pci_find_device( PCI_VENDOR_ID_CREATIVE,
-		       PCI_DEVICE_ID_CREATIVE_EMU10K1,
-		       NULL ) == NULL )
+  if( EMU10kxBase->cards_found == 0 )
   {
     Req( "No SoundBlaster Live! card present.\n" );
     return FALSE;
+  }
+
+  EMU10kxBase->driverdatas = AllocVec( sizeof( *EMU10kxBase->driverdatas ) *
+				       EMU10kxBase->cards_found,
+				       MEMF_PUBLIC );
+
+  if( EMU10kxBase->driverdatas == NULL )
+  {
+    Req( "Out of memory." );
+    return FALSE;
+  }
+
+  
+  card_no = 0;
+
+  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				  dev ) ) != NULL )
+  {
+    EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
+    ++card_no;
   }
 
   return TRUE;
@@ -84,7 +119,15 @@ VOID
 DriverCleanup( struct DriverBase* AHIsubBase )
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
+  int i;
 
+  for( i = 0; i < EMU10kxBase->cards_found; ++i )
+  {
+    FreeDriverData( EMU10kxBase->driverdatas[ i ], AHIsubBase );
+  }
+  
+  FreeVec( EMU10kxBase->driverdatas );
+  
   CloseLibrary( OpenPciBase );
   CloseLibrary( (struct Library*) DOSBase );
 }

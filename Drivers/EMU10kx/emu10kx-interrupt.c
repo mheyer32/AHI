@@ -36,9 +36,9 @@
 ******************************************************************************/
 
 ULONG
-EMU10kxInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
+EMU10kxInterrupt( struct EMU10kxData* dd )
 {
-  struct EMU10kxData* dd = (struct EMU10kxData*) AudioCtrl->ahiac_DriverData;
+  struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
@@ -47,7 +47,8 @@ EMU10kxInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
 
   while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
   {
-    if( intreq & IPR_INTERVALTIMER )
+    if( intreq & IPR_INTERVALTIMER &&
+	AudioCtrl != NULL )
     {
       int hw   = sblive_readptr( &dd->card, CCCA_CURRADDR, dd->voice.num );
       int diff = dd->current_position - ( hw - dd->voice.start );
@@ -72,7 +73,8 @@ EMU10kxInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
       }
     }
 
-    if( intreq & ( IPR_ADCBUFHALFFULL | IPR_ADCBUFFULL ) )
+    if( intreq & ( IPR_ADCBUFHALFFULL | IPR_ADCBUFFULL ) &&
+	AudioCtrl != NULL )
     {
       if( intreq & IPR_ADCBUFHALFFULL )
       {
@@ -108,9 +110,9 @@ EMU10kxInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
 ******************************************************************************/
 
 void
-PlaybackInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
+PlaybackInterrupt( struct EMU10kxData* dd )
 {
-  struct EMU10kxData* dd = (struct EMU10kxData*) AudioCtrl->ahiac_DriverData;
+  struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
@@ -209,9 +211,9 @@ PlaybackInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
 ******************************************************************************/
 
 void
-RecordInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
+RecordInterrupt( struct EMU10kxData* dd )
 {
-  struct EMU10kxData* dd = (struct EMU10kxData*) AudioCtrl->ahiac_DriverData;
+  struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
