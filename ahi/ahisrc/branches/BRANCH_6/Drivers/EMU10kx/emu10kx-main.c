@@ -502,7 +502,10 @@ _AHIsub_Start( ULONG                   flags,
 	return AHIE_UNKNOWN;
     }
 
-    adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;
+    if( dd->card.is_audigy ) {
+      adcctl |= A_ADCCR_LCHANENABLE | A_ADCCR_RCHANENABLE;
+    else
+      adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;
 
     /* Allocate a new recording buffer (page aligned!) */
     dd->record_buffer = pci_alloc_consistent( dd->card.pci_dev,
