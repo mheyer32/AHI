@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _MIXER_H_
-#define _MIXER_H_
+#ifndef ahi_mixer_h
+#define ahi_mixer_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
@@ -83,4 +83,4 @@ void
 DoMasterVolume ( void *buffer,
                  struct AHIPrivAudioCtrl *audioctrl );
 
-#endif /* _MIXER_H_ */
+#endif /* ahi_mixer_h */

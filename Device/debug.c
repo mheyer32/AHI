@@ -555,7 +555,7 @@ Debug_NextAudioID( ULONG id)
 }
 
 void
-Debug_GetAudioAttrsA( ULONG id, struct AHIAudioCtrlDrv *audioctrl, struct TagItem *tags )
+Debug_GetAudioAttrsA( ULONG id, struct AHIPrivAudioCtrl *audioctrl, struct TagItem *tags )
 {
   KPrintF("AHI_GetAudioAttrsA(0x%08lx, 0x%08lx,",id,audioctrl);
   PrintTagList(tags);
@@ -589,7 +589,7 @@ Debug_FreeAudioRequest( struct AHIAudioModeRequester *req )
 }
 
 void
-Debug_PlayA( struct AHIAudioCtrl *audioctrl, struct TagItem *tags )
+Debug_PlayA( struct AHIPrivAudioCtrl *audioctrl, struct TagItem *tags )
 {
   KPrintF("AHI_PlayA(0x%08lx,",audioctrl);
   PrintTagList(tags);

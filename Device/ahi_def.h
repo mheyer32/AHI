@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _AHI_DEF_H_
-#define _AHI_DEF_H_
+#ifndef ahi_ahi_def_h
+#define ahi_ahi_def_h
 
 /*** Debug stuff ***/
 
@@ -239,4 +239,4 @@ struct AHIPrivAudioCtrl
 };
 
 
-#endif /* AHI_DEF_H_ */
+#endif /* ahi_ahi_def_h */

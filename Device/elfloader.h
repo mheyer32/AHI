@@ -20,11 +20,12 @@
      MA 02139, USA.
 */
 
-#ifndef _ELFLOADER_H_
-#define _ELFLOADER_H_
+#ifndef ahi_elfloader_h
+#define ahi_elfloader_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
+
 #include <powerup/ppclib/object.h>
 
 void*
@@ -33,8 +34,9 @@ ELFLoadObject( const char* objname );
 void
 ELFUnLoadObject( void* obj );
 
-BOOL ELFGetSymbol( void* obj,
-                   const char* name,
-                   void** ptr );
+BOOL
+ELFGetSymbol( void* obj,
+              const char* name,
+              void** ptr );
 
-#endif /* _ELFLOADER_H_ */
+#endif /* ahi_elfloader_h */

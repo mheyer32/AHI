@@ -20,11 +20,12 @@
      MA 02139, USA.
 */
 
-#ifndef _ADDROUTINES_H_
-#define _ADDROUTINES_H_
+#ifndef ahi_addroutines_h
+#define ahi_addroutines_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
+
 #include "ahi_def.h"
 
 /*
@@ -92,4 +93,4 @@ LONG AddLofiWordStereoB( ADDARGS );
 LONG AddLofiWordsMonoB( ADDARGS );
 LONG AddLofiWordsStereoB( ADDARGS );
 
-#endif /* _ADDROUTINES_H_ */
+#endif /* ahi_addroutines_h */

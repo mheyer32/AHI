@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _DEBUG_H_
-#define _DEBUG_H_
+#ifndef ahi_debug_h
+#define ahi_debug_h
 
 #include <devices/ahi.h>
 
@@ -60,7 +60,7 @@ void
 Debug_NextAudioID( ULONG id);
 
 void
-Debug_GetAudioAttrsA( ULONG id, struct AHIAudioCtrlDrv *audioctrl, struct TagItem *tags );
+Debug_GetAudioAttrsA( ULONG id, struct AHIPrivAudioCtrl *audioctrl, struct TagItem *tags );
 
 void
 Debug_BestAudioIDA( struct TagItem *tags );
@@ -75,7 +75,7 @@ void
 Debug_FreeAudioRequest( struct AHIAudioModeRequester *req );
 
 void
-Debug_PlayA( struct AHIAudioCtrl *audioctrl, struct TagItem *tags );
+Debug_PlayA( struct AHIPrivAudioCtrl *audioctrl, struct TagItem *tags );
 
 void
 Debug_SampleFrameSize( ULONG sampletype);
@@ -89,4 +89,4 @@ Debug_RemoveAudioMode( ULONG id);
 void
 Debug_LoadModeFile( STRPTR name);
 
-#endif /* _DEBUG_H_ */
+#endif /* ahi_debug_h */

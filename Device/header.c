@@ -39,11 +39,18 @@
 #include <powerup/ppclib/interface.h>
 
 #include "ahi_def.h"
-#include "header.h"
-#include "device.h"
-#include "localize.h"
+
 #include "addroutines.h"
+#include "audioctrl.h"
+#include "database.h"
+#include "devcommands.h"
+#include "device.h"
+#include "header.h"
+#include "localize.h"
 #include "misc.h"
+#include "modeinfo.h"
+#include "requester.h"
+#include "sound.h"
 
 #include "version.h"
 
@@ -234,157 +241,6 @@ Null( void )
 /******************************************************************************
 ** Entry gateway functions ****************************************************
 ******************************************************************************/
-
-
-/* Prototypes ****************************************************************/
-
-
-ULONG
-DevOpen ( ULONG              unit,
-          ULONG              flags,
-          struct AHIRequest* ioreq,
-          struct AHIBase*    AHIBase );
-
-
-BPTR
-DevClose ( struct AHIRequest* ioreq,
-           struct AHIBase*    AHIBase );
-
-
-void
-DevBeginIO( struct AHIRequest* ioreq,
-            struct AHIBase*    AHIBase );
-
-
-ULONG
-DevAbortIO( struct AHIRequest* ioreq,
-            struct AHIBase*    AHIBase );
-
-
-struct AHIAudioCtrl*
-AllocAudioA( struct TagItem* tags,
-             struct AHIBase* AHIBase );
-
-
-ULONG
-FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
-           struct AHIBase*          AHIBase );
-
-
-ULONG
-KillAudio( struct AHIBase* AHIBase );
-
-
-ULONG
-ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
-               struct TagItem*          tags,
-               struct AHIBase*          AHIBase );
-
-
-ULONG
-GetAudioAttrsA( ULONG                   id,
-                struct AHIAudioCtrlDrv* actrl,
-                struct TagItem*         tags,
-                struct AHIBase*         AHIBase );
-
-
-ULONG
-BestAudioIDA( struct TagItem* tags,
-              struct AHIBase* AHIBase );
-
-
-ULONG
-SetVol ( UWORD                    channel,
-         Fixed                    volume,
-         sposition                pan,
-         struct AHIPrivAudioCtrl* audioctrl,
-         ULONG                    flags,
-         struct AHIBase*          AHIBase );
-
-
-ULONG
-SetFreq ( UWORD                    channel,
-          ULONG                    freq,
-          struct AHIPrivAudioCtrl* audioctrl,
-          ULONG                    flags,
-          struct AHIBase*          AHIBase );
-
-
-ULONG
-SetSound ( UWORD                    channel,
-           UWORD                    sound,
-           ULONG                    offset,
-           LONG                     length,
-           struct AHIPrivAudioCtrl* audioctrl,
-           ULONG                    flags,
-           struct AHIBase*          AHIBase );
-
-
-ULONG
-SetEffect( ULONG*                   effect,
-           struct AHIPrivAudioCtrl* audioctrl,
-           struct AHIBase*          AHIBase );
-
-
-ULONG
-LoadSound( UWORD                    sound,
-           ULONG                    type,
-           APTR                     info,
-           struct AHIPrivAudioCtrl* audioctrl,
-           struct AHIBase*          AHIBase );
-
-
-ULONG
-UnloadSound( UWORD                    sound,
-             struct AHIPrivAudioCtrl* audioctrl,
-             struct AHIBase*          AHIBase );
-
-
-ULONG
-PlayA( struct AHIAudioCtrl* audioctrl,
-       struct TagItem*      tags,
-       struct AHIBase*      AHIBase );
-
-
-ULONG
-SampleFrameSize( ULONG           sampletype,
-                 struct AHIBase* AHIBase );
-
-
-struct AHIAudioModeRequester*
-AllocAudioRequestA( struct TagItem* tags,
-                    struct AHIBase* AHIBase );
-
-
-ULONG
-AudioRequestA( struct AHIAudioModeRequester* req_in,
-               struct TagItem*               tags,
-               struct AHIBase*               AHIBase );
-
-
-void
-FreeAudioRequest( struct AHIAudioModeRequester* req,
-                  struct AHIBase*               AHIBase);
-
-
-ULONG
-NextAudioID( ULONG           id,
-             struct AHIBase* AHIBase );
-
-
-ULONG
-AddAudioMode( struct TagItem* DBtags,
-              struct AHIBase* AHIBase );
-
-
-ULONG
-RemoveAudioMode( ULONG           id,
-                 struct AHIBase* AHIBase );
-
-
-ULONG
-LoadModeFile( UBYTE*          name,
-              struct AHIBase* AHIBase );
 
 #if defined( morphos )
 
@@ -698,7 +554,7 @@ static const APTR InitTable[4] =
   (APTR) sizeof( struct AHIBase ),
   (APTR) &funcTable,
   0,
-  (APTR) initRoutine
+  (APTR) gw_initRoutine
 };
 
 

@@ -20,12 +20,24 @@
      MA 02139, USA.
 */
 
-#ifndef _MODEINFO_H_
-#define _MODEINFO_H_
+#ifndef ahi_modeinfo_h
+#define ahi_modeinfo_h
 
 #include <exec/types.h>
 #include <utility/tagitem.h>
 
-BOOL TestAudioID(ULONG id, struct TagItem *tags );
+ULONG
+GetAudioAttrsA( ULONG                    id,
+                struct AHIPrivAudioCtrl* actrl,
+                struct TagItem*          tags,
+                struct AHIBase*          AHIBase );
 
-#endif /* _MODEINFO_H_ */
+ULONG
+BestAudioIDA( struct TagItem* tags,
+              struct AHIBase* AHIBase );
+
+BOOL
+TestAudioID( ULONG id,
+             struct TagItem *tags );
+
+#endif /* ahi_modeinfo_h */
