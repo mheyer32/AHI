@@ -72,7 +72,7 @@ namespace AHI {
        /* Prepare to process buffer. Returns TRUE if something happened. */
        _AHIM(_P, Prepare,	(_AHIM_Dummy+9)),
 
-       /* Process buffer. Returns TRUE on success. */
+       /* Process buffer. See below for return values. */
        _AHIM(_P, Process,	(_AHIM_Dummy+10))
      };
 
@@ -95,6 +95,14 @@ namespace AHI {
        UQUAD	CurrentTime;
      };
 
+     /* Return value */
+
+     enum {
+       _AHIV(_P, Process_FAIL,		(0)),
+       _AHIV(_P, Process_SKIP,		(1)),
+       _AHIV(_P, Process_PERFORM,	(2)),
+     };
+     
 /*****************************************************************************/
 
      enum {

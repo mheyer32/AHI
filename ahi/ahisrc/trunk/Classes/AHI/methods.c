@@ -2,6 +2,7 @@
 #include <classes/ahi.h>
 #include <classes/ahi/buffer.h>
 #include <classes/ahi/processor.h>
+#include <classes/ahi/processor/gain.h>
 #include <intuition/icclass.h>
 
 #include <clib/alib_protos.h>
@@ -35,7 +36,13 @@ get_error_message(struct AHIClassData* AHIClassData) {
 
     case AHIE_Processor_ObjectBusy:
       return "Object is busy";
-	  
+
+    case AHIE_GainProcessor_TooManyChannels:
+      return "Too many channels";
+
+    case AHIE_GainProcessor_InvalidSampleType:
+      return "Invalid buffer sample type";
+      
     default:
       if (Fault(AHIClassData->error,
 		NULL,
