@@ -100,7 +100,7 @@ version.h:	version.rev version.date
 SOURCES		= $(wildcard $(srcdir)/*.c)
 HEADERS		= $(wildcard $(srcdir)/*.h)
 
-#DEPENDENCIES	= $(SOURCES) $(HEADERS) version.h
+#DEPENDENCIES	= $(SOURCES) $(HEADERS)
 
 .PHONY:	depend
 
@@ -108,7 +108,7 @@ depend:
 	$(RM) Makefile.dep
 	$(MAKE) Makefile.dep
 
-Makefile.dep:	$(DEPENDENCIES)
+Makefile.dep:	$(DEPENDENCIES) version.h
 	@echo Making $@
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 
