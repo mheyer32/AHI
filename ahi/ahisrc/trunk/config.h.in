@@ -1,31 +1,83 @@
 /* config.h.in.  Generated automatically from configure.in by autoheader.  */
-
-/* Define to empty if the keyword does not work.  */
-#undef const
-
-/* Define as __inline if that's what the C compiler calls it.  */
-#undef inline
-
-/* Define if WarpUp support code should be included.  */
-#undef ENABLE_WARPUP
-
-/* Define if you have the amiga library (-lamiga).  */
-#undef HAVE_LIBAMIGA
-
-/* Define if you have the m library (-lm).  */
-#undef HAVE_LIBM
-
-/* This one modifies the gcc include files */
+/* Inline calls to Tag functions in MorphOS */
 #undef USE_INLINE_STDARG
 
-/* This one modifies the gcc include files */
+/* Use inlines in AmigaOS 4.x */
 #undef __USE_INLINE__
 
-/* Define if you have the oss.library headers.  */
-#undef HAVE_PROTO_OSS_H
+/* Define if you have the <errno.h> header file. */
+#undef HAVE_ERRNO_H
 
-/* Define if you have the openpci headers.  */
+/* Define if you have the `floor' function. */
+#undef HAVE_FLOOR
+
+/* Define if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H
+
+/* Define if you have the `mui' library (-lmui). */
+#undef HAVE_LIBMUI
+
+/* Define if you have the <libraries/openpci.h> header file. */
 #undef HAVE_LIBRARIES_OPENPCI_H
 
-/* Set to one if we're on a big endian CPU/compiler */
+/* Define if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
+/* Define if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H
+
+/* Define if you have the `memset' function. */
+#undef HAVE_MEMSET
+
+/* Define if you have the `pow' function. */
+#undef HAVE_POW
+
+/* Define if you have the <proto/oss.h> header file. */
+#undef HAVE_PROTO_OSS_H
+
+/* Define if you have the <stddef.h> header file. */
+#undef HAVE_STDDEF_H
+
+/* Define if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H
+
+/* Define if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H
+
+/* Define if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
+
+/* Define if you have the <string.h> header file. */
+#undef HAVE_STRING_H
+
+/* Define if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H
+
+/* Define if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H
+
+/* Define if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H
+
+/* Define if you have the ANSI C header files. */
+#undef STDC_HEADERS
+
+/* Define if your processor stores words with the most significant byte first
+   (like Motorola and SPARC, unlike Intel and VAX). */
 #undef WORDS_BIGENDIAN
+
+/* Define to empty if `const' does not conform to ANSI C. */
+#undef const
+
+/* Define as `__inline' if that's what the C compiler calls it, or to nothing
+   if it is not supported. */
+#undef inline
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef mode_t
+
+/* Define to `long' if <sys/types.h> does not define. */
+#undef off_t
+
+/* Define to `unsigned' if <sys/types.h> does not define. */
+#undef size_t

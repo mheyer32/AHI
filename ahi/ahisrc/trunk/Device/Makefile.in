@@ -52,8 +52,6 @@ ifeq ($(strip $(FLEXCAT)),)
 FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
 endif
 
-ENABLE_WARPUP	= @ENABLE_WARPUP@
-
 #
 # Files
 ########################################
@@ -66,10 +64,6 @@ OBJECTS		= header.o gateway.o gatestubs.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  audioctrl.o effectinit.o sound.o misc.o dspecho.o \
 		  mixer.o 
-
-ifeq ($(ENABLE_WARPUP),yes)
-OBJECTS		+= elfloader.o warpup.o
-endif
 
 ifeq ($(host_cpu),m68k)
 OBJECTS		+= addroutines_68k.o dspechofuncs_68k.o
