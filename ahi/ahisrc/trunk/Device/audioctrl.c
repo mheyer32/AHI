@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.7  1997/07/27 00:15:21  lcs
+* Removed a reference to AHI_KillAudio() in the audiodocs.
+*
 * Revision 4.6  1997/06/28 21:14:58  lcs
 * DizzyTestAudioID() much faster (FindTagitem()->NextTagItem())
 *
@@ -759,7 +762,7 @@ error:
 *   BUGS
 *
 *   SEE ALSO
-*       AHI_AllocAudioA(), AHI_KillAudio(), AHI_UnloadSound()
+*       AHI_AllocAudioA(), AHI_UnloadSound()
 *
 ****************************************************************************
 *
