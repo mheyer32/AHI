@@ -28,6 +28,7 @@
 
 #include <exec/alerts.h>
 #include <exec/errors.h>
+#include <exec/tasks.h>
 #include <exec/io.h>
 #include <exec/devices.h>
 #include <exec/memory.h>
