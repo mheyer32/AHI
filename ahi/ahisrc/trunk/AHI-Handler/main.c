@@ -1,6 +1,9 @@
 /* $Id$
  * $Log$
- * Revision 4.1  1997/04/02 22:46:37  lcs
+ * Revision 4.2  1997/04/09 01:55:32  lcs
+ * Much improved error handling.
+ *
+ * Revision 4.1  1997/04/02  22:46:37  lcs
  * Bumped to version 4
  *
  * Revision 1.8  1997/03/27  12:11:25  lcs
@@ -68,7 +71,7 @@
  *  Prototypes
  */
 
-BOOL PlayAndSwap(struct HandlerData *, LONG);
+LONG PlayAndSwap(struct HandlerData *, LONG);
 long extended2long(extended *);
 void ulong2extended (ULONG, extended *);
 void FillAIFFheader(struct HandlerData *);
@@ -107,7 +110,7 @@ void kprintf(char *, ...);
  *  Global variables
  */
 
-const static char ID[] = "$VER: AHI-Handler 4.1 (2.4.97)\r\n";
+const static char ID[] = "$VER: AHI-Handler 4.2 (9.4.97)\r\n";
 
 struct List        HanList;
 struct DeviceNode *DevNode;
@@ -246,12 +249,14 @@ void _main ()
 
         data = AllocVec(sizeof(struct HandlerData), MEMF_PUBLIC | MEMF_CLEAR);
         if(! data) {
+          packet->dp_Res1 = DOS_FALSE;
           packet->dp_Res2 = ERROR_NO_FREE_STORE;
           break;
         }
 
         if(packet->dp_Res2 = ParseArgs(data, (char *) buf)) {
           FreeHData(data);
+          packet->dp_Res1 = DOS_FALSE;
           break;
         }
 
@@ -262,6 +267,7 @@ void _main ()
         if(packet->dp_Res2 = AllocAudio(unit)) {
           FreeAudio();
           FreeHData(data);
+          packet->dp_Res1 = DOS_FALSE;
           break;
         }
 
@@ -300,6 +306,7 @@ void _main ()
         if(! data->initialized) {
           packet->dp_Res2 = InitHData(data);
           if(packet->dp_Res2) {
+            packet->dp_Res1 = -1;
             break;
           }
         }
@@ -321,6 +328,7 @@ void _main ()
           if((data->buffer1 == NULL)
           || (data->buffer2 == NULL)
           || (data->readreq    == NULL)) {
+            packet->dp_Res1 = -1;
             packet->dp_Res2 = ERROR_NO_FREE_STORE;
             break;
           }
@@ -349,6 +357,7 @@ void _main ()
           if(data->format == AIFF) {
             if(length < sizeof(struct AIFFHeader)) {
               packet->dp_Res1 = -1;
+              packet->dp_Res2 = ERROR_BAD_NUMBER;
               break;
             }
 
@@ -362,6 +371,7 @@ void _main ()
           else if(data->format == AIFC) {
             if(length < sizeof(struct AIFCHeader)) {
               packet->dp_Res1 = -1;
+              packet->dp_Res2 = ERROR_BAD_NUMBER;
               break;
             }
 
@@ -384,15 +394,19 @@ void _main ()
             data->buffer1 = data->buffer2;
             data->buffer2 = temp;
 
-            WaitIO((struct IORequest *) data->readreq);
-            data->length = data->readreq->ahir_Std.io_Actual;
-            data->offset = 0;
-
-            if(data->readreq->ahir_Std.io_Error) {
-              packet->dp_Res2 = ERROR_READ_PROTECTED;
-              length = 0;
+            if(WaitIO((struct IORequest *) data->readreq)) {
+              packet->dp_Res1 = -1;
+              if(data->readreq->ahir_Std.io_Error == AHIE_HALFDUPLEX) {
+                packet->dp_Res2 = ERROR_OBJECT_IN_USE;
+              }
+              else {
+                packet->dp_Res2 = ERROR_READ_PROTECTED;
+              }
               break;
             }
+
+            data->length = data->readreq->ahir_Std.io_Actual;
+            data->offset = 0;
 
             data->readreq->ahir_Std.io_Command = CMD_READ;
             data->readreq->ahir_Std.io_Data    = data->buffer2;
@@ -412,7 +426,9 @@ void _main ()
           data->totallength -= thislength;
         } /* while */
 
-        packet->dp_Res1 = filled;
+        if(packet->dp_Res2 == 0) {
+          packet->dp_Res1 = filled;
+        }
         break;
 
       } /* ACTION_READ */
@@ -462,8 +478,10 @@ void _main ()
               break;
           }
 
-          if(packet->dp_Res2)
+          if(packet->dp_Res2) {
+            packet->dp_Res1 = -1;
             break;
+          }
 
           if((data->args.format == AIFF) || (data->args.format == AIFC)) {
             LONG skiplen = 0;
@@ -473,8 +491,10 @@ void _main ()
             length -= skiplen;
           }
 
-          if(packet->dp_Res2 = InitHData(data))
+          if(packet->dp_Res2 = InitHData(data)) {
+            packet->dp_Res1 = -1;
             break;
+          }
 
           data->writing = TRUE;
 
@@ -482,6 +502,7 @@ void _main ()
           data->buffer2 = AllocVec(data->buffersize, MEMF_PUBLIC);
 
           if((data->buffer1 == NULL) || (data->buffer2 == NULL)) {
+            packet->dp_Res1 = -1;
             packet->dp_Res2 = ERROR_NO_FREE_STORE;
             break;
           }
@@ -499,9 +520,9 @@ void _main ()
           LONG thislength;
         
           if(data->offset >= data->length) {
-            if(! PlayAndSwap(data, data->length)) {
+            packet->dp_Res2 = PlayAndSwap(data, data->length);
+            if(packet->dp_Res2) {
               packet->dp_Res1 = -1;
-              length = 0;
               break;
             }
           }
@@ -515,7 +536,9 @@ void _main ()
 
         } /* while */
 
-        packet->dp_Res1 = filled;
+        if(packet->dp_Res2 == 0) {
+          packet->dp_Res1 = filled;
+        }
         break;
       }
 
@@ -565,6 +588,7 @@ void _main ()
       /***********************************************************************/
 
       default:
+        packet->dp_Res1 = DOS_FALSE;
         packet->dp_Res2 = ERROR_ACTION_NOT_KNOWN;
         break;
 
@@ -574,8 +598,6 @@ void _main ()
       Running = FALSE;
 
     if (packet) {
-      if (packet->dp_Res2)
-        packet->dp_Res1 = DOS_FALSE;
       returnpacket (packet);
 #ifdef DEBUG
       kprintf("Retured packet\n");
@@ -600,7 +622,7 @@ void _main ()
  *  Starts to play the current buffer. Handles double buffering.
  */
 
-BOOL PlayAndSwap(struct HandlerData *data, LONG length) {
+LONG PlayAndSwap(struct HandlerData *data, LONG length) {
   void *temp;
 
   temp          = data->buffer1;
@@ -615,8 +637,9 @@ BOOL PlayAndSwap(struct HandlerData *data, LONG length) {
   if(data->writereq1 == NULL) {
     data->writereq1 = AllocVec(sizeof (struct AHIRequest), MEMF_PUBLIC);
 
-    if(data->writereq1 == NULL)
-      return FALSE;
+    if(data->writereq1 == NULL) {
+      return ERROR_NO_FREE_STORE;
+    }
 
     CopyMem(AHIio, data->writereq1, sizeof (struct AHIRequest));
   }
@@ -636,14 +659,17 @@ BOOL PlayAndSwap(struct HandlerData *data, LONG length) {
   SendIO((struct IORequest *) data->writereq1);
 
   if(data->writereq2) {
-    WaitIO((struct IORequest *) data->writereq2);
-
-    if(data->writereq2->ahir_Std.io_Error) {
-      return FALSE;
+    if(WaitIO((struct IORequest *) data->writereq2)) {
+      if(data->writereq2->ahir_Std.io_Error == AHIE_HALFDUPLEX) {
+        return ERROR_OBJECT_IN_USE;
+      }
+      else {
+        return ERROR_WRITE_PROTECTED;
+      }
     }
   }
 
-  return TRUE;
+  return 0;
 }
 
 
