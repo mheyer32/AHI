@@ -35,7 +35,7 @@ bindist:
 	Builds the binary distribution.  You can change the directory in
 	which the binary distribution will be created, by setting the
 	variable DISTDIR. The default is '/tmp/ahi'. This will build all
-	possible versions of the device, including the PowerUp version.
+	possible versions of the device, including the PowerPC version.
 
 revup:
 	Increases the revision of the distribution.

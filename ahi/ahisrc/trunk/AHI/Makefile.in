@@ -46,7 +46,7 @@ OBJECTS_BGUI	= gui_bgui.o
 OBJECTS_CA	= gui_ca.o
 OBJECTS_MUI	= gui_mui.o
 
-TARGETS		= AHI_BGUI AHI_MUI
+TARGETS		= AHI_MUI # AHI_BGUI AHI_CA
 
 LANGUAGES	= $(notdir $(basename $(wildcard ${srcdir}/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))

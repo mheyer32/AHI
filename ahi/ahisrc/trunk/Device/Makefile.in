@@ -183,8 +183,8 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 #	make clean
 #	make bindist-install VER=GEN CPU=68000
 
-	make clean
-	make bindist-install VER=GEN CPU=68020
+#	make clean
+#	make bindist-install VER=GEN CPU=68020
 
 	make clean
 	make bindist-install VER=GEN CPU=68030
