@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.7  2003/07/20 17:04:14  martin
+Replaced Nicolas Sallin with Genesi and bbrv.
+
 Revision 5.6  2003/02/09 15:04:48  martin
 Added a link to CyberSound.lha for 14 bit Paula calibration.
 Clarified the relationshit between units and sound cards.
@@ -1371,6 +1374,9 @@ For the calibrated 14 bit routines for Paula.
 @item MacroSystem Computer GmbH
 For lending me a Toccata card.
 
+@item bbrv and Genesi
+For the Pegasos and that cool OS.
+
 @item Przemyslaw Gruchala
 For finding all those bugs.
 
@@ -1378,7 +1384,7 @@ For finding all those bugs.
 For hiring me to write a SBLive! driver.
 
 @item Steve Krueger and SAS Institute, Inc.
-For the compiler and all the updates.
+For the SAS/C compiler and all the updates.
 
 @item Johan Otterström
 For all the help with the Toccata driver.
@@ -1389,9 +1395,6 @@ of course, for the sound card!
 
 @item Pauli Porkka
 For active support and promotion of @sc{Ahi} from the beginning.
-
-@item Nicolas Sallin
-For patience beyond belief.
 
 @item All the rest
 Many, many other have helped me, sent suggestions etc.  I owe you a lot.
