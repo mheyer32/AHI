@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.6  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.5  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -37,7 +40,8 @@
 ** Audio Database *************************************************************
 ******************************************************************************/
 
-/* Current implementation of the database (Version 0): */
+/* Current implementation of the database (Version 0):
+   Use FreeVec() to free the structure. */
 
 #define ADB_NAME  "Audio Mode Database"
 
@@ -47,15 +51,16 @@ struct AHI_AudioDatabase
   struct MinList          ahidb_AudioModes;     /* The Audio Database */
   UBYTE                   ahidb_Version;        /* Version number (0) */
   UBYTE                   ahidb_Name[sizeof(ADB_NAME)]; /* Name */
-/* I think that was all. Use FreeVec() to free the structure. */
+
 };
 
 struct AHI_AudioMode
 {
   struct MinNode          ahidbn_MinNode;
   struct TagItem          ahidbn_Tags[0];
-/* Taglist, mode name and driver name follows. */
-/* Size variable. Use FreeVec() to free node. */
+
+  /* Taglist, mode name and driver name follows.
+     Size variable. Use FreeVec() to free node. */
 };
 
 /*
@@ -68,9 +73,16 @@ LockDatabase(void)
   struct AHI_AudioDatabase *audiodb;
 
   Forbid();
-  if(audiodb=(struct AHI_AudioDatabase *)FindSemaphore(ADB_NAME))
+  
+  audiodb = (struct AHI_AudioDatabase *) FindSemaphore(ADB_NAME);
+
+  if(audiodb != NULL)
+  {
     ObtainSemaphoreShared((struct SignalSemaphore *) audiodb);
+  }
+
   Permit();
+
   return audiodb;
 }
 
@@ -84,22 +96,33 @@ LockDatabaseWrite(void)
   struct AHI_AudioDatabase *audiodb;
 
   Forbid();
-  if(audiodb=(struct AHI_AudioDatabase *)FindSemaphore(ADB_NAME))
+
+  audiodb = (struct AHI_AudioDatabase *) FindSemaphore(ADB_NAME);
+
+  if(audiodb != NULL)
+  {
     ObtainSemaphore((struct SignalSemaphore *) audiodb);
+  }
   else
   {
-    if(audiodb=(struct AHI_AudioDatabase *)
-        AllocVec(sizeof(struct AHI_AudioDatabase), MEMF_PUBLIC|MEMF_CLEAR))
+    audiodb = (struct AHI_AudioDatabase *)
+        AllocVec(sizeof(struct AHI_AudioDatabase), MEMF_PUBLIC|MEMF_CLEAR);
+
+    if(audiodb != NULL)
     {
-      NewList((struct List *)&audiodb->ahidb_AudioModes);
-      audiodb->ahidb_Semaphore.ss_Link.ln_Name=audiodb->ahidb_Name;
-      audiodb->ahidb_Semaphore.ss_Link.ln_Pri=20;
-      strcpy(audiodb->ahidb_Semaphore.ss_Link.ln_Name,ADB_NAME);
+
+      NewList( (struct List *) &audiodb->ahidb_AudioModes);
+
+      audiodb->ahidb_Semaphore.ss_Link.ln_Name = audiodb->ahidb_Name;
+      audiodb->ahidb_Semaphore.ss_Link.ln_Pri  = 20;
+      strcpy(audiodb->ahidb_Semaphore.ss_Link.ln_Name, ADB_NAME);
+
       AddSemaphore((struct SignalSemaphore *) audiodb);
       ObtainSemaphore((struct SignalSemaphore *) audiodb);
     }
   }
   Permit();
+
   return audiodb;
 }
 
@@ -107,7 +130,9 @@ void
 UnlockDatabase ( struct AHI_AudioDatabase *audiodb )
 {
   if(audiodb)
-    ReleaseSemaphore((struct SignalSemaphore *)audiodb);
+  {
+    ReleaseSemaphore((struct SignalSemaphore *) audiodb);
+  }
 }
 
 struct TagItem *
@@ -115,14 +140,23 @@ GetDBTagList ( struct AHI_AudioDatabase *audiodb,
                ULONG id )
 {
   struct AHI_AudioMode *node;
+  struct TagItem       *rc = NULL;
 
-  if(audiodb && (id != AHI_INVALID_ID))
+  if((audiodb != NULL) && (id != AHI_INVALID_ID))
+  {
     for(node=(struct AHI_AudioMode *)audiodb->ahidb_AudioModes.mlh_Head;
         node->ahidbn_MinNode.mln_Succ;
         node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ)
+    {
       if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
-        return node->ahidbn_Tags;
-  return NULL;
+      {
+        rc = node->ahidbn_Tags;
+        break;
+      }
+    }
+  }
+
+  return rc;
 }
 
 
@@ -164,7 +198,7 @@ GetDBTagList ( struct AHI_AudioDatabase *audiodb,
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL
 NextAudioID( REG(d0, ULONG id),
              REG(a6, struct AHIBase *AHIBase) )
 {
@@ -177,20 +211,34 @@ NextAudioID( REG(d0, ULONG id),
     Debug_NextAudioID(id);
   }
 
-  if(audiodb=LockDatabase())
+  audiodb = LockDatabase();
+
+  if(audiodb != NULL)
   {
-    node=(struct AHI_AudioMode *)audiodb->ahidb_AudioModes.mlh_Head;
+    node = (struct AHI_AudioMode *) audiodb->ahidb_AudioModes.mlh_Head;
+
     if(id != AHI_INVALID_ID)
     {
-      do
+      while(node != NULL)
       {
         if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
+        {
           break;
-      } while (node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ);
-      node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ;
+        }
+        node = (struct AHI_AudioMode *) node->ahidbn_MinNode.mln_Succ;
+      }
+
+      if(node)
+      {
+        node = (struct AHI_AudioMode *) node->ahidbn_MinNode.mln_Succ;
+      }
     }
+
     if(node)
-      nextid=GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags);
+    {
+      nextid = GetTagData(AHIDB_AudioID, AHI_INVALID_ID, node->ahidbn_Tags);
+    }
+
     UnlockDatabase(audiodb);
   }
 
@@ -210,7 +258,7 @@ NextAudioID( REG(d0, ULONG id),
 /****i* ahi.device/AHI_AddAudioMode *****************************************
 *
 *   NAME
-*       AHI_AddAudioMode -- add a audio mode to the database (V4)
+*       AHI_AddAudioMode -- add an audio mode to the database (V4)
 *
 *   SYNOPSIS
 *       success = AHI_AddAudioMode( DBtags );
@@ -240,16 +288,16 @@ NextAudioID( REG(d0, ULONG id),
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL
 AddAudioMode( REG(a0, struct TagItem *DBtags),
               REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHI_AudioDatabase *audiodb;
   struct AHI_AudioMode *node;
-  ULONG nodesize=sizeof(struct AHI_AudioMode),tagitems=0;
-  ULONG datalength=0,namelength=0,driverlength=0;
-  struct TagItem *tstate=DBtags,*tp,*tag;
-  ULONG rc=FALSE;
+  ULONG nodesize = sizeof(struct AHI_AudioMode), tagitems = 0;
+  ULONG datalength = 0, namelength = 0, driverlength = 0;
+  struct TagItem *tstate = DBtags, *tp, *tag;
+  ULONG rc = FALSE;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
@@ -257,67 +305,74 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
   }
 
 // Remove old mode if present in database
-  AHI_RemoveAudioMode(GetTagData(AHIDB_AudioID,AHI_INVALID_ID,DBtags));
+  AHI_RemoveAudioMode( GetTagData(AHIDB_AudioID, AHI_INVALID_ID, DBtags));
 
 // Now add the new mode
-  if(audiodb=LockDatabaseWrite())
+
+  audiodb = LockDatabaseWrite();
+
+  if(audiodb != NULL)
   {
 
 // Find total size
-    while(tag=NextTagItem(&tstate))
+
+    while( (tag = NextTagItem(&tstate)) != NULL )
     {
       if(tag->ti_Data) switch(tag->ti_Tag)
       {
         case AHIDB_Data:
-          datalength=((ULONG *)tag->ti_Data)[0];
-          nodesize+=datalength;
+          datalength    = ((ULONG *)tag->ti_Data)[0];
+          nodesize     += datalength;
           break;
         case AHIDB_Name:
-          namelength=strlen((UBYTE *)tag->ti_Data)+1;
-          nodesize+=namelength;
+          namelength    = strlen((UBYTE *)tag->ti_Data)+1;
+          nodesize     += namelength;
           break;
         case AHIDB_Driver:
-          driverlength=strlen((UBYTE *)tag->ti_Data)+1;
-          nodesize+=driverlength;
+          driverlength  = strlen((UBYTE *)tag->ti_Data)+1;
+          nodesize     += driverlength;
           break;
       }
-      nodesize+=sizeof(struct TagItem);
+      nodesize += sizeof(struct TagItem);
       tagitems++;
     }
-    nodesize+=sizeof(struct TagItem);  // The last TAG_END
+
+    nodesize += sizeof(struct TagItem);  // The last TAG_END
     tagitems++;
 
-    if(node=AllocVec(nodesize,MEMF_PUBLIC|MEMF_CLEAR))
+    node = AllocVec(nodesize, MEMF_PUBLIC|MEMF_CLEAR);
+
+    if(node != NULL)
     {
-      tp=node->ahidbn_Tags;
-      tstate=DBtags;
-      while (tag=NextTagItem(&tstate))
+      tp      = node->ahidbn_Tags;
+      tstate  = DBtags;
+      while( (tag = NextTagItem(&tstate)) != NULL)
       {
         if(tag->ti_Data) switch(tag->ti_Tag)
         {
           case AHIDB_Data:
-            tp->ti_Data=((ULONG) &node->ahidbn_Tags[tagitems]);
-            CopyMem((APTR)tag->ti_Data,(APTR)tp->ti_Data,datalength);
+            tp->ti_Data = ((ULONG) &node->ahidbn_Tags[tagitems]);
+            CopyMem((APTR)tag->ti_Data, (APTR)tp->ti_Data, datalength);
             break;
           case AHIDB_Name:
-            tp->ti_Data=((ULONG) &node->ahidbn_Tags[tagitems]) + datalength;
-            strcpy((UBYTE *)tp->ti_Data,(UBYTE *)tag->ti_Data);
+            tp->ti_Data = ((ULONG) &node->ahidbn_Tags[tagitems]) + datalength;
+            strcpy((UBYTE *)tp->ti_Data, (UBYTE *)tag->ti_Data);
             break;
           case AHIDB_Driver:
-            tp->ti_Data=((ULONG) &node->ahidbn_Tags[tagitems]) + datalength + namelength;
-            strcpy((UBYTE *)tp->ti_Data,(UBYTE *)tag->ti_Data);
+            tp->ti_Data= ((ULONG) &node->ahidbn_Tags[tagitems]) + datalength + namelength;
+            strcpy((UBYTE *)tp->ti_Data, (UBYTE *)tag->ti_Data);
             break;
           default:
-            tp->ti_Data=tag->ti_Data;
+            tp->ti_Data = tag->ti_Data;
             break;
         }
-        tp->ti_Tag=tag->ti_Tag;
+        tp->ti_Tag = tag->ti_Tag;
         tp++;
       }
-      tp->ti_Tag=TAG_DONE;
+      tp->ti_Tag = TAG_DONE;
 
-      AddHead((struct List *)&audiodb->ahidb_AudioModes,(struct Node *)node);
-      rc=TRUE;
+      AddHead((struct List *) &audiodb->ahidb_AudioModes, (struct Node *) node);
+      rc = TRUE;
     }
     UnlockDatabase(audiodb);
   }
@@ -350,7 +405,7 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
 *       Removes the audio mode from the audio mode database.
 *
 *   INPUTS
-*       ID - The audio ID of the mode to be removed.
+*       ID - The audio ID of the mode to be removed, or AHI_INVALID_ID.
 *
 *   RESULT
 *       success - FALSE if the mode could not be removed.
@@ -367,7 +422,7 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL
 RemoveAudioMode( REG(d0, ULONG id),
                  REG(a6, struct AHIBase *AHIBase) )
 {
@@ -380,10 +435,19 @@ RemoveAudioMode( REG(d0, ULONG id),
     Debug_RemoveAudioMode(id);
   }
 
-  if(audiodb=LockDatabaseWrite())
-    UnlockDatabase(audiodb);
 
-  if(audiodb=LockDatabaseWrite())
+  /* Why ?? */
+
+  audiodb = LockDatabaseWrite();
+
+  if(audiodb != NULL)
+  {
+    UnlockDatabase(audiodb);
+  }
+
+  audiodb = LockDatabaseWrite();
+
+  if(audiodb != NULL)
   {
     if(id != AHI_INVALID_ID)
     {
@@ -391,29 +455,37 @@ RemoveAudioMode( REG(d0, ULONG id),
           node->ahidbn_MinNode.mln_Succ;
           node=(struct AHI_AudioMode *)node->ahidbn_MinNode.mln_Succ)
       {
-        if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
+        if(id == GetTagData(AHIDB_AudioID, AHI_INVALID_ID, node->ahidbn_Tags))
         {
-          Remove((struct Node *)node);
+          Remove((struct Node *) node);
           FreeVec(node);
-          rc=TRUE;
+          rc = TRUE;
           break;
         }
       }
-// Remove the entire database if it's empty
-      if(!audiodb->ahidb_AudioModes.mlh_Head->mln_Succ)
+
+      // Remove the entire database if it's empty
+
+      Forbid();
+
+      if(audiodb->ahidb_AudioModes.mlh_Head->mln_Succ == NULL)
       {
         UnlockDatabase(audiodb);
-        Forbid();
-        if(audiodb=(struct AHI_AudioDatabase *)FindSemaphore(ADB_NAME))
+
+        audiodb = (struct AHI_AudioDatabase *) FindSemaphore(ADB_NAME);
+
+        if(audiodb != NULL)
         {
           RemSemaphore((struct SignalSemaphore *) audiodb);
-          ObtainSemaphore((struct SignalSemaphore *) audiodb);
-          ReleaseSemaphore((struct SignalSemaphore *) audiodb);
+          FreeVec(audiodb);
         }
-        FreeVec(audiodb);
-        audiodb=NULL;
-        Permit();
+
+        audiodb = NULL;
+
       }
+
+      Permit();
+
     }
     UnlockDatabase(audiodb);
   }
@@ -467,7 +539,7 @@ RemoveAudioMode( REG(d0, ULONG id),
 *
 */
 
-ASMCALL ULONG
+ULONG ASMCALL
 LoadModeFile( REG(a0, UBYTE *name),
               REG(a6, struct AHIBase *AHIBase) )
 {
@@ -481,16 +553,22 @@ LoadModeFile( REG(a0, UBYTE *name),
   }
 
   SetIoErr(NULL);
-  if(fib=AllocDosObject(DOS_FIB,TAG_DONE))
+
+  fib = AllocDosObject(DOS_FIB, TAG_DONE);
+
+  if(fib != NULL)
   {
-    if(lock=Lock(name,ACCESS_READ))
+    lock = Lock(name, ACCESS_READ);
+
+    if(lock != NULL)
     {
       if(Examine(lock,fib))
       {
         if(fib->fib_DirEntryType>0) // Directory?
         {
-          thisdir=CurrentDir(lock);
-          while(ExNext(lock,fib))
+          thisdir = CurrentDir(lock);
+
+          while(ExNext(lock, fib))
           {
             if(fib->fib_DirEntryType>0)
             {
@@ -498,7 +576,9 @@ LoadModeFile( REG(a0, UBYTE *name),
             }
             else
             {
-              if(!(rc=AddModeFile(fib->fib_FileName)))
+              rc = AddModeFile(fib->fib_FileName);
+
+              if(!rc)
               {
                 break;
               }
@@ -508,15 +588,18 @@ LoadModeFile( REG(a0, UBYTE *name),
           {
             SetIoErr(NULL);
           }
+
           CurrentDir(thisdir);
         }
         else  // Plain file
         {
-          rc=AddModeFile(name);
+          rc = AddModeFile(name);
         }
       }
+
       UnLock(lock);
     }
+
     FreeDosObject(DOS_FIB,fib);
   }
 
@@ -528,7 +611,9 @@ LoadModeFile( REG(a0, UBYTE *name),
   return rc;
 }
 
-ULONG AddModeFile(UBYTE *filename)
+/* AddModeFile **********************************************************/
+
+ULONG AddModeFile ( UBYTE *filename )
 {
   struct IFFHandle *iff;
   struct StoredProperty *name,*data;
@@ -542,45 +627,63 @@ ULONG AddModeFile(UBYTE *filename)
   };
   ULONG rc=FALSE;
 
-  if(iff=AllocIFF())
+  iff = AllocIFF();
+
+  if(iff != NULL)
   {
-    iff->iff_Stream=Open(filename, MODE_OLDFILE);
-    if(iff->iff_Stream)
+
+    iff->iff_Stream = Open(filename, MODE_OLDFILE);
+
+    if(iff->iff_Stream != NULL)
     {
       InitIFFasDOS(iff);
-      if(!OpenIFF(iff,IFFF_READ))
+
+      if(!OpenIFF(iff, IFFF_READ))
       {
 
-        if(!(PropChunk(iff,ID_AHIM,ID_AUDN)
-          || PropChunk(iff,ID_AHIM,ID_AUDD)
-          || CollectionChunk(iff,ID_AHIM,ID_AUDM)
-          || StopOnExit(iff,ID_AHIM,ID_FORM)))
+        if(!(PropChunk(iff,       ID_AHIM, ID_AUDN)
+          || PropChunk(iff,       ID_AHIM, ID_AUDD)
+          || CollectionChunk(iff, ID_AHIM, ID_AUDM)
+          || StopOnExit(iff,      ID_AHIM, ID_FORM)))
         {
-          if(ParseIFF(iff,IFFPARSE_SCAN) == IFFERR_EOC)
+          if(ParseIFF(iff, IFFPARSE_SCAN) == IFFERR_EOC)
           {
-            name=FindProp(iff,ID_AHIM,ID_AUDN);
-            data=FindProp(iff,ID_AHIM,ID_AUDD);
-            if(name)
-              extratags[0].ti_Data=(ULONG)name->sp_Data;
-            if(data)
-              extratags[1].ti_Data=(ULONG)data->sp_Data;
-            ci=FindCollection(iff,ID_AHIM,ID_AUDM);
-            rc=TRUE;
-            while(ci && rc)
+            name = FindProp(iff,       ID_AHIM, ID_AUDN);
+            data = FindProp(iff,       ID_AHIM, ID_AUDD);
+            ci   = FindCollection(iff, ID_AHIM, ID_AUDM);
+
+            if(name != NULL)
             {
-// Relocate loaded taglist
-              tstate=(struct TagItem *)ci->ci_Data;
-              while(tag=NextTagItem(&tstate))
+              extratags[0].ti_Data = (ULONG) name->sp_Data;
+            }
+
+            if(data != NULL)
+            {
+              extratags[1].ti_Data = (ULONG) data->sp_Data;
+            }
+
+            rc = TRUE;
+
+            while(ci != NULL && rc)
+            {
+              // Relocate loaded taglist
+
+              tstate = (struct TagItem *) ci->ci_Data;
+              while((tag = NextTagItem(&tstate)) != NULL )
               {
                 if(tag->ti_Tag & (AHI_TagBaseR ^ AHI_TagBase))
                 {
-                  tag->ti_Data+=(ULONG)ci->ci_Data;
+                  tag->ti_Data += (ULONG) ci->ci_Data;
                 }
               }
-// Link taglists
-              extratags[2].ti_Data=(ULONG)ci->ci_Data;
-              rc=AHI_AddAudioMode(&extratags[0]);
-              ci=ci->ci_Next;
+
+              // Link taglists
+
+              extratags[2].ti_Data = (ULONG) ci->ci_Data;
+
+              rc = AHI_AddAudioMode(extratags);
+
+              ci = ci->ci_Next;
             }
           }
         }
@@ -590,5 +693,6 @@ ULONG AddModeFile(UBYTE *filename)
     }
     FreeIFF(iff);
   }
+
   return rc;
 }

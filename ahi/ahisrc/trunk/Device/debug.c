@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.1  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -39,7 +42,7 @@ PrintTagList(struct TagItem *tags)
   else
   {
     tstate = tags;
-    while (tag = NextTagItem(&tstate))
+    while((tag = NextTagItem(&tstate)))
     {
       KPrintF("\n  0x%08lx, 0x%08lx,", tag->ti_Tag, tag->ti_Data);
     }
@@ -111,7 +114,14 @@ Debug_SetEffect( ULONG *effect, struct AHIPrivAudioCtrl *audioctrl )
 void
 Debug_LoadSound( UWORD sound, ULONG type, APTR info, struct AHIPrivAudioCtrl *audioctrl )
 {
-  KPrintF("AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)", sound, type, info, audioctrl);
+  KPrintF("AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx) ", sound, type, info, audioctrl);
+
+  if(type == AHIST_SAMPLE || type == AHIST_DYNAMICSAMPLE)
+  {
+    struct AHISampleInfo *si = (struct AHISampleInfo *) info;
+
+    KPrintF("[T:0x%08lx A:0x%08lx L:%ld]", si->ahisi_Type, si->ahisi_Address, si->ahisi_Length);
+  }
 }
 
 void
@@ -198,7 +208,7 @@ Debug_LoadModeFile( STRPTR name)
 ** The Prayer *****************************************************************
 ******************************************************************************/
 
-const static char prayer[] =
+static const char prayer[] =
 {
   "Oh Lord, most wonderful God, I pray for every one that uses this software; "
   "Let the Holy Ghost speak, call him or her to salvation, reveal your Love. "

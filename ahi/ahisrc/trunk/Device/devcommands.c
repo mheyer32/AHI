@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.12  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.11  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 * Fixed a bug that showed up when C optimizing was turned on.
@@ -14,7 +17,9 @@
 
 //#define DEBUG
 
+#include <CompilerSpecific.h>
 #include "ahi_def.h"
+
 #include <dos/dos.h>
 #include <exec/errors.h>
 #include <exec/io.h>
@@ -38,7 +43,6 @@
 
 
 static void TermIO(struct AHIRequest *, struct AHIBase *);
-void PerformIO(struct AHIRequest *, struct AHIBase *);
 static void Devicequery(struct AHIRequest *, struct AHIBase *);
 static void ResetCmd(struct AHIRequest *, struct AHIBase *);
 static void ReadCmd(struct AHIRequest *, struct AHIBase *);
@@ -47,19 +51,12 @@ static void StopCmd(struct AHIRequest *, struct AHIBase *);
 static void StartCmd(struct AHIRequest *, struct AHIBase *);
 static void FlushCmd(struct AHIRequest *, struct AHIBase *);
 
-void FeedReaders(struct AHIDevUnit *,struct AHIBase *);
 static void FillReadBuffer(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
 
 static void NewWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
 static void AddWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
 static void PlayRequest(int, struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
-void RethinkPlayers( struct AHIDevUnit *, struct AHIBase *);
 static void RemPlayers( struct List *, struct AHIDevUnit *, struct AHIBase *);
-void UpdateSilentPlayers( struct AHIDevUnit *, struct AHIBase *);
-
-// Should be moved to a separate file... IMHO.
-struct Node *FindNode(struct List *, struct Node *);
-
 
 
 /******************************************************************************
@@ -69,7 +66,7 @@ struct Node *FindNode(struct List *, struct Node *);
 // This function is called by the system each time exec.library/DoIO()
 // is called.
 
-ASMCALL void
+void ASMCALL
 DevBeginIO ( REG(a1, struct AHIRequest *ioreq),
              REG(a6, struct AHIBase *AHIBase) )
 {
@@ -115,7 +112,7 @@ DevBeginIO ( REG(a1, struct AHIRequest *ioreq),
 // This function is called by the system each time exec.library/AbortIO()
 // is called.
 
-ASMCALL ULONG
+ULONG ASMCALL
 DevAbortIO ( REG(a1, struct AHIRequest *ioreq),
              REG(a6, struct AHIBase *AHIBase) )
 {
@@ -518,22 +515,22 @@ FlushCmd ( struct AHIRequest *ioreq,
   ioreq->ahir_Std.io_Actual = 0;
 
   // Abort all current IO-requests
-  while(ior = (struct AHIRequest *) iounit->ReadList.mlh_Head)
+  while((ior = (struct AHIRequest *) iounit->ReadList.mlh_Head))
   {
     DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
-  while(ior = (struct AHIRequest *) iounit->PlayingList.mlh_Head)
+  while((ior = (struct AHIRequest *) iounit->PlayingList.mlh_Head))
   {
     DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
-  while(ior = (struct AHIRequest *) iounit->SilentList.mlh_Head)
+  while((ior = (struct AHIRequest *) iounit->SilentList.mlh_Head))
   {
     DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
-  while(ior = (struct AHIRequest *) iounit->WaitingList.mlh_Head)
+  while((ior = (struct AHIRequest *) iounit->WaitingList.mlh_Head))
   {
     DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
@@ -918,7 +915,7 @@ StartCmd ( struct AHIRequest *ioreq,
   if(iounit->StopCnt)
   {
     iounit->StopCnt--;
-    if(AHIsubBase = audioctrl->ahiac_SubLib)
+    if((AHIsubBase = audioctrl->ahiac_SubLib))
     {
       if(iounit->StopCnt == 0)
       {
@@ -929,8 +926,8 @@ StartCmd ( struct AHIRequest *ioreq,
 
 //        AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
 
-        while(ior = (struct AHIRequest *) RemHead(
-            (struct List *) &iounit->RequestQueue))
+        while((ior = (struct AHIRequest *) RemHead(
+            (struct List *) &iounit->RequestQueue)))
         {
           WriteCmd(ior, AHIBase);
         }
@@ -1297,7 +1294,7 @@ AddWriter ( struct AHIRequest *ioreq,
 
   for(channel = 0; channel < iounit->Channels; channel++)
   {
-    if(iounit->Voices[channel].NextOffset == FREE)
+    if(iounit->Voices[channel].NextOffset == (ULONG) FREE)
     {
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
       PlayRequest(channel, ioreq, iounit, AHIBase);
@@ -1463,13 +1460,13 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
 
   // Move all silent requests to our temporary list
 
-  while(ioreq = (struct AHIRequest *) RemHead((struct List *) &iounit->SilentList))
+  while((ioreq = (struct AHIRequest *) RemHead((struct List *) &iounit->SilentList)))
   {
     AddTail((struct List *) &templist, (struct Node *) ioreq);
   }
 
   // And add them back...
-  while(ioreq = (struct AHIRequest *) RemHead((struct List *) &templist))
+  while((ioreq = (struct AHIRequest *) RemHead((struct List *) &templist)))
   {
     AddWriter(ioreq, iounit, AHIBase);
   }

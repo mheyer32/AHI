@@ -1,5 +1,8 @@
 ;/* $Id$
 * $Log$
+* Revision 4.11  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.10  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -21,12 +24,25 @@
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
 
-ASMCALL ULONG RecalcBuff ( REG(d1, ULONG freq), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
-ASMCALL BOOL PreTimer ( void ) {}
-ASMCALL void PostTimer ( void ) {}
-ASMCALL BOOL DummyPreTimer ( void ) {}
-ASMCALL void DummyPostTimer ( void ) {}
-ASMCALL LONG Fixed2Shift ( REG(d0, Fixed val) ) {}
+char STDARGS *Sprintf(char *dst, const char *fmt, ...) {}
+BOOL ASMCALL PreTimer ( void ) {}
+void ASMCALL PostTimer ( void ) {}
+BOOL ASMCALL DummyPreTimer ( void ) {}
+void ASMCALL DummyPostTimer ( void ) {}
+LONG ASMCALL Fixed2Shift ( REG(d0, Fixed val) ) {}
+
+void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
+
+#if 0
+void ASMCALL Add64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+LONG ASMCALL Cmp64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+void ASMCALL Divs64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+void ASMCALL Divu64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+void ASMCALL Muls64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+void ASMCALL Mulu64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+void ASMCALL Neg64p( REG(a0, longlong *ValueAPtr) ) {}
+void ASMCALL Sub64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
+#endif
 
 ;/*     Comment terminated at the end of the file!
 
@@ -45,7 +61,6 @@ ASMCALL LONG Fixed2Shift ( REG(d0, Fixed val) ) {}
 
 	include	ahi_def.i
 
-	XDEF	_RecalcBuff
 	XDEF	_PreTimer
 	XDEF	_PostTimer
 	XDEF	_DummyPreTimer
@@ -57,6 +72,24 @@ ASMCALL LONG Fixed2Shift ( REG(d0, Fixed val) ) {}
 	XREF	_TimerBase
 	XREF	_UtilityBase
 
+	XDEF	_Mix
+
+	* Define 64 bit math routines if 020+
+
+ IF 0
+ IFGE	__CPU-68020
+	XDEF	_Add64p
+	XDEF	_Cmp64p
+	XDEF	_Divs64p
+	XDEF	_Divu64p
+	XDEF	_Muls64p
+	XDEF	_Mulu64p
+	XDEF	_Neg64p
+	XDEF	_Sub64p
+ ENDC
+ ENDC * IF 0
+
+** Sprintf ********************************************************************
 
 ;
 ; Simple version of the C "sprintf" function.  Assumes C-style
@@ -88,55 +121,7 @@ stuffChar:
 	rts
 
 
-;in:
-* d1	Frequency (Fixed)
-* a2	ptr to AHIAudioCtrl
-;ut:
-* d0	Samples/MixerPass (also in ahiac_BuffSamples)
-*       ahiac_BuffSizeNow will also be updated (For mixing routine)
-_RecalcBuff:
-	move.l	ahiac_MixFreq(a2),d0
-	beq	.error
-	tst.l	d1
-	beq	.error
-	lsl.l	#8,d0				; Mix freq <<8 => 24.8
-	cmp.l	#65536,d1
-	bhs.b	.fixed
-	swap.w	d1
-.fixed
-	lsr.l	#8,d1				; Freq >>8 => 24.8
-
- IFGE	__CPU-68020
-	divu.l	d1,d0
- ELSE
-	move.l	_UtilityBase(pc),a1
-	jsr	_LVOUDivMod32(a1)
- ENDC
-	and.l	#$ffff,d0
-	move.l	d0,ahiac_BuffSamples(a2)
-
-	move.l	d0,d1
-	lsl.l	#1,d1				;always words
-	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
-	beq	.1
-	lsl.l	#1,d1				;2 hw channels
-.1
-	btst	#AHIACB_HIFI,ahiac_Flags+3(a2)
-	beq	.2
-	lsl.l	#1,d1				;32 bit samples
-.2
-	btst.b	#AHIACB_POSTPROC-24,ahiac_Flags(a2)
-	beq	.3
-	lsl.l	#1,d1				;2 buffers
-.3
-	addq.l	#7,d1
-	and.b	#~7,d1				;8 byte align
-	add.l	#80,d1				;FIXIT! Kludge for Mungwall hits
-	move.l	d1,ahiac_BuffSizeNow(a2)
-.error
-	rts
-
-
+** PreTimer/PostTimer *********************************************************
 
 ;in:
 * a2	ptr to AHIAudioCtrl
@@ -191,6 +176,8 @@ _DummyPreTimer:
 _DummyPostTimer:
 	rts
 
+
+** Fixed2Shift ****************************************************************
 
 ;in:
 * d0	Fixed
@@ -255,6 +242,8 @@ _Fixed2Shift:
 	pop	d1
 	rts
 
+** UDivMod64 ******************************************************************
+
 ;UDivMod64 -- unsigned 64 by 32 bit division
 ;             64 bit quotient, 32 bit remainder.
 ; (d1:d2)/d0 = d0:d2, d1 remainder.
@@ -289,5 +278,176 @@ _UDivMod64:
 	move.l	d6,d0
 	movem.l	(sp)+,d3-d7
 	rts
+
+
+** Stubs **********************************************************************
+
+_Mix:
+
+ IFD	VERSION68K
+	XREF	_Mix68k
+
+	jmp	_Mix68k
+ ENDC
+
+ IFD	VERSIONPPC
+	XREF	_MixPPC
+
+	pushm	d0-d1/a0-a1
+	jsr	_MixPPC
+	popm	d0-d1/a0-a1
+	rts
+ ENDC
+
+ IFD	VERSIONGEN
+	XREF	_MixGeneric
+
+	pushm	d0-d1/a0-a1
+	jsr	_MixGeneric
+	popm	d0-d1/a0-a1
+	rts
+ ENDC
+
+** Math functions *************************************************************
+
+ IF 0
+
+pow2_32:
+	dc.x	2<<32
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+;	longlong *ValueAPtr updated
+_Add64p:
+	addq.l	#8,a0
+	addq.l	#8,a1
+	move.w	#0,ccr			;clear x
+	addx.l	-(a1),-(a0)
+	addx.l	-(a1),-(a0)
+	rts
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+* d0	A<B: -1, A=B: 0, A>B: 1
+_Cmp64p:
+	cmp.l	(a1)+,(a0)+
+	bgt	.aGTb
+	bls	.aLSb
+
+	cmp.l	(a1)+,(a0)+
+	bgt	.aGTb
+	bls	.aLSb
+
+	moveq	#0,d0
+	rts
+
+.aGTb
+	moveq	#1,d0
+	rts
+
+.aLSb
+	moveq	#-1,d0
+	rts
+
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+;	longlong *ValueAPtr updated
+_Divs64p:
+	fmov.x	fp2,-(sp)
+	movem.l	(a0),d0/d1
+	movem.l	(a1),d2/d3
+	fmov.x	pow2_32,fp2
+
+	fmov.l	d0,fp0
+	fmul	fp2,fp0
+	fadd.l	d1,fp0
+
+	fmov.l	d2,fp1
+	fmul	fp2,fp1
+	fadd.l	d3,fp1
+
+	fdiv	fp1,fp0
+
+Great. Now how do I convert fp0 to a 64 bit integer??? Sigh.
+
+	divs.l	d2:d3,d0:d1
+	movem.l	d0/d1,(a0)
+	fmov.x	(sp)+,fp2
+	rts
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+;	longlong *ValueAPtr updated
+_Divu64p:
+	movem.l	(a0),d0/d1
+	movem.l	(a1),d2/d3
+	divul.l	d2:d3,d0:d1
+	movem.l	d0/d1,(a0)
+	rts
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+;	longlong *ValueAPtr updated
+_Muls64p:
+	movem.l	(a0),d0/d1
+	movem.l	(a1),d2/d3
+	mulsl.l	d2:d3,d0:d1
+	movem.l	d0/d1,(a0)
+	rts
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+;	longlong *ValueAPtr updated
+_Mulu64p:
+	movem.l	(a0),d0/d1
+	movem.l	(a1),d2/d3
+	mulul.l	d2:d3,d0:d1
+	movem.l	d0/d1,(a0)
+	rts
+	rts
+
+;in:
+* a0	longlong *ValueAPtr
+;out
+;	longlong *ValueAPtr updated
+_Neg64p:
+	not.l	(a0)+
+	not.l	(a0)+
+	lea	.1,a1
+	move.w	#0,ccr			;clear x
+	addx.l	-(a1),-(a0)
+	addx.l	-(a1),-(a0)
+	rts
+
+	dc.l	0,1
+.1
+
+;in:
+* a0	longlong *ValueAPtr
+* a1	longlong *ValueBPtr
+;out
+;	longlong *ValueAPtr updated
+_Sub64p:
+	addq.l	#8,a0
+	addq.l	#8,a1
+	move.w	#0,ccr			;clear x
+	subx.l	-(a1),-(a0)
+	subx.l	-(a1),-(a0)
+	rts
+ ENDC * IF 0
+
 
 ;	C comment terminating here... */

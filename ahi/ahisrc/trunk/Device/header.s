@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.6  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.5  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -84,18 +87,18 @@
 *
 
 
-	include	devices/timer.i
+;	include	devices/timer.i
 	include	exec/exec.i
-	include dos/dos.i
-	include	graphics/gfxbase.i
-	include	utility/utility.i
+;	include dos/dos.i
+;	include	graphics/gfxbase.i
+;	include	utility/utility.i
 
 	include	lvo/exec_lib.i
 
-	include devices/ahi.i
-	include libraries/ahi_sub.i
 	include ahi_def.i
 	include ahi.device_rev.i
+
+	include	macros.i
 
 ;	section	text,code
 
@@ -131,20 +134,38 @@ RomTag:
 _DevName:	AHINAME
 _IDString:	VSTRING
 
+VERSIONXXX	MACRO	
+
+ IFD	VERSIONPPC
+	dc.b	"/PPC"
+ ENDC
+
+ IFD	VERSIONGEN
+	dc.b	"/Generic"
+ ENDC
+
+	ENDM
+
 	dc.b	"$VER: "
 	VERS
 	dc.b	" ("
 	DATE
 	dc.b	") "
-	dc.b	"©1994-1997 Martin Blom. "
+	dc.b	"©1994-1998 Martin Blom. "
  IFGE	__CPU-68020
   IFGE	__CPU-68060
-	dc.b	"68060 version.",0
+	dc.b	"68060"
+	VERSIONXXX
+	dc.b	" version.",0
   ELSE
-	dc.b	"68020+ version.",0
+	dc.b	"68020+"
+	VERSIONXXX
+	dc.b	" version.",0
   ENDC
  ELSE
-	dc.b	"68000 version.",0
+	dc.b	"68000"
+	VERSIONXXX
+	dc.b	" version.",0
  ENDC
 
 *******************************************************************************
@@ -194,7 +215,7 @@ funcTable:
 *
 	dc.l	_DevBeginIO
 	dc.l	_DevAbortIO
-
+*
 	dc.l	_AllocAudioA
 	dc.l	_FreeAudio
 	dc.l	_KillAudio
@@ -227,6 +248,12 @@ dataTable:
 	INITLONG	LIB_IDSTRING,_IDString
 	DC.L		0
 
+
+
+*******************************************************************************
+** Globals ********************************************************************
+*******************************************************************************
+
 	XDEF	_AHIBase
 	XDEF	_DOSBase
 	XDEF	_GadToolsBase
@@ -236,11 +263,6 @@ dataTable:
 	XDEF	_LocaleBase
 	XDEF	_TimerBase
 	XDEF	_UtilityBase
-
-
-*******************************************************************************
-** Globals ********************************************************************
-*******************************************************************************
 
 _AHIBase:	dc.l	0
 _DOSBase:	dc.l	0
@@ -271,7 +293,6 @@ _timeval:	dc.l	0
 ** initRoutine ****************************************************************
 *******************************************************************************
 
-	XREF	_initcode
 	XREF	_OpenLibs
 
 initRoutine:
@@ -299,8 +320,6 @@ initRoutine:
 	jsr	_OpenLibs
 	tst.l	d0
 	beq	.exit
-
-	jsr	_initcode
 
 	move.l	a5,d0
 .exit

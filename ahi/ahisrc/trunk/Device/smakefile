@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.16  1998/01/12 20:07:28  lcs
+# More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+#
 # Revision 4.15  1997/12/21 17:41:50  lcs
 # Major source cleanup, moved some functions to separate files.
 #
@@ -15,25 +18,39 @@
 ##
 ###############################################################################
 
-CPU	= 68030
+CPU	= 68030            # The CPU to generate code for.
+MATH	= STANDARD         # What math code to generate
+#MATH	= soft-float
+VER	= VERSION68K       # This constant will be defined. Can be VERSION68K,
+                           # VERSIONPPC or VERSIONGEN.
+
 OPTIMIZE= OPTIMIZE OPTTIME OPTSCHED
-DEBUG	= DEBUG=FULL
 TARGET	= AHI:User/Devs/ahi.device
+
+
+## Sources
 
 SRCCOMMON = asmfuncs.a audioctrl.c database.c debug.c devcommands.c device.c\
 devsupp.a effectinit.c footer.a header.a modeinfo.c requester.c sound.c
 
 SRC68K	= dspecho_68k.a mixer_68k.a
 
-SRCPPC	= dspecho_generic.c mixer_generic.c
+SRCPPC	= dspecho_ppc.c mixer_ppc.c
 
-SOURCES = $(SRCCOMMON) $(SRC68K) $(SRCPPC)
+SRCGEN	= dspecho_generic.c mixer_generic.c
 
+SOURCES = $(SRCCOMMON) $(SRC68K) $(SRCPPC) $(SRCGEN)
+
+
+## Prototypes
 
 PROTOS = CSOURCE asmfuncs.a debug.c CSOURCE devsupp.a requester.c device.c\
-audioctrl.c mixer_generic.c CSOURCE mixer_68k.a modeinfo.c database.c\
-effectinit.c devcommands.c sound.c
+audioctrl.c CSOURCE mixer_68k.a mixer_ppc.c mixer_generic.c modeinfo.c\
+database.c effectinit.c devcommands.c sound.c\
+dspecho_generic.c dspecho_ppc.c CSOURCE dspecho_68k.a
 
+
+## Objects
 
 OBJCOMMON = header.o device.o devcommands.o devsupp.o\
 localize.o modeinfo.o requester.o database.o debug.o\
@@ -41,29 +58,59 @@ asmfuncs.o audioctrl.o effectinit.o sound.o footer.o
 
 OBJ68K	= dspecho_68k.o mixer_68k.o
 
-OBJPPC	= dspecho_generic.o mixer_generic.o
+OBJPPC	= dspecho_ppc.o mixer_ppc.o
+
+OBJGEN	= dspecho_generic.o mixer_generic.o
 
 OBJECTS68k = $(OBJCOMMON) $(OBJ68K)
 OBJECTSPPC = $(OBJCOMMON) $(OBJPPC)
+OBJECTSGEN = $(OBJCOMMON) $(OBJGEN)
 
-OBJECTS	= $(OBJCOMMON) $(OBJ68K) $(OBJPPC)
+OBJECTS	= $(OBJCOMMON) $(OBJ68K) $(OBJPPC) $(OBJGEN)
+
+## Link libraries
+
+LIBCOMMON = LIB LIB:scnb.lib LIB:debug.lib LIB:amiga.lib
+
+LIB68K	=
+
+LIBPPC	= LIB:scm881nb.lib
+
+LIBGEN	= LIB:scm881nb.lib
+
+LIBRARIES68K = $(LIBCOMMON) $(LIB68K)
+LIBRARIESPPC = $(LIBCOMMON) $(LIBPPC)
+LIBRARIESGEN = $(LIBCOMMON) $(LIBGEN)
+
+
+## Files to RCS
 
 RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h\
 ahi.cd C_c_AHI.sd C_h_AHI.sd smakefile
 
 
+## Programs and arguments
+
 CCOMP	= SC:c/sc
-CFLAGS = $(DEBUG) CODE=FAR DATA=FARONLY ABSFUNCPOINTER PARAMETERS=REGISTERS\
-NOSTACKCHECK UNSIGNEDCHARS COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS\
-MEMORYSIZE=HUGE STRINGSECTION=CODE GST=gst CPU=$(CPU) $(OPTIMIZE)
+CFLAGS = CPU=$(CPU) MATH=$(MATH) DEFINE $(VER) NOLINK DEBUG=FULL\
+PARAMETERS=REGISTERS CODE=FAR DATA=FARONLY STRINGSECTION=CODE ABSFUNCPOINTER\
+NOSTACKCHECK UNSIGNEDCHARS UTILITYLIBRARY\
+NOVERSION NOICONS MEMORYSIZE=HUGE GST=gst\
+#OPTIMIZE OPTTIME OPTSCHED
+
+#CCOMP	= gcc
+#CFLAGS	= -m$(CPU) -m$(MATH) -D$(VER) -c -g \
+#-noixemul -mregparm=4 -mfixedstack -funsigned-char \
+#-Wall -W -Wstrict-prototypes\
+#-O2 -ffast-math -funroll-loops
 
 ASM	= Programmering:PhxAss/Bin/PhxAss
-AFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
+AFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)\
+          SET "$(VER)"
 
 LINKER	= SC:c/slink
 LFLAGS	= ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy\
-          MAP ahi.map NOALVS LIB LIB:scnb.lib
-LDEBUG	= LIB:debug.lib LIB:amiga.lib
+          DEFINE @_CXBRK=@__dummy MAP ahi.map,x NOALVS 
 
 
 ##
@@ -72,13 +119,37 @@ LDEBUG	= LIB:debug.lib LIB:amiga.lib
 ###############################################################################
 
 $(TARGET): $(OBJECTS68K)
-	$(LINKER) $(LFLAGS) $(LDEBUG) TO Devs:ahi.device FROM $(OBJECTS68K)
+	$(LINKER) $(LFLAGS) $(LIBRARIES68K) TO Devs:ahi.device FROM $(OBJECTS68K)
 	$(LINKER) FROM Devs:ahi.device to $(TARGET) ND NOICONS
 
-$(TARGET).PPC: $(OBJECTSPPC)
-	$(LINKER) $(LFLAGS) $(LDEBUG) TO Devs:ahi.device FROM $(OBJECTSPPC)
+$(TARGET).ppc: $(OBJECTSPPC)
+	$(LINKER) $(LFLAGS) $(LIBRARIESPPC) TO Devs:ahi.device FROM $(OBJECTSPPC)
 	$(LINKER) FROM Devs:ahi.device to $(TARGET) ND NOICONS
 
+$(TARGET).gen: $(OBJECTSGEN)
+	$(LINKER) $(LFLAGS) $(LIBRARIESGEN) TO Devs:ahi.device FROM $(OBJECTSGEN)
+	$(LINKER) FROM Devs:ahi.device to $(TARGET) ND NOICONS
+
+
+mc000:
+	smake $(TARGET) CPU=68000
+	move $(TARGET) $(TARGET).000
+
+mc030:
+	smake $(TARGET) CPU=68030
+
+mc060:
+	smake $(TARGET) CPU=68060
+	move $(TARGET) $(TARGET).060
+
+ppc040:
+	smake $(TARGET).ppc CPU=68040 MATH=68881 VER=VERSIONPPC
+
+ppc060:
+	smake $(TARGET).ppc CPU=68060 MATH=68881 VER=VERSIONPPC
+
+gen:
+	smake $(TARGET).gen CPU=68030 MATH=68881 VER=VERSIONGEN
 
 ##
 ## CPU=68000, CPU=68030 and CPU=68060 versions
@@ -88,15 +159,15 @@ $(TARGET).PPC: $(OBJECTSPPC)
 device:
 	smake allclean
 	smake protos
-	--copy mixer_68k_protos.h mixer_protos.h
-	--copy dspecho_68k_protos.h dspecho_protos.h
-	smake $(TARGET) CPU=68000
-	move $(TARGET) $(TARGET).000
+
 	smake clean
-	smake $(TARGET) CPU=68060
-	move $(TARGET) $(TARGET).060
+	smake mc000
+
 	smake clean
-	smake $(TARGET) CPU=68030
+	smake mc060
+
+	smake clean
+	smake mc030
 
 
 ##
@@ -152,7 +223,7 @@ clean:
 
 allclean:
 	smake clean
-	--delete $(TARGET) $(TARGET).000 $(TARGET).060 \#?protos.h
+	--delete $(TARGET) $(TARGET).\#? \#?protos.h
 
 
 ##
@@ -160,10 +231,32 @@ allclean:
 ##
 ###############################################################################
 
-protos:
+protos:	localize.h
 	$(CCOMP) GPROTO $(CFLAGS) $(PROTOS)
-	--copy mixer_68k_protos.h mixer_protos.h
-	--copy dspecho_68k_protos.h dspecho_protos.h
+
+	copy TO mixer_protos.h <<
+	\#ifdef VERSION68K
+	\#include "mixer_68k_protos.h"
+	\#endif
+	\#ifdef VERSIONPPC
+	\#include "mixer_ppc_protos.h"
+	\#endif
+	\#ifdef VERSIONGEN
+	\#include "mixer_generic_protos.h"
+	\#endif
+	< 
+
+	copy TO dspecho_protos.h <<
+	\#ifdef VERSION68K
+	\#include "dspecho_68k_protos.h"
+	\#endif
+	\#ifdef VERSIONPPC
+	\#include "dspecho_ppc_protos.h"
+	\#endif
+	\#ifdef VERSIONGEN
+	\#include "dspecho_generic_protos.h"
+	\#endif
+	< 
 
 
 ##
@@ -172,10 +265,45 @@ protos:
 ###############################################################################
 
 
-gst:	ahi_def.h ahi_device.h dsp.h localize.h
-	grep -h \#include *.c > gst.c
+gst:
+	# Don't cache my own include files
+	grep -h "\#include <" *.c > gst.c
 	$(CCOMP) NOOBJNAME $(CFLAGS) MGST=gst gst.c
 	delete gst.c QUIET
+
+##
+## All objects
+##
+###############################################################################
+
+.a.o:
+	$(ASM) $(AFLAGS) $*.a
+
+.c.o:
+	$(CCOMP) $(CFLAGS) $*.c
+
+localize.c:	ahi.cd C_c_AHI.sd
+	FlexCat ahi.cd localize.c=C_c_AHI.sd 
+
+localize.h:	ahi.cd C_c_AHI.sd
+	FlexCat ahi.cd localize.h=C_h_AHI.sd
+
+localize.o:	localize.c ahi_def.h
+
+$(OBJECTS):	gst
+
+# Asm dependencies
+
+asmfuncs.o:	asmfuncs.a ahi_def.i
+devsupp.o:	devsupp.a
+dspecho_68k.o:	dspecho_68k.a ahi_def.i dsp.i
+footer.o:	footer.a
+header.o:	header.a ahi_def.i ahi.device_rev.i
+	$(ASM) $(AFLAGS) header.a
+
+mixer_68k.o:	mixer_68k.a ahi_def.i dsp.i
+	
+
 
 ##
 ## Build include files
@@ -196,13 +324,13 @@ includes:
 	fd2pragma AHIINC:FD/ahi_sub_lib.fd  3 TO AHIINC:SAS/pragmas/ahi_sub_pragmas.h COMMENT
 	fd2pragma AHIINC:FD/ahi_lib.fd     33 TO AHIINC:SAS/proto/ahi.h
 	fd2pragma AHIINC:FD/ahi_sub_lib.fd 33 TO AHIINC:SAS/proto/ahi_sub.h
-	# ADE gcc inlines
+	# GeekGadgets gcc inlines
 	fd2inline AHIINC:FD/ahi_lib.fd\
 	          AHIINC:C/clib/ahi_protos.h\
-	       -o AHIINC:ADE/inline/ahi.h
+	       -o AHIINC:GG/inline/ahi.h
 	fd2inline AHIINC:FD/ahi_sub_lib.fd\
 	          AHIINC:C/clib/ahi_sub_protos.h\
-	       -o AHIINC:ADE/inline/ahi_sub.h
+	       -o AHIINC:GG/inline/ahi_sub.h
 	# E modules
 	copy AHIINC:FD/ahi_lib.fd AHIINC:FD/ahi_sub_lib.fd AHIINC:E
 	Programmering:AmigaE/Bin/FD2Module AHIINC:E/ahi
@@ -263,47 +391,18 @@ catalogs:
 
 
 ##
-## All objects
-##
-###############################################################################
-
-.a.o:
-	$(ASM) $(AFLAGS) $*.a
-
-.c.o:
-	$(CCOMP) $(CFLAGS) $*.c
-
-localize.c:	ahi.cd C_c_AHI.sd
-	FlexCat ahi.cd localize.c=C_c_AHI.sd 
-
-localize.h:	ahi.cd C_c_AHI.sd
-	FlexCat ahi.cd localize.h=C_h_AHI.sd
-
-localize.o:	localize.c ahi_def.h
-
-# Asm dependencies
-
-asmfuncs.o:	asmfuncs.a ahi_def.i
-devsupp.o:	devsupp.a
-dspecho_68k.o:	dspecho_68k.a ahi_def.i dsp.i
-footer.o:	footer.a
-header.o:	header.a ahi_def.i ahi.device_rev.i
-	$(ASM) $(AFLAGS) header.a
-
-mixer_68k.o:	mixer_68k.a ahi_def.i dsp.i
-	
-
-##
 ## Dependencies (do not edit after this line, it's autogenerated data!)
 ##
 ###############################################################################
 
 #DEPENDENCIES
 
-asmfuncs.o: asmfuncs.a
+asmfuncs.o: asmfuncs.a ahi_def.h ahi_device.h dsp.h
 
 audioctrl.o: audioctrl.c ahi_def.h ahi_device.h dsp.h\
-	 audioctrl_protos.h database_protos.h debug_protos.h
+	 audioctrl_protos.h mixer_protos.h mixer_68k_protos.h\
+	 mixer_ppc_protos.h mixer_generic_protos.h asmfuncs_protos.h\
+	 debug_protos.h
 
 database.o: database.c ahi_def.h ahi_device.h dsp.h database_protos.h\
 	 debug_protos.h
@@ -319,24 +418,31 @@ device.o: device.c ahi_def.h ahi_device.h dsp.h localize.h\
 devsupp.o: devsupp.a
 
 effectinit.o: effectinit.c ahi_def.h ahi_device.h dsp.h\
-	 effectinit_protos.h
+	 effectinit_protos.h asmfuncs_protos.h
 
 footer.o: footer.a
+
+header.o: header.a
 
 modeinfo.o: modeinfo.c ahi_def.h ahi_device.h dsp.h localize.h\
 	 modeinfo_protos.h audioctrl_protos.h debug_protos.h
 
 requester.o: requester.c ahi_def.h ahi_device.h dsp.h localize.h\
-	 requester_protos.h modeinfo_protos.h
+	 requester_protos.h asmfuncs_protos.h debug_protos.h
 
 sound.o: sound.c ahi_def.h ahi_device.h dsp.h sound_protos.h\
-	 effectinit_protos.h mixer_protos.h
+	 debug_protos.h effectinit_protos.h
 
 dspecho_68k.o: dspecho_68k.a
 
-mixer_68k.o: mixer_68k.a
+mixer_68k.o: mixer_68k.a ahi_def.h ahi_device.h dsp.h
+
+dspecho_ppc.o: dspecho_ppc.c
+
+mixer_ppc.o: mixer_ppc.c
 
 dspecho_generic.o: dspecho_generic.c
 
-mixer_generic.o: mixer_generic.c
+mixer_generic.o: mixer_generic.c ahi_def.h ahi_device.h dsp.h\
+	 mixer_generic_protos.h
 

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.7  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.6  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 *
@@ -22,21 +25,10 @@
 #endif
 
 #include "asmfuncs_protos.h"
+#include "dspecho_protos.h"
 #include "mixer_protos.h"
 
 #endif
-
-
-ASMCALL void do_DSPEchoMono16 ( void );
-ASMCALL void do_DSPEchoMono16Fast ( void );
-ASMCALL void do_DSPEchoStereo16 ( void );
-ASMCALL void do_DSPEchoStereo16Fast ( void );
-ASMCALL void do_DSPEchoMono32 ( void );
-ASMCALL void do_DSPEchoStereo32 ( void );
-ASMCALL void do_DSPEchoMono16NCFM ( void );
-ASMCALL void do_DSPEchoStereo16NCFM ( void );
-ASMCALL void do_DSPEchoMono16NCFMFast ( void );
-ASMCALL void do_DSPEchoStereo16NCFMFast ( void );
 
 
 /***********************************************
@@ -49,7 +41,7 @@ ASMCALL void do_DSPEchoStereo16NCFMFast ( void );
 ** MASTERVOLUME ***************************************************************
 ******************************************************************************/
 
-ASMCALL BOOL 
+BOOL ASMCALL
 update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                       REG(a5, struct AHIBase *AHIBase) )
 {
@@ -109,7 +101,7 @@ update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
 #define mode_ncnm   4       // No cross, no mix
 #define mode_fast   8
 
-ASMCALL BOOL
+BOOL ASMCALL
 update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
                  REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                  REG(a5, struct AHIBase *AHIBase) )
@@ -119,22 +111,7 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
 
   free_DSPEcho(audioctrl, AHIBase);
 
-  switch(audioctrl->ac.ahiac_BuffType)
-  {
-    case AHIST_M16S:
-    case AHIST_M32S:
-      samplesize = 2;
-      break;
-
-    case AHIST_S16S:
-    case AHIST_S32S:
-      samplesize = 4;
-      break;
-
-    default:
-      return FALSE;
-      break;
-  }
+  samplesize = AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
 
   length = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
 
@@ -181,6 +158,12 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
                              ((0x10000 - echo->ahiede_Cross) >> 8);
 
 
+#if defined(VERSIONGEN) || defined(VERSIONPPC)
+
+    audioctrl->ahiac_EchoMasterVolume = 0x10000;
+
+#else
+
     if((echo->ahiede_Cross == 0) && (echo->ahiede_Mix == 0x10000))
     {
       mode |= mode_ncnm;
@@ -191,7 +174,15 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
       audioctrl->ahiac_EchoMasterVolume = 0x10000;
     }
 
+#endif
+
     update_MasterVolume(audioctrl,AHIBase);
+
+#if defined(VERSIONGEN) || defined(VERSIONPPC)
+
+    /* No fast echo in generic or PPC version*/
+
+#else
 
     // No fast echo in 32 bit (HiFi) modes!
     switch(audioctrl->ac.ahiac_BuffType)
@@ -214,87 +205,118 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
         break;
     }
 
+#endif
+
+#if defined(VERSIONGEN) || defined(VERSIONPPC)
+
     switch(mode)
     {
-      case 0:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16;
-        break;
-
-      // stereo
-      case 1:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16;
-        break;
-
       // 32bit
       case 2:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
+        es->ahiecho_Code   = do_DSPEchoMono32;
         break;
 
       // stereo 32bit
       case 3:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
+        es->ahiecho_Code   = do_DSPEchoStereo32;
+        break;
+
+      // Should not happen!
+      default:
+        FreeVec(es);
+        return FALSE;
+    }
+
+#else
+
+    switch(mode)
+    {
+      case 0:
+        es->ahiecho_Code   = do_DSPEchoMono16;
+        break;
+
+      // stereo
+      case 1:
+        es->ahiecho_Code   = do_DSPEchoStereo16;
+        break;
+
+      // 32bit
+      case 2:
+        es->ahiecho_Code   = do_DSPEchoMono32;
+        break;
+
+      // stereo 32bit
+      case 3:
+        es->ahiecho_Code   = do_DSPEchoStereo32;
         break;
 
       // ncnm
       case 4:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16NCFM;
+        es->ahiecho_Code   = do_DSPEchoMono16NCFM;
         break;
 
       // stereo ncnm
       case 5:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16NCFM;
+        es->ahiecho_Code   = do_DSPEchoStereo16NCFM;
         break;
 
       // 32bit ncnm
       case 6:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
+        es->ahiecho_Code   = do_DSPEchoMono32;
         break;
 
       // stereo 32bit ncnm
       case 7:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
+        es->ahiecho_Code   = do_DSPEchoStereo32;
         break;
 
       // fast
       case 8:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16Fast;
+        es->ahiecho_Code   = do_DSPEchoMono16Fast;
         break;
 
       // stereo fast
       case 9:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16Fast;
+        es->ahiecho_Code   = do_DSPEchoStereo16Fast;
         break;
 
       // 32bit fast
       case 10:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
+        es->ahiecho_Code   = do_DSPEchoMono32;
         break;
 
       // stereo 32bit fast
       case 11:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
+        es->ahiecho_Code   = do_DSPEchoStereo32;
         break;
 
       // ncnm fast
       case 12:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16NCFMFast;
+        es->ahiecho_Code   = do_DSPEchoMono16NCFMFast;
         break;
 
       // stereo ncnm fast
       case 13:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16NCFMFast;
+        es->ahiecho_Code   = do_DSPEchoStereo16NCFMFast;
         break;
 
       // 32bit ncnm fast
       case 14:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
+        es->ahiecho_Code   = do_DSPEchoMono32;
         break;
 
       // stereo 32bit ncnm fast
       case 15:
-        es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
+        es->ahiecho_Code   = do_DSPEchoStereo32;
         break;
+
+      // Should not happen!
+      default:
+        FreeVec(es);
+        return FALSE;
     }
+
+#endif
 
     // Structure filled, make it available to the mixing routine
 
@@ -307,7 +329,7 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
 }
 
 
-ASMCALL void 
+void ASMCALL
 free_DSPEcho ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                REG(a5, struct AHIBase *AHIBase) )
 {
@@ -350,7 +372,7 @@ addchannel ( struct AHIChannelData **list, struct AHIChannelData *cd )
   cd->cd_Succ = NULL;
 }
 
-ASMCALL BOOL
+BOOL ASMCALL
 update_DSPMask ( REG(a0, struct AHIEffDSPMask *mask),
                  REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                  REG(a5, struct AHIBase *AHIBase) )
@@ -397,7 +419,7 @@ update_DSPMask ( REG(a0, struct AHIEffDSPMask *mask),
 }
 
 
-ASMCALL void
+void ASMCALL
 clear_DSPMask ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                 REG(a5, struct AHIBase *AHIBase) )
 {

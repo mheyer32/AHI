@@ -1,5 +1,8 @@
 ;/* $Id$
 * $Log$
+* Revision 4.13  1998/01/12 20:05:03  lcs
+* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
+*
 * Revision 4.12  1997/12/21 17:41:50  lcs
 * Major source cleanup, moved some functions to separate files.
 * Renamed from addroutines.a.
@@ -24,18 +27,18 @@
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
 
-ASMCALL void initcode ( REG(a6, struct ExecBase *SysBase) ) {}
-ASMCALL BOOL InitMixroutine ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
-ASMCALL void calcMasterVolumeTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-ASMCALL BOOL initSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-ASMCALL void calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-ASMCALL BOOL initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-ASMCALL void calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+BOOL ASMCALL InitMixroutine ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
+void ASMCALL calcMasterVolumeTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+BOOL ASMCALL initSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+void ASMCALL calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+BOOL ASMCALL initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
+void ASMCALL calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
 
-ASMCALL void SelectAddRoutine ( REG(d0, Fixed VolumeLeft), REG(d1, Fixed VolumeRight), REG(d2, ULONG SampleType), REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a0, ULONG *ScaleLeft), REG(a1, ULONG *ScaleRight), REG(a3, APTR AddRoutine) ) {}
+void ASMCALL SelectAddRoutine ( REG(d0, Fixed VolumeLeft), REG(d1, Fixed VolumeRight), REG(d2, ULONG SampleType), REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a0, ULONG *ScaleLeft), REG(a1, ULONG *ScaleRight), REG(a3, void **AddRoutine) ) {}
 
-ASMCALL void Mix ( void ) {}
-ASMCALL ULONG CalcSamples ( REG(d0, ULONG AddI), REG(d1, UWORD AddF ), REG(d2, ULONG Type), REG(d3, ULONG LastOffsetI), REG(d4, UWORD LastOffsetF), REG(d5, ULONG OffsetI), REG(d6, UWORD OffsetF) ) {}
+
+void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
+ULONG ASMCALL CalcSamples ( REG(d0, ULONG AddI), REG(d1, UWORD AddF ), REG(d2, ULONG Type), REG(d3, ULONG LastOffsetI), REG(d4, UWORD LastOffsetF), REG(d5, ULONG OffsetI), REG(d6, UWORD OffsetF) ) {}
 
 ;/*     Comment terminated at the end of the file!
 
@@ -48,7 +51,6 @@ ASMCALL ULONG CalcSamples ( REG(d0, ULONG AddI), REG(d1, UWORD AddF ), REG(d2, U
  IFD	_PHXASS_
 
 DEBUG	EQU	0	;no debug 
-ALIGN	EQU	0	;move code to even 128 bit boundary
  ENDC
 
 	include	exec/exec.i
@@ -59,8 +61,6 @@ ALIGN	EQU	0	;move code to even 128 bit boundary
 	include	ahi_def.i
 	include	dsp.i
 
-	XDEF	_initcode
-
 	XDEF	_InitMixroutine
 
 	XDEF	_calcMasterVolumeTable
@@ -69,7 +69,7 @@ ALIGN	EQU	0	;move code to even 128 bit boundary
 	XDEF	_initUnsignedTable
 	XDEF	_calcUnsignedTable
 	XDEF	_SelectAddRoutine
-	XDEF	_Mix
+	XDEF	_Mix68k
 	XDEF	_CalcSamples
 
 	XREF	_UtilityBase
@@ -80,35 +80,6 @@ TABLEMAXVOL	EQU	32
 TABLESHIFT	EQU	11	(TABLEMAXVOL<<TABLESHIFT == 0x10000)
 
 ;-----------------------------------------
-
-;in:
-* a6	ExecBase
-_initcode:
- IFNE	ALIGN
-* Align Add#? routines to even 16-byte address
-	lea	AlignStart(pc),a0
-	move.l	a0,d0
-	and.b	#$f0,d0
-	move.l	d0,a1
-	move.l	#AlignEnd-AlignStart-1,d0
-.11
-	move.b	(a0)+,(a1)+
-	dbf	d0,.11
-* Update relative pointers
-	lea	AlignStart(pc),a0
-	move.l	a0,d0
-	and.w	#$0f,d0
-	lea	OffsetTable(pc),a0
-.12
-	tst.w	(a0)
-	bmi.b	.13
-	sub.w	d0,(a0)+
-	bra.b	.12
-.13
-	call	CacheClearU
- ENDC
-	rts
-
 
 ;in:
 * a2	ptr to AHIAudioCtrl
@@ -709,7 +680,7 @@ functionstable:
 * a0	Hook
 * a1	Mixing buffer (size is 8 byte aligned)
 * a2	AHIAudioCtrl
-_Mix:
+_Mix68k:
 	pushm	d0-a6
 
 ;	PRINTF	0,"Mix!"
@@ -751,7 +722,7 @@ _Mix:
 .notEOS
 
 	movem.l	(a5),d1/d3/d4/d5/d6/a3	;Flags,OffsI,OffsF,AddI,AddF,DataStart
-	not.w	d1			;FreqOK and SoundOK must both be $FF
+	cmp.w	#TRUE<<8 | TRUE,d1	;FreqOK and SoundOK must both be TRUE
 	bne	.channel_done		;No sound or freq not set yet.
 
 	cmp.l	cd_Samples(a5),d0
@@ -823,7 +794,7 @@ _Mix:
 
 ; But what if the next sample is so short that we just passed it!?
 ; Here is the nice part. CalcSamples checks this,
-; and set cd_Samples to 0 in that case. And the add routines doesn't
+; and sets cd_Samples to 0 in that case. And the add routines doesn't
 ; do anything when asked to mix 0 samples.
 ; Assume we have passed a sample with 4 samples, and the next one
 ; is only 3. CalcSamples returns 0. The 'jsr (a0)' call above does
@@ -843,7 +814,7 @@ _Mix:
 	move.l	d0,cd_Samples(a5)
 
 	pop	d0
-	move.w	#$ffff,cd_EOS(a5)	;signal End-Of-Sample
+	move.w	#TRUE,cd_EOS(a5)	;signal End-Of-Sample
 	bra.w	.contchannel		;same channel, new sound
 
 .wont_reach_end
@@ -865,8 +836,8 @@ _Mix:
 	move.l	ahiac_EffDSPEchoStruct(a2),d0
 	beq	.noEffDSPEcho
 	move.l	d0,a0
-	move.l	ahiecho_Code(a0),a0
-	jsr	(a0)
+	move.l	ahiecho_Code(a0),a3
+	jsr	(a3)
 .noEffDSPEcho
 	popm	a0-a6
 
@@ -880,6 +851,8 @@ _Mix:
 *** AHIET_MASTERVOLUME
 	bsr	DoMasterVolume
 
+; BUG!! FIXIT! If there are no wet channels, and postprocessing is on,
+; a4 will be uninitialized!!
 	move.l	a4,a1			;New block
 	bra	.nextchannel
 
@@ -1653,7 +1626,6 @@ OffsWordsSVPHB:	dc.w	AddWordsSVPHB-*
 
 	cnop	0,16
 	ds.b	16
-AlignStart:
 
 ; To make the backward-mixing routines, do this:
 ; 1) Copy all mixing routines.
@@ -5194,6 +5166,5 @@ AddWordsSVPTB:
 	rts
 
 ;------------------------------------------------------------------------------
-AlignEnd
 
 ;	C comment terminating here... */
