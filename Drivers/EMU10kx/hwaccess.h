@@ -32,7 +32,7 @@
 #ifndef _HWACCESS_H
 #define _HWACCESS_H
 
-#ifdef lcs
+#ifndef __amiga__
 #include <linux/fs.h>
 #include <linux/sound.h>
 #include <linux/soundcard.h>
@@ -48,14 +48,10 @@
 #include "midi.h"
 
 #else
-
 #include "linuxsupport.h"
-
-#define SOUND_MIXER_NRDEVICES 1
-
 #include "efxmgr.h"
-
 #endif
+
 
 #define EMUPAGESIZE     4096            /* don't change */
 #define NUM_G           64              /* use all channels */
@@ -75,13 +71,11 @@ struct memhandle
 	u32 size;
 };
 
-
-
-#define DEBUG_LEVEL 2
+#define DEBUG_LEVEL 4
 
 #ifdef EMU10K1_DEBUG
-# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: " x , y );} while(0)
-# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: " x  );} while(0)
+# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ , y );} while(0)
+# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ );} while(0)
 #else
 # define DPD(level,x,y...) do { } while (0) /* not debugging: nothing */
 # define DPF(level,x) do { } while (0)
@@ -89,12 +83,12 @@ struct memhandle
 
 #define ERROR() DPF(1,"error\n")
 
+#ifdef lcs
 /* DATA STRUCTURES */
 
-#ifdef lcs
 struct emu10k1_waveout
 {
-	u32 send_routing[3];
+	u16 send_routing[3];
 
 	u8 send_a[3];
 	u8 send_b[3];
@@ -143,9 +137,9 @@ struct mixer_private_ioctl {
 #define CMD_PRIVATE3_VERSION	_IOW('D', 19, struct mixer_private_ioctl)
 #define CMD_AC97_BOOST		_IOW('D', 20, struct mixer_private_ioctl)
 
-#endif
 //up this number when breaking compatibility
 #define PRIVATE3_VERSION 1
+#endif
 
 struct emu10k1_card 
 {
@@ -164,41 +158,42 @@ struct emu10k1_card
 //	unsigned		timer_delay;
 //	spinlock_t		timer_lock;
 
-	void*                   pci_dev;
+	void			*pci_dev;
 	unsigned long           iobase;
 	unsigned long		length;
 	unsigned short		model;
 	unsigned int irq; 
+#ifdef lcs
+	int	audio_dev;
+	int	audio_dev1;
+	int	midi_dev;
+#ifdef EMU10K1_SEQUENCER
+	int seq_dev;
+	struct emu10k1_mididevice *seq_mididev;
+#endif
 
-//	int	audio_dev;
-//	int	audio_dev1;
-//	int	midi_dev;
-//#ifdef EMU10K1_SEQUENCER
-//	int seq_dev;
-//	struct emu10k1_mididevice *seq_mididev;
-//#endif
+	struct ac97_codec ac97;
+	int ac97_supported_mixers;
+	int ac97_stereo_mixers;
 
-//	struct ac97_codec ac97;
-//	int ac97_supported_mixers;
-//	int ac97_stereo_mixers;
+	/* Number of first fx voice for multichannel output */
+	u8 mchannel_fx;
+	struct emu10k1_waveout	waveout;
+	struct emu10k1_wavein	wavein;
+	struct emu10k1_mpuout	*mpuout;
+	struct emu10k1_mpuin	*mpuin;
 
-//	/* Number of first fx voice for multichannel output */
-//	u8 mchannel_fx;
-//	struct emu10k1_waveout	waveout;
-//	struct emu10k1_wavein	wavein;
-//	struct emu10k1_mpuout	*mpuout;
-//	struct emu10k1_mpuin	*mpuin;
+	struct semaphore	open_sem;
+	mode_t			open_mode;
+	wait_queue_head_t	open_wait;
 
-//	struct semaphore	open_sem;
-//	mode_t			open_mode;
-//	wait_queue_head_t	open_wait;
-
-//	u32	    mpuacqcount;	  // Mpu acquire count
+	u32	    mpuacqcount;	  // Mpu acquire count
+#endif
 	u32	    has_toslink;	       // TOSLink detection
 
 	u8 chiprev;                    /* Chip revision                */
-	u8 audigy;
-	u8 isaps;
+
+	int isaps;
 
 	struct patch_manager mgr;
 //	struct pt_data pt;
@@ -208,12 +203,11 @@ int emu10k1_addxmgr_alloc(u32, struct emu10k1_card *);
 void emu10k1_addxmgr_free(struct emu10k1_card *, int);
 
 
-#ifdef lcs
+
 int emu10k1_find_control_gpr(struct patch_manager *, const char *, const char *);
 void emu10k1_set_control_gpr(struct emu10k1_card *, int , s32, int );
 
 void emu10k1_set_volume_gpr(struct emu10k1_card *, int, s32, int);
-#endif
 
 
 #define VOL_6BIT 0x40
@@ -230,7 +224,6 @@ u8 sumVolumeToAttenuation(u32);
 /* Hardware Abstraction Layer access functions */
 
 void emu10k1_writefn0(struct emu10k1_card *, u32 , u32 );
-void emu10k1_writefn0_2(struct emu10k1_card *card, u32 reg, u32 data, int size);
 u32 emu10k1_readfn0(struct emu10k1_card *, u32 );
 
 void sblive_writeptr(struct emu10k1_card *, u32 , u32 , u32 );

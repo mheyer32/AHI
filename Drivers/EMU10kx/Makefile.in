@@ -1,6 +1,6 @@
 #  $Id$
 #
-#  Makefile.in for EMU10k1 sound card driver
+#  Makefile.in for EMU10kx sound card driver
 #
 
 
@@ -36,8 +36,8 @@ ARFLAGS         = @ARFLAGS@
 
 LIBS		= @LIBS@
 
-DRIVER		= emu10k1.audio
-MODEFILE	= EMU10K1
+DRIVER		= emu10kx.audio
+MODEFILE	= EMU10KX
 
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
@@ -47,8 +47,8 @@ INSTALL_DATA	= @INSTALL_DATA@
 # Files
 ########################################
 
-OBJECTS		= main.o hwaccess.o emuadxmg.c efxmgr.o linuxsupport.o
-
+OBJECTS		= main.o hwaccess.o emuadxmg.c efxmgr.o voicemgr.o \
+		  linuxsupport.o 
 
 #
 # Targets
