@@ -34,6 +34,8 @@
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
+#include <clib/alib_protos.h>
+
 #include <strings.h>
 
 #include "ahi_def.h"
@@ -118,7 +120,7 @@ DummyHook( void )
 static struct Hook DefPlayerHook =
 {
   {0, 0},
-  (HOOKFUNC) m68k_HookEntry,
+  (HOOKFUNC) HookEntry,
   (HOOKFUNC) DummyHook,
   0
 };
@@ -133,7 +135,7 @@ static struct TagItem boolmap[] =
   { AHIDB_PingPong,  AHIACF_PINGPONG },
   { AHIDB_Record,    AHIACF_RECORD },
   { AHIDB_MultTable, AHIACF_MULTTAB },
-  { TAG_DONE,        NULL }
+  { TAG_DONE,        0 }
 };
 
 
@@ -575,7 +577,7 @@ AllocAudioA( struct TagItem* tags,
       goto error;
 
 
-    audioctrl->ac.ahiac_MixerFunc->h_Entry    = (HOOKFUNC) m68k_HookEntryPreserveAllRegs;
+    audioctrl->ac.ahiac_MixerFunc->h_Entry    = (HOOKFUNC) HookEntryPreserveAllRegs;
     audioctrl->ac.ahiac_MixerFunc->h_SubEntry = (HOOKFUNC) MixerFunc;
 
     if((AHIBase->ahib_MaxCPU >= 0x10000) || (AHIBase->ahib_MaxCPU <= 0x0))
@@ -587,8 +589,8 @@ AllocAudioA( struct TagItem* tags,
       audioctrl->ahiac_MaxCPU = AHIBase->ahib_MaxCPU >> 8;
     }
 
-    audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) m68k_PreTimer;
-    audioctrl->ac.ahiac_PostTimer = (void (*)(void)) m68k_PostTimer;
+    audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) PreTimerPreserveAllRegs;
+    audioctrl->ac.ahiac_PostTimer = (void (*)(void)) PostTimerPreserveAllRegs;
 
     if( !InitMixroutine( audioctrl ) ) goto error;
   }
@@ -598,7 +600,7 @@ AllocAudioA( struct TagItem* tags,
   if(!audioctrl->ac.ahiac_SamplerFunc)
     goto error;
 
-  audioctrl->ac.ahiac_SamplerFunc->h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  audioctrl->ac.ahiac_SamplerFunc->h_Entry    = (HOOKFUNC) HookEntry;
   audioctrl->ac.ahiac_SamplerFunc->h_SubEntry = (HOOKFUNC) SamplerFunc;
 
   /* Set default hardware properties, only if AHI_DEFAULT_ID was used!*/
@@ -708,7 +710,7 @@ FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
 
     AHIFreeVec( audioctrl );
   }
-  return NULL;
+  return 0;
 }
 
 
@@ -769,7 +771,7 @@ KillAudio( struct AHIBase* AHIBase )
 
   AHI_FreeAudio(AHIBase->ahib_AudioCtrl);
   AHIBase->ahib_AudioCtrl=NULL;
-  return NULL;
+  return 0;
 }
 
 
@@ -881,7 +883,7 @@ ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
                struct TagItem*          tags,
                struct AHIBase*          AHIBase )
 {
-  ULONG *ptr, playflags=NULL, stopflags=NULL, rc=AHIE_OK;
+  ULONG *ptr, playflags=0, stopflags=0, rc=AHIE_OK;
   UBYTE update=FALSE;
   struct TagItem *tag,*tstate=tags;
   struct Library *AHIsubBase=audioctrl->ahiac_SubLib;

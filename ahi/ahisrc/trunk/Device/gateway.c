@@ -23,10 +23,12 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-
 #include <exec/types.h> 
 
-#ifdef __morphos__
+#include <clib/alib_protos.h>
+
+
+#if defined( __morphos__ ) || defined( __MORPHOS__ )
 # define EMUL_NOQUICKMODE
 # include <emul/emulregs.h>
 #endif
@@ -54,7 +56,7 @@
  *
  */
 
-#ifdef __morphos__
+#if defined( __morphos__ ) || defined( __MORPHOS__ )
 
 /******************************************************************************
 ** MorphOS gateway functions **************************************************
@@ -407,7 +409,8 @@ gw_LoadModeFile( void )
 
 /* m68k_IndexToFrequency *****************************************************/
 
-static LONG gw_IndexToFrequency( void )
+static LONG
+gw_IndexToFrequency( void )
 {
   struct Gadget* gad   = (struct Gadget*) ((ULONG*) REG_A7)[1];
   WORD           level = (WORD)           ((ULONG*) REG_A7)[2];
@@ -429,18 +432,9 @@ struct EmulLibEntry m68k_DevProc =
 };
 
 
-/* native_HookEntry *************************************************************/
+/* HookEntry *****************************************************************/
 
-ULONG
-native_HookEntry( struct Hook* h,
-		  void*        o, 
-		  void*        msg )
-{
-  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
-}
-
-
-/* m68k_HookEntry ************************************************************/
+/* Should be in libamiga, but isn't? */
 
 static ULONG
 gw_HookEntry( void )
@@ -452,19 +446,12 @@ gw_HookEntry( void )
   return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
 }
 
-struct EmulLibEntry m68k_HookEntry =
+struct EmulLibEntry _HookEntry =
 {
   TRAP_LIB, 0, (void (*)(void)) &gw_HookEntry
 };
 
-
-/* m68k_HookEntryPreserveAllRegs  ********************************************/
-
-struct EmulLibEntry m68k_HookEntryPreserveAllRegs =
-{
-  TRAP_LIBNR, 0, (void (*)(void)) &gw_HookEntry
-};
-
+__asm( ".globl HookEntry;HookEntry=_HookEntry" );
 
 /* m68k_PreTimer  ************************************************************/
 
@@ -476,7 +463,7 @@ gw_PreTimer( void )
   return PreTimer( audioctrl );
 }
 
-struct EmulLibEntry m68k_PreTimer =
+static struct EmulLibEntry m68k_PreTimer =
 {
   TRAP_LIB, 0, (void (*)(void)) &gw_PreTimer
 };
@@ -492,9 +479,530 @@ gw_PostTimer( void )
   PostTimer( audioctrl );
 }
 
-struct EmulLibEntry m68k_PostTimer =
+static struct EmulLibEntry m68k_PostTimer =
 {
   TRAP_LIBNR, 0, (void (*)(void)) &gw_PostTimer
+};
+
+#elif defined( __amithlon__ )
+
+/******************************************************************************
+** Amithlon gateway functions *************************************************
+******************************************************************************/
+
+/* gw_initRoutine ************************************************************/
+
+struct AHIBase*
+gw_initRoutine( struct AHIBase*  device,
+                APTR             seglist,
+                struct ExecBase* sysbase )
+{
+  return initRoutine( device, seglist, sysbase );
+}
+
+
+/* gw_DevExpunge *************************************************************/
+
+BPTR 
+gw_DevExpunge( struct _Regs* regs ) __attribute__((regparm(3)));
+
+BPTR 
+gw_DevExpunge( struct _Regs* regs )
+{
+  struct AHIBase* device = (struct AHIBase*) regs->reg_a6;
+
+  return DevExpunge( device );
+}
+
+
+/* gw_DevOpen ****************************************************************/
+
+ULONG 
+gw_DevOpen( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_DevOpen( struct _Regs* regs )
+{
+  ULONG              unit    = (ULONG)              regs->reg_d0;
+  ULONG              flags   = (ULONG)              regs->reg_d1;
+  struct AHIRequest* ioreq   = (struct AHIRequest*) regs->reg_a1;
+  struct AHIBase*    AHIBase = (struct AHIBase*)    regs->reg_a6;
+
+  return DevOpen( unit, flags, ioreq, AHIBase );
+}
+
+
+/* gw_DevClose ***************************************************************/
+
+BPTR
+gw_DevClose( struct _Regs* regs ) __attribute__((regparm(3)));
+
+BPTR
+gw_DevClose( struct _Regs* regs )
+{
+  struct AHIRequest* ioreq   = (struct AHIRequest*)  regs->reg_a1;
+  struct AHIBase*    AHIBase = (struct AHIBase*)     regs->reg_a6;
+
+  return DevClose( ioreq, AHIBase );
+}
+
+
+/* gw_DevBeginIO *************************************************************/
+
+void 
+gw_DevBeginIO( struct _Regs* regs ) __attribute__((regparm(3)));
+
+void 
+gw_DevBeginIO( struct _Regs* regs )
+{
+  struct AHIRequest* ioreq   = (struct AHIRequest*) regs->reg_a1;
+  struct AHIBase*    AHIBase = (struct AHIBase*)    regs->reg_a6;
+
+  DevBeginIO( ioreq, AHIBase );
+}
+
+
+/* gw_DevAbortIO *************************************************************/
+
+ULONG 
+gw_DevAbortIO( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_DevAbortIO( struct _Regs* regs )
+{
+  struct AHIRequest* ioreq   = (struct AHIRequest*) regs->reg_a1;
+  struct AHIBase*    AHIBase = (struct AHIBase*)    regs->reg_a6;
+
+  return DevAbortIO( ioreq, AHIBase );
+}
+
+
+/* gw_AllocAudioA ************************************************************/
+
+struct AHIAudioCtrl* 
+gw_AllocAudioA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+struct AHIAudioCtrl* 
+gw_AllocAudioA( struct _Regs* regs )
+{
+  struct TagItem* tags    = (struct TagItem*) regs->reg_a1;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return AllocAudioA( tags, AHIBase );
+}
+
+
+/* gw_FreeAudio **************************************************************/
+
+ULONG 
+gw_FreeAudio( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_FreeAudio( struct _Regs* regs )
+{
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return FreeAudio( audioctrl, AHIBase );
+}
+
+
+/* gw_KillAudio **************************************************************/
+
+ULONG 
+gw_KillAudio( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_KillAudio( struct _Regs* regs )
+{
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return KillAudio( AHIBase );
+}
+
+
+/* gw_ControlAudioA **********************************************************/
+
+ULONG 
+gw_ControlAudioA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_ControlAudioA( struct _Regs* regs )
+{
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct TagItem*          tags      = (struct TagItem*)          regs->reg_a1;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return ControlAudioA( audioctrl, tags, AHIBase );
+}
+
+
+/* gw_SetVol *****************************************************************/
+
+ULONG 
+gw_SetVol( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_SetVol( struct _Regs* regs )
+{
+  UWORD                    channel   = (UWORD)                    regs->reg_d0;
+  Fixed                    volume    = (Fixed)                    regs->reg_d1;
+  sposition                pan       = (sposition)                regs->reg_d2;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  ULONG                    flags     = (ULONG)                    regs->reg_d3;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return SetVol( channel, volume, pan, audioctrl, flags, AHIBase );
+}
+
+
+/* gw_SetFreq ****************************************************************/
+
+ULONG 
+gw_SetFreq( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_SetFreq( struct _Regs* regs )
+{
+  UWORD                    channel   = (UWORD)                    regs->reg_d0;
+  ULONG                    freq      = (ULONG)                    regs->reg_d1;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  ULONG                    flags     = (ULONG)                    regs->reg_d2;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return SetFreq( channel, freq, audioctrl, flags, AHIBase );
+}
+
+
+/* gw_SetSound ***************************************************************/
+
+ULONG 
+gw_SetSound( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_SetSound( struct _Regs* regs )
+{
+  UWORD                    channel   = (UWORD)                    regs->reg_d0;
+  UWORD                    sound     = (UWORD)                    regs->reg_d1;
+  ULONG                    offset    = (ULONG)                    regs->reg_d2;
+  LONG                     length    = (LONG)                     regs->reg_d3;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  ULONG                    flags     = (ULONG)                    regs->reg_d4;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return SetSound( channel, sound, offset, length, audioctrl, flags, AHIBase );
+}
+
+
+/* gw_SetEffect **************************************************************/
+
+ULONG 
+gw_SetEffect( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_SetEffect( struct _Regs* regs )
+{
+  ULONG*                   effect    = (ULONG*)                   regs->reg_a0;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return SetEffect( effect, audioctrl, AHIBase );
+}
+
+
+/* gw_LoadSound **************************************************************/
+
+ULONG 
+gw_LoadSound( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_LoadSound( struct _Regs* regs )
+{
+  UWORD                    sound     = (UWORD)                    regs->reg_d0;
+  ULONG                    type      = (ULONG)                    regs->reg_d1;
+  APTR                     info      = (APTR)                     regs->reg_a0;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return LoadSound( sound, type, info, audioctrl, AHIBase );
+}
+
+
+/* gw_UnloadSound ************************************************************/
+
+ULONG 
+gw_UnloadSound( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_UnloadSound( struct _Regs* regs )
+{
+  UWORD                    sound     = (UWORD)                    regs->reg_d0;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return UnloadSound( sound, audioctrl, AHIBase );
+}
+
+
+/* gw_PlayA ******************************************************************/
+
+ULONG  
+gw_PlayA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG  
+gw_PlayA( struct _Regs* regs )
+{
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct TagItem*          tags      = (struct TagItem*)          regs->reg_a1;
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->reg_a6;
+
+  return PlayA( audioctrl, tags, AHIBase );
+}
+
+
+/* gw_SampleFrameSize ********************************************************/
+
+ULONG 
+gw_SampleFrameSize( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_SampleFrameSize( struct _Regs* regs )
+{
+  ULONG           sampletype = (ULONG)           regs->reg_d0;
+  struct AHIBase* AHIBase    = (struct AHIBase*) regs->reg_a6;
+
+  return SampleFrameSize( sampletype, AHIBase );
+}
+
+
+/* gw_GetAudioAttrsA *********************************************************/
+
+ULONG  
+gw_GetAudioAttrsA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG  
+gw_GetAudioAttrsA( struct _Regs* regs )
+{
+  ULONG                    id      = (ULONG)                    regs->reg_d0;
+  struct AHIPrivAudioCtrl* actrl   = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+  struct TagItem*          tags    = (struct TagItem*)          regs->reg_a1;
+  struct AHIBase*          AHIBase = (struct AHIBase*)          regs->reg_a6;
+
+  return GetAudioAttrsA( id, actrl, tags, AHIBase );
+}
+
+
+/* gw_BestAudioIDA ***********************************************************/
+
+ULONG  
+gw_BestAudioIDA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG  
+gw_BestAudioIDA( struct _Regs* regs )
+{
+  struct TagItem* tags    = (struct TagItem*) regs->reg_a1;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return BestAudioIDA( tags, AHIBase );
+}
+
+
+/* gw_AllocAudioRequestA *****************************************************/
+
+struct AHIAudioModeRequester* 
+gw_AllocAudioRequestA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+struct AHIAudioModeRequester* 
+gw_AllocAudioRequestA( struct _Regs* regs )
+{
+  struct TagItem* tags    = (struct TagItem*) regs->reg_a0;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return AllocAudioRequestA( tags, AHIBase );
+}
+
+
+/* gw_AudioRequestA **********************************************************/
+
+ULONG  
+gw_AudioRequestA( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG  
+gw_AudioRequestA( struct _Regs* regs )
+{
+  struct AHIAudioModeRequester* req_in  = (struct AHIAudioModeRequester*) regs->reg_a0;
+  struct TagItem*               tags    = (struct TagItem*)               regs->reg_a1;
+  struct AHIBase*               AHIBase = (struct AHIBase*)               regs->reg_a6;
+
+  return AudioRequestA( req_in, tags, AHIBase );
+}
+
+
+/* gw_FreeAudioRequest *******************************************************/
+
+void  
+gw_FreeAudioRequest( struct _Regs* regs ) __attribute__((regparm(3)));
+
+void  
+gw_FreeAudioRequest( struct _Regs* regs )
+{
+  struct AHIAudioModeRequester* req     = (struct AHIAudioModeRequester*) regs->reg_a0;
+  struct AHIBase*               AHIBase = (struct AHIBase*)               regs->reg_a6;
+
+  FreeAudioRequest( req, AHIBase );
+}
+
+
+/* gw_NextAudioID ************************************************************/
+
+ULONG 
+gw_NextAudioID( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_NextAudioID( struct _Regs* regs )
+{
+  ULONG           id      = (ULONG)           regs->reg_d0;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return NextAudioID( id, AHIBase );
+}
+
+
+/* gw_AddAudioMode ***********************************************************/
+
+ULONG 
+gw_AddAudioMode( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_AddAudioMode( struct _Regs* regs )
+{
+  struct TagItem* DBtags  = (struct TagItem*) regs->reg_a0;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return AddAudioMode( DBtags, AHIBase );
+}
+
+
+/* gw_RemoveAudioMode ********************************************************/
+
+ULONG 
+gw_RemoveAudioMode( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_RemoveAudioMode( struct _Regs* regs )
+{
+  ULONG           id      = (ULONG)           regs->reg_d0;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return RemoveAudioMode( id, AHIBase );
+}
+
+
+/* gw_LoadModeFile ***********************************************************/
+
+ULONG 
+gw_LoadModeFile( struct _Regs* regs ) __attribute__((regparm(3)));
+
+ULONG 
+gw_LoadModeFile( struct _Regs* regs )
+{
+  UBYTE*          name    = (UBYTE*)          regs->reg_a0;
+  struct AHIBase* AHIBase = (struct AHIBase*) regs->reg_a6;
+
+  return LoadModeFile( name, AHIBase );
+}
+
+
+/* m68k_IndexToFrequency *****************************************************/
+
+static LONG
+gw_IndexToFrequency( struct Gadget *gad, WORD level ) __attribute__((regparm(3)));
+
+static LONG
+gw_IndexToFrequency( struct Gadget *gad, WORD level )
+{
+  return IndexToFrequency( gad, level );
+}
+
+struct
+{
+    UWORD movel_4sp_d0[2];
+    UWORD movew_10sp_a0[2];
+    UWORD movel_a0_d1;
+    UWORD jmp;
+    ULONG addr;
+} m68k_IndexToFrequency =
+{
+  {0x202F,0x0004},
+  {0x306F,0x000A},
+  0x2208,
+  0x4EF9, (ULONG) gw_IndexToFrequency + 1
+};
+
+
+/* m68k_DevProc **************************************************************/
+
+struct
+{
+    UWORD nop;  // Just to 32-bit align the long word
+    UWORD jmp;
+    ULONG addr;
+} m68k_DevProc =
+{
+  0x4E71,
+  0x4EF9, (ULONG) DevProc + 1
+};
+
+
+/* m68k_PreTimer  ************************************************************/
+
+static BOOL
+gw_PreTimer( struct AHIPrivAudioCtrl* audioctrl ) __attribute__((regparm(3)));
+
+static BOOL
+gw_PreTimer( struct AHIPrivAudioCtrl* audioctrl )
+{
+  return PreTimer( audioctrl );
+}
+
+static struct
+{
+    UWORD nop;
+    UWORD movel_4sp_d0[2];
+    UWORD jmp;
+    ULONG addr;
+} m68k_PreTimer =
+{
+  0x4E71,
+  {0x202F, 0x0004},
+  0x4EF9, (ULONG) gw_PreTimer + 1
+};
+
+
+/* m68k_PostTimer  ***********************************************************/
+
+static void
+gw_PostTimer( struct _Regs* regs ) __attribute__((regparm(3)));
+
+static void
+gw_PostTimer( struct _Regs* regs )
+{
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->reg_a2;
+
+  PostTimer( audioctrl );
+}
+
+static struct
+{
+    UWORD nop;
+    UWORD movel_4sp_d0[2];
+    UWORD jmp;
+    ULONG addr;
+} m68k_PostTimer =
+{
+  0x4E71,
+  {0x202F, 0x0004},
+  0x4EF9, (ULONG) gw_PostTimer + 1
 };
 
 #else // ifdef __morphos__
@@ -799,7 +1307,7 @@ gw_LoadModeFile( REG(a0, UBYTE*          name),
 /* m68k_IndexToFrequency *****************************************************/
 
 LONG STDARGS SAVEDS
-m68k_IndexToFrequency( struct Gadget *gad, WORD level)
+m68k_IndexToFrequency( struct Gadget *gad, WORD level )
 {
   return IndexToFrequency( gad, level );
 }
@@ -814,72 +1322,80 @@ m68k_DevProc( void )
 }
 
 
-/* native_HookEntry *************************************************************/
-
-ULONG ASMCALL
-native_HookEntry( REG( a0, struct Hook* h ),
-		  REG( a2, void*        o ), 
-		  REG( a1, void*        msg ) )
-{
-  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
-}
-
-
-/* m68k_HookEntry ************************************************************/
-
-ULONG ASMCALL
-m68k_HookEntry( REG( a0, struct Hook* h ),
-                REG( a2, void*        o ), 
-                REG( a1, void*        msg ) )
-{
-  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
-}
-
-
-/* m68k_HookEntryPreserveAllRegs  ********************************************/
-
-asm("
-        .even
-        .globl _m68k_HookEntryPreserveAllRegs
-_m68k_HookEntryPreserveAllRegs:
-
-        moveml d0/d1/a0/a1,sp@-
-        jsr    _m68k_HookEntry
-        moveml sp@+,d0/d1/a0/a1
-        rts
-");
-
-
 /* m68k_PreTimer  ************************************************************/
 
-asm("
-        .even
-        .globl _m68k_PreTimer
-_m68k_PreTimer:
-
-        moveml d1/a0/a1,sp@-
-        movel  a2,sp@-
-        jsr    _PreTimer
-        extl   d0
-        addql  #4,%sp
-        moveml sp@+,d1/a0/a1
-        rts
-");
+BOOL ASMCALL
+m68k_PreTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
+{
+  return PreTimer( audioctrl );
+}
 
 
 /* m68k_PostTimer  ***********************************************************/
 
-asm("
-        .even
-        .globl _m68k_PostTimer
-_m68k_PostTimer:
-
-        moveml d0/d1/a0/a1,sp@-
-        movel  a2,sp@-
-        jsr    _PostTimer
-        addql  #4,%sp
-        moveml sp@+,d0/d1/a0/a1
-        rts
-");
+void
+m68k_PostTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
+{
+  PostTimer( audioctrl );
+}
 
 #endif // ifdef __morphos__
+
+
+/*** Some special wrappers ***************************************************/
+
+struct
+{
+    UWORD nop;                    // Just make sure the addr is 32-bit aligned
+    UWORD pushm_d0_d1_a0_a1[2];
+    UWORD jsr;
+    ULONG addr;
+    UWORD popm_d0_d1_a0_a1[2];
+    UWORD rts;
+} HookEntryPreserveAllRegs __attribute__ ((aligned (4))) =
+{
+  0x4E71,
+  {0x48E7, 0xC0C0},
+  0x4EB9, (ULONG) HookEntry,
+  {0x4CDF, 0x0303},
+  0x4E75
+};
+
+
+struct
+{
+    UWORD nop;
+    UWORD pushm_d1_a0_a1[2];
+    UWORD jsr;
+    ULONG addr;
+    UWORD popm_d1_a0_a1[2];
+    UWORD extl_d0;
+    UWORD rts;
+} PreTimerPreserveAllRegs =
+{
+  0x4E71,
+  {0x48E7, 0x40C0},
+  0x4EB9, (ULONG) &m68k_PreTimer,
+  {0x4CDF, 0x0302},
+  0x48C0,
+  0x4E75
+};
+
+
+struct
+{
+    UWORD nop;                    // Just make sure the addr is 32-bit aligned
+    UWORD pushm_d0_d1_a0_a1[2];
+    UWORD jsr;
+    ULONG addr;
+    UWORD popm_d0_d1_a0_a1[2];
+    UWORD rts;
+} PostTimerPreserveAllRegs __attribute__ ((aligned (4))) =
+{
+  0x4E71,
+  {0x48E7, 0xC0C0},
+  0x4EB9, (ULONG) &m68k_PostTimer,
+  {0x4CDF, 0x0303},
+  0x4E75
+};
+

@@ -17,7 +17,7 @@ DEVDIR		= ${DISTDIR}/Developer
 
 DEVINCDIR	= ${DEVDIR}/Include
 
-build_os	= @build_os@
+host_alias	= @host_alias@
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -28,6 +28,13 @@ FD2PP		= @FD2PRAGMA_PRE@
 
 VPATH		= @srcdir@
 
+ifeq  ($(host_alias),i686be-amithlon)
+FD2INLINE_TARGET= --target=ix86be-amithlon
+else
+ifneq ($(host_alias),m68k-amigaos)
+FD2INLINE_TARGET= --target=$(host_alias)
+endif
+endif
 
 #
 # Files
@@ -79,18 +86,28 @@ bindist:	$(TARGETS)
 	 $(INSTALL_DATA) $$file $(DEVINCDIR)/`echo $$file | sed -e 's,-,/,g'`; \
 	done
 
-gcc-include:	$(GCCFILES)
-	for dir in `cd $(srcdir)/C && find . -type d -not -name CVS`; do \
-	 $(INSTALL) --directory gcc/$$dir; \
-	done
+gcc-include: FD/ahi_lib.fd FD/ahi_sub_lib.fd \
+	     C/clib/ahi_protos.h C/clib/ahi_sub_protos.h
+	 $(INSTALL) --directory gcc/clib gcc/devices gcc/libraries \
+	                        gcc/inline gcc/proto
+
 	for file in `cd $(srcdir)/C && find . -type f -not -path "*CVS/*"`; do \
 	 $(INSTALL_DATA) $(srcdir)/C/$$file gcc/$$file; \
 	done
 
-	for file in $(GCCFILES); do \
-	 $(INSTALL) --directory `echo $$file | sed -e 's,\(.*\)-.*.,\1,' | sed -e 's,-,/,g'`; \
-	 $(INSTALL_DATA) $$file `echo $$file | sed -e 's,-,/,g'`; \
-	done
+	$(FD2INLINE) --new $(FD2INLINE_TARGET) \
+	             $(srcdir)/FD/ahi_lib.fd gcc/clib/ahi_protos.h \
+		     -o gcc/inline/ahi.h
+
+	$(FD2INLINE) --new $(FD2INLINE_TARGET) \
+	             $(srcdir)/FD/ahi_sub_lib.fd gcc/clib/ahi_sub_protos.h \
+	             -o gcc/inline/ahi_sub.h
+
+	$(FD2INLINE) --proto $(FD2INLINE_TARGET) \
+	             $(srcdir)/FD/ahi_lib.fd -o gcc/proto/ahi.h
+
+	$(FD2INLINE) --proto $(FD2INLINE_TARGET) \
+	             $(srcdir)/FD/ahi_sub_lib.fd -o gcc/proto/ahi_sub.h
 
 #
 # Auto-remake autoconf stuff

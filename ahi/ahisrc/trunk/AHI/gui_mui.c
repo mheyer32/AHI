@@ -44,6 +44,42 @@
 #include "support.h"
 #include "gui.h"
 
+
+
+#if defined( __morphos__ ) || defined( __MORPHOS__ )
+
+#ifndef DoMethod
+#define DoMethod(obj, ... )         \
+({                                  \
+  ULONG _args[] = { __VA_ARGS__ };  \
+  DoMethodA(obj,(Msg) _args);       \
+})
+#endif
+
+/* Why the #$*@ is this not in libamiga.a?! */
+
+static ULONG
+gw_HookEntry( void )
+{
+  struct Hook* h   = (struct Hook*) REG_A0;
+  void*        o   = (void*)        REG_A2; 
+  void*        msg = (void*)        REG_A1;
+
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
+struct EmulLibEntry _HookEntry =
+{
+  TRAP_LIB, 0, (void (*)(void)) &gw_HookEntry
+};
+
+__asm( ".globl HookEntry;HookEntry=_HookEntry" );
+
+
+#endif
+
+
+
 static void GUINewSettings(void);
 static void GUINewUnit(void);
 static void GUINewMode(void);

@@ -59,16 +59,13 @@ void gw_LoadModeFile( void );
 void m68k_IndexToFrequency( void );
 void m68k_DevProc( void );
 
-/* Hook entry points */
+/* Special hook entry points */
 
-void native_HookEntry( void );
-
-void m68k_HookEntry( void );
-void m68k_HookEntryPreserveAllRegs( void );
+void HookEntryPreserveAllRegs( void );
 
 /* (Pre|Post)Timer entry points */
 
-void m68k_PreTimer( void );
-void m68k_PostTimer( void );
+void PreTimerPreserveAllRegs( void );
+void PostTimerPreserveAllRegs( void );
 
 #endif /* ahi_gateway_h */

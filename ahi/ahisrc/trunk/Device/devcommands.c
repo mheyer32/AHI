@@ -1085,7 +1085,7 @@ FillReadBuffer ( struct AHIRequest *ioreq,
 
     switch (ioreq->ahir_Type)
     {
-#ifdef mc68000
+#ifndef __amithlon__
       case AHIST_M8S:
         RecM8S(length,ioreq->ahir_Frequency,
             iounit->RecordBuffer,

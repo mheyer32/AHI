@@ -577,7 +577,7 @@ LoadModeFile( UBYTE*          name,
   {
     lock = Lock(name, ACCESS_READ);
 
-    if(lock != NULL)
+    if(lock != 0)
     {
       if(Examine(lock,fib))
       {
@@ -644,9 +644,9 @@ AddModeFile ( UBYTE *filename )
   struct TagItem *tag,*tstate;
   struct TagItem extratags[]=
   {
-    { AHIDB_Driver, NULL },
-    { AHIDB_Data, NULL },
-    { TAG_MORE,   NULL }
+    { AHIDB_Driver, 0 },
+    { AHIDB_Data,   0 },
+    { TAG_MORE,     0 }
   };
   ULONG rc=FALSE;
 
@@ -657,7 +657,7 @@ AddModeFile ( UBYTE *filename )
 
     iff->iff_Stream = Open(filename, MODE_OLDFILE);
 
-    if(iff->iff_Stream != NULL)
+    if(iff->iff_Stream != 0)
     {
       InitIFFasDOS(iff);
 

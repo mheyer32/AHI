@@ -1222,7 +1222,7 @@ PlayA( struct AHIPrivAudioCtrl* audioctrl,
   }
 
   AHIsub_Enable((struct AHIAudioCtrlDrv *)audioctrl);
-  return NULL;
+  return 0;
 }
 
 

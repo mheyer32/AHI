@@ -798,19 +798,19 @@ DevProc( void )
 
   iounit->Process = NULL;
 
-  iounit->PlayerHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->PlayerHook.h_Entry    = (HOOKFUNC) HookEntry;
   iounit->PlayerHook.h_SubEntry = (HOOKFUNC) PlayerFunc;
   iounit->PlayerHook.h_Data     = iounit;
 
-  iounit->RecordHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->RecordHook.h_Entry    = (HOOKFUNC) HookEntry;
   iounit->RecordHook.h_SubEntry = (HOOKFUNC) RecordFunc;
   iounit->RecordHook.h_Data     = iounit;
 
-  iounit->SoundHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->SoundHook.h_Entry    = (HOOKFUNC) HookEntry;
   iounit->SoundHook.h_SubEntry = (HOOKFUNC) SoundFunc;
   iounit->SoundHook.h_Data     = iounit;
 
-  iounit->ChannelInfoHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->ChannelInfoHook.h_Entry    = (HOOKFUNC) HookEntry;
   iounit->ChannelInfoHook.h_SubEntry = (HOOKFUNC) ChannelInfoFunc;
   iounit->ChannelInfoHook.h_Data     = iounit;
 
