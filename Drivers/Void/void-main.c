@@ -400,7 +400,7 @@ SlaveEntry( void )
     {
       signals = SetSignal(0L,0L);
 
-      if( signals & ( SIGBREAKF_CTRL_C | 1L << dd->slavesignal ) )
+      if( signals & ( SIGBREAKF_CTRL_C | (1L << dd->slavesignal) ) )
       {
         running = FALSE;
       }
