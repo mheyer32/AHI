@@ -5,6 +5,7 @@
 #include <proto/ahi.h>
 #include <proto/exec.h>
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -67,18 +68,21 @@ main( int argc, char* argv[] ) {
   return rc;
 }
 
+#define LENGTH 100
+//#define SINE
+
 int
 Test71( ULONG mode_id ) {
   int   rc = RETURN_OK;
   LONG* sample;
 
-  sample = malloc( sizeof(LONG) * 8 * 1001 );
+  sample = malloc( sizeof(LONG) * 8 * (LENGTH+1) );
   
   if( sample != NULL ) {
     struct AHIAudioCtrl* actrl;
     int   i;
 
-    for( i = 0; i < 500; ++i ) {
+    for( i = 0; i < (LENGTH+1); ++i ) {
       sample[ i * 8 + 0 ] = 0;
       sample[ i * 8 + 1 ] = 0;
       sample[ i * 8 + 2 ] = 0;
@@ -86,18 +90,11 @@ Test71( ULONG mode_id ) {
       sample[ i * 8 + 4 ] = 0;
       sample[ i * 8 + 5 ] = 0;
       sample[ i * 8 + 6 ] = 0;
-      sample[ i * 8 + 7 ] = 0x7fffffff;
-    }
-
-    for( i = 500; i < 1001; ++i ) {
-      sample[ i * 8 + 0 ] = 0;
-      sample[ i * 8 + 1 ] = 0;
-      sample[ i * 8 + 2 ] = 0;
-      sample[ i * 8 + 3 ] = 0;
-      sample[ i * 8 + 4 ] = 0;
-      sample[ i * 8 + 5 ] = 0;
-      sample[ i * 8 + 6 ] = 0;
-      sample[ i * 8 + 7 ] = 0x80000000;
+#ifdef SINE
+      sample[ i * 8 + 7 ] = 0x7fffffff*sin(2*M_PI*i/LENGTH);
+#else
+      sample[ i * 8 + 7 ] = i < (LENGTH/2) ? 0x7fffffff : 0x80000000;
+#endif
     }
 
     actrl = AHI_AllocAudio( AHIA_AudioID,   mode_id,
@@ -107,14 +104,14 @@ Test71( ULONG mode_id ) {
 			    TAG_DONE );
 
     if( actrl != NULL ) {
-      struct AHISampleInfo sample_fl  = { AHIST_L7_1, sample + 7, 1000 };
-      struct AHISampleInfo sample_fr  = { AHIST_L7_1, sample + 6, 1000 };
-      struct AHISampleInfo sample_rl  = { AHIST_L7_1, sample + 5, 1000 };
-      struct AHISampleInfo sample_rr  = { AHIST_L7_1, sample + 4, 1000 };
-      struct AHISampleInfo sample_sl  = { AHIST_L7_1, sample + 3, 1000 };
-      struct AHISampleInfo sample_sr  = { AHIST_L7_1, sample + 2, 1000 };
-      struct AHISampleInfo sample_c   = { AHIST_L7_1, sample + 1, 1000 };
-      struct AHISampleInfo sample_lfe = { AHIST_L7_1, sample + 0, 1000 };
+      struct AHISampleInfo sample_fl  = { AHIST_L7_1, sample + 7, LENGTH };
+      struct AHISampleInfo sample_fr  = { AHIST_L7_1, sample + 6, LENGTH };
+      struct AHISampleInfo sample_rl  = { AHIST_L7_1, sample + 5, LENGTH };
+      struct AHISampleInfo sample_rr  = { AHIST_L7_1, sample + 4, LENGTH };
+      struct AHISampleInfo sample_sl  = { AHIST_L7_1, sample + 3, LENGTH };
+      struct AHISampleInfo sample_sr  = { AHIST_L7_1, sample + 2, LENGTH };
+      struct AHISampleInfo sample_c   = { AHIST_L7_1, sample + 1, LENGTH };
+      struct AHISampleInfo sample_lfe = { AHIST_L7_1, sample + 0, LENGTH };
 	
       if( AHI_LoadSound( 0, AHIST_SAMPLE, &sample_fl,  actrl) == AHIE_OK &&
 	  AHI_LoadSound( 1, AHIST_SAMPLE, &sample_fr,  actrl) == AHIE_OK &&
