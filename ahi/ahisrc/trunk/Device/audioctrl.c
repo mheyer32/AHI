@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/04/07 13:12:35  lcs
+* Fixed a bug in the AHIST_INPUT record hook
+*
 * Revision 4.1  1997/04/02 22:28:11  lcs
 * Bumped to version 4
 *
@@ -355,6 +358,9 @@ static __asm __interrupt void Sampler(
   {
     CopyMemQuick(recmsg->ahirm_Buffer, actrl->ahiac_InputRecordPtr,
         actrl->ahiac_InputBlockLength << 2);  // AHIST_S16S
+
+    actrl->ahiac_InputRecordPtr = (APTR) (((ULONG) actrl->ahiac_InputRecordPtr) +
+                                           actrl->ahiac_InputBlockLength << 2);
     actrl->ahiac_InputRecordCnt -= actrl->ahiac_InputBlockLength;
     
     if(actrl->ahiac_InputRecordCnt == 0)
