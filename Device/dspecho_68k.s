@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 4.5  1997/08/02 17:11:59  lcs
+* Right. Now echo should work!
+* Also fixed a bug in the 32 bit stereo echo code.
+*
 * Revision 4.4  1997/08/02 16:32:39  lcs
 * Fixed a memory trashing error. Will change it yet again now...
 *
@@ -168,13 +172,13 @@
 *   Dst=E+Delay
 * Loop:
 *   If LoopsLeft <= 0 GOTO Exit
-*   IF Src >= (E + BuffSamples + Delay) THEN Src = Src - (BuffSamples + Delay)
-*   IF Dst >= (E + BuffSamples + Delay) THEN Dst = Dst - (BuffSamples + Delay)
-*   IF Offset >= (BuffSamples + Delay) THEN Offset = Offset - (BuffSamples + Delay)
+*   IF Src >= (E + MaxBuffSamples + Delay) THEN Src = Src - (MaxBuffSamples + Delay)
+*   IF Dst >= (E + MaxBuffSamples + Delay) THEN Dst = Dst - (MaxBuffSamples + Delay)
+*   IF Offset >= (MaxBuffSamples + Delay) THEN Offset = Offset - (MaxBuffSamples + Delay)
 *
-*   IF Offset < BuffSamples THEN LoopTimes = BuffSamples-Offset : GOTO Echo
-*   IF Offset <= Delay THEN LoopTimes = BuffSamples : GOTO Echo 
-*   LoopTimes = BuffSamples+Delay-Offset
+*   IF Offset < MaxBuffSamples THEN LoopTimes = MaxBuffSamples-Offset : GOTO Echo
+*   IF Offset <= Delay THEN LoopTimes = MaxBuffSamples : GOTO Echo 
+*   LoopTimes = MaxBuffSamples+Delay-Offset
 * Echo:
 *   LoopTimes = min(LoopTimes,LoopsLeft)
 *   Echo LoopTimes samples
@@ -200,15 +204,6 @@ LOCALSIZE	SET	4
 
 	move.l	ahiac_EffDSPEchoStruct(a2),a0
 
-	move.l	ahiac_BuffSamples(a2),d0
-	add.l	ahiecho_Delay(a0),d0
-	move.l	ahiecho_SampleSize(a0),d1
-	mulu.w	d1,d0
-	move.l	d0,ahiecho_BufferSize(a0)
-	lea	ahiecho_Buffer(a0),a3
-	add.l	d0,a3
-	move.l	a3,ahiecho_EndPtr(a0)
-
 	move.l	ahiac_BuffSamples(a2),(sp)	;Looped
 	move.l	ahiecho_Offset(a0),d6
 	move.l	ahiecho_SrcPtr(a0),a3
@@ -226,26 +221,23 @@ LOCALSIZE	SET	4
 	blo	.dst_ok
 	sub.l	ahiecho_BufferSize(a0),a6
 .dst_ok
-	move.l	ahiac_BuffSamples(a2),d0
-	add.l	ahiecho_Delay(a0),d0
-	cmp.l	d0,d6
+	cmp.l	ahiecho_BufferLength(a0),d6
 	blo	.offs_ok
-	sub.l	d0,d6
+	sub.l	ahiecho_BufferLength(a0),d6
 .offs_ok
 
-
-	cmp.l	ahiac_BuffSamples(a2),d6
+	cmp.l	ahiac_MaxBuffSamples(a2),d6
 	bhs	.hi_buffsamples
-	move.l	ahiac_BuffSamples(a2),d7
+	move.l	ahiac_MaxBuffSamples(a2),d7
 	sub.l	d6,d7
 	bra	.echo
 .hi_buffsamples
 	cmp.l	ahiecho_Delay(a0),d6
 	bhi	.hi_delay
-	move.l	ahiac_BuffSamples(a2),d7
+	move.l	ahiac_MaxBuffSamples(a2),d7
 	bra	.echo
 .hi_delay
-	move.l	ahiac_BuffSamples(a2),d7
+	move.l	ahiac_MaxBuffSamples(a2),d7
 	add.l	ahiecho_Delay(a0),d7
 	sub.l	d6,d7
 
@@ -260,44 +252,44 @@ LOCALSIZE	SET	4
 	bmi	.exit				;This is an error (should not happen)
 
 
-	movem.l	d0-d7/a0-a6,$100000
+;	movem.l	d0-d7/a0-a6,$100000
 	ENDM
 
 
 DSPECHO_POST	MACRO
 
 
-	cmp.l	ahiecho_EndPtr(a0),a3
-	bhi	.error
-	cmp.l	ahiecho_EndPtr(a0),a6
-	bhi	.error
-	move.l	ahiac_BuffSamples(a2),d0
-	add.l	ahiecho_Delay(a0),d0
-	cmp.l	d0,d6
-	bhi	.error
+;	cmp.l	ahiecho_EndPtr(a0),a3
+;	bhi	.error
+;	cmp.l	ahiecho_EndPtr(a0),a6
+;	bhi	.error
+;	cmp.l	ahiecho_BufferLength(a0),d6
+;	bhi	.error
+;	bra	.loop
+;.error
+;	pushm	a0/a1
+;	move.w	#$fff,$dff180
+;	lea	$100000,a0
+;	lea	$110000,a1
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	move.l	(a0)+,(a1)+
+;	popm	a0/a1
+
 	bra	.loop
-.error
-	pushm	a0/a1
-	move.w	#$fff,$dff180
-	lea	$100000,a0
-	lea	$110000,a1
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	move.l	(a0)+,(a1)+
-	popm	a0/a1
-	bra	.loop
+
 .exit
 	move.l	d6,ahiecho_Offset(a0)
 	move.l	a3,ahiecho_SrcPtr(a0)
@@ -569,7 +561,7 @@ _do_DSPEchoStereo32:
 *** input data is used!
 
 .echoloop
-	move.l	(a1),d0				;Get left sample x[n] (high word)
+	move.w	(a1),d0				;Get left sample x[n] (high word)
 	ext.l	d0
 	move.l	d0,d1
 	muls.l	ahiecho_MixN(a0),d0
