@@ -38,9 +38,8 @@ namespace AHI {
       /* Low part of length (unit is sample frames). */
       _AHIA(_P, LengthLow,	(_AHIA_Dummy+26)),		/* OM_GET */
 
-      /* Output/destination buffer sample type array
-       * (~0-terminated). */
-      _AHIA(_P, SupportedFormats,(_AHIA_Dummy+27))		/* OM_GET */
+      /* The sample frequency of this sound. */
+      _AHIA(_P, SampleFreq	,(_AHIA_Dummy+27))		/* OM_GET */
 
     };
     
@@ -55,7 +54,7 @@ namespace AHI {
 
 /*****************************************************************************/
 
-    /* AHIM_Sound_Decode */
+    /* AHIM_Sound_Decode, returns TRUE on success */
     struct _AHIP(_P, Decode) {
 	ULONG	MethodID;
 	Object*	Buffer;

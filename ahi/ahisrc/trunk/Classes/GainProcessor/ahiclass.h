@@ -13,7 +13,9 @@ struct AHIClassBase {
 
 struct AHIClassData {
     ULONG  channels;
+    float  gain;
     float* gains;
+    float* balance;
     float* data;
     ULONG  length;
 };
