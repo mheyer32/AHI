@@ -1,10 +1,10 @@
-#ifndef CLASSES_AHI_PROCESSOR_SYNTH_H
-#define CLASSES_AHI_PROCESSOR_SYNTH_H
+#ifndef CLASSES_AHI_PROCESSOR_V6SYNTH_H
+#define CLASSES_AHI_PROCESSOR_V6SYNTH_H
 
 /*
-**	$VER: synth.h 7.0 (2.7.2003)
+**	$VER: v6synth.h 7.0 (2.7.2003)
 **
-**	synth.ahi-processor definitions
+**	v6synth.ahi-processor definitions
 **
 **	(C) Copyright 2002-2003 Martin Blom
 **	All Rights Reserved.
@@ -19,14 +19,14 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHIC_SynthProcessor	"synth.ahi-processor"
+#define AHIC_V6SynthProcessor	"v6synth.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {
   namespace Processor {
-    namespace Synth {
+    namespace V6Synth {
 #else
-# define _P _SynthProcessor
+# define _P _V6SynthProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
@@ -49,14 +49,6 @@ namespace AHI {
 
 //      };
 
-      /* Overridden members:
-
-      OM_ADDMEMBER	Add a sound object.
-
-      OM_REMMEMBER	Remove a sound object.
-
-      */
-
 /*****************************************************************************/
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
@@ -67,4 +59,4 @@ namespace AHI {
 # undef _P
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
-#endif /* CLASSES_AHI_PROCESSOR_SYNTH_H */
+#endif /* CLASSES_AHI_PROCESSOR_V6SYNTH_H */
