@@ -241,7 +241,7 @@ DevOpen ( ULONG              unit,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("OpenDevice(%ld, 0x%08lx, %ld)", unit, ioreq, flags);
+    KPrintF("OpenDevice(%ld, 0x%08lx, %ld)", unit, (ULONG) ioreq, flags);
   }
 
 // Check if size includes the ahir_Version field
@@ -372,7 +372,7 @@ DevClose ( struct AHIRequest* ioreq,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("CloseDevice(0x%08lx)\n", ioreq);
+    KPrintF("CloseDevice(0x%08lx)\n", (ULONG) ioreq);
   }
 
   ObtainSemaphore(&AHIBase->ahib_Lock);
@@ -428,7 +428,7 @@ InitUnit ( ULONG unit,
       iounit->Unit.unit_MsgPort.mp_Flags = PA_IGNORE;
       iounit->Unit.unit_MsgPort.mp_Node.ln_Name = AHINAME " Unit";
       iounit->UnitNum = unit;
-      InitSemaphore(&iounit->ListLock);
+      InitSemaphore(&iounit->Lock);
       NewList((struct List *)&iounit->ReadList);
       NewList((struct List *)&iounit->PlayingList);
       NewList((struct List *)&iounit->SilentList);
@@ -884,9 +884,9 @@ DevProc( void )
       
       if(signals & (1L << iounit->PlaySignal))
       {
-        ObtainSemaphore(&iounit->ListLock);
+        ObtainSemaphore(&iounit->Lock);
         UpdateSilentPlayers(iounit,AHIBase);
-        ReleaseSemaphore(&iounit->ListLock);
+        ReleaseSemaphore(&iounit->Lock);
       }
 
       if(signals & (1L << iounit->RecordSignal))
@@ -926,10 +926,10 @@ PlayerFunc( struct Hook*         hook,
 {
   struct AHIDevUnit *iounit = (struct AHIDevUnit *) hook->h_Data;
 
-  if(AttemptSemaphore(&iounit->ListLock))
+  if(AttemptSemaphore(&iounit->Lock))
   {
     UpdateSilentPlayers(iounit,AHIBase);
-    ReleaseSemaphore(&iounit->ListLock);
+    ReleaseSemaphore(&iounit->Lock);
   }
   else
   { // Do it later instead
