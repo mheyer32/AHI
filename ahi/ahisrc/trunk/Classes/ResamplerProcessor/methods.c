@@ -15,37 +15,37 @@
 #include "version.h"
 
 static void
-calc_pitch(struct AHIClassBase* AHIClassBase,
-	   struct AHIClassData* AHIClassData) {
-  if (AHIClassData->frequency != -1 && AHIClassData->buffer != NULL) {
+calc_pitch(struct ClassData* ClassData,
+	   struct ObjectData* ObjectData) {
+  if (ObjectData->frequency != -1 && ObjectData->buffer != NULL) {
     ULONG freq = 0;
 	
-    GetAttr(AHIA_Buffer_SampleFreqInt, AHIClassData->buffer, &freq);
+    GetAttr(AHIA_Buffer_SampleFreqInt, ObjectData->buffer, &freq);
 
     if (freq != 0) {
-      AHIClassData->pitch =  (double) freq / AHIClassData->frequency;
+      ObjectData->pitch =  (double) freq / ObjectData->frequency;
     }
   }
   else {
-    AHIClassData->pitch = -1;
+    ObjectData->pitch = -1;
   }
 }
 
 
 static void
-calc_freq(struct AHIClassBase* AHIClassBase,
-	  struct AHIClassData* AHIClassData) {
-  if (AHIClassData->pitch != -1 && AHIClassData->buffer != NULL) {
+calc_freq(struct ClassData* ClassData,
+	  struct ObjectData* ObjectData) {
+  if (ObjectData->pitch != -1 && ObjectData->buffer != NULL) {
     ULONG freq = 0;
 	
-    GetAttr(AHIA_Buffer_SampleFreqInt, AHIClassData->buffer, &freq);
+    GetAttr(AHIA_Buffer_SampleFreqInt, ObjectData->buffer, &freq);
 
     if (freq != 0) {
-      AHIClassData->frequency = freq * AHIClassData->pitch;
+      ObjectData->frequency = freq * ObjectData->pitch;
     }
   }
   else {
-    AHIClassData->frequency = -1;
+    ObjectData->frequency = -1;
   }
 }
 
@@ -56,13 +56,13 @@ calc_freq(struct AHIClassBase* AHIClassBase,
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
-  AHIClassData->frequency    = -1;
-  AHIClassData->pitch        = 1.0;
-  AHIClassData->phase_offset = 0;
+  ObjectData->frequency    = -1;
+  ObjectData->pitch        = 1.0;
+  ObjectData->phase_offset = 0;
   
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
@@ -78,8 +78,8 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 }
 
 
@@ -90,8 +90,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL check_ready = FALSE;
   
@@ -101,33 +101,33 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Processor_Buffer:
-	AHIClassData->buffer = (Object*) tag->ti_Data;
+	ObjectData->buffer = (Object*) tag->ti_Data;
 
-	if (AHIClassData->frequency == -1) {
-	  calc_freq(AHIClassBase, AHIClassData);
+	if (ObjectData->frequency == -1) {
+	  calc_freq(ClassData, ObjectData);
 	}
 
-	if (AHIClassData->pitch == -1) {
-	  calc_pitch(AHIClassBase, AHIClassData);
+	if (ObjectData->pitch == -1) {
+	  calc_pitch(ClassData, ObjectData);
 	}
 	
 	check_ready = TRUE;
 	break;
 
       case AHIA_ResamplerProcessor_Frequency: {
-	AHIClassData->frequency = tag->ti_Data;
-	calc_pitch(AHIClassBase, AHIClassData);
+	ObjectData->frequency = tag->ti_Data;
+	calc_pitch(ClassData, ObjectData);
 	break;
       }
 
       case AHIA_ResamplerProcessor_Pitch: {
-	AHIClassData->pitch = tag->ti_Data / 65536.0;
-	calc_freq(AHIClassBase, AHIClassData);
+	ObjectData->pitch = tag->ti_Data / 65536.0;
+	calc_freq(ClassData, ObjectData);
 	break;
       }
 
       case AHIA_ResamplerProcessor_PhaseOffset: {
-	AHIClassData->phase_offset = tag->ti_Data / 65536.0;
+	ObjectData->phase_offset = tag->ti_Data / 65536.0;
 	break;
       }
 	
@@ -138,7 +138,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->buffer != 0),
+		  AHIA_Processor_Ready, (ObjectData->buffer != 0),
 		  TAG_DONE);
   }
 
@@ -153,8 +153,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -186,15 +186,15 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
       
     case AHIA_ResamplerProcessor_Frequency:
-      *msg->opg_Storage = (ULONG) AHIClassData->frequency;
+      *msg->opg_Storage = (ULONG) ObjectData->frequency;
       break;
 
     case AHIA_ResamplerProcessor_Pitch:
-      *msg->opg_Storage = (ULONG) (AHIClassData->pitch * 65536);
+      *msg->opg_Storage = (ULONG) (ObjectData->pitch * 65536);
       break;
 
     case AHIA_ResamplerProcessor_PhaseOffset:
-      *msg->opg_Storage = (ULONG) (AHIClassData->phase_offset * 65536);
+      *msg->opg_Storage = (ULONG) (ObjectData->phase_offset * 65536);
       break;
 	
     default:

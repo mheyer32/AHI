@@ -1,4 +1,4 @@
 
 #include "ahiclass.h"
 
-char* get_error_message(struct AHIClassData* AHIClassData);
+char* get_error_message(struct ObjectData* ObjectData);

@@ -6,11 +6,11 @@
 
 #include "boopsi.h"
 
-struct AHIClassBase {
+struct ClassData {
     struct CommonBase common;
 };
 
-struct AHIClassData {
+struct ObjectData {
     ULONG  channels;
     float  gain;
     float* gains;

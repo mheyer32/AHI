@@ -5,6 +5,6 @@
 ==include <dos/dos.h>
 ==include <intuition/classes.h>
 ==include "ahiclass.h"
-==base _AHIClassBase
+==base _ClassData
 ==libname ahi.class
-==basetype struct AHIClassBase*
+==basetype struct ClassData*

@@ -24,19 +24,19 @@ fract(double x) {
 
 static void
 calc_iq(Class* class, Object* object, struct opUpdate* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   double phase;
   double i = 0;
   double q = 0;
 
-  phase  = fmod(AHIClassData->ticktime * AHIClassData->frequency +
-		AHIClassData->phase_offset, 1.0);
+  phase  = fmod(ObjectData->ticktime * ObjectData->frequency +
+		ObjectData->phase_offset, 1.0);
 
-  AHIClassData->phase = phase;
+  ObjectData->phase = phase;
 
-  switch  (AHIClassData->waveform) {
+  switch  (ObjectData->waveform) {
     case AHIV_LFO_Sine:
       i = cos(phase * 2 * M_PI);
       q = sin(phase * 2 * M_PI);
@@ -67,17 +67,17 @@ calc_iq(Class* class, Object* object, struct opUpdate* msg) {
       break;
   }
 
-  AHIClassData->i = AHIClassData->bias + AHIClassData->amplitude * i;
-  AHIClassData->q = AHIClassData->bias + AHIClassData->amplitude * q;
+  ObjectData->i = ObjectData->bias + ObjectData->amplitude * i;
+  ObjectData->q = ObjectData->bias + ObjectData->amplitude * q;
 
 /*   KPrintF("Calculated phase to %08lx, I = %08lx, Q = %08lx\n", */
-/* 	  (ULONG) (AHIClassData->phase * FIXED2PI), */
-/* 	  (ULONG) AHIClassData->i, (ULONG) AHIClassData->q); */
+/* 	  (ULONG) (ObjectData->phase * FIXED2PI), */
+/* 	  (ULONG) ObjectData->i, (ULONG) ObjectData->q); */
   
   NotifySuper(class, object, msg,
-	      AHIA_LFO_Phase, (ULONG) (AHIClassData->phase * FIXED2PI),
-	      AHIA_LFO_I,     (ULONG) AHIClassData->i,
-	      AHIA_LFO_Q,     (ULONG) AHIClassData->q,
+	      AHIA_LFO_Phase, (ULONG) (ObjectData->phase * FIXED2PI),
+	      AHIA_LFO_I,     (ULONG) ObjectData->i,
+	      AHIA_LFO_Q,     (ULONG) ObjectData->q,
 	      TAG_DONE);
 }
 
@@ -88,8 +88,8 @@ calc_iq(Class* class, Object* object, struct opUpdate* msg) {
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
@@ -106,8 +106,8 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 }
 
 
@@ -117,8 +117,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 		    
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL update_iq = FALSE;
   
@@ -130,18 +130,18 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
     
     switch (tag->ti_Tag) {
       case AHIA_LFO_Frequency:
-	AHIClassData->frequency = tag->ti_Data / 65536.0;
+	ObjectData->frequency = tag->ti_Data / 65536.0;
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	update_iq = TRUE;
 	break;
 
       case AHIA_LFO_Phase: {
-	double offset = (AHIClassData->phase_offset + tag->ti_Data / FIXED2PI -
-			 AHIClassData->phase);
+	double offset = (ObjectData->phase_offset + tag->ti_Data / FIXED2PI -
+			 ObjectData->phase);
 
-	AHIClassData->phase_offset = fmod(offset, 1.0);
+	ObjectData->phase_offset = fmod(offset, 1.0);
 	NotifySuper(class, object, msg,
-		    AHIA_LFO_PhaseOffset, (ULONG) (AHIClassData->phase_offset *
+		    AHIA_LFO_PhaseOffset, (ULONG) (ObjectData->phase_offset *
 						   FIXED2PI),
 		    TAG_DONE);
 	update_iq = TRUE;
@@ -149,19 +149,19 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
       }
 
       case AHIA_LFO_PhaseOffset:
-	AHIClassData->phase_offset = tag->ti_Data / FIXED2PI;
+	ObjectData->phase_offset = tag->ti_Data / FIXED2PI;
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	update_iq = TRUE;
 	break;
 	
       case AHIA_LFO_Amplitude:
-	AHIClassData->amplitude = tag->ti_Data;
+	ObjectData->amplitude = tag->ti_Data;
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	update_iq = TRUE;
 	break;
 
       case AHIA_LFO_Bias:
-	AHIClassData->bias = tag->ti_Data;
+	ObjectData->bias = tag->ti_Data;
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	update_iq = TRUE;
 	break;
@@ -172,7 +172,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
 	  case AHIV_LFO_Square:
 	  case AHIV_LFO_Triangle:
 	  case AHIV_LFO_Sawtooth:
-	    AHIClassData->waveform = tag->ti_Data;
+	    ObjectData->waveform = tag->ti_Data;
 	    NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	    update_iq = TRUE;
 	    break;
@@ -203,19 +203,19 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
 	freq = freq_hi + ldexp(freq_lo, -32);
 	time = ldexp(time_hi, 32) + time_lo;
 
-	AHIClassData->ticktime = time / freq;
-	AHIClassData->tickfreq = freq;
+	ObjectData->ticktime = time / freq;
+	ObjectData->tickfreq = freq;
 	update_iq = TRUE;
 	break;
       }
 	
       case AHIA_LFO_Tick:
-	AHIClassData->ticktime = tag->ti_Data / AHIClassData->tickfreq;
+	ObjectData->ticktime = tag->ti_Data / ObjectData->tickfreq;
 	update_iq = TRUE;
 	break;
 
       case AHIA_LFO_TickFreq:
-	AHIClassData->tickfreq = tag->ti_Data;
+	ObjectData->tickfreq = tag->ti_Data;
 	update_iq = TRUE;
 	break;
 	
@@ -238,8 +238,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
 
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -271,39 +271,39 @@ MethodGet(Class* class, Object* object, struct opGet* msg) {
       break;
       
     case AHIA_LFO_Frequency:
-      *msg->opg_Storage = (ULONG) (AHIClassData->frequency * 65536);
+      *msg->opg_Storage = (ULONG) (ObjectData->frequency * 65536);
       break;
 
     case AHIA_LFO_Phase:
-      *msg->opg_Storage = (ULONG) (AHIClassData->phase * FIXED2PI);
+      *msg->opg_Storage = (ULONG) (ObjectData->phase * FIXED2PI);
       break;
 
     case AHIA_LFO_PhaseOffset:
-      *msg->opg_Storage = (ULONG) (AHIClassData->phase_offset * FIXED2PI);
+      *msg->opg_Storage = (ULONG) (ObjectData->phase_offset * FIXED2PI);
       break;
       
     case AHIA_LFO_Amplitude:
-      *msg->opg_Storage = AHIClassData->amplitude;
+      *msg->opg_Storage = ObjectData->amplitude;
       break;
 
     case AHIA_LFO_Bias:
-      *msg->opg_Storage = AHIClassData->bias;
+      *msg->opg_Storage = ObjectData->bias;
       break;
 	
     case AHIA_LFO_Waveform:
-      *msg->opg_Storage = AHIClassData->waveform;
+      *msg->opg_Storage = ObjectData->waveform;
       break;
 
     case AHIA_LFO_I:
-      *msg->opg_Storage = (LONG) AHIClassData->i;
+      *msg->opg_Storage = (LONG) ObjectData->i;
       break;
 
     case AHIA_LFO_Q:
-      *msg->opg_Storage = (LONG) AHIClassData->q;
+      *msg->opg_Storage = (LONG) ObjectData->q;
       break;
       
     case AHIA_LFO_TickFreq:
-      *msg->opg_Storage = (ULONG) AHIClassData->tickfreq;
+      *msg->opg_Storage = (ULONG) ObjectData->tickfreq;
       break;
 
     default:

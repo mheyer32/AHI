@@ -5,11 +5,11 @@
 
 #include "boopsi.h"
 
-struct AHIClassBase {
+struct ClassData {
     struct CommonBase common;
 };
 
-struct AHIClassData {
+struct ObjectData {
     ULONG             sample_type;
     ULONG             capacity;
     ULONG             length;

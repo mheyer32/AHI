@@ -20,8 +20,8 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   struct TagItem model_tags[] = {
     { ICA_TARGET,     0 },
@@ -36,19 +36,19 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Locale:
-	AHIClassData->locale = (struct Locale*) tag->ti_Data;
+	ObjectData->locale = (struct Locale*) tag->ti_Data;
 	break;
 
       case AHIA_Owner:
-	AHIClassData->owner = (Object*) tag->ti_Data;
+	ObjectData->owner = (Object*) tag->ti_Data;
 	break;
 
       case AHIA_InterruptSafe:
-	AHIClassData->interrupt_safe = tag->ti_Data;
+	ObjectData->interrupt_safe = tag->ti_Data;
 	break;
 
       case AHIA_UserData:
-	AHIClassData->user_data = tag->ti_Data;
+	ObjectData->user_data = tag->ti_Data;
 	break;
 
       case ICA_TARGET:
@@ -69,31 +69,31 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
   }
 
   // The owner dictates the InterruptSafe flag
-  if (AHIClassData->owner != NULL) {
-    GetAttr(AHIA_InterruptSafe, AHIClassData->owner,
-	    &AHIClassData->interrupt_safe);
+  if (ObjectData->owner != NULL) {
+    GetAttr(AHIA_InterruptSafe, ObjectData->owner,
+	    &ObjectData->interrupt_safe);
   }
     
-  AHIClassData->model_class = NewObjectA(NULL, MODELCLASS, model_tags);
+  ObjectData->model_class = NewObjectA(NULL, MODELCLASS, model_tags);
 
   tstate = msg->ops_AttrList;
 
   while ((tag = NextTagItem(&tstate))) {
     if (tag->ti_Tag == AHIA_AddNotify) {
-      if (AHIClassData->model_class == NULL) {
+      if (ObjectData->model_class == NULL) {
 	DoMethod((Object*) tag->ti_Data, OM_DISPOSE);
       }
       else {
-	DoMethod(AHIClassData->model_class, OM_ADDMEMBER, tag->ti_Data);
+	DoMethod(ObjectData->model_class, OM_ADDMEMBER, tag->ti_Data);
       }
     }
   }
 
-  if (AHIClassData->model_class == NULL) {
+  if (ObjectData->model_class == NULL) {
     return ERROR_NO_FREE_STORE;
   }
   
-  InitSemaphore(&AHIClassData->semaphore);
+  InitSemaphore(&ObjectData->semaphore);
 
   return 0;
 }
@@ -105,10 +105,10 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  DisposeObject(AHIClassData->model_class);
+  DisposeObject(ObjectData->model_class);
 }
 
 
@@ -130,8 +130,8 @@ notify(Object* object, struct opUpdate* msg, ULONG tag, ULONG data) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   struct TagItem* tstate = msg->opu_AttrList;
   struct TagItem* tag;
@@ -139,33 +139,33 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Locale:
-	AHIClassData->locale = (struct Locale*) tag->ti_Data;
+	ObjectData->locale = (struct Locale*) tag->ti_Data;
 	break;
 
       case AHIA_Owner:
-	AHIClassData->owner = (Object*) tag->ti_Data;
+	ObjectData->owner = (Object*) tag->ti_Data;
 
 	// The owner dictates the InterruptSafe flag
-	if (AHIClassData->owner != NULL) {
-	  GetAttr(AHIA_InterruptSafe, AHIClassData->owner,
-		  &AHIClassData->interrupt_safe);
+	if (ObjectData->owner != NULL) {
+	  GetAttr(AHIA_InterruptSafe, ObjectData->owner,
+		  &ObjectData->interrupt_safe);
 	}
 	
 	break;
 
       case AHIA_InterruptSafe:
-	if (AHIClassData->owner == NULL) {
-	  AHIClassData->interrupt_safe = tag->ti_Data;
+	if (ObjectData->owner == NULL) {
+	  ObjectData->interrupt_safe = tag->ti_Data;
 	}
 	break;
  
       case AHIA_Error:
-	AHIClassData->error = tag->ti_Data;
+	ObjectData->error = tag->ti_Data;
 	notify(object, msg, tag->ti_Tag, tag->ti_Data);
 	break;
 
       case AHIA_UserData:
-	AHIClassData->user_data = tag->ti_Data;
+	ObjectData->user_data = tag->ti_Data;
 	notify(object, msg, tag->ti_Tag, tag->ti_Data);
 	break;
 
@@ -177,7 +177,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	  { TAG_DONE,    0            }
 	};
 	
-	DoMethod(AHIClassData->model_class, msg->MethodID,
+	DoMethod(ObjectData->model_class, msg->MethodID,
 		 (ULONG) tl, (ULONG) msg->opu_GInfo,
 		 msg->MethodID == OM_UPDATE ? msg->opu_Flags : 0 );
 	break;
@@ -199,8 +199,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -232,27 +232,27 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
 
     case AHIA_Locale:
-      *msg->opg_Storage = (ULONG) AHIClassData->locale;
+      *msg->opg_Storage = (ULONG) ObjectData->locale;
       break;
 
     case AHIA_Owner:
-      *msg->opg_Storage = (ULONG) AHIClassData->owner;
+      *msg->opg_Storage = (ULONG) ObjectData->owner;
       break;
 
     case AHIA_InterruptSafe:
-      *msg->opg_Storage = AHIClassData->interrupt_safe;
+      *msg->opg_Storage = ObjectData->interrupt_safe;
       break;
 
     case AHIA_Error:
-      *msg->opg_Storage = AHIClassData->error;
+      *msg->opg_Storage = ObjectData->error;
       break;
 
     case AHIA_ErrorMessage:
-      *msg->opg_Storage = (ULONG) get_error_message(AHIClassData);
+      *msg->opg_Storage = (ULONG) get_error_message(ObjectData);
       break;
       
     case AHIA_UserData:
-      *msg->opg_Storage = AHIClassData->user_data;
+      *msg->opg_Storage = ObjectData->user_data;
       break;
 
     case AHIA_ParameterTags:
@@ -263,7 +263,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
     case ICA_TARGET:
     case ICA_MAP:
     case ICSPECIAL_CODE:
-      GetAttr(msg->opg_AttrID, AHIClassData->model_class, msg->opg_Storage);
+      GetAttr(msg->opg_AttrID, ObjectData->model_class, msg->opg_Storage);
       break;
 	
     default:
@@ -281,17 +281,17 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 void
 MethodLock(Class* class, Object* object, Msg msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  if (AHIClassData->interrupt_safe) {
+  if (ObjectData->interrupt_safe) {
     Disable();
   }
-  else if (AHIClassData->owner != NULL) {
-    DoMethodA(AHIClassData->owner, msg);
+  else if (ObjectData->owner != NULL) {
+    DoMethodA(ObjectData->owner, msg);
   }
   else {
-    ObtainSemaphore(&AHIClassData->semaphore);
+    ObtainSemaphore(&ObjectData->semaphore);
   }
 }
 
@@ -303,16 +303,16 @@ MethodLock(Class* class, Object* object, Msg msg)
 void
 MethodUnlock(Class* class, Object* object, Msg msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
-  if (AHIClassData->interrupt_safe) {
+  if (ObjectData->interrupt_safe) {
     Enable();
   }
-  else if (AHIClassData->owner != NULL) {
-    DoMethodA(AHIClassData->owner, msg);
+  else if (ObjectData->owner != NULL) {
+    DoMethodA(ObjectData->owner, msg);
   }
   else {
-    ReleaseSemaphore(&AHIClassData->semaphore);
+    ReleaseSemaphore(&ObjectData->semaphore);
   }
 }

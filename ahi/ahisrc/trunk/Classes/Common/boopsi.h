@@ -17,14 +17,14 @@ struct CommonBase {
     struct ClassLibrary* super;
 };
 
-struct AHIClassBase;
-struct AHIClassData;
+struct ClassData;
+struct ObjectData;
 
 BOOL
-AHIClassInit(struct AHIClassBase* AHIClassBase);
+AHIClassInit(struct ClassData* ClassData);
 
 VOID
-AHIClassCleanup(struct AHIClassBase* AHIClassBase);
+AHIClassCleanup(struct ClassData* ClassData);
 
 ULONG
 AHIClassDispatch(Class*  class,

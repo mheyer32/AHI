@@ -26,17 +26,17 @@ float2dbfixed(float x) {
 
 
 static void
-recalc_sweeps(struct AHIClassData* AHIClassData) {
-  if (AHIClassData->length > 0 &&
-      AHIClassData->balance != NULL &&
-      AHIClassData->gains != NULL &&
-      AHIClassData->sweeps != NULL) {
+recalc_sweeps(struct ObjectData* ObjectData) {
+  if (ObjectData->length > 0 &&
+      ObjectData->balance != NULL &&
+      ObjectData->gains != NULL &&
+      ObjectData->sweeps != NULL) {
     ULONG c;
-    float step = 1.0f / AHIClassData->length;
+    float step = 1.0f / ObjectData->length;
 
-    for (c = 0; c <  AHIClassData->channels; ++c) {
-      float gain = AHIClassData->balance[c] * AHIClassData->gain;
-      AHIClassData->sweeps[c] = pow(AHIClassData->gains[c]/gain, step);
+    for (c = 0; c <  ObjectData->channels; ++c) {
+      float gain = ObjectData->balance[c] * ObjectData->gain;
+      ObjectData->sweeps[c] = pow(ObjectData->gains[c]/gain, step);
     }
   }
 }
@@ -47,11 +47,11 @@ recalc_sweeps(struct AHIClassData* AHIClassData) {
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG result = 0;
 
-  AHIClassData->gain = 1.0f;
+  ObjectData->gain = 1.0f;
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
   GetAttr(AHIA_Error, object, &result);
@@ -66,13 +66,13 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
 
-  FreeVec(AHIClassData->balance); AHIClassData->balance = NULL;
-  FreeVec(AHIClassData->gains);   AHIClassData->gains   = NULL;
-  FreeVec(AHIClassData->sweeps);  AHIClassData->sweeps  = NULL;
+  FreeVec(ObjectData->balance); ObjectData->balance = NULL;
+  FreeVec(ObjectData->gains);   ObjectData->gains   = NULL;
+  FreeVec(ObjectData->sweeps);  ObjectData->sweeps  = NULL;
 }
 
 
@@ -83,8 +83,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   BOOL check_ready = FALSE;
   
@@ -94,43 +94,43 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Buffer_Data:
-	AHIClassData->data = (float*) tag->ti_Data;
+	ObjectData->data = (float*) tag->ti_Data;
 	check_ready = TRUE;
 	break;
 
       case AHIA_Buffer_Length:
-	AHIClassData->length = tag->ti_Data;
-	recalc_sweeps(AHIClassData);
+	ObjectData->length = tag->ti_Data;
+	recalc_sweeps(ObjectData);
 	check_ready = TRUE;
 	break;
 
       case AHIA_Buffer_SampleType: {
 	ULONG st = tag->ti_Data;
 
-	FreeVec(AHIClassData->balance); AHIClassData->balance = NULL;
-	FreeVec(AHIClassData->gains);   AHIClassData->gains   = NULL;
-	FreeVec(AHIClassData->sweeps);  AHIClassData->sweeps  = NULL;
+	FreeVec(ObjectData->balance); ObjectData->balance = NULL;
+	FreeVec(ObjectData->gains);   ObjectData->gains   = NULL;
+	FreeVec(ObjectData->sweeps);  ObjectData->sweeps  = NULL;
 
-	AHIClassData->channels = 0;
+	ObjectData->channels = 0;
 	
 	if ((st & AHIST_TYPE_MASK) ==
 	    (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
-	  int size = sizeof (float) * AHIClassData->channels;
+	  int size = sizeof (float) * ObjectData->channels;
 	  
-	  AHIClassData->channels = AHIST_C_DECODE(st);
-	  AHIClassData->balance  = AllocVec(size, MEMF_PUBLIC);
-	  AHIClassData->gains    = AllocVec(size, MEMF_PUBLIC);
-	  AHIClassData->sweeps   = AllocVec(size, MEMF_PUBLIC);
+	  ObjectData->channels = AHIST_C_DECODE(st);
+	  ObjectData->balance  = AllocVec(size, MEMF_PUBLIC);
+	  ObjectData->gains    = AllocVec(size, MEMF_PUBLIC);
+	  ObjectData->sweeps   = AllocVec(size, MEMF_PUBLIC);
 
-	  if (AHIClassData->balance != NULL &&
-	      AHIClassData->gains != NULL &&
-	      AHIClassData->sweeps != NULL) {
+	  if (ObjectData->balance != NULL &&
+	      ObjectData->gains != NULL &&
+	      ObjectData->sweeps != NULL) {
 	    ULONG c;
 
-	    for (c = 0; c < AHIClassData->channels; ++c) {
-	      AHIClassData->balance[c] = 1.0f;
-	      AHIClassData->gains[c]   = AHIClassData->gain;
-	      AHIClassData->sweeps[c]  = 1.0f;
+	    for (c = 0; c < ObjectData->channels; ++c) {
+	      ObjectData->balance[c] = 1.0f;
+	      ObjectData->gains[c]   = ObjectData->gain;
+	      ObjectData->sweeps[c]  = 1.0f;
 	    }
 	  }
 	  else {
@@ -152,8 +152,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
       case AHIA_GainProcessor_Gain: {
 	ULONG c;
 
-	AHIClassData->gain = dbfixed2float(tag->ti_Data);
-	recalc_sweeps(AHIClassData);
+	ObjectData->gain = dbfixed2float(tag->ti_Data);
+	recalc_sweeps(ObjectData);
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
       }
 	
@@ -164,12 +164,12 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->balance != NULL &&
-					 AHIClassData->gains != NULL &&
-					 AHIClassData->sweeps != NULL &&
-					 AHIClassData->data != NULL &&
-					 AHIClassData->length > 0 &&
-					 AHIClassData->channels > 0),
+		  AHIA_Processor_Ready, (ObjectData->balance != NULL &&
+					 ObjectData->gains != NULL &&
+					 ObjectData->sweeps != NULL &&
+					 ObjectData->data != NULL &&
+					 ObjectData->length > 0 &&
+					 ObjectData->channels > 0),
 		  TAG_DONE);
   }
 
@@ -184,8 +184,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg)
 {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -217,11 +217,11 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
       
     case AHIA_GainProcessor_Channels:
-      *msg->opg_Storage = AHIClassData->channels;
+      *msg->opg_Storage = ObjectData->channels;
       break;
 
     case AHIA_GainProcessor_Gain:
-      *msg->opg_Storage = float2dbfixed(AHIClassData->gain);
+      *msg->opg_Storage = float2dbfixed(ObjectData->gain);
 
     default:
       return FALSE;
@@ -237,8 +237,8 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
 ULONG
 MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   ULONG result = DoSuperMethodA(class, object, (Msg) msg);
   
@@ -251,19 +251,19 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 	ULONG  c;
 	ULONG  s;
 	ULONG  i;
-	float* data  = AHIClassData->data;
-	float* gain  = AHIClassData->gains;
-	float* sweep = AHIClassData->sweeps;
+	float* data  = ObjectData->data;
+	float* gain  = ObjectData->gains;
+	float* sweep = ObjectData->sweeps;
 
-	for (s = 0, i = 0; s < AHIClassData->length; ++s) {
-	  for (c = 0; c < AHIClassData->channels; ++c, ++i) {
+	for (s = 0, i = 0; s < ObjectData->length; ++s) {
+	  for (c = 0; c < ObjectData->channels; ++c, ++i) {
 	    data[i] *= gain[c];
 	    gain[c] *= sweep[c];
 	  }
 	}
 
 	// Reset sweep factors
-	for (c = 0; c < AHIClassData->channels; ++c, ++i) {
+	for (c = 0; c < ObjectData->channels; ++c, ++i) {
 	  sweep[c] = 1.0;
 	}
       }
@@ -280,21 +280,21 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 
 BOOL
 MethodSetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG c;
   
-  if (msg->Channels > AHIClassData->channels ||
-      AHIClassData->balance == NULL) {
+  if (msg->Channels > ObjectData->channels ||
+      ObjectData->balance == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
 
   for (c = 0; c <  msg->Channels; ++c) {
-    AHIClassData->balance[c] = dbfixed2float(msg->Gains[c]);
+    ObjectData->balance[c] = dbfixed2float(msg->Gains[c]);
   }
 
-  recalc_sweeps(AHIClassData);
+  recalc_sweeps(ObjectData);
 
   return TRUE;
 }
@@ -306,18 +306,18 @@ MethodSetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance
 
 BOOL
 MethodGetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
   ULONG c;
 
-  if (msg->Channels > AHIClassData->channels ||
-      AHIClassData->balance == NULL) {
+  if (msg->Channels > ObjectData->channels ||
+      ObjectData->balance == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
 
   for (c = 0; c <  msg->Channels; ++c) {
-    msg->Gains[c] = float2dbfixed(AHIClassData->balance[c]);
+    msg->Gains[c] = float2dbfixed(ObjectData->balance[c]);
   }
 
   return TRUE;

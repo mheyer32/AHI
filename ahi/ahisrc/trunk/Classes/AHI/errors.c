@@ -11,8 +11,8 @@
 #include "util.h"
 
 char*
-get_error_message(struct AHIClassData* AHIClassData) {
-  switch (AHIClassData->error) {
+get_error_message(struct ObjectData* ObjectData) {
+  switch (ObjectData->error) {
 
 
     // ahi.class errors
@@ -90,22 +90,22 @@ get_error_message(struct AHIClassData* AHIClassData) {
     // dos.library or unknown errors
 
     default:
-      if (Fault(AHIClassData->error,
+      if (Fault(ObjectData->error,
 		DOSNAME,
-		AHIClassData->error_message,
-		sizeof (AHIClassData->error_message)) > 0) {
-	return  AHIClassData->error_message;
+		ObjectData->error_message,
+		sizeof (ObjectData->error_message)) > 0) {
+	return  ObjectData->error_message;
       }
   }
 
   // I don't think this will ever be reached, since Fault() should
   // handle unknown error codes too ...?
 
-  SPrintF(AHIClassData->error_message,
+  SPrintF(ObjectData->error_message,
 	  "Unknown error 0x%08lx (%ld)",
-	  AHIClassData->error, AHIClassData->error);
+	  ObjectData->error, ObjectData->error);
 
-  return AHIClassData->error_message;
+  return ObjectData->error_message;
 }
 
 

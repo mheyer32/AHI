@@ -6,11 +6,11 @@
 
 #include "boopsi.h"
 
-struct AHIClassBase {
+struct ClassData {
     struct CommonBase common;
 };
 
-struct AHIClassData {
+struct ObjectData {
     double frequency;		// The LFO frequency in Hz
     double phase_offset;	// Phase offset (0.0 <= phase_offset < 1.0)
     ULONG  amplitude;		// The LFO amplitude

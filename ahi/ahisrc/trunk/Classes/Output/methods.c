@@ -19,14 +19,14 @@
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   struct TagItem* tstate = msg->ops_AttrList;
   struct TagItem* tag;
   ULONG result = 0;
 
-  AHIClassData->mode = AHIV_Output_AnyMode;
+  ObjectData->mode = AHIV_Output_AnyMode;
 
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
@@ -36,7 +36,7 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 	  case AHIV_Output_AnyMode:
 	  case AHIV_Output_SharedMode:
 	  case AHIV_Output_ExclusiveMode:
-	    AHIClassData->mode = tag->ti_Data;
+	    ObjectData->mode = tag->ti_Data;
 	    break;
 
 	  default:
@@ -62,8 +62,8 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 
 void
 MethodDispose(Class* class, Object* object, Msg msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 }
 
 
@@ -73,8 +73,8 @@ MethodDispose(Class* class, Object* object, Msg msg) {
 		    
 ULONG
 MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   struct TagItem* tstate = msg->opu_AttrList;
   struct TagItem* tag;
@@ -99,8 +99,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
 
 BOOL
 MethodGet(Class* class, Object* object, struct opGet* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  struct ClassData* ClassData = (struct ClassData*) class->cl_UserData;
+  struct ObjectData* ObjectData = (struct ObjectData*) INST_DATA(class, object);
 
   switch (msg->opg_AttrID) {
     case AHIA_Title:
@@ -134,7 +134,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg) {
       // Subclasses are expected to override these:
 
     case AHIA_Output_Mode:
-      *msg->opg_Storage = AHIClassData->mode;
+      *msg->opg_Storage = ObjectData->mode;
       
     case AHIA_Board_OutputClass:
     case AHIA_Board_Inputs:

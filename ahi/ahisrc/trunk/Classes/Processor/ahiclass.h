@@ -6,11 +6,11 @@
 
 #include "boopsi.h"
 
-struct AHIClassBase {
+struct ClassData {
     struct CommonBase common;
 };
 
-struct AHIClassData {
+struct ObjectData {
     struct MinList members;
     struct MinList buffers;
     ULONG          num_members;
