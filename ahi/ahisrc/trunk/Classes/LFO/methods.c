@@ -41,33 +41,37 @@ calc_iq(Class* class, Object* object, struct opUpdate* msg) {
       break;
 
     case AHIV_LFO_Square: {
-      static const ULONG sqr[5] = { 1, 1, -1, -1, 1 };
-	    
+      static const double sqr[5] = { 1, 1, -1, -1, 1 };
+
       i = sqr[(int) (phase * 4) + 1];
       q = sqr[(int) (phase * 4) + 0];
       break;
     }
 	    
     case AHIV_LFO_Triangle: {
-      static const ULONG tri[6] = { 0, 1, 0, -1, 0, 1 };
-	    
+      static const double tri[6] = { 0, 1, 0, -1, 0, 1 };
+      double f  = fmod( phase * 4, 1.0);
       int i_idx = (int) (phase * 4) + 1;
       int q_idx = (int) (phase * 4) + 0;
 
-      i = tri[i_idx] + (tri[i_idx + 1] - tri[i_idx]) * phase;
-      q = tri[q_idx] + (tri[q_idx + 1] - tri[i_idx]) * phase;
+      i = tri[i_idx] + (tri[i_idx + 1] - tri[i_idx]) * f;
+      q = tri[q_idx] + (tri[q_idx + 1] - tri[q_idx]) * f;
       break;
     }
 
     case AHIV_LFO_Sawtooth:
       i = 1.0 - 2.0 * phase;
-      q = 1.0 - 2.0 * ((phase + 0.75) - (int) (phase + 0.75));
+      q = 1.0 - 2.0 * fmod(phase + 0.75, 1.0);
       break;
   }
 
   AHIClassData->i = AHIClassData->bias + AHIClassData->amplitude * i;
   AHIClassData->q = AHIClassData->bias + AHIClassData->amplitude * q;
 
+/*   KPrintF("Calculated phase to %08lx, I = %08lx, Q = %08lx\n", */
+/* 	  (ULONG) (AHIClassData->phase * FIXED2PI), */
+/* 	  (ULONG) AHIClassData->i, (ULONG) AHIClassData->q); */
+  
   NotifySuper(class, object, msg,
 	      AHIA_LFO_Phase, (ULONG) (AHIClassData->phase * FIXED2PI),
 	      AHIA_LFO_I,     (ULONG) AHIClassData->i,
@@ -120,6 +124,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
   struct TagItem* tag;
 
   while ((tag = NextTagItem(&tstate))) {
+//    KPrintF("LFO %08lx attrib %08lx is %08lx\n", object, tag->ti_Tag, tag->ti_Data);
+    
     switch (tag->ti_Tag) {
       case AHIA_LFO_Frequency:
 	AHIClassData->frequency = tag->ti_Data / 65536.0;
@@ -198,6 +204,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg) {
 	AHIClassData->ticktime = time / freq;
 	AHIClassData->tickfreq = freq;
 	update_iq = TRUE;
+	break;
       }
 	
       case AHIA_LFO_Tick:
