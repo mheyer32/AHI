@@ -32,7 +32,8 @@ Added		Fixed		What?
 980224				AUDIO: crashes if UNIT is 4.
 980511				AUDIO: and ahi.device should report how much is played.
 980805				AHIC_Monitor, "Monitor always" in prefs.
-900908				Global volume control for device modes.
+990908				Global volume control for device modes.
+991111				Open the filesave requester on the user's screen.
 
 V5 Proposal, improvements and new lowlevel soundcard access
 ===========================================================
