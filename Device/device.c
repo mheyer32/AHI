@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/01/05 13:38:01  lcs
+* Prettified the code a bit... ;)
+*
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
 * CMD_WRITE seem to work as supposed now
@@ -727,8 +730,6 @@ static __asm __interrupt void SoundFunc(
       break;
     default:
       /* A normal sound is done, and another is waiting */
-      voice->QueuedRequest = voice->NextRequest;
-      voice->NextRequest = NULL;
       AHI_SetSound(sndmsg->ahism_Channel,
           voice->NextSound,
           voice->NextOffset,
@@ -741,6 +742,8 @@ static __asm __interrupt void SoundFunc(
           voice->NextVolume,
           voice->NextPan,
           actrl,NULL);
+      voice->QueuedRequest = voice->NextRequest;
+      voice->NextRequest = NULL;
       voice->NextOffset = PLAY;
       break;
   }
