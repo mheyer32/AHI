@@ -1,6 +1,10 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.3  2002/01/03 08:51:06  martin
+ * Imported RCS archive to the AHI CVS tree.
+ * Imported the last source snapshot I got from Teemu.
+ *
  * Revision 1.2  1997/07/27 22:07:32  lcs
  * Last check-in, Leviticus signing off... ;)
  *
@@ -107,10 +111,13 @@ extern ULONG error;
 
 void kprintf(char *, ...);
 
+ASM void puta4(void);
+
 ASM void SlaveTaskEntry(void);
 ASM void IOTaskEntry(void);
 ASM void HookLoad(void);
 ASM ULONG GetRawReply(REG(a0) struct ToccataBase *);
+ASM RawReply(void);
 
 void fillhardinfo(void);
 

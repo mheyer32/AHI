@@ -1,6 +1,10 @@
 *
 * $Id$
 * $Log$
+* Revision 1.4  2002/01/03 08:51:06  martin
+* Imported RCS archive to the AHI CVS tree.
+* Imported the last source snapshot I got from Teemu.
+*
 * Revision 1.3  1997/07/27 22:07:32  lcs
 * Last check-in, Leviticus signing off... ;)
 *
@@ -14,14 +18,36 @@
 
 	include	exec/tasks.i
 	include	utility/hooks.i
-	include	lvo/exec_lib.i
-	include	macros.i
+	include lvo/ahi_lib.i
+
+pushm	macro
+	movem.l	\1,-(a7)
+	endm
+
+popm	macro
+	movem.l	(a7)+,\1
+	endm
+
+push	macro
+	move.l	\1,-(a7)
+	endm
+
+pop		macro
+	move.l	(a7)+,\1
+	endm
+
+call	macro
+	xref	_LVO\1
+	jsr		_LVO\1(a6)
+	endm
+
 
 	XREF	_ToccataBase
 	XREF	_SlaveTask
 	XREF	_IOTask
-	XREF	_RawReply
+	XdEF	_RawReply
 
+	xref	_NextBufferOK
 	XREF	_t_NextFrequency
 	XREF	_t_FindFrequency
 	XREF	_t_SetPart
@@ -99,22 +125,22 @@
 	XDEF	_T_SetReg
 	XDEF	_T_GetReg
 
-_GetRawReply:
-	push	a6
-	move.l	a0,CRRtoccatabase
-	base	exec
-	call	CacheClearU
-	move.l	#CallRawReply,d0
-	pop	a6
+	xdef	_puta4
+	xref	_ToccataBase
+
+_puta4
+	move.l	a4,varbase
 	rts
 
-CallRawReply:
-	push	a6
-	dc.w	$4DF9			; "lea.l xxx.l,a6
-CRRtoccatabase:
-	dc.l	0
-	jsr	_RawReply
-	pop	a6
+_GetRawReply:
+	move.l	#_RawReply,d0
+	rts
+
+_RawReply:
+	move.l	a0,-(a7)
+	move.l	varbase,a0
+	move.l	#1,_NextBufferOK(a0)
+	move.l	(a7)+,a0
 	rts
 
 _HookLoad:
@@ -126,19 +152,13 @@ _HookLoad:
 	rts
 
 _SlaveTaskEntry:
-	move.l	4.w,a6
-	suba.l	a1,a1
-	call	FindTask
-	move.l	d0,a0
-	move.l	TC_Userdata(a0),a6
+	move.l	varbase,a4
+	move.l	_ToccataBase(a4),a6
 	jmp	_SlaveTask
 
 _IOTaskEntry:
-	move.l	4.w,a6
-	suba.l	a1,a1
-	call	FindTask
-	move.l	d0,a0
-	move.l	TC_Userdata(a0),a6
+	move.l	varbase,a4
+	move.l	_ToccataBase(a4),a6
 	jmp	_IOTask
 
 
@@ -429,3 +449,11 @@ _T_GetReg:
 	jsr	_t_GetReg
 	popm	d1/a0-a1
 	rts
+
+*****************************************************
+
+
+	xdef	varbase
+
+	section	data,data
+varbase	dc.l	$BADC0DED
