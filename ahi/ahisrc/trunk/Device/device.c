@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.13  1998/03/13 10:16:48  lcs
+* Now uses signals in PlayRequest(), instead of busy-waiting or Delay().
+*
 * Revision 4.12  1998/01/29 23:09:47  lcs
 * Playing with anticlick
 *
@@ -16,6 +19,7 @@
 
 
 //#define DEBUG
+//#define DEBUG_R
 
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
@@ -959,7 +963,7 @@ RecordFunc ( REG(a0, struct Hook *hook),
     iounit = (struct AHIDevUnit *) hook->h_Data;
     iounit->RecordBuffer = recmsg->ahirm_Buffer;
     iounit->RecordSize = recmsg->ahirm_Length<<2;
-#ifdef DEBUG
+#ifdef DEBUG_R
     KPrintF("Buffer Filled again...\n");
 #endif
     Signal((struct Task *) iounit->Master, (1L << iounit->RecordSignal));
