@@ -20,6 +20,7 @@
 #include "database.h"
 #include "debug.h"
 #include "header.h"
+#include "misc.h"
 
 
 // Boolean comparison macros
@@ -531,7 +532,7 @@ GetAudioAttrsA( REG(d0, ULONG id),
     else // no valid audioctrl
        rc=FALSE;
     if(id != AHI_INVALID_ID)
-      FreeVec(audioctrl);
+      AHIFreeVec(audioctrl);
     if(AHIsubBase)
       CloseLibrary(AHIsubBase);
     UnlockDatabase(audiodb);

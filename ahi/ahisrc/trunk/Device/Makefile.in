@@ -42,7 +42,8 @@ CFLAGS		= @CFLAGS@ -m$(CPU)
 ASFLAGS		= @ASFLAGS@ -m$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
-ASMFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD \
+ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
+		  QUIET NOEXE OPT NRQBPSMD \
 		  MACHINE $(CPU) SET "VERSION$(VER)"
 
 VPATH		= @srcdir@
@@ -83,7 +84,7 @@ TARGET		= ahi.elf.$(CPU)
 endif
 
 
-LANGUAGES	= $(notdir $(basename $(wildcard translations/*.ct)))
+LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
 
@@ -132,24 +133,24 @@ install:	$(TARGET)
 version.i:	version.rev
 	@echo Creating $@
 	@ver=`cat $(top_srcdir)/version.ver` \
-	 rev=`cat version.rev` && \
+	 rev=`cat $(srcdir)/version.rev` && \
 	 echo "VERSION  EQU $$ver" >$@ && \
 	 echo "REVISION EQU $$rev" >>$@
 
 version.h:	version.rev version.date
 	@echo Creating $@
 	@ver=`cat $(top_srcdir)/version.ver` \
-	 rev=`cat version.rev` \
-	 date=`cat version.date` && \
+	 rev=`cat $(srcdir)/version.rev` \
+	 date=`cat $(srcdir)/version.date` && \
 	 echo "#define VERSION $$ver" > $@ && \
 	 echo "#define REVISION $$rev" >> $@ && \
 	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
 
 revup:
-	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
-	@date +%d.%m.%y > version.date
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%d.%m.%y > $(srcdir)/version.date
 	@echo -n "New revision: "
-	@cat version.rev
+	@cat $(srcdir)/version.rev
 
 #
 # Auto-remake autoconf stuff
@@ -167,30 +168,30 @@ Makefile: Makefile.in ../config.status
 	$(AS) $(ASFLAGS) $< -o $@
 
 asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
-	$(ASM) $(ASMFLAGS) $<
+	$(ASM) $(ASMFLAGS) $< TO $@
 
 $(TARGET):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 localize.c:	ahi.cd C_c_AHI.sd
-	$(FLEXCAT) ahi.cd localize.c=C_c_AHI.sd 
+	$(FLEXCAT) $(srcdir)/ahi.cd localize.c=$(srcdir)/C_c_AHI.sd 
 
 localize.h:	ahi.cd C_c_AHI.sd
-	$(FLEXCAT) ahi.cd localize.h=C_h_AHI.sd
+	$(FLEXCAT) $(srcdir)/ahi.cd localize.h=$(srcdir)/C_h_AHI.sd
 
 %.catalog:	translations/%.ct
-	$(FLEXCAT) ahi.cd $< CATALOG $@
+	$(FLEXCAT) $(srcdir)/ahi.cd $< CATALOG $@
 
 %.ct:
-	$(FLEXCAT) ahi.cd $@ NEWCTFILE $@
+	$(FLEXCAT) $(srcdir)/ahi.cd $@ NEWCTFILE $@
 
 
 #
 # Dependencies
 ########################################
 
-SOURCES		= $(wildcard *.c)
-HEADERS		= $(wildcard *.h)
+SOURCES		= $(notdir $(wildcard $(srcdir)/*.c))
+HEADERS		= $(notdir $(wildcard $(srcdir)/*.h))
 
 Makefile.dep:	$(SOURCES) $(HEADERS) localize.c localize.h version.h
 	@echo Making $@
@@ -198,7 +199,7 @@ ifneq ($(build_os),amigaos)
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 else
 	-@touch $@
-	-@makedepend -f $@ $(SOURCES)
+	-@makedepend -f $@ -I $(srcdir) $(SOURCES)
 endif
 
 include Makefile.dep
@@ -208,7 +209,7 @@ devsupp.o:	devsupp.s
 dspecho_68k.o:	dspecho_68k.s ahi_def.i dsp.i
 mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
 
-$(wildcard translations/*.ct) ahi.ct:	ahi.cd
+$(wildcard $(srcdir)/translations/*.ct) ahi.ct:	ahi.cd
 
 #
 # Options

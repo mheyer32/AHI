@@ -139,6 +139,8 @@ struct AHISoundData
 
 /* Private AHIChannelData */
 
+#ifdef VERSION68K
+
 struct AHIChannelData
 {
 	UWORD	cd_EOS;			/* $FFFF: Sample has reached end */
@@ -170,7 +172,7 @@ struct AHIChannelData
 	ULONG	cd_NextType;
 
 	LONG	cd_Samples;		/* Samples left to store (down-counter) */
-	LONG	cd_FirstOffsetI;		/* for linear interpolation routines */
+	LONG	cd_FirstOffsetI;	/* for linear interpolation routines */
 	LONG	cd_LastSampleL;		/* for linear interpolation routines */
 	LONG	cd_TempLastSampleL;	/* for linear interpolation routines */
 	LONG	cd_LastSampleR;		/* for linear interpolation routines */
@@ -184,13 +186,63 @@ struct AHIChannelData
 	LONG	cd_AntiClickCount;
 } __attribute__  ((packed));
 
-#define AHIACB_NOMIXING	31	/* private ahiac_Flags flag */
+#else
+
+struct AHIChannelData
+{
+	UWORD	cd_EOS;			/* $FFFF: Sample has reached end */
+	UBYTE	cd_FreqOK;		/* $00: Freq=0 ; $FF: Freq<>0 */
+	UBYTE	cd_SoundOK;		/* $00: No sound set ; $FF: S. OK. */
+	APTR	cd_DataStart;
+	Fixed64	cd_Offset;
+	Fixed64	cd_Add;
+	Fixed64	cd_LastOffset;
+	Fixed	cd_ScaleLeft;
+	Fixed	cd_ScaleRight;
+	Fixed	cd_VolumeLeft;
+	Fixed	cd_VolumeRight;
+	APTR	cd_AddRoutine;
+	ULONG	cd_Type;
+
+	UWORD	cd_NextEOS;		/* Not in use */
+	UBYTE	cd_NextFreqOK;
+	UBYTE	cd_NextSoundOK;
+	APTR	cd_NextDataStart;
+	Fixed64	cd_NextOffset;
+	Fixed64	cd_NextAdd;
+	Fixed64	cd_NextLastOffset;
+	Fixed	cd_NextScaleLeft;
+	Fixed	cd_NextScaleRight;
+	Fixed	cd_NextVolumeLeft;
+	Fixed	cd_NextVolumeRight;
+	APTR	cd_NextAddRoutine;
+	ULONG	cd_NextType;
+
+	LONG	cd_Samples;		/* Samples left to store (down-counter) */
+	LONG	cd_FirstOffsetI;	/* for linear interpolation routines */
+	LONG	cd_LastSampleL;		/* for linear interpolation routines */
+	LONG	cd_TempLastSampleL;	/* for linear interpolation routines */
+	LONG	cd_LastSampleR;		/* for linear interpolation routines */
+	LONG	cd_TempLastSampleR;	/* for linear interpolation routines */
+	LONG	cd_LastScaledSampleL;	/* for anticlick */
+	LONG	cd_LastScaledSampleR;	/* for anticlick */
+
+	struct AHIChannelData *cd_Succ;	/* For the wet and dry lists */
+	UWORD	cd_ChannelNo;
+	UWORD	cd_Pad1;
+	LONG	cd_AntiClickCount;
+	LONG	cd_Pad2;
+};
+
+#endif
+
+#define AHIACB_NOMIXING	31		/* private ahiac_Flags flag */
 #define AHIACF_NOMIXING	(1L<<31)	/* private ahiac_Flags flag */
-#define AHIACB_NOTIMING	30	/* private ahiac_Flags flag */
+#define AHIACB_NOTIMING	30		/* private ahiac_Flags flag */
 #define AHIACF_NOTIMING	(1L<<30)	/* private ahiac_Flags flag */
-#define AHIACB_POSTPROC	29	/* private ahiac_Flags flag */
+#define AHIACB_POSTPROC	29		/* private ahiac_Flags flag */
 #define AHIACF_POSTPROC	(1L<<29)	/* private ahiac_Flags flag */
-#define AHIACB_CLIPPING	28	/* private ahiac_Flags flag */
+#define AHIACB_CLIPPING	28		/* private ahiac_Flags flag */
 #define AHIACF_CLIPPING	(1L<<28)	/* private ahiac_Flags flag */
 
 /* Private AudioCtrl structure */
@@ -233,8 +285,7 @@ struct AHIPrivAudioCtrl
 	UWORD			 ahiac_ChannelNo;	/* PPC communication variable */
 	UWORD			 ahiac_Pad;
 	LONG			 ahiac_ComV;		/* PPC communication variable */
-	APTR			 ahiac_AntiClickBuffer;
-	ULONG			 ahiac_AntiClickSize;	/* in bytes */
+	APTR			 ahiac_PPCMixBuffer;
 	char			 ahiac_DriverName[ 256 ];
 };
 

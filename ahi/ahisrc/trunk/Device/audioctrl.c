@@ -551,9 +551,6 @@ AllocAudioA( REG(a1, struct TagItem *tags),
         audioctrl->ahiac_Channels2, audioctrl->ac.ahiac_Flags);
 */
 
-    if(!(InitMixroutine(audioctrl)))
-      goto error;
-
     if(!(audioctrl->ac.ahiac_Flags & AHIACF_NOTIMING))
     {
       RecalcBuff(audioctrl->ac.ahiac_MinPlayerFreq,audioctrl);
@@ -592,6 +589,8 @@ AllocAudioA( REG(a1, struct TagItem *tags),
       audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) PreTimer;
       audioctrl->ac.ahiac_PostTimer = (void (*)(void)) PostTimer;
     }
+
+    if( !InitMixroutine( audioctrl ) ) goto error;
   }
 
   audioctrl->ac.ahiac_SamplerFunc = AllocVec(sizeof(struct Hook),
@@ -702,7 +701,7 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
     FreeVec( audioctrl->ahiac_MultTableU );
     FreeVec( audioctrl->ac.ahiac_SamplerFunc );
     FreeVec( audioctrl->ac.ahiac_MixerFunc );
-    AHIFreeVec( audioctrl->ahiac_AntiClickBuffer );
+    AHIFreeVec( audioctrl->ahiac_PPCMixBuffer );
     AHIFreeVec( audioctrl->ahiac_SoundDatas );
     AHIFreeVec( audioctrl->ahiac_ChannelDatas );
 
