@@ -1,7 +1,7 @@
 # $Id$
 # $Log$
-# Revision 1.15  1997/03/15 09:51:52  lcs
-# Added TODO file to RCS
+# Revision 1.16  1997/03/20 02:02:50  lcs
+# bah!
 #
 # Revision 1.14  1997/02/20 10:26:13  lcs
 # New Flexcat caused some problems
@@ -49,7 +49,7 @@ SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
 device.c devsupp.a dspecho.a footer.a header.a requester.c\
 ahi.cd C_c_AHI.sd C_h_AHI.sd
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile TODO
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile
 
 OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
 device.o devsupp.o dspecho.o footer.o localize.o requester.o header.o 
