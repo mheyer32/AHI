@@ -37,10 +37,24 @@
 #include "8010.h"
 //#include "icardmid.h"
 
+
+/*** Stuff that should really have been in a link library ********************/
+
+void
+KPrintFArgs( UBYTE* fmt, 
+             ULONG* args );
+
+#define KPrintF( fmt, ... )        \
+({                                 \
+  ULONG _args[] = { __VA_ARGS__ }; \
+  KPrintFArgs( (fmt), _args );     \
+})
+
+
 unsigned short my_inb(unsigned long port)
 {
   unsigned char res = *(u8*) port;
-
+//  KPrintF( "my_inb(%08lx) ->%02lx\n", port, res );
   DPD(6, "my_inb(%08x) ->%02x\n", port, res );
 
   return res;
@@ -50,6 +64,7 @@ unsigned short my_inw(unsigned long port)
 {
   unsigned short res = *(u16*) port;
 
+//  KPrintF( "my_inw(%08lx) ->%04lx\n", port, res );
   DPD(6, "my_inw(%08x) ->%04x\n", port, res );
 
   return res;
@@ -59,6 +74,7 @@ unsigned int my_inl(unsigned long port)
 {
   unsigned int res = *(u32*) port;
 
+//  KPrintF( "my_inl(%08lx) ->%08lx\n", port, res );
   DPD(6, "my_inl(%08x) ->%08x\n", port, res );
 
   return res;
@@ -67,18 +83,21 @@ unsigned int my_inl(unsigned long port)
 void my_outb(unsigned char value, unsigned long port)
 {
   *(u8*) port = value;
+//  KPrintF( "my_outb(%08lx,%02lx)\n", port, value );  
   DPD(6, "my_outb(%08x,%02x)\n", port, value );  
 }
 
 void my_outw(unsigned short value, unsigned long port)
 {
   *(u16*) port = value;
+//  KPrintF( "my_outw(%08lx,%04lx)\n", port, value );  
   DPD(6, "my_outw(%08x,%04x)\n", port, value );  
 }
 
 void my_outl(unsigned int value, unsigned long port)
 {
   *(u32*) port = value;
+//  KPrintF( "my_outl(%08lx,%08lx)\n", port, value );  
   DPD(6, "my_outl(%08x,%08x)\n", port, value );  
 }
 
