@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.10  1997/10/11 15:58:13  lcs
+* Boolean variables are compared using XNOR now, not ==.
+*
 * Revision 4.9  1997/07/27 02:03:23  lcs
 * AHI_LoadSound() now returns an error if the user tries to
 * play unsigned samples in HiFi modes (i.e., removed the
@@ -103,10 +106,15 @@
 #include "cfuncs_protos.h"
 #endif
 #endif
+
 // Makes 'in' fit the given bounds.
 
 #define inbounds(in,min,max) \
     ( (in > max) ? max : ( (in < min) ? min : in ) )
+
+
+#define XOR(a,b) ((a && !b) || (!a && b))
+#define XNOR(a,b) (! XOR(a,b))
 
 extern __asm ULONG RecalcBuff( register __d1 ULONG , register __a2 struct AHIPrivAudioCtrl * );
 extern __asm BOOL InitMixroutine(register __a2 struct AHIPrivAudioCtrl *);
@@ -307,43 +315,43 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 
       case AHIDB_Volume:
         total++;
-        if(tag->ti_Data == volume)
+        if(XNOR(tag->ti_Data, volume))
           hits++;
         break;
 
       case AHIDB_Stereo:
         total++;
-        if(tag->ti_Data == stereo)
+        if(XNOR(tag->ti_Data, stereo))
           hits++;
         break;
       case AHIDB_Panning:
         total++;
-        if(tag->ti_Data == panning)
+        if(XNOR(tag->ti_Data, panning))
           hits++;
         break;
       case AHIDB_HiFi:
         total++;
-        if(tag->ti_Data == hifi)
+        if(XNOR(tag->ti_Data, hifi))
           hits++;
         break;
       case AHIDB_PingPong:
         total++;
-        if(tag->ti_Data == pingpong)
+        if(XNOR(tag->ti_Data, pingpong))
           hits++;
         break;
       case AHIDB_Record:
         total++;
-        if(tag->ti_Data == record)
+        if(XNOR(tag->ti_Data, record))
           hits++;
         break;
       case AHIDB_Realtime:
         total++;
-        if(tag->ti_Data == realtime)
+        if(XNOR(tag->ti_Data, realtime))
           hits++;
         break;
       case AHIDB_FullDuplex:
         total++;
-        if(tag->ti_Data == fullduplex)
+        if(XNOR(tag->ti_Data, fullduplex))
           hits++;
         break;
 
@@ -1530,6 +1538,10 @@ __asm ULONG GetAudioAttrsA( register __d0 ULONG id,
 *   NOTES
 *
 *   BUGS
+*       Due to a bug in the code that compared the boolean tag values in
+*       version 4.158 and earlier, TRUE must be equal to 1. The bug is not
+*       present in later revisions.
+*
 *
 *   SEE ALSO
 *      AHI_NextAudioID(), AHI_GetAudioAttrsA()
@@ -1653,7 +1665,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *               ahisi_Length - The size of the array, in samples.
 *               Don't even think of setting ahisi_Address to 0 and
 *               ahisi_Length to 0xffffffff as you can do with
-*               AHIST_DYNAMICSAMPLE! Very few DMA/DSP cards has 4 GB onboard
+*               AHIST_DYNAMICSAMPLE! Very few DMA/DSP cards have 4 GB onboard
 *               RAM...
 *
 *           AHIST_DYNAMICSAMPLE A pointer to a struct AHISampleInfo, filled
