@@ -200,3 +200,9 @@ block.
 The PlayerFunc() should be called before you fill the fifo.  The user is
 responsible for setting a new AHIC_DirectWrite block from this hook.
 
+*************
+
+User-defined audio modes, just like "Default Music Unit", id #0
+User-defined pseudo drivers that handles mixing from several programs/device
+units.
+
