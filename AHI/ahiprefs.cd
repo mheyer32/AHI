@@ -1,10 +1,10 @@
 #language english
 #version 4
-;## chunk AUTH Translated by xxx <xxx@xxx.xx>
+;
 ; $Id$
 ; $Log$
-; Revision 4.3  1997/04/09 03:02:02  lcs
-; *** empty log message ***
+; Revision 4.4  1997/04/23 21:08:31  lcs
+; Removed (Disabled)
 ;
 ; Revision 4.2  1997/04/07 01:36:51  lcs
 ; Localized it, bug fixes
@@ -99,7 +99,7 @@ msgOptChannels (//)
 C_hannels
 ;
 msgOptNoChannels (//)
-(Disabled)
+
 ;
 msgOptVolume (//)
 _Volume
