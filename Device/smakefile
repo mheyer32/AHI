@@ -1,10 +1,10 @@
 # $Id$
 # $Log$
+# Revision 4.6  1997/04/22 01:35:21  lcs
+# This is release 4! Finally.
+#
 # Revision 4.5  1997/04/15 12:22:14  lcs
 # Catalog changes.
-#
-# Revision 4.4  1997/04/14 01:50:39  lcs
-# *** empty log message ***
 #
 # Revision 4.3  1997/04/07 13:12:35  lcs
 # Better handling of catalog files now (no need to change the makefile
@@ -94,6 +94,25 @@ DEBUG	= LIB:debug.lib LIB:amiga.lib
 $(TARGET): $(OBJECTS)
 	$(LINKER) $(LFLAGS) TO Devs:ahi.device FROM $(OBJECTS) LIB LIB:sc.lib $(DEBUG)
 	slink FROM Devs:ahi.device to $(TARGET) ND NOICONS
+
+##
+## Everything!
+##
+###############################################################################
+
+dist:	protos cpu support
+
+##
+## CPU=68000 and CPU=68030 versions
+##
+###############################################################################
+
+cpu:
+	smake clean
+	smake CPU=68000
+	move $(TARGET) $(TARGET).000
+	smake clean
+	smake
 
 ##
 ## Dependences (doesn't work with asm files anyway!)
@@ -245,7 +264,7 @@ autodocs:
 catalogs:
 	# Make sure the directories exists
 	echo > T:catscript "FailAt 11"
-	list \#?.ct >> T:catscript lformat "MakeDir AHI:User/Catalogs/%m"
+	list \#?.ct >> T:catscript lformat "MakeDir >NIL: AHI:User/Catalogs/%m"
 	--execute T:catscript
 	# Make catalogs
 	list \#?.ct > T:catscript lformat\

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/04/22 01:35:21  lcs
+* This is release 4! Finally.
+*
 * Revision 4.2  1997/04/14 01:50:39  lcs
 * Spellchecked
 *
@@ -273,7 +276,8 @@ __asm void CloseLibs(register __a6 struct ExecBase *SysBase)
 *           AHI_NO_UNIT should be used when you're using the low-level
 *           API.
 *       ioRequest - a pointer to a struct AHIRequest, initialized by
-*           exec.library/CreateIORequest().
+*           exec.library/CreateIORequest(). ahir_Version *must* be preset
+*           to the version you need!
 *       flags - There is only one flag defined, AHIDF_NOMODESCAN, which
 *           asks ahi.device not to build the audio mode database if not
 *           already initialized. It should not be used by applications
@@ -594,8 +598,8 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
   if(iounit)
   {
-    /* Internal defaults for device unit 0 */
-    iounit->AudioMode       = AHI_BestAudioID(AHIDB_Realtime, TRUE, TAG_DONE);
+    /* Internal defaults for device unit */
+    iounit->AudioMode       = AHI_INVALID_ID;   // See at the end of the function!
     iounit->Frequency       = 10000;
     iounit->Channels        = 4;
     iounit->MonitorVolume   = -1;
@@ -607,7 +611,7 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
   else
   {
     /* Internal defaults for low-level mode */
-    AHIBase->ahib_AudioMode       = AHI_BestAudioID( AHIDB_Realtime, TRUE, TAG_DONE);
+    AHIBase->ahib_AudioMode       = AHI_INVALID_ID;
     AHIBase->ahib_Frequency       = 10000;
     AHIBase->ahib_MonitorVolume   = 0x00000;
   	AHIBase->ahib_InputGain       = 0x10000;
@@ -708,6 +712,25 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
     }
     FreeIFF(iff);
   }
+
+  // Avoids calling AHI_BestAudioID if not neccessary (faster startup time,
+  // since doesn't open all sub libraries.
+
+  if(iounit)
+  {
+    if(iounit->AudioMode == AHI_INVALID_ID)
+    {
+      iounit->AudioMode = AHI_BestAudioID(AHIDB_Realtime, TRUE, TAG_DONE);
+    }
+  }
+  else
+  {
+    if(AHIBase->ahib_AudioMode == AHI_INVALID_ID)
+    {
+      AHIBase->ahib_AudioMode = AHI_BestAudioID( AHIDB_Realtime, TRUE, TAG_DONE);
+    }
+  }
+
   return TRUE;
 }
 

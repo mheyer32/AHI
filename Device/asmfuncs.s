@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.4  1997/04/22 01:35:21  lcs
+* This is release 4! Finally.
+*
 * Revision 4.3  1997/04/14 01:50:39  lcs
 * AHIST_INPUT still doesn't work...
 *
@@ -1149,7 +1152,7 @@ update_DSPMask:
 	move.l	d0,a0
 	move.l	cd_Succ(a0),d0
 	bne	.scanlist
-	move.l	a3,-AHIChannelData_SIZEOF+cd_Succ(a0)
+	move.l	a3,cd_Succ(a0)
 	clr.l	cd_Succ(a3)
 
 	add.w	#AHIChannelData_SIZEOF,a3

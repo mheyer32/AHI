@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.4  1997/04/22 01:35:21  lcs
+* This is release 4! Finally.
+*
 * Revision 4.3  1997/04/14 01:50:39  lcs
 * AHIST_INPUT still doesn't work...
 *
@@ -982,6 +985,7 @@ _Mix:
 	bne.b	.exit			;Both wet and dry finished
 	addq.b	#1,ahiac_WetOrDry(a2)	;Mark dry
 
+	pushm	a0-a6
 *** AHIET_DSPECHO
 	move.l	ahiac_EffDSPEchoStruct(a2),d0
 	beq	.noEffDSPEcho
@@ -989,6 +993,7 @@ _Mix:
 	move.l	ahiecho_Code(a0),a0
 	jsr	(a0)
 .noEffDSPEcho
+	popm	a0-a6
 
 .do_dry
 	move.l	ahiac_DryList(a2),d0
