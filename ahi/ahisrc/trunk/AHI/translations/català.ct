@@ -32,59 +32,59 @@ msgMenuProject
 ; \000Project
 ;
 msgItemOpen
-O\0Obrir...
+O\000Obrir...
 ; O\000Open...
 ;
 msgItemSaveAs
-A\0Desar com...
+A\000Desar com...
 ; A\000Save As...
 ;
 msgItemAbout
-?\0Sobre...
+?\000Sobre...
 ; ?\000About...
 ;
 msgItemQuit
-Q\0Sortir
+Q\000Sortir
 ; Q\000Quit
 ;
 msgMenuEdit
-\0Editar
+\000Editar
 ; \000Edit
 ;
 msgItemDefaults
-D\0Reset per defecte
+D\000Reset per defecte
 ; D\000Reset To Defaults
 ;
 msgItemLastSaved
-L\0Últim desat
+L\000Últim desat
 ; L\000Last Saved
 ;
 msgItemRestore
-R\0Restaurar
+R\000Restaurar
 ; R\000Restore
 ;
 msgMenuSettings
-\0Paràmetres
+\000Paràmetres
 ; \000Settings
 ;
 msgItemCreateIcons
-I\0Crear icona?
+I\000Crear icona?
 ; I\000Create Icons?
 ;
 msgMenuHelp
-\0Ajuda
+\000Ajuda
 ; \000Help
 ;
 msgItemHelp
-Ajuda\0Ajuda...
+Ajuda\000Ajuda...
 ; Help\000Help...
 ;
 msgItemUsersGuide
-H\0AHI Guia del usuari...
+H\000AHI Guia del usuari...
 ; H\000AHI User's guide...
 ;
 msgItemConceptIndex
-\0Index...
+\000Index...
 ; \000Concept Index...
 ;
 ; *** The pages ***
