@@ -1,5 +1,9 @@
 2005-04-03  Martin Blom  <martin@blom.org>
 
+	* Released AHI 6.0rc3.
+
+	* Released ahi.device 6.2.
+
 	* ahi.device: Removed the beta requester from the Amithlon build.
 
 	* ahi.device: Applied an old clean-up patch from Gunther Nikl to
