@@ -105,7 +105,7 @@ OBJECTS		= header.o device.o devcommands.o devsupp.o \
 ifeq ($(VER),GEN)
 
 ifeq ($(host_cpu),m68k)
-#OBJECTS		+= addroutines_68k.o
+OBJECTS		+= addroutines_68k.o
 endif
 
 ifeq ($(host_cpu),ppc)

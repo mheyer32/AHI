@@ -91,10 +91,6 @@ a6	right lastpoint
 	.globl	_AddWordsMonoB
 	.globl	_AddWordsStereoB
 
-/*
-_AddByteStereo:
-_AddBytesMono:
-_AddBytesStereo:
 _AddWordMono:
 _AddWordStereo:
 _AddWordsMono:
@@ -110,7 +106,7 @@ _AddWordsStereoB:
 	move.l	(Samples,sp),d0
 	movem.l	(sp)+,d2-d7/a2-a6
 	rts
-*/
+
 
 AddSilenceMono:
  .if	CPU < 68060
@@ -216,11 +212,12 @@ AddSilenceStereoB:
 	moveq	#0,d0
 	rts
 
-_AddByteMono:
+	.macro	prelude
+
 	movem.l	d2-d7/a2-a6,-(sp)
 	move.l	(Samples,sp),d0			/* counter */
 	move.l	(ScaleLeft,sp),d1
-# 	move.l	(ScaleRight,sp),d2
+ 	move.l	(ScaleRight,sp),d2
 	move.l	(Src,sp),a0
 	move.l	([Dst,sp]),a1
 	move.l	(FirstOffsetI,sp),a2
@@ -231,28 +228,44 @@ _AddByteMono:
 	moveq	#0,d4
 	move.w	([Offset,sp],4),d4		/* Fraction offset (upper 16 bits) */
 	suba.l	a5,a5
-#	suba.l	a6,a6
+	suba.l	a6,a6
+
+	.endm
+
+
+	.macro	postlude
+
+	sub.l	(Samples,sp),d0
+	neg.l	d0				/* Return Samples - d0 */
+	movem.l	(sp)+,d2-d7/a2-a6
+
+	.endm
+
+###############################################################################
+
+_AddByteMono:
+	prelude
 
 	tst.w	(StopAtZero,sp)
-	bne.b	L00first_sampleZ
+	bne.b	1f
 	tst.l	d1
-	bne.b	L00first_sample
+	bne.b	2f
 	bsr	AddSilenceMono
-	bra	L00abort
+	bra	7f
 
-L00next_sampleZ:
+0:	/* .next_sampleZ */
 	add.w	d6,d4
 	addx.l	d5,d3
-L00first_sampleZ:
+1:	/* .first_sampleZ */
 	cmp.l	a2,d3
-	bne.b	L00not_firstZ
+	bne.b	3f
 	move.l	([StartPointLeft,sp]),a3
-	bra.b	L00got_sampleZ
-L00not_firstZ:
+	bra.b	4f
+3:	/* .not_firstZ */
 	move.b	(-1,a0,d3.l),d7
 	lsl.w	#8,d7
 	move.w	d7,a3				/* sign extend */
-L00got_sampleZ:
+4:	/* .got_sampleZ */
 	move.b	(0,a0,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
@@ -261,40 +274,41 @@ L00got_sampleZ:
 	muls.l	d4,d7
 	asr.l	#7,d7
 	asr.l	#8,d7
-	add.l	a3,d7
+	add.l	d7,a3
 
 	tst.l	a5
-	bgt.b	L00lastpoint_gtZ
-	beq.b	L00lastpoint_checkedZ
+	bgt.b	5f
+	beq.b	6f
 	tst.l	d7
-	bge.b	L00abort
-	bra.b	L00lastpoint_checkedZ
-L00lastpoint_gtZ:
+	bge.b	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
 	tst.l	d7
-	ble.b	L00abort
-L00lastpoint_checkedZ:
-	move.l	d7,a5				/* update lastsample */
+	ble.b	7f
+6:	/* .lastpoint_checkedZ */
+	move.l	a3,a5				/* update lastsample */
 
+	move.l	a3,d7
 	muls.l	d1,d7
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	L00next_sampleZ
-	bra.b	L00exit
+	bne.b	0b
+	bra.b	8f
 
-L00next_sample:
+0:	/* .next_sample */
 	add.w	d6,d4
 	addx.l	d5,d3
-L00first_sample:
+2:	/* .first_sample */
 	cmp.l	a2,d3
-	bne.b	L00not_first
+	bne.b	3f
 	move.l	([StartPointLeft,sp]),a3
-	bra.b	L00got_sample
-L00not_first:
+	bra.b	4f
+3:	/* .not_first */
 	move.b	(-1,a0,d3.l),d7
 	lsl.w	#8,d7
 	move.w	d7,a3				/* sign extend */
-L00got_sample:
+4:	/* .got_sample */
 	move.b	(0,a0,d3.l),d7
 	lsl.w	#8,d7
 	ext.l	d7
@@ -303,19 +317,20 @@ L00got_sample:
 	muls.l	d4,d7
 	asr.l	#7,d7
 	asr.l	#8,d7
-	add.l	a3,d7
+	add.l	d7,a3
 
+	move.l	a3,d7
 	muls.l	d1,d7
 	add.l	d7,(a1)+
 	
 	subq.l	#1,d0
-	bne.b	L00next_sample
-	bra.b	L00exit
+	bne.b	0b
+	bra.b	8f
 
-L00abort:
+7:	/* .abort */
 	moveq	#0,d5				/* Prevent the last add */
 	moveq	#0,d6
-L00exit:
+8:	/* .exit */
 	move.b	(0,a0,d3.l),d7			/* Fetch last endpoint */
 	lsl.w	#8,d7
 	ext.l	d7
@@ -329,50 +344,39 @@ L00exit:
 
 	move.l	a1,([Dst,sp])
 
-	sub.l	(Samples,sp),d0
-	neg.l	d0				/* Return Samples - d0 */
-	movem.l	(sp)+,d2-d7/a2-a6
+	postlude
 	rts
 
-_AddByteMonoB:
-	movem.l	d2-d7/a2-a6,-(sp)
-	move.l	(Samples,sp),d0			/* counter */
-	move.l	(ScaleLeft,sp),d1
-# 	move.l	(ScaleRight,sp),d2
-	move.l	(Src,sp),a0
-	move.l	([Dst,sp]),a1
-	move.l	(FirstOffsetI,sp),a2
-	move.l	(AddI,sp),d5			/* Integer add */
-	moveq	#0,d6
-	move.w	(AddF,sp),d6			/* Fraction add (upper 16 bits) */
-	move.l	([Offset,sp],0),d3		/* Integer offset */
-	moveq	#0,d4
-	move.w	([Offset,sp],4),d4		/* Fraction offset (upper 16 bits) */
-	neg.w	d4
-	suba.l	a5,a5
-#	suba.l	a6,a6
+###############################################################################
+
+_AddBytesMono:
+	prelude
 
 	tst.w	(StopAtZero,sp)
-	bne.b	L01first_sampleZ
+	bne.b	1f
 	tst.l	d1
-	bne.b	L01first_sample
-	bsr	AddSilenceMonoB
-	bra	L01abort
+	bne	2f
+	bsr	AddSilenceMono
+	bra	7f
 
-L01next_sampleZ:
+0:	/* .next_sampleZ */
 	add.w	d6,d4
-	subx.l	d5,d3
-L01first_sampleZ:
+	addx.l	d5,d3
+1:	/* .first_sampleZ */
 	cmp.l	a2,d3
-	bne.b	L01not_firstZ
+	bne.b	3f
 	move.l	([StartPointLeft,sp]),a3
-	bra.b	L01got_sampleZ
-L01not_firstZ:
-	move.b	(1,a0,d3.l),d7
+	move.l	([StartPointRight,sp]),a4
+	bra.b	4f
+3:	/* .not_firstZ */
+	move.b	(-2,a0,d3.l*2),d7
 	lsl.w	#8,d7
 	move.w	d7,a3				/* sign extend */
-L01got_sampleZ:
-	move.b	(0,a0,d3.l),d7
+	move.b	(-1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	move.w	d7,a4				/* sign extend */
+4:	/* .got_sampleZ */
+	move.b	(0,a0,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	sub.l	a3,d7
@@ -380,41 +384,60 @@ L01got_sampleZ:
 	muls.l	d4,d7
 	asr.l	#7,d7
 	asr.l	#8,d7
-	add.l	a3,d7
+	add.l	d7,a3
+
+	move.b	(1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a4,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a4
 
 	tst.l	a5
-	bgt.b	L01lastpoint_gtZ
-	beq.b	L01lastpoint_checkedZ
+	bgt.b	5f
+	beq.b	6f
 	tst.l	d7
-	bge.b	L01abort
-	bra.b	L01lastpoint_checkedZ
-L01lastpoint_gtZ:
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
 	tst.l	d7
-	ble.b	L01abort
-L01lastpoint_checkedZ:
-	move.l	d7,a5				/* update lastsample */
+	ble	7f
+6:	/* .lastpoint_checkedZ */
+	move.l	a3,a5				/* update lastsample */
+	move.l	a4,a6				/* update lastsample */
 
+	move.l	a3,d7
 	muls.l	d1,d7
+	add.l	d7,(a1)
+	move.l	a4,d7
+	muls.l	d2,d7
 	add.l	d7,(a1)+
 
 	subq.l	#1,d0
-	bne.b	L01next_sampleZ
-	bra.b	L01exit
+	bne.b	0b
+	bra.b	8f
 
-L01next_sample:
+0:	/* .next_sample */
 	add.w	d6,d4
-	subx.l	d5,d3
-L01first_sample:
+	addx.l	d5,d3
+2:	/* .first_sample */
 	cmp.l	a2,d3
-	bne.b	L01not_first
+	bne.b	3f
 	move.l	([StartPointLeft,sp]),a3
-	bra.b	L01got_sample
-L01not_first:
-	move.b	(1,a0,d3.l),d7
+	move.l	([StartPointRight,sp]),a4
+	bra.b	4f
+3:	/* .not_first */
+	move.b	(-2,a0,d3.l*2),d7
 	lsl.w	#8,d7
 	move.w	d7,a3				/* sign extend */
-L01got_sample:
-	move.b	(0,a0,d3.l),d7
+	move.b	(-1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	move.w	d7,a4				/* sign extend */
+4:	/* .got_sample */
+	move.b	(0,a0,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
 	sub.l	a3,d7
@@ -422,19 +445,403 @@ L01got_sample:
 	muls.l	d4,d7
 	asr.l	#7,d7
 	asr.l	#8,d7
-	add.l	a3,d7
+	add.l	d7,a3
 
+	move.b	(1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a4,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a4
+
+	move.l	a3,d7
 	muls.l	d1,d7
+	add.l	d7,(a1)
+	move.l	a4,d7
+	muls.l	d2,d7
 	add.l	d7,(a1)+
 	
 	subq.l	#1,d0
-	bne.b	L01next_sample
-	bra.b	L01exit
+	bne.b	0b
+	bra.b	8f
 
-L01abort:
+7:	/* .abort */
 	moveq	#0,d5				/* Prevent the last add */
 	moveq	#0,d6
-L01exit:
+8:	/* .exit */
+	move.b	(0,a0,d3.l*2),d7		/* Fetch last endpoint */
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,([StartPointLeft,sp])
+
+	move.b	(1,a0,d3.l*2),d7		/* Fetch last endpoint */
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,([StartPointRight,sp])
+
+	add.w	d6,d4
+	addx.l	d5,d3
+
+	move.l	d3,([Offset,sp],0)		/* Integer offset */
+	move.w	d4,([Offset,sp],4)		/* Fraction offset (16 bit) */
+
+	move.l	a1,([Dst,sp])
+
+	postlude
+	rts
+
+###############################################################################
+
+_AddByteStereo:
+	prelude
+
+	tst.w	(StopAtZero,sp)
+	bne.b	1f
+	tst.l	d1
+	bne.b	2f
+	bsr	AddSilenceStereo
+	bra	7f
+
+0:	/* .next_sampleZ */
+	add.w	d6,d4
+	addx.l	d5,d3
+1:	/* .first_sampleZ */
+	cmp.l	a2,d3
+	bne.b	3f
+	move.l	([StartPointLeft,sp]),a3
+	bra.b	4f
+3:	/* .not_firstZ */
+	move.b	(-1,a0,d3.l),d7
+	lsl.w	#8,d7
+	move.w	d7,a3				/* sign extend */
+4:	/* .got_sampleZ */
+	move.b	(0,a0,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a3,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a3
+
+	tst.l	a5
+	bgt.b	5f
+	beq.b	6f
+	tst.l	d7
+	bge.b	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	d7
+	ble.b	7f
+6:	/* .lastpoint_checkedZ */
+	move.l	a3,a5				/* update lastsample */
+
+	move.l	a3,d7
+	muls.l	d1,d7
+	add.l	d7,(a1)+
+	move.l	a3,d7
+	muls.l	d2,d7
+	add.l	d7,(a1)+
+
+	subq.l	#1,d0
+	bne.b	0b
+	bra.b	8f
+
+0:	/* .next_sample */
+	add.w	d6,d4
+	addx.l	d5,d3
+2:	/* .first_sample */
+	cmp.l	a2,d3
+	bne.b	3f
+	move.l	([StartPointLeft,sp]),a3
+	bra.b	4f
+3:	/* .not_first */
+	move.b	(-1,a0,d3.l),d7
+	lsl.w	#8,d7
+	move.w	d7,a3				/* sign extend */
+4:	/* .got_sample */
+	move.b	(0,a0,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a3,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a3
+
+	move.l	a3,d7
+	muls.l	d1,d7
+	add.l	d7,(a1)+
+	move.l	a3,d7
+	muls.l	d2,d7
+	add.l	d7,(a1)+
+	
+	subq.l	#1,d0
+	bne.b	0b
+	bra.b	8f
+
+7:	/* .abort */
+	moveq	#0,d5				/* Prevent the last add */
+	moveq	#0,d6
+8:	/* .exit */
+	move.b	(0,a0,d3.l),d7			/* Fetch last endpoint */
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,([StartPointLeft,sp])
+
+	add.w	d6,d4
+	addx.l	d5,d3
+
+	move.l	d3,([Offset,sp],0)		/* Integer offset */
+	move.w	d4,([Offset,sp],4)		/* Fraction offset (16 bit) */
+
+	move.l	a1,([Dst,sp])
+
+	postlude
+	rts
+
+###############################################################################
+
+_AddBytesStereo:
+	prelude
+
+	tst.w	(StopAtZero,sp)
+	bne.b	1f
+	tst.l	d1
+	bne	2f
+	bsr	AddSilenceStereo
+	bra	7f
+
+0:	/* .next_sampleZ */
+	add.w	d6,d4
+	addx.l	d5,d3
+1:	/* .first_sampleZ */
+	cmp.l	a2,d3
+	bne.b	3f
+	move.l	([StartPointLeft,sp]),a3
+	move.l	([StartPointRight,sp]),a4
+	bra.b	4f
+3:	/* .not_firstZ */
+	move.b	(-2,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	move.w	d7,a3				/* sign extend */
+	move.b	(-1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	move.w	d7,a4				/* sign extend */
+4:	/* .got_sampleZ */
+	move.b	(0,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a3,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a3
+
+	move.b	(1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a4,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a4
+
+	tst.l	a5
+	bgt.b	5f
+	beq.b	6f
+	tst.l	d7
+	bge	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	d7
+	ble	7f
+6:	/* .lastpoint_checkedZ */
+	move.l	a3,a5				/* update lastsample */
+	move.l	a4,a6				/* update lastsample */
+
+	move.l	a3,d7
+	muls.l	d1,d7
+	add.l	d7,(a1)+
+	move.l	a4,d7
+	muls.l	d2,d7
+	add.l	d7,(a1)+
+
+	subq.l	#1,d0
+	bne.b	0b
+	bra.b	8f
+
+0:	/* .next_sample */
+	add.w	d6,d4
+	addx.l	d5,d3
+2:	/* .first_sample */
+	cmp.l	a2,d3
+	bne.b	3f
+	move.l	([StartPointLeft,sp]),a3
+	move.l	([StartPointRight,sp]),a4
+	bra.b	4f
+3:	/* .not_first */
+	move.b	(-2,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	move.w	d7,a3				/* sign extend */
+	move.b	(-1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	move.w	d7,a4				/* sign extend */
+4:	/* .got_sample */
+	move.b	(0,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a3,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a3
+
+	move.b	(1,a0,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a4,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a4
+
+	move.l	a3,d7
+	muls.l	d1,d7
+	add.l	d7,(a1)+
+	move.l	a4,d7
+	muls.l	d2,d7
+	add.l	d7,(a1)+
+	
+	subq.l	#1,d0
+	bne.b	0b
+	bra.b	8f
+
+7:	/* .abort */
+	moveq	#0,d5				/* Prevent the last add */
+	moveq	#0,d6
+8:	/* .exit */
+	move.b	(0,a0,d3.l*2),d7		/* Fetch last endpoint */
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,([StartPointLeft,sp])
+
+	move.b	(1,a0,d3.l*2),d7		/* Fetch last endpoint */
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,([StartPointRight,sp])
+
+	add.w	d6,d4
+	addx.l	d5,d3
+
+	move.l	d3,([Offset,sp],0)		/* Integer offset */
+	move.w	d4,([Offset,sp],4)		/* Fraction offset (16 bit) */
+
+	move.l	a1,([Dst,sp])
+
+	postlude
+	rts
+
+###############################################################################
+
+_AddByteMonoB:
+	prelude
+	neg.w	d4
+
+	tst.w	(StopAtZero,sp)
+	bne.b	1f
+	tst.l	d1
+	bne.b	2f
+	bsr	AddSilenceMonoB
+	bra	7f
+
+0:	/* .next_sampleZ */
+	add.w	d6,d4
+	subx.l	d5,d3
+1:	/* .first_sampleZ */
+	cmp.l	a2,d3
+	bne.b	3f
+	move.l	([StartPointLeft,sp]),a3
+	bra.b	4f
+3:	/* .not_firstZ */
+	move.b	(1,a0,d3.l),d7
+	lsl.w	#8,d7
+	move.w	d7,a3				/* sign extend */
+4:	/* .got_sampleZ */
+	move.b	(0,a0,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a3,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a3
+
+	tst.l	a5
+	bgt.b	5f
+	beq.b	6f
+	tst.l	d7
+	bge.b	7f
+	bra.b	6f
+5:	/* .lastpoint_gtZ */
+	tst.l	d7
+	ble.b	7f
+6:	/* .lastpoint_checkedZ */
+	move.l	a3,a5				/* update lastsample */
+
+	move.l	a3,d7
+	muls.l	d1,d7
+	add.l	d7,(a1)+
+
+	subq.l	#1,d0
+	bne.b	0b
+	bra.b	8f
+
+0:	/* .next_sample */
+	add.w	d6,d4
+	subx.l	d5,d3
+2:	/* .first_sample */
+	cmp.l	a2,d3
+	bne.b	3f
+	move.l	([StartPointLeft,sp]),a3
+	bra.b	4f
+3:	/* .not_first */
+	move.b	(1,a0,d3.l),d7
+	lsl.w	#8,d7
+	move.w	d7,a3				/* sign extend */
+4:	/* .got_sample */
+	move.b	(0,a0,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	sub.l	a3,d7
+	asr.l	#1,d7
+	muls.l	d4,d7
+	asr.l	#7,d7
+	asr.l	#8,d7
+	add.l	d7,a3
+
+	move.l	a3,d7
+	muls.l	d1,d7
+	add.l	d7,(a1)+
+
+	subq.l	#1,d0
+	bne.b	0b
+	bra.b	8f
+
+7:	/* .abort */
+	moveq	#0,d5				/* Prevent the last add */
+	moveq	#0,d6
+8:	/* .exit */
 	move.b	(0,a0,d3.l),d7			/* Fetch last endpoint */
 	lsl.w	#8,d7
 	ext.l	d7
@@ -449,9 +856,7 @@ L01exit:
 
 	move.l	a1,([Dst,sp])
 
-	sub.l	(Samples,sp),d0
-	neg.l	d0				/* Return Samples - d0 */
-	movem.l	(sp)+,d2-d7/a2-a6
+	postlude
 	rts
 
 	.end
