@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.12  1997/02/04 15:44:30  lcs
+* AHIDB_MaxChannels didn't work in AHI_BestAudioID()
+*
 * Revision 1.11  1997/02/02 22:35:50  lcs
 * Localized it
 *
@@ -463,6 +466,7 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
                                   AHIDB_Realtime, TRUE,
                                   AHIDB_MaxChannels, 4,
                                   TAG_DONE);
+    KPrintF("0x%08lx\n", iounit->AudioMode);
     iounit->Frequency       = 10000;
     iounit->Channels        = 4;
     iounit->MonitorVolume   = -1;
