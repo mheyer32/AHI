@@ -132,6 +132,14 @@ CallSoundHook( volatile struct AHIPrivAudioCtrl *audioctrl )
   while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
 }
 
+static void
+CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, short int value )
+{
+  audioctrl->ahiac_Pad = int;
+  audioctrl->ahiac_Com = AHIAC_COM_DEBUG;
+  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
+}
+
 #else
 
 /* M68k code *****************************************************************/
@@ -165,6 +173,13 @@ Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                        (struct AHIPrivAudioCtrl*) audioctrl,
                        (UWORD*) &audioctrl->ahiac_ChannelNo );
+          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          break;
+
+        case AHIAC_COM_DEBUG:
+          kprintf( "AHIAC_COM_DEBUG: Channel %ld, Value %ld\n",
+                   audioctrl->ahiac_ChannelNo,
+                   audioctrl->ahiac_Pad );
           audioctrl->ahiac_Com = AHIAC_COM_ACK;
           break;
 
@@ -675,6 +690,8 @@ MixGeneric ( struct Hook *Hook,
 
   memset(dst, 0, audioctrl->ahiac_BuffSizeNow);
 
+CallDebug( audioctrl, 0 );
+
   /* Mix the samples */
 
   audioctrl->ahiac_WetOrDry = AHIEDM_WET;
@@ -710,8 +727,10 @@ MixGeneric ( struct Hook *Hook,
 
         if(cd->cd_FreqOK && cd->cd_SoundOK)
         {
+CallDebug( audioctrl, 1 );
           if(cd->cd_AddRoutine == NULL)
           {
+CallDebug( audioctrl, 2 );
             break;  // Panic! Should never happen.
           }
 
@@ -721,6 +740,7 @@ MixGeneric ( struct Hook *Hook,
 
             /* Call AddRoutine (cd->cd_Samples) */
 
+CallDebug( audioctrl, 3 );
             CallAddRoutine(cd->cd_Samples, &dstptr, cd, audioctrl);
 
             /* Linear interpol. stuff */
@@ -810,6 +830,7 @@ MixGeneric ( struct Hook *Hook,
           
             /*** Call AddRoutine (samplesleft) ***/
 
+CallDebug( audioctrl, 4 );
             CallAddRoutine(samplesleft, &dstptr, cd, audioctrl);
 
           }
@@ -860,6 +881,7 @@ MixGeneric ( struct Hook *Hook,
 
   /*** AHIET_MASTERVOLUME ***/
 
+CallDebug( audioctrl, 5 );
   DoMasterVolume(dst, audioctrl);
 
 #if !defined( VERSIONPOWERUP )

@@ -242,5 +242,6 @@ struct AHIPrivAudioCtrl
 #define AHIAC_COM_INIT		2
 #define AHIAC_COM_SOUNDFUNC	3
 #define AHIAC_COM_QUIT		4
+#define AHIAC_COM_DEBUG		5
 
 #endif /* AHI_DEF_H_ */
