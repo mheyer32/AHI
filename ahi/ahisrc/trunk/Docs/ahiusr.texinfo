@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9  2004/06/01 19:00:01  martin
+Makeinfo fix.
+
 Revision 5.8  2004/02/19 20:45:03  martin
 Added note about AddAudioModes and sound card/AC97 initializing.
 
@@ -219,7 +222,7 @@ publication, even if advised of the possibility of such damage.}
 
 @node    Top, Overview, (dir), (dir)
 
-@ifinfo
+@c @ifinfo
 
 @majorheading @sc{Ahi} User's Guide
 
@@ -246,7 +249,7 @@ The latest release of @sc{Ahi} can always be found at
 
 @end menu
 
-@end ifinfo
+@c @end ifinfo
 
 @c Part 5:  The Body of the Document
 @c ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
