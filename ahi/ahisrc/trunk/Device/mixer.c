@@ -133,21 +133,19 @@ CallSoundHook( volatile struct AHIPrivAudioCtrl *audioctrl )
 }
 
 static void
-CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, short int value )
+CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, long value )
 {
-  audioctrl->ahiac_Pad = value;
-  audioctrl->ahiac_Com = AHIAC_COM_DEBUG;
+  audioctrl->ahiac_ComV = value;
+  audioctrl->ahiac_Com  = AHIAC_COM_DEBUG;
   while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
 }
 
 #else
 
 static void
-CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, short int value )
+CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
-  kprintf( "AHIAC_COM_DEBUG: Channel %ld, Value %ld\n",
-           audioctrl->ahiac_ChannelNo,
-           value );
+  kprintf( "%lx ", value );
 }
 
 /* M68k code *****************************************************************/
@@ -185,7 +183,7 @@ Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
 
         case AHIAC_COM_DEBUG:
-          CallDebug( audioctrl, audioctrl->ahiac_Pad );
+          CallDebug( audioctrl, audioctrl->ahiac_ComV );
           audioctrl->ahiac_Com = AHIAC_COM_ACK;
           break;
 
@@ -347,22 +345,26 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 */
       if( AHIPPCObject != NULL )
       {
-        struct PPCObjectInfo oi;
+        struct PPCObjectInfo oi =
+        {
+          NULL,
+          NULL,
+          PPCELFINFOTYPE_SYMBOL,
+          STT_SECTION,
+          STB_GLOBAL,
+          0
+        };
+
+        struct TagItem tag_done =
+        {
+          TAG_DONE, 0
+        };
+
         int r = ~0;
-
-        memset( &oi, 0, sizeof oi);
-
-        /* Now set up the function pointers */
-
-        oi.Address = NULL;
-        oi.Type    = PPCELFINFOTYPE_SYMBOL;
-        oi.SubType = STT_SECTION;
-        oi.Binding = STB_GLOBAL;
-        oi.Size    = 0;
 
 #define GetSymbol( name ) \
         oi.Name = #name; \
-        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE ); \
+        r &= PPCGetObjectAttrs( AHIPPCObject, &oi, &tag_done ); \
         name ## Ptr = (ADDFUNC*) oi.Address;
 
         GetSymbol( AddSilence    );
@@ -524,7 +526,6 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 {
   // This version only cares about the sample format and does not use any
   // optimized add-routines.
-
 
   // Scale the volume
 
@@ -696,8 +697,6 @@ MixGeneric ( struct Hook *Hook,
 
   memset(dst, 0, audioctrl->ahiac_BuffSizeNow);
 
-CallDebug( audioctrl, 0 );
-
   /* Mix the samples */
 
   audioctrl->ahiac_WetOrDry = AHIEDM_WET;
@@ -733,10 +732,8 @@ CallDebug( audioctrl, 0 );
 
         if(cd->cd_FreqOK && cd->cd_SoundOK)
         {
-CallDebug( audioctrl, 1 );
           if(cd->cd_AddRoutine == NULL)
           {
-CallDebug( audioctrl, 2 );
             break;  // Panic! Should never happen.
           }
 
@@ -746,7 +743,6 @@ CallDebug( audioctrl, 2 );
 
             /* Call AddRoutine (cd->cd_Samples) */
 
-CallDebug( audioctrl, 3 );
             CallAddRoutine(cd->cd_Samples, &dstptr, cd, audioctrl);
 
             /* Linear interpol. stuff */
@@ -836,7 +832,6 @@ CallDebug( audioctrl, 3 );
           
             /*** Call AddRoutine (samplesleft) ***/
 
-CallDebug( audioctrl, 4 );
             CallAddRoutine(samplesleft, &dstptr, cd, audioctrl);
 
           }
@@ -887,7 +882,6 @@ CallDebug( audioctrl, 4 );
 
   /*** AHIET_MASTERVOLUME ***/
 
-CallDebug( audioctrl, 5 );
   DoMasterVolume(dst, audioctrl);
 
 #if !defined( VERSIONPOWERUP )
@@ -1015,11 +1009,10 @@ CallAddRoutine ( LONG samples,
                  struct AHIPrivAudioCtrl *audioctrl )
 {
 #if 1
-
+  CallDebug( audioctrl, samples );
   ((ADDFUNC *) cd->cd_AddRoutine)(
       samples, cd->cd_ScaleLeft, cd->cd_ScaleRight,
       &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, dstptr, cd);
-
 #else
 
   LONG fadesamples = 0;
@@ -1236,7 +1229,7 @@ AddByteMVH ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
 
     *Offset += Add;
   }
@@ -1272,8 +1265,8 @@ AddByteSVPH ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleRight * lastsample;
 
     *Offset += Add;
   }
@@ -1314,7 +1307,7 @@ AddBytesMVH ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
     *Offset += Add;
   }
@@ -1357,8 +1350,8 @@ AddBytesSVPH ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL;
+    //*dst++ += ScaleRight * lastsampleR;
 
     *Offset += Add;
   }
@@ -1396,7 +1389,7 @@ AddWordMVH ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
 
     *Offset += Add;
   }
@@ -1432,8 +1425,8 @@ AddWordSVPH ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleRight * lastsample;
 
     *Offset += Add;
   }
@@ -1474,7 +1467,7 @@ AddWordsMVH ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
     *Offset += Add;
   }
@@ -1517,8 +1510,8 @@ AddWordsSVPH ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL;
+    //*dst++ += ScaleRight * lastsampleR;
 
     *Offset += Add;
   }
@@ -1563,7 +1556,7 @@ AddByteMVHB ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
 
     *Offset -= Add;
   }
@@ -1599,8 +1592,8 @@ AddByteSVPHB ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleRight * lastsample;
 
     *Offset -= Add;
   }
@@ -1642,7 +1635,7 @@ AddBytesMVHB ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
     *Offset -= Add;
   }
@@ -1685,8 +1678,8 @@ AddBytesSVPHB ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL;
+    //*dst++ += ScaleRight * lastsampleR;
 
     *Offset -= Add;
   }
@@ -1724,7 +1717,7 @@ AddWordMVHB ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
 
     *Offset -= Add;
   }
@@ -1760,8 +1753,8 @@ AddWordSVPHB ( ADDARGS )
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsample;
-    *dst++ += ScaleRight * lastsample;
+    //*dst++ += ScaleLeft * lastsample;
+    //*dst++ += ScaleRight * lastsample;
 
     *Offset -= Add;
   }
@@ -1802,7 +1795,7 @@ AddWordsMVHB ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
     *Offset -= Add;
   }
@@ -1845,8 +1838,8 @@ AddWordsSVPHB ( ADDARGS )
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
-    *dst++ += ScaleLeft * lastsampleL;
-    *dst++ += ScaleRight * lastsampleR;
+    //*dst++ += ScaleLeft * lastsampleL;
+    //*dst++ += ScaleRight * lastsampleR;
 
     *Offset -= Add;
   }

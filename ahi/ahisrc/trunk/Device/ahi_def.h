@@ -109,7 +109,7 @@ struct AHIBase
 	struct ExecBase		*ahib_SysLib;
 	ULONG			 ahib_SegList;
 	APTR			 ahib_AudioCtrl;
-	struct AHIDevUnit		*ahib_DevUnits[AHI_UNITS];
+	struct AHIDevUnit	*ahib_DevUnits[AHI_UNITS];
 	struct SignalSemaphore	 ahib_Lock;
 	ULONG			 ahib_AudioMode;
 	ULONG			 ahib_Frequency;
@@ -182,7 +182,7 @@ struct AHIChannelData
 	UWORD	cd_ChannelNo;
 	UWORD	cd_Pad;
 	LONG	cd_AntiClickCount;
-};
+} __attribute__  ((packed));
 
 #define AHIACB_NOMIXING	31	/* private ahiac_Flags flag */
 #define AHIACF_NOMIXING	(1L<<31)	/* private ahiac_Flags flag */
@@ -232,6 +232,7 @@ struct AHIPrivAudioCtrl
 	UWORD			 ahiac_Com;		/* PPC communication variable */
 	UWORD			 ahiac_ChannelNo;	/* PPC communication variable */
 	UWORD			 ahiac_Pad;
+	LONG			 ahiac_ComV;		/* PPC communication variable */
 	APTR			 ahiac_AntiClickBuffer;
 	ULONG			 ahiac_AntiClickSize;	/* in bytes */
 	char			 ahiac_DriverName[ 256 ];
