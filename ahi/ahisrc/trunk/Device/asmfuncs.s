@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.9  1997/02/01 21:54:53  lcs
+* Max freq. for AHI_SetFreq() uncreased to more than one million! ;)
+*
 * Revision 1.8  1997/02/01 19:44:18  lcs
 * Added stereo samples
 *
@@ -760,7 +763,7 @@ SetVol_nodebug
 *       It is safe to call this function from an interrupt.
 *
 *   BUGS
-*       Freq is limited to 262143 Hz.
+*       Freq is limited to 1048576 Hz.
 *
 *   SEE ALSO
 *       AHI_SetEffect(),  AHI_SetSound(), AHI_SetVol(), AHI_LoadSound()
@@ -818,7 +821,7 @@ SetFreq_nodebug
 
 * Calculate period
 	lsl.l	#8,d0
-	lsl.l	#8-2,d0				;Makes the sample freq limit 262143
+	lsl.l	#8-4,d0				;Makes the sample freq limit 1048576
 	move.l	ahiac_MixFreq(a2),d1
  IFGE	__CPU-68020
 	divu.l	d1,d0
@@ -827,7 +830,7 @@ SetFreq_nodebug
 	jsr	_LVOUDivMod32(a1)
  ENDC
 .setperiod
-	lsl.l	#2,d0
+	lsl.l	#4,d0
 	move.w	d0,cd_NextAddF(a0)
 	clr.w	d0
 	swap.w	d0
