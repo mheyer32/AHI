@@ -1,3 +1,10 @@
+2003-07-04  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Added CAMD support.
+
+	* emu10kx: A CAMD driver that works with both V37.14 and V40.4 of
+	camd.library.
+
 2003-06-30  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.39.
