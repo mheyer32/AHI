@@ -1,0 +1,10 @@
+#  $Id$
+
+VPATH		= @srcdir@
+srcdir		= @srcdir@
+
+AHI_CLASS_NAME	= ahi-lfo.class
+
+OBJECTS		= main.o methods.o
+
+include ../Common/Makefile.common
