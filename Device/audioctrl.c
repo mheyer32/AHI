@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.7  1997/02/01 21:54:53  lcs
+* Will never use drivers that are newer than itself anymore
+*
 * Revision 1.6  1997/02/01 19:44:18  lcs
 * *** empty log message ***
 *
@@ -187,19 +190,19 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   }
 
   AHI_GetAudioAttrs(id, NULL,
-                        AHIDB_Volume, &volume,
-                        AHIDB_Stereo, &stereo,
-                        AHIDB_Panning, &panning,
-                        AHIDB_HiFi,&hifi,
-                        AHIDB_PingPong,&pingpong,
-                        AHIDB_Record,&record,
-                        AHIDB_Bits,&bits,
-                        AHIDB_MaxChannels,&channels,
-                        AHIDB_MinMixFreq,&minmix,
-                        AHIDB_MaxMixFreq,&maxmix,
-                        AHIDB_Realtime,&realtime,
-                        AHIDB_FullDuplex,&fullduplex,
-                        TAG_DONE);
+      AHIDB_Volume, &volume,
+      AHIDB_Stereo, &stereo,
+      AHIDB_Panning, &panning,
+      AHIDB_HiFi,&hifi,
+      AHIDB_PingPong,&pingpong,
+      AHIDB_Record,&record,
+      AHIDB_Bits,&bits,
+      AHIDB_MaxChannels,&channels,
+      AHIDB_MinMixFreq,&minmix,
+      AHIDB_MaxMixFreq,&maxmix,
+      AHIDB_Realtime,&realtime,
+      AHIDB_FullDuplex,&fullduplex,
+      TAG_DONE);
 
 // Boolean tags
   if(tag=FindTagItem(AHIDB_Volume,tags))
@@ -309,9 +312,14 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
 
   audioctrl->ac.ahiac_SamplerFunc=audioctrl->ahiac_RecordFunc;   // FIXIT!
 
+  audioctrl->ahiac_SubAllocRC = AHISF_ERROR;
   audioctrl->ahiac_SubLib=
-  AHIsubBase=OpenLibrary(audioctrl->ahiac_DriverName,DriverVersion);
+  AHIsubBase = OpenLibrary(audioctrl->ahiac_DriverName,DriverVersion);
   if(!AHIsubBase)
+    goto error;
+
+  // Never allow drivers that are newer than ahi.device.
+  if(AHIsubBase->lib_Version > Version)
     goto error;
 
   audiodb=LockDatabase();
