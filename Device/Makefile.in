@@ -243,6 +243,9 @@ localize.h:		ahi.cd C_c_AHI.sd
 elftest:		elftest.o elfloader.o asmfuncs.o
 	$(CC) $^ $(LIBS) -o $@
 
+warpup-test:		warpup-test.o elfloader.o asmfuncs.o
+	$(CC) $^ $(LIBS) -o $@
+
 
 #
 # Dependencies
