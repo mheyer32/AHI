@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/02/02 22:35:50  lcs
+* Localized it
+*
 * Revision 1.4  1997/01/29 23:34:38  lcs
 * *** empty log message ***
 *
@@ -23,6 +26,10 @@
 #include <intuition/intuition.h>
 #include <intuition/intuitionbase.h>
 #include <libraries/gadtools.h>
+
+#include "localize.h"
+
+#include <string.h>
 
 #include <proto/exec.h>
 #include <proto/dos.h>
@@ -64,20 +71,6 @@ static struct TagItem reqboolmap[] =
 #define RESTOREITEM   4
 #define OKITEM        5
 #define CANCELITEM    6
-
-static struct NewMenu reqnewmenu[] =
-{
-  { NM_TITLE, "Control"          ,  0  ,0,0,(APTR) 0,            },
-  {  NM_ITEM, "Last Mode"        , "L" ,0,0,(APTR) LASTMODEITEM, },
-  {  NM_ITEM, "Next Mode"        , "N" ,0,0,(APTR) NEXTMODEITEM, },
-  {  NM_ITEM, NM_BARLABEL        ,  0  ,0,0,(APTR) 0,            },
-//{  NM_ITEM, "Property List..." , "?" ,0,0,(APTR) PROPERTYITEM, },
-  {  NM_ITEM, "Restore"          , "R" ,0,0,(APTR) RESTOREITEM , },
-  {  NM_ITEM, NM_BARLABEL        ,  0  ,0,0,(APTR) 0,            },
-  {  NM_ITEM, "OK"               , "O" ,0,0,(APTR) OKITEM,       },
-  {  NM_ITEM, "Cancel"           , "C" ,0,0,(APTR) CANCELITEM,   },
-  {   NM_END, NULL               ,  0  ,0,0,(APTR) 0,            },
-};
 
 /* Node for audio mode requester */
 
@@ -127,10 +120,6 @@ static struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 #define CANCELBUTTON  2
 #define FREQSLIDER    3
 #define LISTVIEW      4
-
-#define OKTEXT        "OK"
-#define CANCELTEXT    "Cancel"
-#define FREQTEXT      "Frequency"
 
 #define FREQTEXT2     "%lu Hz"
 #define FREQLEN2      (5+3) // 5 digits + space + "Hz"
@@ -334,14 +323,14 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
 // Frequency
     if(req->Flags & freqgad)
     {
-      intuitext.IText=FREQTEXT;
+      intuitext.IText = GetAHIString(msgReqFrequency);
       pixels=IntuiTextLength(&intuitext)+INTERWIDTH;
       if(pixels+MINSLIDERWIDTH+INTERWIDTH+FREQLEN2*fontwidth > req->gw)
         return FALSE;
       ng.ng_Width=req->gw-pixels-INTERWIDTH-FREQLEN2*fontwidth;
       ng.ng_LeftEdge=req->gx+pixels;
       ng.ng_TopEdge-=2+buttonheight;
-      ng.ng_GadgetText=FREQTEXT;
+      ng.ng_GadgetText=GetAHIString(msgReqFrequency);
       ng.ng_GadgetID=FREQSLIDER;
       ng.ng_Flags=PLACETEXT_LEFT;
       gad=CreateGadget(SLIDER_KIND,gad,&ng,
@@ -668,8 +657,8 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
     req->Req.ahiam_MixFreq=AHIBase->ahib_Frequency;
     req->Req.ahiam_InfoWidth=280;
     req->Req.ahiam_InfoHeight=112;
-    req->PositiveText=OKTEXT;
-    req->NegativeText=CANCELTEXT;
+    req->PositiveText=GetAHIString(msgReqOK);
+    req->NegativeText=GetAHIString(msgReqCancel);
 
     FillReqStruct(req,tags);
   }
@@ -733,7 +722,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID=id;
-      Sprintf(node->node.ln_Name,"UNKNOWN:Audio ID 0x%08lx",id);
+      Sprintf(node->node.ln_Name,GetAHIString(msgUnknown),id);
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
           AHIDB_Name,node->node.ln_Name);
@@ -808,7 +797,11 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
   {
     WindowLimits(req->Window,
       // Topaz80: "Frequency"+INTERWIDTH+MINSLIDERWIDTH+INTERWIDTH+"99999 Hz" gives...
-      (req->Window->BorderLeft+4)+9*8+INTERWIDTH+MINSLIDERWIDTH+INTERWIDTH+8*8+(req->Window->BorderRight+4),
+      (req->Window->BorderLeft+4)+
+      strlen(GetAHIString(msgReqFrequency))*8+
+      INTERWIDTH+MINSLIDERWIDTH+INTERWIDTH+
+      FREQLEN2*8+
+      (req->Window->BorderRight+4),
       // Topaz80: 5 lines, freq & buttons gives...
       (req->Window->BorderTop+2)+(5*8+6)+2+(8+6)+2+(8+6)+(req->Window->BorderBottom+2),
       0,0);
@@ -821,6 +814,46 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
 
       if(rc) // Layout OK?
       {
+        struct NewMenu reqnewmenu[] =
+        {
+          { NM_TITLE, NULL        , 0 ,0,0,(APTR) 0,            },
+          {  NM_ITEM, NULL        , 0 ,0,0,(APTR) LASTMODEITEM, },
+          {  NM_ITEM, NULL        , 0 ,0,0,(APTR) NEXTMODEITEM, },
+          {  NM_ITEM, NM_BARLABEL , 0 ,0,0,(APTR) 0,            },
+        //{  NM_ITEM, NULL        , 0 ,0,0,(APTR) PROPERTYITEM, },
+          {  NM_ITEM, NULL        , 0 ,0,0,(APTR) RESTOREITEM , },
+          {  NM_ITEM, NM_BARLABEL , 0 ,0,0,(APTR) 0,            },
+          {  NM_ITEM, NULL        , 0 ,0,0,(APTR) OKITEM,       },
+          {  NM_ITEM, NULL        , 0 ,0,0,(APTR) CANCELITEM,   },
+          {   NM_END, NULL        , 0 ,0,0,(APTR) 0,            },
+        };
+        const static APTR strings[] =
+        {
+          msgMenuControl,
+          msgMenuLastMode,
+          msgMenuNextMode,
+          msgMenuRestore,
+          msgMenuOK,
+          msgMenuCancel,
+        };
+
+        struct NewMenu *menuptr;
+        APTR           *stringptr;
+        
+        menuptr   = (struct NewMenu *) &reqnewmenu;
+        stringptr = (APTR *) &strings;
+
+        while(menuptr->nm_Type != NM_END)
+        {
+          if(menuptr->nm_Label == NULL)
+          {
+            menuptr->nm_CommKey = GetAHIString(*stringptr);
+            menuptr->nm_Label = menuptr->nm_CommKey + 2;
+            stringptr++;
+          }
+          menuptr++;
+        }
+
         if(req->Flags & ownIDCMP)
         {
           req->Window->UserPort=req->SrcWindow->UserPort;
@@ -836,6 +869,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
                 WA_BusyPointer,TRUE,
                 TAG_DONE);
         }
+        
         // Add menus
         if(req->Menu=CreateMenus(reqnewmenu, 
             GTMN_FullMenu, TRUE,

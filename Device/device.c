@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.11  1997/02/02 22:35:50  lcs
+* Localized it
+*
 * Revision 1.10  1997/02/02 18:15:04  lcs
 * Added protection against CPU overload
 *
@@ -35,6 +38,7 @@
 */
 
 #include "ahi_def.h"
+#include "localize.h"
 
 #include <exec/alerts.h>
 #include <exec/errors.h>
@@ -142,6 +146,10 @@ __asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
     return FALSE;
   }
 
+  /* Locale Library */
+
+  LocaleBase = OpenLibrary("locale.library", 38);
+
   /* Timer Device */
 
   if((TimerIO = (struct timerequest *) AllocVec(sizeof(struct timerequest),
@@ -174,6 +182,8 @@ __asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
     return FALSE;
   }
 
+  OpenAHICatalog(NULL, NULL);
+
   return TRUE;
 }
 
@@ -188,11 +198,13 @@ __asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
 __asm void CloseLibs(register __a6 struct ExecBase *SysBase)
 {
 
+  CloseAHICatalog();
   CloseLibrary(UtilityBase);
   if(TimerIO)
     CloseDevice((struct IORequest *) TimerIO);
   FreeVec(timeval);
   FreeVec(TimerIO);
+  CloseLibrary(LocaleBase);
   CloseLibrary((struct Library *) IntuitionBase);
   CloseLibrary(IFFParseBase);
   CloseLibrary(GadToolsBase);

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.3  1997/02/02 22:35:50  lcs
+* Localized it
+*
 * Revision 1.2  1997/02/01 23:54:26  lcs
 * Rewrote the library open code in C and removed the library bases
 * from AHIBase
@@ -146,6 +149,7 @@ dataTable:
 	XDEF	_GfxBase
 	XDEF	_IFFParseBase
 	XDEF	_IntuitionBase
+	XDEF	_LocaleBase
 	XDEF	_TimerBase
 	XDEF	_UtilityBase
 
@@ -160,6 +164,7 @@ _GadToolsBase:	dc.l	0
 _GfxBase:	dc.l	0
 _IFFParseBase:	dc.l	0
 _IntuitionBase:	dc.l	0
+_LocaleBase:	dc.l	0
 _TimerBase:	dc.l	0
 _UtilityBase:	dc.l	0
 
