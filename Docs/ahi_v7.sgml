@@ -170,6 +170,12 @@ also sound formats defined for first and second order Ambisonics, a
 general encoder and a decoder that can handle common Ambisonics speaker
 positions.</para>
 
+      <para>Amibisonincs is the perfect intermediate format for 3D
+audio. An application can render any number of objects into the audio
+stream, which is later decoded optimally for the users specific speaker
+locations. It could also be possible, in the future, to add HRTFs for
+headphone output, but this is not planned for the first release.</para>
+
       <para>While not planned at this time, it would be possible to add
 modules for automatic doppler and reverberation calculations. (One could
 argue, though, that this task is better handled by OpenAL than
@@ -215,6 +221,17 @@ full hardware acceleration. &ahi7; can also take direct advantage of
 drivers that can resample and mix several audio streams in hardware.
 </para>
     </section>
+
+    <section>
+      <title>Error handling</title>
+
+      <para>Traditionally, &ahi; has not been very robust in case the
+programmer did something wrong (or so I've heard). &ahi7; performs
+extensive error checking and every object has its own error state. Using
+BOOPSI notification, the application can be actively informed as soon as
+something goes wrong, and act accordingly.</para>
+    </section>
+
     
     <section>
       <title>Backward compatible</title>
