@@ -607,7 +607,7 @@ ReadConfig ( struct AHIDevUnit *iounit,
                   AHIBase->ahib_Flags |= AHIBF_CLIPPING;
               }
 
-              AHIBase->ahib_AntiClickSamples = 64;  // FIXIT! User setable should it be, yes.
+              AHIBase->ahib_AntiClickSamples = 256;  // FIXIT! User setable should it be, yes.
 
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);

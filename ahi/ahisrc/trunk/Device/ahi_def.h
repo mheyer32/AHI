@@ -224,6 +224,8 @@ struct AHIChannelData
   APTR    cd_AddRoutine;
   ULONG   cd_Type;
 
+  UWORD   cd_Pad0;
+
   UBYTE   cd_NextFreqOK;
   UBYTE   cd_NextSoundOK;
   APTR    cd_NextDataStart;
@@ -236,6 +238,8 @@ struct AHIChannelData
   Fixed   cd_NextVolumeRight;
   APTR    cd_NextAddRoutine;
   ULONG   cd_NextType;
+
+  UWORD   cd_Pad1;
 
   UBYTE   cd_DelayedFreqOK;
   UBYTE   cd_DelayedSoundOK;
@@ -250,22 +254,26 @@ struct AHIChannelData
   APTR    cd_DelayedAddRoutine;
   ULONG   cd_DelayedType;
 
+  BOOL    cd_SoundDelayed;
+  BOOL    cd_FreqDelayed;
+  BOOL    cd_VolDelayed;
+  UWORD   cd_Pad2;
+
   LONG    cd_Samples;             /* Samples left to store (down-counter) */
   LONG    cd_FirstOffsetI;        /* for linear interpolation routines */
 
   LONG    cd_DelayedSamples;
   LONG    cd_DelayedFirstOffsetI;
 
-  LONG    cd_LastSampleL;         /* for linear interpolation routines */
-  LONG    cd_TempLastSampleL;     /* for linear interpolation routines */
-  LONG    cd_LastSampleR;         /* for linear interpolation routines */
-  LONG    cd_TempLastSampleR;     /* for linear interpolation routines */
+  LONG    cd_StartPointL;         /* for linear interpolation routines */
+  LONG    cd_TempStartPointL;     /* for linear interpolation routines */
+  LONG    cd_StartPointR;         /* for linear interpolation routines */
+  LONG    cd_TempStartPointR;     /* for linear interpolation routines */
 
   struct AHIChannelData *cd_Succ; /* For the wet and dry lists */
   UWORD   cd_ChannelNo;
-  UWORD   cd_Pad1;
+  UWORD   cd_Pad3;
   LONG    cd_AntiClickCount;
-  LONG    cd_Pad2;
 };
 
 #endif
