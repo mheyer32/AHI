@@ -1,0 +1,35 @@
+dnl $Id$
+
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_REVISION( $Revision$ )
+dnl
+AC_INIT( Makefile.in )
+
+
+dnl General
+
+AC_PROG_MAKE_SET
+: ${CFLAGS='-noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
+: ${LDFLAGS='-noixemul'}
+AC_PREFIX_DEFAULT( /ahi ) 
+
+dnl Checks for programs.
+
+
+dnl Checks for libraries.
+
+
+dnl Checks for header files.
+
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+
+
+dnl Checks for library functions.
+
+
+AC_CONFIG_SUBDIRS( AHI AddAudioModes Device Docs )
+AC_OUTPUT(Makefile, echo timestamp > stamp-h)
+
