@@ -2,15 +2,18 @@
 
 * $Id$
 * $Log$
-* Revision 4.26  2001/09/16 19:04:26  lcs
-* * paula.audio:  The fixed CMD_STOP/CMD_START in ahi.device
-* triggered a bug that could make the driver lose track of the
-* AHIsub_Disable and AHIsub_Enable nesting.  Also, these functions
-* was not "thread safe" (they are not actually called from a thread
+* Revision 4.27  2001/09/28 20:52:17  lcs
+* I broke the DMA playback mode in the last update. Fixed now.
+*
 * but rather an interrupt).
 *
 * Now uses "rx" to launch the rexx script.
 *
+* Revision 4.25  2000/11/15 20:45:07  lcs
+* Checking in...
+*
+* Revision 4.24  1999/01/23 22:12:00  lcs
+* Added code to mix in a task and not an interrupt (AHIpaulaMixTaskPri).
 *
 * Revision 4.23  1998/12/06 11:43:39  lcs
 * Clean-up.
@@ -4486,9 +4489,11 @@ DMA_Start:
 	bsr	DMA_Update				;Calc p_EClock/p_EPeriod
 	pop	a6					;and p_EAlarm
 
+	; Add p_EPeriod to the alarm time
 	move.l	p_EAlarm+EV_LO(a3),d0
 	move.l	p_EAlarm+EV_HI(a3),d1
-							;and p_EAlarm
+	move.l	p_EPeriod(a3),d2
+	moveq	#0,d3
 	add.l	d0,d2
 	addx.l	d1,d3
 	move.l	d2,p_EAlarm+EV_LO(a3)
