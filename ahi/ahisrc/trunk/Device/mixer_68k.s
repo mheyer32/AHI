@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.11  1997/03/22 18:58:07  lcs
+* --background-- updated + some work on dspecho
+*
 * Revision 1.10  1997/02/20 10:26:13  lcs
 * *** empty log message ***
 *
@@ -51,8 +54,6 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 	include	lvo/utility_lib.i
 	include	ahi_def.i
 
-	XREF	_UtilityBase
-
 	XDEF	initcode
 
 	XDEF	initSignedTable
@@ -63,7 +64,9 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 	XDEF	_Mix
 	XDEF	CalcSamples
 
-	XDEF	UDivMod64
+	XREF	_UtilityBase
+	XREF	_Fixed2Shift
+	XREF	_UDivMod64
 
 TABLEMAXVOL	EQU	32
 TABLESHIFT	EQU	11	(TABLEMAXVOL<<TABLESHIFT == 0x10000)
@@ -1051,100 +1054,6 @@ CalcSamples:
 	moveq	#0,d0
 	rts
 
-;UDivMod64 -- unsigned 64 by 32 bit division
-;             64 bit quotient, 32 bit remainder.
-; (d1:d2)/d0 = d0:d2, d1 remainder.
-
-UDivMod64:
-	movem.l	d3-d7,-(sp)
-	move.l	d0,d7
-	moveq	#0,d0
-	move.l	#$80000000,d3
-	move.l	#$00000000,d4
-	moveq	#0,d5			;result
-	moveq	#0,d6			;result
-
-.2
-	lsl.l	#1,d2
-	roxl.l	#1,d1
-	roxl.l	#1,d0
-	sub.l	d7,d0
-	bmi	.3
-	or.l	d3,d5
-	or.l	d4,d6
-	skipw
-.3
-	add.l	d7,d0
-
-	lsr.l	#1,d3
-	roxr.l	#1,d4
-	bcc	.2
-
-	move.l	d5,d2
-	move.l	d0,d1
-	move.l	d6,d0
-	movem.l	(sp)+,d3-d7
-	rts
-
-;in:
-* d0	Fixed
-;out:
-* d0	Shift value
-fixed2shift:
-	push	d1
-	moveq	#0,d1
-	cmp.l	#$8000,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$4000,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$2000,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$1000,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$800,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$400,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$200,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$100,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$80,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$40,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$20,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$10,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$8,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$4,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$2,d0
-	bgt	.exit
-	addq.l	#1,d1
-	cmp.l	#$1,d0
-	bgt	.exit
-	addq.l	#1,d1
-.exit
-	move.l	d1,d0
-	pop	d1
-	rts
 
 
 * ALL FIXVOL RUTINES:
@@ -1359,7 +1268,7 @@ FixVolWordMV:
 
 FixVolWordMVT:
 	add.l	d1,d0
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	lea	OffsWordMVT(pc),a0
 	rts
 
@@ -1393,22 +1302,22 @@ FixVolWordSVP:
 	rts
 
 FixVolWordSVTl:
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	lea	OffsWordSVTl(pc),a0
 	rts
 
 FixVolWordSVTr:
 	move.l	d1,d0
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	move.l	d0,d1
 	lea	OffsWordSVTr(pc),a0
 	rts
 
 FixVolWordSVPT:
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	push	d0
 	move.l	d1,d0
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	move.l	d0,d1
 	pop	d0
 	lea	OffsWordSVPT(pc),a0
@@ -1432,10 +1341,10 @@ FixVolWordsMV:
 	rts
 
 FixVolWordsMVT:
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	push	d0
 	move.l	d1,d0
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	move.l	d0,d1
 	pop	d0
 	lea	OffsWordsMVT(pc),a0
@@ -1458,22 +1367,22 @@ FixVolWordsSVP:
 	rts
 
 FixVolWordsSVTl:
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	lea	OffsWordsSVTl(pc),a0
 	rts
 
 FixVolWordsSVTr:
 	move.l	d1,d0
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	move.l	d0,d1
 	lea	OffsWordsSVTr(pc),a0
 	rts
 
 FixVolWordsSVPT:
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	push	d0
 	move.l	d1,d0
-	bsr	fixed2shift
+	bsr	_Fixed2Shift
 	move.l	d0,d1
 	pop	d0
 	lea	OffsWordsSVPT(pc),a0

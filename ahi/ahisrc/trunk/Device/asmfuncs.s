@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.19  1997/03/22 18:58:07  lcs
+* --background-- updated + some work on dspecho
+*
 * Revision 1.18  1997/03/15 09:51:52  lcs
 * Dynamic sample loading in the device: No more alignment restrictions.
 *
@@ -72,6 +75,9 @@
 
 	include	ahi_def.i
 
+	XDEF	_DefPlayerHook
+	XDEF	_DefRecordHook
+
 	XDEF	_SetVol
 	XDEF	_SetFreq
 	XDEF	_SetSound
@@ -86,8 +92,8 @@
 	XDEF	_DummyPreTimer
 	XDEF	_DummyPostTimer
 
-	XDEF	_DefPlayerHook
-	XDEF	_DefRecordHook
+	XDEF	_Fixed2Shift
+	XDEF	_UDivMod64
 
 	XREF	_DriverVersion
 	XREF	_CreateAudioCtrl
@@ -145,7 +151,7 @@ stuffChar:
 	move.b	d0,(a3)+	;Put data to output string
 	rts
 
-
+
 ****** ahi.device/--background-- *******************************************
 *
 *   PURPOSE
@@ -160,119 +166,74 @@ stuffChar:
 *
 *   OVERVIEW
 *
-*       * Driver based
+*       Please see the document "Programming guidelines" for more
+*       information.
 *
+*
+*       * Driver based
+*  
 *       Each supported sound card is controlled by a library-based audio
 *       driver. For a 'dumb' sound card, a new driver should be written in
 *       a few hours. For a 'smart' sound card, it is possible to utilize an
-*       on-board DSP, for example, to maximize performance and sound
-*       quality. For sound cards with own DSP but little or no memory, it is
-*       possible to use the main CPU to mix channels and do the post-
-*       processing with the DSP.
-*
+*       on-board DSP, for example, to maximize performance and sound quality.
+*       For sound cards with own DSP but little or no memory, it is possible
+*       to use the main CPU to mix channels and do the post-processing
+*       with the DSP. Available today are drivers for
+*  
+*       · Aura (sampler only)
+*       · Delfina
+*       · Paula (8/14/14c bit)
+*       · Prelude
+*       · Toccata
+*       · Wavetools
+*       · 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
+*  
 *       * Fast, powerful mixing routines (yeah, right... haha)
-*
-*       The device's mixing routines mix 8- or 16-bit signed samples
-*       located in Fast-RAM and outputs 16-bit mono or stereo (with stereo
-*       panning if desired) data, using any number of channels (as long as
-*       'any' means less than 128...). Tables can be used speed the mixing
-*       up (especially when using 8-bit samples). The samples can have any
-*       length (including odd) and can have any number of loops. For non-
-*       realtime purposes so-called HiFi mixing routines can be used, which
-*       use linear interpolation and gives 32 bit output.
-*
+*  
+*       The device's mixing routines mix 8- or 16-bit signed samples, both
+*       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
+*       (with stereo panning if desired) data, using any number of channels
+*       (as long as 'any' means less than 128...).  Tables can be used speed
+*       the mixing up (especially when using 8-bit samples).  The samples can
+*       have any length (including odd) and can have any number of loops.
+*       
 *       * Support for non-realtime mixing
-*
+*  
 *       By providing a timing feature, it is possible to create high-
 *       quality output even if the processing power is lacking, by saving
 *       the output to disk, for example as an IFF AIFF or 8SXV file.
-*
+*       There are so-called HiFi mixing routines that can be used, which
+*       use linear interpolation and gives 32 bit output.
+*  
 *       * Audio database
-*
+*  
 *       Uses ID codes, much like Screenmode IDs, to select the many
 *       parameters that can be set. The functions to access the audio
 *       database are not too different from those in 'graphics.library'.
-*       Audio modes are added to the database with the tool 'AddAudioModes',
-*       which either takes IFF-AHIM file(s) as argument or scans
-*       'DEVS:AudioModes/' and adds all files found there. The device also
-*       features a requester to get an ID code from the user.
-*
+*       The device also features a requester to get an ID code from the
+*       user.
+*  
+*       * Both high- and low-level protocol
+*  
+*       By acting both like a device and a library, AHI gives the programmer
+*       a choice between full control and simplicity. The device API allows
+*       serveral programs to use the audio hardware at the same time, and
+*       the AUDIO: dos-device driver makes playing and recording sound very
+*       simple for both the programmer and user.
+*  
 *       * Future Compatible
-*
+*  
 *       When AmigaOS gets device-independent audio worth it's name, it should
 *       not be too difficult to write a driver for AHI, allowing applications
 *       using 'ahi.device' to automatically use the new OS interface. At
 *       least I hope it wont.
 *
-*   PROGRAMMING GUIDELINES
-*
-*        * Follow the rules
-*
-*        It's really simple. If I tell you to check return values, check
-*        sample types when recording, don't trash d2-d7/a2-a6 in Hooks, or
-*        don't call AHI_ControlAudio() with the AHIC_Play tag from interrups
-*        or Hooks, you do as you are told.
-*
-*        * The library base
-*
-*        The AHIBase structure is private, so are the sub libraries' library
-*        base structures. Don't try to be clever.
-*
-*        * The Audio Database
-*
-*        The implementation of the database is private, and may change any
-*        time. 'ahi.device' provides functions access the information in
-*        the database (AHI_NextAudioID(), AHI_GetAudioAttrsA() and
-*        AHI_BestAudioIDA()).
-*
-*        * User Hooks
-*
-*        All user Hooks must follow normal register conventions, which means
-*        that d2-d7 and a2-a6 must be presered. They may be called from an
-*        interrupt, but you cannot count on that, it can be your own process
-*        or another process. Don't assume system is in single-thread mode.
-*        Never spend much time in a Hook, get the work done as quick as
-*        possible and then return.
-*
-*        * Function calls from other tasks, interrupts or user Hooks
-*
-*        The AHIAudioCtrl structure may not be shared with other tasks/
-*        threads. The task that called AHI_AllocAudioA() must do all other
-*        calls too (except those callable from interrupts).
-*
-*        Only calls specifically said to be callable from interrups may be
-*        called from user Hooks or interrupts. Note that AHI_ControlAudioA()
-*        have some tags that must not be present when called from an
-*        interrupt.
-*
-*        * AHI_SetVol(), AHI_SetFreq() and AHI_SetSound() Flags
-*
-*        These function calls take some flags as arguments. Currently, only
-*        one flag is defined, AHISF_IMM, which causes the changes to take
-*        effecy immediately. THIS FLAG SHOULD *NEVER* BE SET when you call
-*        these routines from a SoundFunc. This is very important. If these
-*        functions are called from a PlayerFunc, this flag may be both set
-*        or cleared. If they are called from neither a SoundFunc nor a
-*        PlayerFunc, the flag MUST BE SET.
-*
-*        * System requirements
-*
-*        V37 of the system libraries are required.
-*
-*        'ahi.device', or rather most audio drivers, need multitasking to be
-*        turned on to function properly. Don't turn it off when using the
-*        device.
-*
-*        Some drivers use 'realtime.library', which must be present for those
-*        drivers to work. 'realtime.library' needs a free CIA timer. If your
-*        application uses a CIA timer, it is strongly recommended that you
-*        use the PlayerFunc in 'ahi.device' instead.
 *
 ****************************************************************************
 *
 *
 
-
+
 ****** ahi.device/AHI_SetVol ***********************************************
 *
 *   NAME
@@ -459,7 +420,7 @@ SetVol_nodebug
 	popm	d2-d7/a2-a6
 	rts
 
-
+
 ****** ahi.device/AHI_SetFreq **********************************************
 *
 *   NAME
@@ -607,7 +568,7 @@ SetFreq_nodebug
 	popm	d2-d7/a2-a6
 	rts
 
-
+
 ****** ahi.device/AHI_SetSound *********************************************
 *
 *   NAME
@@ -788,7 +749,7 @@ SetSound_nodebug
 	popm	d2-d7/a2-a6
 	rts
 
-
+
 ****** ahi.device/AHI_SetEffect ********************************************
 *
 *   NAME
@@ -1153,7 +1114,7 @@ clear_DSPMask:
  ENDC * MC020
 
 
-
+
 ****** ahi.device/AHI_LoadSound ********************************************
 *
 *   NAME
@@ -1325,7 +1286,7 @@ LoadSound_nodebug1
 LoadSound_nodebug2
 	rts
 
-
+
 ****** ahi.device/AHI_UnloadSound ******************************************
 *
 *   NAME
@@ -1570,4 +1531,101 @@ _PostTimer:
 _DummyPreTimer:
 	moveq	#FALSE,d0
 _DummyPostTimer:
+	rts
+
+;in:
+* d0	Fixed
+;out:
+* d0	Shift value
+_Fixed2Shift:
+	push	d1
+	moveq	#0,d1
+	cmp.l	#$10000,d0
+	bge	.exit
+	cmp.l	#$8000,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$4000,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$2000,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$1000,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$800,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$400,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$200,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$100,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$80,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$40,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$20,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$10,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$8,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$4,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$2,d0
+	bge	.exit
+	addq.l	#1,d1
+	cmp.l	#$1,d0
+	bge	.exit
+	addq.l	#1,d1
+.exit
+	move.l	d1,d0
+	pop	d1
+	rts
+
+;UDivMod64 -- unsigned 64 by 32 bit division
+;             64 bit quotient, 32 bit remainder.
+; (d1:d2)/d0 = d0:d2, d1 remainder.
+
+_UDivMod64:
+	movem.l	d3-d7,-(sp)
+	move.l	d0,d7
+	moveq	#0,d0
+	move.l	#$80000000,d3
+	move.l	#$00000000,d4
+	moveq	#0,d5			;result
+	moveq	#0,d6			;result
+
+.2
+	lsl.l	#1,d2
+	roxl.l	#1,d1
+	roxl.l	#1,d0
+	sub.l	d7,d0
+	bmi	.3
+	or.l	d3,d5
+	or.l	d4,d6
+	skipw
+.3
+	add.l	d7,d0
+
+	lsr.l	#1,d3
+	roxr.l	#1,d4
+	bcc	.2
+
+	move.l	d5,d2
+	move.l	d0,d1
+	move.l	d6,d0
+	movem.l	(sp)+,d3-d7
 	rts
