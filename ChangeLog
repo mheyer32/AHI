@@ -1,3 +1,14 @@
+2002-09-30  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.29.
+
+2002-07-08  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Did you know, by the way, that AttemptSemaphore() is
+	not safe to call from interrupts? Oh, you did? Proves what a sad,
+	miserable excuse for a developer I am. This bug has been there for
+	about five years now ... [Nicolas Sallin]
+	
 2002-07-07  Martin Blom  <martin@blom.org>
 
 	* Released AHI preferences 5.7.
