@@ -412,8 +412,8 @@ gw_LoadModeFile( void )
 static LONG
 gw_IndexToFrequency( void )
 {
-  struct Gadget* gad   = (struct Gadget*) ((ULONG*) REG_A7)[1];
-  WORD           level = (WORD)           ((ULONG*) REG_A7)[2];
+  struct Gadget* gad   = (struct Gadget*) REG_A1;
+  WORD           level = (WORD)           REG_D0;
 
   return IndexToFrequency( gad , level );
 }
