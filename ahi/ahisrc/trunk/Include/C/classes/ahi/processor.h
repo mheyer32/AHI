@@ -38,14 +38,16 @@ namespace AHI {
 	 AHIA_Buffer_SampleFreqFract, AHIA_Buffer_Length and
 	 AHIA_Buffer_Data when this attribute is changed. The
 	 ahi-processor will also be added to the buffers' notification
-	 list automatically.
+	 list automatically. This attribute should not be set by the
+	 user or subclasses.
       */
       _AHIA(_P, Buffer,		(_AHIA_Dummy+20)),	/* OM_NEW,
 							   OM_SET,
 							   OM_GET,
 							   OM_NOTIFY */
 
-      /* Pointer to parent processor. */
+      /* Pointer to parent processor. This attribute should not be set
+	 by the user or subclasses.*/
       _AHIA(_P, Parent,		(_AHIA_Dummy+21)),	/* OM_NEW,
 							   OM_SET,
 							   OM_GET */
@@ -109,7 +111,7 @@ namespace AHI {
 
      struct _AHIP(_P, Process) {
        ULONG	MethodID;
-       ULONG	Flags;			/* No flags defined yet */
+       ULONG	Flags;
        UQUAD	CurrentTime;
      };
 
@@ -120,13 +122,23 @@ namespace AHI {
        _AHIV(_P, SkipProc,		(1)),
        _AHIV(_P, PerformProc,		(2)),
      };
+
+     /* Flags */
+
+     enum {
+       _AHIB(_P, FirstProcess,		(0))	/* Somebody pressed "play" */
+     };
      
 /*****************************************************************************/
 
      enum {
        _AHIE(_P, ObjectNotReady,		(_AHIE_Dummy+5)),
        _AHIE(_P, ObjectBusy,			(_AHIE_Dummy+6)),
-       _AHIE(_P, TooManyChildren,		(_AHIE_Dummy+9))
+       _AHIE(_P, TooManyChildren,		(_AHIE_Dummy+9)),
+       _AHIE(_P, MultipleParents,		(_AHIE_Dummy+11)),
+       _AHIE(_P, DifferentOwner,		(_AHIE_Dummy+12)),
+       _AHIE(_P, NotMember,			(_AHIE_Dummy+13)),
+       _AHIE(_P, NullMember,			(_AHIE_Dummy+14))
      };
 
 /*****************************************************************************/
