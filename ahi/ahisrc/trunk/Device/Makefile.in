@@ -59,7 +59,7 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
 OBJECTS		= header.o gateway.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
-		  audioctrl.o effectinit.o sound.o misc.o\
+		  audioctrl.o effectinit.o sound.o misc.o dspecho.o \
 		  mixer.o 
 
 ifeq ($(ENABLE_WARPUP),yes)
@@ -140,7 +140,7 @@ $(TARGET):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o \
-			addroutines_32bit.o dspecho.o
+			addroutines_32bit.o dspechofuncs.o
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 
