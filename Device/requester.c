@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.12  1997/02/12 15:32:45  lcs
+* Moved each autodoc header to the file where the function is
+*
 * Revision 1.11  1997/02/10 10:36:48  lcs
 * Really, I fixed it! Trust me.
 *
@@ -65,7 +68,8 @@ static void OpenInfoWindow( struct AHIAudioModeRequesterExt * );
 static void CloseInfoWindow( struct AHIAudioModeRequesterExt * );
 static void UpdateInfoWindow( struct AHIAudioModeRequesterExt * );
 
-/******************************************************************************
+
+/******************************************************************************
 ** Audio mode requester  ******************************************************
 ******************************************************************************/
 
@@ -862,7 +866,7 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
   }
   else
   {
-    req->Req.ahiam_InfoOpened   = TRUE;
+    req->Req.ahiam_InfoOpened   = FALSE;
 
   }
 
@@ -871,9 +875,54 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_AllocAudioRequestA *****************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_AllocAudioRequestA ***********************************
+*
+*   NAME
+*       AHI_AllocAudioRequestA -- allocate an audio mode requester.
+*       AHI_AllocAudioRequest -- varargs stub for AHI_AllocAudioRequestA()
+*
+*   SYNOPSIS
+*       requester = AHI_AllocAudioRequestA( tags );
+*       D0                                  A0
+*
+*       struct AHIAudioModeRequester *AHI_AllocAudioRequestA(
+*           struct TagItem * );
+*
+*       requester = AHI_AllocAudioRequest( tag1, ... );
+*
+*       struct AHIAudioModeRequester *AHI_AllocAudioRequest( Tag, ... );
+*
+*   FUNCTION
+*       Allocates an audio mode requester data structure.
+*
+*   INPUTS
+*       tags - A pointer to an optional tag list specifying how to initialize
+*           the data structure returned by this function. See the
+*           documentation for AHI_AudioRequestA() for an explanation of how
+*           to use the currently defined tags.
+*
+*   RESULT
+*       requester - An initialized requester data structure, or NULL on
+*           failure. 
+*
+*   EXAMPLE
+*
+*   NOTES
+*       The requester data structure is READ-ONLY and can only be modified
+*       by using tags!
+*
+*   BUGS
+*
+*   SEE ALSO
+*      AHI_AudioRequestA(), AHI_FreeAudioRequest()
+*
+****************************************************************************
+*
+*/
 
 __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct TagItem *tags )
 {
@@ -907,9 +956,178 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
   return (struct AHIAudioModeRequester *) req;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_AudioRequestA **********************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_AudioRequestA ****************************************
+*
+*   NAME
+*       AHI_AudioRequestA -- get an audio mode from user using an requester.
+*       AHI_AudioRequest -- varargs stub for AHI_AudioRequestA()
+*
+*   SYNOPSIS
+*       success = AHI_AudioRequestA( requester, tags );
+*       D0                           A0         A1
+*
+*       BOOL AHI_AudioRequestA( struct AHIAudioModeRequester *,
+*           struct TagItem * );
+*
+*       result = AHI_AudioRequest( requester, tag1, ... );
+*
+*       BOOL AHI_AudioRequest( struct AHIAudioModeRequester *, Tag, ... );
+*
+*   FUNCTION
+*       Prompts the user for an audio mode, based on the modifying tags.
+*       If the user cancels or the system aborts the request, FALSE is
+*       returned, otherwise the requester's data structure relects the
+*       user input.
+*
+*       Note that tag values stay in effect for each use of the requester
+*       until they are cleared or modified by passing the same tag with a
+*       new value.
+*
+*   INPUTS
+*       requester - Requester structure allocated with
+*           AHI_AllocAudioRequestA(). If this parameter is NULL, this
+*           function will always return FALSE with a dos.library/IoErr()
+*           result of ERROR_NO_FREE_STORE.
+*       tags - Pointer to an optional tag list which may be used to control
+*           features of the requester.
+*
+*   TAGS
+*       Tags used for the requester (they look remarkable similar to the
+*       screen mode requester in asl, don't they? ;-) )
+*
+*       AHIR_Window (struct Window *) - Parent window of requester. If no
+*           AHIR_Screen tag is specified, the window structure is used to
+*           determine on which screen to open the requesting window.
+*
+*       AHIR_PubScreenName (STRPTR) - Name of a public screen to open on.
+*           This overrides the screen used by AHIR_Window.
+*
+*       AHIR_Screen (struct Screen *) - Screen on which to open the
+*           requester. This overrides the screen used by AHIR_Window or by
+*           AHIR_PubScreenName.
+*
+*       AHIR_PrivateIDCMP (BOOL) - When set to TRUE, this tells AHI to
+*           allocate a new IDCMP port for the requesting window. If not
+*           specified or set to FALSE, and if AHIR_Window is provided, the
+*           requesting window will share AHIR_Window's IDCMP port.
+*
+*       AHIR_IntuiMsgFunc (struct Hook *) - A function to call whenever an
+*           unknown Intuition message arrives at the message port being used
+*           by the requesting window. The function receives the following
+*           parameters:
+*               A0 - (struct Hook *)
+*               A1 - (struct IntuiMessage *)
+*               A2 - (struct AHIAudioModeRequester *)
+*
+*       AHIR_SleepWindow (BOOL) - When set to TRUE, this tag will cause the
+*           window specified by AHIR_Window to be "put to sleep". That is, a
+*           busy pointer will be displayed in the parent window, and no
+*           gadget or menu activity will be allowed. This is done by opening
+*           an invisible Intuition Requester in the parent window.
+*
+*       AHIR_UserData (APTR) - A 32-bit value that is simply copied in the
+*           ahiam_UserData field of the requester structure.
+*
+*       AHIR_TextAttr (struct TextAttr *) - Font to be used for the
+*           requesting window's gadgets and menus. If this tag is not
+*           provided or its value is NULL, the default font of the screen
+*           on which the requesting window opens will be used. This font
+*           must already be in memory as AHI calls OpenFont() and not
+*           OpenDiskFont().
+*
+*       AHIR_Locale (struct Locale *) - Locale to use for the requesting
+*           window. This determines the language used for the requester's
+*           gadgets and menus. If this tag is not provided or its value is
+*           NULL, the system's current default locale will be used.
+*
+*       AHIR_TitleText (STRPTR) - Title to use for the requesting window.
+*           Default is no title.
+*
+*       AHIR_PositiveText (STRPTR) - Label of the positive gadget in the
+*           requester. English default is "OK".
+*
+*       AHIR_NegativeText (STRPTR) - Label of the negative gadget in the
+*           requester. English default is "Cancel".
+*
+*       AHIR_InitialLeftEdge (WORD) - Suggested left edge of requesting
+*           window.
+*
+*       AHIR_InitialTopEdge (WORD) - Suggested top edge of requesting
+*           window.
+*
+*       AHIR_InitialWidth (WORD) - Suggested width of requesting window.
+*
+*       AHIR_InitialHeight (WORD) - Suggested height of requesting window.
+*
+*       AHIR_InitialAudioID (ULONG) - Initial setting of the Mode list view
+*           gadget (ahiam_AudioID). Default is ~0 (AHI_INVALID_ID), which
+*           means that no mode will be selected.
+*
+*       AHIR_InitialMixFreq (ULONG) - Initial setting of the frequency
+*           slider. Default is the lowest frequency supported.
+*
+*       AHIR_InitialInfoOpened (BOOL) - Whether to open the property
+*           information window automatically. Default is FALSE.
+*
+*       AHIR_InitialInfoLeftEdge (WORD) - Initial left edge of information
+*           window.
+*
+*       AHIR_InitialInfoTopEdge (WORD) - Initial top edge of information
+*           window.
+*
+*       AHIR_DoMixFreq (BOOL) - Set this tag to TRUE to cause the requester
+*           to display the frequency slider gadget. Default is FALSE.
+*
+*       AHIR_FilterFunc (struct Hook *) - A function to call for each mode
+*           encountered. If the function returns TRUE, the mode is included
+*           in the file list, otherwise it is rejected and not displayed. The
+*           function receives the following parameters:
+*               A0 - (struct Hook *)
+*               A1 - (ULONG) mode id
+*               A2 - (struct AHIAudioModeRequester *)
+*
+*       AHIR_FilterTags (struct TagItem *) - A pointer to a tag list used to
+*           filter modes away, like AHIR_FilterFunc does. The tags are the
+*           same as AHI_BestAudioIDA() takes as arguments. See that function
+*           for an explanation of each tag.
+*
+*   RESULT
+*       result - FALSE if the user cancelled the requester or if something
+*           prevented the requester from opening. If TRUE, values in the
+*           requester structure will be set.
+*
+*           If the return value is FALSE, you can look at the result from the
+*           dos.library/IoErr() function to determine whether the requester
+*           was cancelled or simply failed to open. If dos.library/IoErr()
+*           returns 0, then the requester was cancelled, any other value
+*           indicates a failure to open. Current possible failure codes are
+*           ERROR_NO_FREE_STORE which indicates there was not enough memory,
+*           and ERROR_NO_MORE_ENTRIES which indicates no modes were available
+*           (usually because the application filter hook filtered them all
+*           away).
+*
+*   EXAMPLE
+*
+*   NOTES
+*       The requester data structure is READ-ONLY and can only be modified
+*       by using tags!
+*
+*       The mixing/recording frequencies that are presented to the user
+*       may not be the only ones a driver supports, but just a selection.
+*
+*   BUGS
+*
+*   SEE ALSO
+*      AHI_AllocAudioRequestA(), AHI_FreeAudioRequest()
+*
+****************************************************************************
+*
+*/
 
 __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, register __a1 struct TagItem *tags )
 {
@@ -1221,9 +1439,45 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
   return rc;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_FreeAudioRequest *******************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_FreeAudioRequest *************************************
+*
+*   NAME
+*       AHI_FreeAudioRequest -- frees requester resources 
+*
+*   SYNOPSIS
+*       AHI_FreeAudioRequest( requester );
+*                             A0
+*
+*       void AHI_FreeAudioRequest( struct AHIAudioModeRequester * );
+*
+*   FUNCTION
+*       Frees any resources allocated by AHI_AllocAudioRequestA(). Once a
+*       requester has been freed, it can no longer be used with other calls to
+*       AHI_AudioRequestA().
+*
+*   INPUTS
+*       requester - Requester obtained from AHI_AllocAudioRequestA(), or NULL
+*       in which case this function does nothing.
+*
+*   RESULT
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*      AHI_AllocAudioRequestA()
+*
+****************************************************************************
+*
+*/
 
 __asm void FreeAudioRequest( register __a0 struct AHIAudioModeRequester *req)
 {

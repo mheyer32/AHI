@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.11  1997/02/12 15:32:45  lcs
+* Moved each autodoc header to the file where the function is
+*
 * Revision 1.10  1997/02/01 19:44:18  lcs
 * Added stereo samples
 *
@@ -77,7 +80,9 @@ void UpdateSilentPlayers( struct AHIDevUnit *, struct AHIBase *);
 // Should be moved to a separate file... IMHO.
 struct Node *FindNode(struct List *, struct Node *);
 
-/******************************************************************************
+
+
+/******************************************************************************
 ** DevBeginIO *****************************************************************
 ******************************************************************************/
 
@@ -122,7 +127,7 @@ __asm void DevBeginIO(
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AbortIO ********************************************************************
 ******************************************************************************/
 
@@ -207,7 +212,7 @@ __asm ULONG DevAbortIO(
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** TermIO *********************************************************************
 ******************************************************************************/
 
@@ -232,7 +237,7 @@ static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** PerformIO ******************************************************************
 ******************************************************************************/
 
@@ -281,7 +286,7 @@ void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** Findnode *******************************************************************
 ******************************************************************************/
 
@@ -305,9 +310,54 @@ struct Node *FindNode(struct List *list, struct Node *node)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** Devicequery ****************************************************************
 ******************************************************************************/
+
+/****** ahi.device/NSCMD_DEVICEQUERY  ***************************************
+*
+*   NAME
+*       NSCMD_DEVICEQUERY -- Query the device for its capabilities (V3)
+*
+*   FUNCTION
+*       Fills an initialized NSDeviceQueryResult structure with
+*       information about the device.
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      NSCMD_DEVICEQUERY
+*       io_Data         Pointer to the NSDeviceQueryResult structure,
+*                       initialized as follows:
+*                           DevQueryFormat - Set to 0
+*                           SizeAvailable  - Must be cleared.
+*                       It is probably good manners to clear all other
+*                       fields as well.
+*       io_Length       Size of the NSDeviceQueryResult structure.
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, the value in
+*                       NSDeviceQueryResult.SizeAvailable.
+*
+*       The NSDeviceQueryResult structure now contains valid information.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*       <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 static UWORD commandlist[] =
 {
@@ -342,7 +392,7 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** StopCmd ********************************************************************
 ******************************************************************************/
 
@@ -366,9 +416,48 @@ static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   TermIO(ioreq,AHIBase);
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** FlushCmd *******************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CMD_FLUSH ************************************************
+*
+*   NAME
+*       CMD_FLUSH -- Cancel all I/O requests (V3)
+*
+*   FUNCTION
+*       Aborts ALL current requestes, both active and waiting, even
+*       other programs requests!
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_FLUSH
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, number of requests actually
+*                       flushed.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       This command should only be used in very rare cases, like AHI
+*       system utilities. Never use this command in an application.
+*
+*   BUGS
+*
+*   SEE ALSO
+*       CMD_RESET, <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
@@ -408,9 +497,47 @@ static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /* All the following functions are called within the unit process context */
 
 
-/******************************************************************************
+/******************************************************************************
 ** ResetCmd *******************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CMD_RESET ************************************************
+*
+*   NAME
+*       CMD_RESET -- Restore device to a known state (V3)
+*
+*   FUNCTION
+*       Aborts all current requestes, even other programs requests
+*       (CMD_FLUSH), rereads the configuration file and resets the hardware
+*       to its initial state
+*       
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_RESET
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       This command should only be used in very rare cases, like AHI
+*       system utilities. Never use this command in an application.
+*
+*   BUGS
+*
+*   SEE ALSO
+*       CMD_FLUSH, <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
@@ -428,9 +555,54 @@ static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   TermIO(ioreq,AHIBase);
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** ReadCmd ********************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CMD_READ *************************************************
+*
+*   NAME
+*       CMD_READ -- Read raw samples from audio input (V3)
+*
+*   FUNCTION
+*       Reads samples from the users prefered input to memory. The sample
+*       format and frequency will be converted on the fly. 
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_READ
+*       io_Data         Pointer to the buffer where the data should be put.
+*       io_Length       Number of bytes to read, must be a multiple of the
+*                       sample frame size (see ahir_Type).
+*       io_Offset       Set to 0 when you use for the first time or after
+*                       a delay.
+*       ahir_Type       The desired sample format, see <ahi/devices.h>.
+*       ahir_Frequency  The desired sample frequency in Hertz.
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, number of bytes actually
+*                       transferred.
+*       io_Offset       Updated to be used as input next time.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*       <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
@@ -496,9 +668,61 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** WriteCmd *******************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CMD_WRITE ************************************************
+*
+*   NAME
+*       CMD_WRITE -- Write raw samples to audio output (V3)
+*
+*   FUNCTION
+*       Plays the samples to the users prefered audio output.
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_WRITE
+*       io_Data         Pointer to the buffer of samples to be played.
+*       io_Length       Number of bytes to play, must be a multiple of the
+*                       sample frame size (see ahir_Type).
+*       io_Offset       Must be 0.
+*       ahir_Type       The desired sample format, see <ahi/devices.h>.
+*       ahir_Frequency  The desired sample frequency in Hertz.
+*       ahir_Volume     The desired volume. The range is 0 to 0x10000, where
+*                       0 means muted and 0x10000 (== 1.0) means full volume.
+*       ahir_Position   Defines the stereo balance. 0 is far left, 0x8000 is
+*                       center and 0x10000 is far right.
+*       ahir_Link       If non-zero, pointer to a previously sent AHIRequest
+*                       which this AHIRequest will be linked to. This
+*                       request will be delayed until the old one is
+*                       finished (used for double buffering). Must be set
+*                       to NULL if not used.
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, number of bytes actually
+*                       played.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*       io_Data must be an even multiple of the sample frame size.
+*       32 bit samples is not allowed yet.
+*
+*   SEE ALSO
+*       <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*/
 
 const static UWORD type2snd[] =
 {
@@ -617,7 +841,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** StartCmd *******************************************************************
 ******************************************************************************/
 
@@ -658,7 +882,7 @@ static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** FeedReaders ****************************************************************
 ******************************************************************************/
 
@@ -699,7 +923,7 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** FillReadBuffer *************************************************************
 ******************************************************************************/
 
@@ -816,7 +1040,7 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** NewWriter ******************************************************************
 ******************************************************************************/
 
@@ -921,7 +1145,7 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AddWriter ******************************************************************
 ******************************************************************************/
 
@@ -982,7 +1206,7 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** PlayRequest ****************************************************************
 ******************************************************************************/
 
@@ -1049,7 +1273,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** RethinkPlayers *************************************************************
 ******************************************************************************/
 
@@ -1091,7 +1315,7 @@ void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** RemPlayers *****************************************************************
 ******************************************************************************/
 
@@ -1141,7 +1365,8 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
   }
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** UpdateSilentPlayers ********************************************************
 ******************************************************************************/
 

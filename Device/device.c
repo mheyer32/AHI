@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.14  1997/02/12 15:32:45  lcs
+* Moved each autodoc header to the file where the function is
+*
 * Revision 1.13  1997/02/10 02:23:06  lcs
 * Infowindow in the requester added.
 *
@@ -465,11 +468,7 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
   if(iounit)
   {
     /* Internal defaults for device unit 0 */
-    iounit->AudioMode       = AHI_BestAudioID(
-                                  AHIDB_Realtime, TRUE,
-                                  AHIDB_MaxChannels, 4,
-                                  TAG_DONE);
-    KPrintF("0x%08lx\n", iounit->AudioMode);
+    iounit->AudioMode       = AHI_BestAudioID(AHIDB_Realtime, TRUE, TAG_DONE);
     iounit->Frequency       = 10000;
     iounit->Channels        = 4;
     iounit->MonitorVolume   = -1;

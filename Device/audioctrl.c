@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.12  1997/02/12 15:32:45  lcs
+* Moved each autodoc header to the file where the function is
+*
 * Revision 1.11  1997/02/10 02:23:06  lcs
 * Infowindow in the requester added.
 *
@@ -62,7 +65,8 @@ extern __asm void PostTimer(void);
 extern __asm BOOL DummyPreTimer(void);
 extern __asm void DummyPostTimer(void);
 
-/******************************************************************************
+
+/******************************************************************************
 ** CreateAudioCtrl & UpdateAudioCtrl ******************************************
 ******************************************************************************/
 
@@ -107,7 +111,7 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
     audioctrl->ahiac_MasterVolume=0x00010000;
 
     if(audioctrl->ahiac_AudioID == AHI_DEFAULT_ID)
-      audioctrl->ahiac_AudioID=AHIBase->ahib_AudioMode;
+      audioctrl->ahiac_AudioID = AHIBase->ahib_AudioMode;
 
     if(audioctrl->ac.ahiac_MixFreq == AHI_DEFAULT_FREQ)
       audioctrl->ac.ahiac_MixFreq=AHIBase->ahib_Frequency;
@@ -129,7 +133,8 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
       if(dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID))
       {
         audioctrl->ac.ahiac_Flags=PackBoolTags(GetTagData(AHIDB_Flags,NULL,dbtags),dbtags,boolmap);
-        stpcpy(stpcpy(stpcpy(audioctrl->ahiac_DriverName,"DEVS:ahi/"),(char *)GetTagData(AHIDB_Driver,(ULONG)"",dbtags)),".audio");
+        stpcpy(stpcpy(stpcpy(audioctrl->ahiac_DriverName,"DEVS:ahi/"),
+            (char *)GetTagData(AHIDB_Driver,(ULONG)"",dbtags)),".audio");
         error=FALSE;
       }
       UnlockDatabase(audiodb);
@@ -166,7 +171,8 @@ __asm  void UpdateAudioCtrl( register __a0 struct AHIPrivAudioCtrl *audioctrl)
     audioctrl->ac.ahiac_MinBuffSamples=AHIBase->ahib_Frequency/audioctrl->ac.ahiac_PlayerFreq;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** TestAudioID & DizzyTestAudioID *********************************************
 ******************************************************************************/
 
@@ -299,9 +305,140 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
     return (Fixed) 0x10000;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_AllocAudioA ************************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_AllocAudioA ******************************************
+*
+*   NAME
+*       AHI_AllocAudioA -- allocates and initializes the audio hardware
+*       AHI_AllocAudio -- varargs stub for AHI_AllocAudioA()
+*
+*   SYNOPSIS
+*       audioctrl = AHI_AllocAudioA( tags );
+*       D0                           A1
+*
+*       struct AHIAudioCtrl *AHI_AllocAudioA( struct TagItem * );
+*
+*       audioctrl = AHI_AllocAudio( tag1, ... );
+*
+*       struct AHIAudioCtrl *AHI_AllocAudio( Tag, ... );
+*
+*   FUNCTION
+*       Allocates and initializes the audio hardware, selects the best
+*       mixing routine (if neccessary) according to the supplied tags.
+*       To start playing you first need to call AHI_ControlAudioA().
+*
+*   INPUTS
+*       tags - A pointer to a tag list.
+*
+*   TAGS
+*
+*       AHIA_AudioID (ULONG) - The audio mode to use (AHI_DEFAULT_ID is the
+*           user's default mode. It's a good value to use the first time she
+*           starts your application.
+*
+*       AHIA_MixFreq (ULONG) - Desired mixing frequency. The actual
+*           mixing rate may or may not be exactly what you asked for.
+*           AHI_DEFAULT_FREQ is the user's prefered frequency.
+*
+*       AHIA_Channels (UWORD) - Number of channel to use. The actual
+*           number of channels used will be equal or grater than the
+*           requested. If too many channels were requested, this function
+*           will fail. This tag must be supplied.
+*
+*       AHIA_Sounds (UWORD) - Number of sounds to use. This tag must be
+*           supplied.
+*
+*       AHIA_SoundFunc (struct Hook *) - A function to call each time
+*           when a sound has been started. The function receives the
+*           following parameters:
+*               A0 - (struct Hook *)
+*               A2 - (struct AHIAudioCtrl *)
+*               A1 - (struct AHISoundMessage *)
+*           The hook may be called from an interrupt, so normal interrupt
+*           restrictions apply.
+*           The called function should follow normal register conventions,
+*           which means that d2-d7 and a2-a6 must be preserved.
+*
+*       AHIA_PlayerFunc (struct Hook *) - A function to be called at regular
+*           intervals. By using this hook there is no need for music players
+*           to use other timing, such as VBLANK or CIA timers. But the real
+*           reason it's present is that it makes it possible to do non-
+*           realtime mixing to disk.
+*           Using this interrupt source is currently the only supported way
+*           to ensure that no mixing occurs between calls to AHI_SetVol(),
+*           AHI_SetFreq() or AHI_SetSound().
+*           If the sound playback is done without mixing, 'realtime.library'
+*           is used to provide timing. The function receives the following
+*           parameters:
+*               A0 - (struct Hook *)
+*               A2 - (struct AHIAudioCtrl *)
+*               A1 - Undefined.
+*           Do not assume A1 contains any particular value!
+*           The hook may be called from an interrupt, so normal interrupt
+*           restrictions apply.
+*           The called function should follow normal register conventions,
+*           which means that d2-d7 and a2-a6 must be preserved.
+*
+*       AHIA_PlayerFreq (Fixed) - If non-zero, enables timing and specifies
+*           how many times per second PlayerFunc will be called. This must
+*           be specified if AHIA_PlayerFunc is! Do not use any extreme
+*           frequences. The result of MixFreq/PlayerFreq must fit an UWORD,
+*           ie it must be less or equal to 65535. It is also suggested that
+*           you keep the result over 80. For normal use this should not be a
+*           problem. Note that the data type is Fixed, not integer. 50 Hz is
+*           50<<16.
+*
+*       AHIA_MinsPlayerFreq (Fixed) - The minimum frequency (AHIA_PlayerFreq)
+*           you will use. You should always supply this if you are using the
+*           device's interrupt feature!
+*
+*       AHIA_MaxPlayerFreq (Fixed) - The maximum frequency (AHIA_PlayerFreq)
+*           you will use. You should always supply this if you are using the
+*           device's interrupt feature!
+*
+*       AHIA_RecordFunc (struct Hook *) - This function will be called
+*           regulary when sampling is turned on (see AHI_ControlAudioA())
+*           with the following parameters:
+*               A0 - (struct Hook *)
+*               A2 - (struct AHIAudioCtrl *)
+*               A1 - (struct AHIRecordMessage *)
+*           The message (AHIRecordMessage) is filled as follows:
+*               ahirm_Buffer - Pointer to the samples. The buffer is valid
+*                   until next time the Hook is called.
+*               ahirm_Length - Number of sample FRAMES in buffer.
+*                   To get the size in bytes, multiply by 4 if ahiim_Type is
+*                   AHIST_S16S.
+*               ahirm_Type - Always AHIST_S16S at the moment, but you *must*
+*                   check this, since it may change in the future!
+*           The hook may be called from an interrupt, so normal interrupt
+*           restrictions apply. Signal a process if you wish to save the
+*           buffer to disk. The called function should follow normal register
+*           conventions, which means that d2-d7 and a2-a6 must be preserved.
+*       *** NOTE: The function MUST return NULL (in d0). This was previously
+*           not documented. Now you know.
+*
+*       AHIA_UserData (APTR) - Can be used to initialise the ahiac_UserData
+*           field.
+*
+*   RESULT
+*       A pointer to an AHIAudioCtrl structure or NULL if an error occured.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*       AHI_FreeAudio(), AHI_ControlAudioA()
+*
+****************************************************************************
+*
+*/
 
 __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
 {
@@ -457,36 +594,16 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
 */
   }
 
-  /* Set default hardware properties */
+  /* Set default hardware properties, only if AHI_DEFAULT_ID was used!*/
+  if(GetTagData(AHIA_AudioID, AHI_DEFAULT_ID, tags) == AHI_DEFAULT_ID)
   {
-    LONG minmon,maxmon,mingain,maxgain,minvol,maxvol,inputs,outputs;
-
-    if(AHI_GetAudioAttrs(AHI_INVALID_ID,(struct AHIAudioCtrl *)audioctrl,
-        AHIDB_MinMonitorVolume, &minmon,
-        AHIDB_MaxMonitorVolume, &maxmon,
-        AHIDB_MinInputGain, &mingain,
-        AHIDB_MaxInputGain, &maxgain,
-        AHIDB_MinOutputVolume, &minvol,
-        AHIDB_MaxOutputVolume, &maxvol,
-        AHIDB_Inputs, &inputs,
-        AHIDB_Outputs, &outputs,
-        TAG_DONE))
-
-    {
-      AHIBase->ahib_MonitorVolume = inbounds(AHIBase->ahib_MonitorVolume, minmon, maxmon);
-      AHIBase->ahib_InputGain     = inbounds(AHIBase->ahib_InputGain, minmon, maxmon);
-      AHIBase->ahib_OutputVolume  = inbounds(AHIBase->ahib_OutputVolume, minmon, maxmon);
-      AHIBase->ahib_Input         = inbounds(AHIBase->ahib_Input,0,inputs-1);
-      AHIBase->ahib_Output        = inbounds(AHIBase->ahib_Output,0,outputs-1);
-
-      AHI_ControlAudio((struct AHIAudioCtrl *)audioctrl,
-          AHIC_MonitorVolume,   AHIBase->ahib_MonitorVolume,
-          AHIC_InputGain,       AHIBase->ahib_InputGain,
-          AHIC_OutputVolume,    AHIBase->ahib_OutputVolume,
-          AHIC_Input,           AHIBase->ahib_Input,
-          AHIC_Output,          AHIBase->ahib_Output,
-          TAG_DONE);
-    }
+    AHI_ControlAudio((struct AHIAudioCtrl *)audioctrl,
+        AHIC_MonitorVolume,   AHIBase->ahib_MonitorVolume,
+        AHIC_InputGain,       AHIBase->ahib_InputGain,
+        AHIC_OutputVolume,    AHIBase->ahib_OutputVolume,
+        AHIC_Input,           AHIBase->ahib_Input,
+        AHIC_Output,          AHIBase->ahib_Output,
+        TAG_DONE);
   }
 
 exit:
@@ -504,9 +621,43 @@ error:
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_FreeAudio **************************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_FreeAudio *******************************************
+*
+*   NAME
+*       AHI_FreeAudio -- deallocates the audio hardware
+*
+*   SYNOPSIS
+*       AHI_FreeAudio( audioctrl );
+*                      A2
+*
+*       void AHI_FreeAudio( struct AHIAudioCtrl * );
+*
+*   FUNCTION
+*       Deallocates the AHIAudioCtrl structure and any other resources
+*       allocated by AHI_AllocAudioA(). After this call it must not be used
+*       by any other functions anymore. AHI_UnloadSound() is automatically
+*       called for every sound.
+*
+*   INPUTS
+*       audioctrl - A pointer to an AHIAudioCtrl structure obtained from
+*           AHI_AllocAudioA(). If NULL, this function does nothing.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*       AHI_AllocAudioA(), AHI_KillAudio(), AHI_UnloadSound()
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
 {
@@ -548,9 +699,45 @@ __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_KillAudio **************************************************************
 ******************************************************************************/
+
+/****i* ahi.device/AHI_KillAudio *******************************************
+*
+*   NAME
+*      AHI_KillAudio -- clean up
+*
+*   SYNOPSIS
+*      AHI_KillAudio();
+*
+*      void AHI_KillAudio( void );
+*
+*   FUNCTION
+*      'ahi.device' keeps track of most of what the user does. This call is
+*      used to clean up as much as possible. It must never, ever, be used
+*      in an application. It is included for development use only, and can
+*      be used to avoid rebooting the computer if your program has allocated
+*      the audio hardware and crashed. This call can lead to a system crash,
+*      so don't use it if you don't have to.
+*
+*   INPUTS
+*
+*   RESULT
+*      This function returns nothing. In fact, it may never return.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*      AHI_FreeAudio()
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG KillAudio(void)
 {
@@ -571,9 +758,106 @@ __asm ULONG KillAudio(void)
   return NULL;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_ControlAudioA **********************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_ControlAudioA ***************************************
+*
+*   NAME
+*       AHI_ControlAudioA -- change audio attributes
+*       AHI_ControlAudio -- varargs stub for AHI_ControlAudioA()
+*
+*   SYNOPSIS
+*       error = AHI_ControlAudioA( audioctrl, tags );
+*       D0                         A2         A1
+*
+*       ULONG AHI_ControlAudioA( struct AHIAudioCtrl *, struct TagItem * );
+*
+*       error = AHI_ControlAudio( AudioCtrl, tag1, ...);
+*
+*       ULONG AHI_ControlAudio( struct AHIAudioCtrl *, Tag, ... );
+*
+*   FUNCTION
+*       This function should be used to change attributes for a given
+*       AHIAudioCtrl structure. It is also used to start and stop playback,
+*       and to control special hardware found on some sound cards.
+*
+*   INPUTS
+*       audioctrl - A pointer to an AHIAudioCtrl structure.
+*       tags - A pointer to a tag list.
+*
+*   TAGS
+*       AHIC_Play (BOOL) - Starts (TRUE) and stops (FALSE) playback and
+*           PlayerFunc. NOTE: If the audio hardware cannot play at the same
+*           time as recording samples, the recording will be stopped.
+*
+*       AHIC_Record (BOOL) - Starts (TRUE) and stops (FALSE) sampling and
+*           RecordFunc. NOTE: If the audio hardware cannot record at the same
+*           time as playing samples, the playback will be stopped.
+*
+*       AHIC_MonitorVolume (Fixed) - Sets the input monitor volume, i.e. how
+*           much of the input signal is mixed with the output signal while
+*           recording. Use AHI_GetAudioAttrsA() to find the available range.
+*
+*       AHIC_MonitorVolume_Query (Fixed *) - Get the current input monitor
+*           volume. ti_Data is a pointer to a Fixed variable, where the result
+*           will be stored.
+*
+*       AHIC_MixFreq_Query (ULONG *) - Get the current mixing frequency.
+*           ti_Data is a pointer to an ULONG variable, where the result will
+*           be stored.
+*
+*       AHIC_InputGain (Fixed) - Set the input gain. Use AHI_GetAudioAttrsA()
+*           to find the available range. (V2)
+*
+*       AHIC_InputGain_Query (Fixed *) - Get current input gain. (V2)
+*
+*       AHIC_OutputVolume (Fixed) - Set the output volume. Use
+*           AHI_GetAudioAttrsA() to find the available range. (V2)
+*
+*       AHIC_OutputVolume_Query (Fixed *) - Get current output volume. (V2)
+*
+*       AHIC_Input (ULONG) - Select input source. See AHI_GetAudioAttrsA().
+*           (V2)
+*
+*       AHIC_Input_Query (ULONG *) - Get current input source. (V2)
+*
+*       AHIC_Output (ULONG) - Select destination for output. See
+*           AHI_GetAudioAttrsA(). (V2)
+*
+*       AHIC_Output_Query (ULONG *) - Get destination for output. (V2)
+*
+*       The following tags are also recognized by AHI_ControlAudioA(). See
+*       AHI_AllocAudioA() for what they do. They may be used from interrupts.
+*
+*       AHIA_SoundFunc (struct Hook *)
+*       AHIA_PlayerFunc (struct Hook *)
+*       AHIA_PlayerFreq (Fixed)
+*       AHIA_RecordFunc (struct Hook *)
+*       AHIA_UserData (APTR)
+*
+*       Note that AHIA_PlayerFreq must never be outside the limits specified
+*       with AHIA_MinPlayerFreq and AHIA_MaxPlayerFreq!
+*
+*   RESULT
+*       An error code, defined in <devices/ahi.h>.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       The AHIC_Play and AHIC_Record tags *must not* be used from
+*       interrupts.
+*
+*   BUGS
+*
+*   SEE ALSO
+*       AHI_AllocAudioA(), AHI_GetAudioAttrsA(), <devices/ahi.h>
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
     register __a1 struct TagItem *tags)
@@ -675,9 +959,202 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
   return rc;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_GetAudioAttrsA *********************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_GetAudioAttrsA ***************************************
+*
+*   NAME
+*       AHI_GetAudioAttrsA -- examine an audio mode via a tag list
+*       AHI_GetAudioAttrs -- varargs stub for AHI_GetAudioAttrsA()
+*
+*   SYNOPSIS
+*       success = AHI_GetAudioAttrsA( ID, [audioctrl], tags );
+*       D0                            D0  A2           A1
+*
+*       BOOL AHI_GetAudioAttrsA( ULONG, struct AHIAudioCtrl *,
+*                                struct TagItem * );
+*
+*       success = AHI_GetAudioAttrs( ID, [audioctrl], attr1, &result1, ...);
+*
+*       BOOL AHI_GetAudioAttrs( ULONG, struct AHIAudioCtrl *, Tag, ... );
+*
+*   FUNCTION
+*       Retrieve information about an audio mode specified by ID or audioctrl
+*       according to the tags in the tag list. For each entry in the tag
+*       list, ti_Tag identifies the attribute, and ti_Data is mostly a
+*       pointer to a LONG (4 bytes) variable where you wish the result to be
+*       stored.
+*
+*   INPUTS
+*       ID - An audio mode identifier or AHI_INVALID_ID.
+*       audioctrl - A pointer to an AHIAudioCtrl structure, only used if
+*           ID equals AHI_INVALID_ID. Set to NULL if not used. If set to
+*           NULL when used, this function returns immediately. Always set
+*           ID to AHI_INVALID_ID and use audioctrl if you have allocated
+*           a valid AHIAudioCtrl structure. Some of the tags return incorrect
+*           values otherwise.
+*       tags - A pointer to a tag list.
+*
+*   TAGS
+*       AHIDB_Volume (ULONG *) - TRUE if this mode supports volume changes.
+*
+*       AHIDB_Stereo (ULONG *) - TRUE if output is in stereo. Unless
+*           AHIDB_Panning (see below) is TRUE, all even channels are played
+*           to the left and all odd to the right.
+*
+*       AHIDB_Panning (ULONG *) - TRUE if this mode supports stereo panning.
+*
+*       AHIDB_HiFi (ULONG *) - TRUE if no shortcuts, like predivision, is
+*           used by the mixing routines.
+*
+*       AHIDB_PingPong (ULONG *) - TRUE if this mode can play samples backwards.
+*
+*       AHIDB_Record (ULONG *) - TRUE if this mode can record samples.
+*
+*       AHIDB_FullDuplex (ULONG *) - TRUE if this mode can record and play at
+*           the same time.
+*
+*       AHIDB_Realtime (ULONG *) - Modes which return TRUE for this fulfils
+*           two criteria:
+*           1) Calls to AHI_SetVol(), AHI_SetFreq() or AHI_SetSound() will be
+*              preformed within (about) 10 ms if called from a PlayFunc Hook.
+*           2) The PlayFunc Hook will be called at the specifed frequency.
+*           If you don't use AHI's PlayFunc Hook, you must not use modes that
+*           are not realtime. (Criterium 2 is not that obvious if you consider
+*           a mode that renders the output to disk as a sample.)
+*
+*       AHIDB_Bits (ULONG *) - The number of output bits (8, 12, 14, 16 etc).
+*
+*       AHIDB_MaxChannels (ULONG *) - The maximum number of channels this mode
+*           can handle.
+*
+*       AHIDB_MinMixFreq (ULONG *) - The minimum mixing frequency supported.
+*
+*       AHIDB_MaxMixFreq (ULONG *) - The maximum mixing frequency supported.
+*
+*       AHIDB_Frequencies (ULONG *) - The number of different sample rates
+*           available.
+*
+*       AHIDB_FrequencyArg (ULONG) - Specifies which frequency
+*           AHIDB_Frequency should return (see below). Range is 0 to
+*           AHIDB_Frequencies-1 (including).
+*           NOTE: ti_Data is NOT a pointer, but an ULONG.
+*
+*       AHIDB_Frequency (ULONG *) - Return the frequency associated with the
+*           index number specified with AHIDB_FrequencyArg (see above).
+*
+*       AHIDB_IndexArg (ULONG) - AHIDB_Index will return the index which
+*           gives the closest frequency to AHIDB_IndexArg
+*           NOTE: ti_Data is NOT a pointer, but an ULONG.
+*
+*       AHIDB_Index (ULONG *) - Return the index associated with the frequency
+*           specified with AHIDB_IndexArg (see above).
+*
+*       AHIDB_MaxPlaySamples (ULONG *) - Return the lowest number of sample
+*           frames that must be present in memory when AHIST_DYNAMICSAMPLE
+*           sounds are used. This number must then be scaled by Fs/Fm, where
+*           Fs is the frequency of the sound and Fm is the mixing frequency.
+*
+*       AHIDB_MaxRecordSamples (ULONG *) - Return the number of sample frames
+*           you will recieve each time the RecordFunc is called.
+*
+*       AHIDB_BufferLen (ULONG) - Specifies how many characters will be
+*           copyed when requesting text attributes. Default is 0, which
+*           means that AHIDB_Driver, AHIDB_Name, AHIDB_Author,
+*           AHIDB_Copyright, AHIDB_Version and AHIDB_Annotation,
+*           AHIDB_Input and AHIDB_Output will do nothing.
+*
+*       AHIDB_Driver (STRPTR) - Name of driver (excluding path and
+*           extention). 
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen.
+*
+*       AHIDB_Name (STRPTR) - Human readable name of this mode.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen.
+*
+*       AHIDB_Author (STRPTR) - Name of driver author.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen.
+*
+*       AHIDB_Copyright (STRPTR) - Driver copyright notice.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen
+*
+*       AHIDB_Version (STRPTR) - Driver version string.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen.
+*
+*       AHIDB_Annotation (STRPTR) - Annotation by driver author.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen.
+*
+*       AHIDB_MinMonitorVolume (Fixed *)
+*       AHIDB_MaxMonitorVolume (Fixed *) - Lower/upper limit for input
+*           monitor volume, see AHI_ControlAudioA(). If both are 0.0,
+*           the sound hardware does not have an input monitor feature.
+*           If both are same, but not 0.0, the hardware always sends the
+*           recorded sound to the outputs (at the given volume). (V2)
+*
+*       AHIDB_MinInputGain (Fixed *)
+*       AHIDB_MaxInputGain (Fixed *) - Lower/upper limit for input gain,
+*           see AHI_ControlAudioA(). If both are same, there is no input
+*           gain hardware. (V2)
+*
+*       AHIDB_MinOutputVolume (Fixed *)
+*       AHIDB_MaxOutputVolume (Fixed *) - Lower/upper limit for output
+*           volume, see AHI_ControlAudioA(). If both are same, the sound
+*           card does not have volume control. (V2)
+*
+*       AHIDB_Inputs (ULONG *) - The number of inputs the sound card has.
+*           (V2)
+*
+*       AHIDB_InputArg (ULONG) - Specifies what AHIDB_Input should return
+*           (see below). Range is 0 to AHIDB_Inputs-1 (including).
+*           NOTE: ti_Data is NOT a pointer, but an ULONG. (V2)
+*
+*       AHIDB_Input (STRPTR) - Gives a human readable string describing the
+*           input associated with the index specified with AHIDB_InputArg
+*           (see above). See AHI_ControlAudioA() for how to select one.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen. (V2)
+*
+*       AHIDB_Outputs (ULONG *) - The number of outputs the sound card
+*           has. (V2)
+*
+*       AHIDB_OutputArg (ULONG) - Specifies what AHIDB_Output should return
+*           (see below). Range is 0 to AHIDB_Outputs-1 (including)
+*           NOTE: ti_Data is NOT a pointer, but an ULONG. (V2)
+*
+*       AHIDB_Output (STRPTR) - Gives a human readable string describing the
+*           output associated with the index specified with AHIDB_OutputArg
+*           (see above). See AHI_ControlAudioA() for how to select one.
+*           NOTE: ti_Data is a pointer to an UBYTE array where the name
+*           will be stored. See AHIDB_BufferLen. (V2)
+*
+*       If the requested information cannot be found, the variable will be not
+*       be touched.
+*
+*   RESULT
+*       TRUE if everything went well.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*       In versions earlier than 3, the tags that filled a string buffer would
+*       not NULL-terminate the string on buffer overflows.
+*
+*   SEE ALSO
+*      AHI_NextAudioID(), AHI_BestAudioIDA()
+*
+****************************************************************************
+*
+*/
 
 __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
     register __a2 struct AHIAudioCtrlDrv *actrl,
@@ -839,9 +1316,100 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
   return rc;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_BestAudioIDA ***********************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_BestAudioIDA *****************************************
+*
+*   NAME
+*       AHI_BestAudioIDA -- calculate the best ModeID with given parameters
+*       AHI_BestAudioID -- varargs stub for AHI_BestAudioIDA()
+*
+*   SYNOPSIS
+*       ID = AHI_BestAudioIDA( tags );
+*       D0                     A1
+*
+*       ULONG AHI_BestAudioIDA( struct TagItem * );
+*
+*       ID = AHI_BestAudioID( tag1, ... );
+*
+*       ULONG AHI_BestAudioID( Tag, ... );
+*
+*   FUNCTION
+*       Determines the best AudioID to fit the parameters set in the tag
+*       list.
+*
+*   INPUTS
+*       tags - A pointer to a tag list. Only the tags present matter.
+*
+*   TAGS
+*       Many combinations are probably stupid to ask for, like not supporting
+*       panning or recording.
+*
+*       AHIDB_AudioID (ULONG) - The mode must use the same audio hardware
+*           as this mode does.
+*
+*       AHIDB_Volume (BOOL) - If TRUE: mode must support volume changes.
+*           If FALSE: mode must not support volume changes.
+*
+*       AHIDB_Stereo (BOOL) - If TRUE: mode must have stereo output.
+*           If FALSE: mode must not have stereo output (=mono).
+*
+*       AHIDB_Panning (BOOL) - If TRUE: mode must support volume panning.
+*           If FALSE: mode must not support volume panning. 
+*
+*       AHIDB_HiFi (BOOL) - If TRUE: mode must have HiFi output.
+*           If FALSE: mode must not have HiFi output.
+*
+*       AHIDB_PingPong (BOOL) - If TRUE: mode must support playing samples
+*           backwards. If FALSE: mode must not support playing samples
+*           backwards.
+*
+*       AHIDB_Record (BOOL) - If TRUE: mode must support recording. If FALSE:
+*           mode must not support recording.
+*
+*       AHIDB_Realtime (BOOL) - If TRUE: mode must be realtime. If FALSE:
+*           take a wild guess.
+*
+*       AHIDB_FullDuplex (BOOL) - If TRUE: mode must be able to record and
+*           play at the same time.
+*
+*       AHIDB_Bits (UBYTE) - Mode must have greater or equal number of bits.
+*
+*       AHIDB_MaxChannels (UWORD) - Mode must have greater or equal number
+*           of channels.
+*
+*       AHIDB_MinMixFreq (ULONG) - Lowest mixing frequency supported must be
+*           less or equal.
+*
+*       AHIDB_MaxMixFreq (ULONG) - Highest mixing frequency must be greater
+*           or equal.
+*
+*       AHIB_Dizzy (struct TagItem *) - This tag points to a second tag list.
+*           After all other tags has been tested, the mode that matches these
+*           tags best is returned, i.e. the one that has most of the features
+*           you ask for, and least of the ones you don't want. Without this
+*           second tag list, this function hardly does what its name
+*           suggests. (V3)
+*
+*   RESULT
+*       ID - The best AudioID to use or AHI_INVALID_ID if none of the modes
+*           in the audio database could meet the requirements.
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*      AHI_NextAudioID(), AHI_GetAudioAttrsA()
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 {
@@ -892,9 +1460,95 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
   return bestid;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_PlayA ******************************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_PlayA ************************************************
+*
+*   NAME
+*       AHI_PlayA -- Start multiple sounds in one call (V3)
+*       AHI_Play -- varargs stub for AHI_PlayA()
+*
+*   SYNOPSIS
+*       AHI_PlayA( audioctrl, tags );
+*                  A2         A1
+*
+*       void AHI_PlayA( struct AHIAudioCtrl *, struct TagItem * );
+*
+*       AHI_Play( AudioCtrl, tag1, ...);
+*
+*       void AHI_Play( struct AHIAudioCtrl *, Tag, ... );
+*
+*   FUNCTION
+*       This function performs the same actions as multiple calls to
+*       AHI_SetFreq(), AHI_SetSound() and AHI_SetVol(). The advantages
+*       of using only one call is that simple loops can be set without
+*       using a SoundFunc (see AHI_AllocAudioA(), tag AHIA_SoundFunc) and
+*       that sounds on different channels can be syncronized even when the
+*       sounds are not started from a PlayerFunc (see AHI_AllocAudioA(), tag
+*       AHIA_PlayerFunc). The disadvantage is that this call has more
+*       overhead than AHI_SetFreq(), AHI_SetSound() and AHI_SetVol(). It is
+*       therefore recommended that you only use this call if you are not
+*       calling from a SoundFunc or PlayerFunc.
+*
+*       The supplied tag list works like a 'program'. This means that
+*       the order of tags matter.
+*
+*   INPUTS
+*       audioctrl - A pointer to an AHIAudioCtrl structure.
+*       tags - A pointer to a tag list.
+*
+*   TAGS
+*       AHIP_BeginChannel (UWORD) - Before you start setting attributes
+*           for a sound to play, you have to use this tag to chose a
+*           channel to operate on. If AHIP_BeginChannel is omitted, the
+*           resullt is undefined.
+*
+*       AHIP_EndChannel (ULONG) - Signals the end of attributes for
+*           the current channel. If AHIP_EndChannel is omitted, the result
+*           is undefined. ti_Data MUST BE NULL!
+*
+*       AHIP_Freq (ULONG) - The playback frequency in Hertz or AHI_MIXFREQ.
+*
+*       AHIP_Vol (Fixed) - The desired volume. If omitted, but AHIP_Pan is
+*           present, AHIP_Vol defaults to 0.
+*
+*       AHIP_Pan (sposition) - The desired panning. If omitted, but AHIP_Vol
+*           is present, AHIP_Pan defaults to 0 (extreme left).
+*
+*       AHIP_Sound (UWORD) - Sound to be played, or AHI_NOSOUND.
+*
+*       AHIP_Offset (ULONG) - Specifies an offset (in samples) into the
+*           sound. If this tag is present, AHIP_Length MUST be present too!
+*
+*       AHIP_Length (LONG) - Specifies how many samples that should be
+*           player.
+*
+*       AHIP_LoopFreq (ULONG)
+*       AHIP_LoopVol (Fixed)
+*       AHIP_LoopPan (sposition)
+*       AHIP_LoopSound (UWORD)
+*       AHIP_LoopOffset (ULONG)
+*       AHIP_LoopLength (LONG) - These tags can be used to set simple loop
+*          attributes. They default to their sisters. These tags must be
+*          after the other tags.
+*
+*   RESULT
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*       AHI_SetFreq(), AHI_SetSound(), AHI_SetVol()
+*
+****************************************************************************
+*
+*/
 
 __asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
     register __a1 struct TagItem *tags)
@@ -993,9 +1647,43 @@ __asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
   return NULL;
 }
 
-/******************************************************************************
+
+/******************************************************************************
 ** AHI_SampleFrameSize ********************************************************
 ******************************************************************************/
+
+/****** ahi.device/AHI_SampleFrameSize **************************************
+*
+*   NAME
+*       AHI_SampleFrameSize -- get the size of a sample frame (V3)
+*
+*   SYNOPSIS
+*       size = AHI_SampleFrameSize( sampletype );
+*       D0                          D0
+*
+*       ULONG AHI_SampleFrameSize( ULONG );
+*
+*   FUNCTION
+*       Returns the size in bytes of a sample frame for a given sample type.
+*
+*   INPUTS
+*       sampletype - The sample type to examine. See <devices/ahi.h> for
+*           possible types.
+*
+*   RESULT
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*      <devices/ahi.h>
+*
+****************************************************************************
+*
+*/
 
 const static UBYTE type2bytes[]=
 {
