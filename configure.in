@@ -12,7 +12,7 @@ dnl General
 
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
-: ${CFLAGS='-noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
+: ${CFLAGS='-V egcs-2.90.27 -noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
 : ${LDFLAGS='-noixemul'}
 AC_PREFIX_DEFAULT( /tmp/ahi ) 
 
@@ -26,6 +26,7 @@ AC_CHECK_PROG( RM, rm, rm )
 dnl Checks for libraries.
 
 AC_CHECK_LIB( amiga, NewList,  , AC_MSG_ERROR( "libamiga is missing." ) )
+AC_CHECK_LIB( m,     floor,    , AC_MSG_ERROR( "libm is missing." ) )
 
 
 dnl Checks for header files.
@@ -42,4 +43,4 @@ AC_C_INLINE
 dnl Checks for library functions.
 
 
-AC_OUTPUT(Makefile AddAudioModes/Makefile, echo timestamp > stamp-h)
+AC_OUTPUT(Makefile AHI/Makefile AddAudioModes/Makefile, echo timestamp > stamp-h)
