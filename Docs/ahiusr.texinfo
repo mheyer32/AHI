@@ -53,6 +53,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.12  1997/11/02 02:01:48  lcs
+Added Concierto (again!).
+
 Revision 4.11  1997/10/21 01:33:40  lcs
 The version number is now the AHI release version, not the documents version.
 
@@ -798,6 +801,9 @@ delivered with @sc{Ahi}.
 
 @table @code
 
+@item concierto.audio
+Requires @code{concierto.library}.
+
 @item delfina.audio
 Requires @code{delfina.library} version 4 or greater @footnote{The latest
 version of the Delfina software can be found at Petsoff Limited
@@ -1257,6 +1263,9 @@ The following people has contributed to the @sc{Ahi} project with code:
 
 @item Stéphane Barbaray @email{opty@@club-internet.fr}
 The MUI version of the preferences program.
+
+@item Olaf Barthel @email{olsen@@sourcery.han.de}
+The Concierto driver.
 
 @item Thorsten Hansen @email{hansen_t@@informatik.fh-hamburg.de}
 The Melody MPEG driver.
