@@ -1,0 +1,135 @@
+
+	.MACRO	LONG num
+.ifdef	LITTLE_ENDIAN
+	.byte	((\num)>>24)&255
+	.byte	((\num)>>16)&255
+	.byte	((\num)>> 8)&255
+	.byte	((\num)>> 0)&255
+.else
+	.long	\num
+.endif
+	.ENDM
+
+	.MACRO	LONG2 num1,num2
+.ifdef	LITTLE_ENDIAN
+	.byte	((\num1)>>24)&255
+	.byte	((\num1)>>16)&255
+	.byte	((\num1)>> 8)&255
+	.byte	((\num1)>> 0)&255
+	
+	.byte	((\num2)>>24)&255
+	.byte	((\num2)>>16)&255
+	.byte	((\num2)>> 8)&255
+	.byte	((\num2)>> 0)&255
+.else
+	.long	\num1, \num2
+.endif
+	.ENDM
+
+	.MACRO	FORM_START name
+CHUNKCNT	.ASSIGNA 0
+	.ascii	"FORM"
+	LONG	FORMEND-FORMSTART
+FORMSTART:
+	.ascii	"\name"
+	.ENDM
+
+	.MACRO	FORM_END name
+FORMEND:
+	.balign	2,0
+	.ENDM
+
+	.MACRO	CHUNK_START name
+	.ascii	"\name"
+	LONG	CHUNKEND\&CHUNKCNT-CHUNKSTART\&CHUNKCNT
+CHUNKSTART\&CHUNKCNT:
+	.ENDM
+
+	.MACRO	CHUNK_END
+CHUNKEND\&CHUNKCNT:
+CHUNKCNT	.ASSIGNA \&CHUNKCNT+1
+	.balign	2,0
+	.ENDM
+
+AHIDB_AudioID	.EQU	2147483648+100
+AHIDB_Volume	.EQU	2147483648+103
+AHIDB_Panning	.EQU	2147483648+104
+AHIDB_Stereo	.EQU	2147483648+105
+AHIDB_HiFi	.EQU	2147483648+106
+AHIDB_MultTable	.EQU	2147483648+108
+AHIDB_Name	.EQU	2147483648+32768+109
+
+TAG_DONE	.EQU	0
+	
+TRUE		.EQU	1
+FALSE		.EQU	0
+	
+		
+	FORM_START	AHIM
+	
+	CHUNK_START	AUDN
+	.asciz		"void"
+	CHUNK_END
+	
+	CHUNK_START	AUDM
+1:	
+	LONG2		AHIDB_AudioID,	0x001f0001
+	LONG2		AHIDB_Volume,	TRUE
+	LONG2		AHIDB_Panning,	FALSE
+	LONG2		AHIDB_Stereo,	FALSE
+	LONG2		AHIDB_HiFi,	TRUE
+	LONG2		AHIDB_MultTable,FALSE
+	LONG2		AHIDB_Name,	2f-1b
+	LONG		TAG_DONE
+2:
+	.asciz		"VOID:HiFi 32 bit mono"
+	CHUNK_END
+
+	CHUNK_START	AUDM
+1:	
+	LONG2		AHIDB_AudioID,	0x001f0002
+	LONG2		AHIDB_Volume,	TRUE
+	LONG2		AHIDB_Panning,	TRUE
+	LONG2		AHIDB_Stereo,	TRUE
+	LONG2		AHIDB_HiFi,	TRUE
+	LONG2		AHIDB_MultTable,FALSE
+	LONG2		AHIDB_Name,	2f-1b
+	LONG		TAG_DONE
+2:
+	.asciz		"VOID:HiFi 32 bit stereo++"
+	CHUNK_END
+		
+	CHUNK_START	AUDM
+1:	
+	LONG2		AHIDB_AudioID,	0x001f0003
+	LONG2		AHIDB_Volume,	TRUE
+	LONG2		AHIDB_Panning,	FALSE
+	LONG2		AHIDB_Stereo,	FALSE
+	LONG2		AHIDB_HiFi,	FALSE
+	LONG2		AHIDB_MultTable,FALSE
+	LONG2		AHIDB_Name,	2f-1b
+	LONG		TAG_DONE
+2:
+	.asciz		"VOID:16 bit mono"
+	CHUNK_END
+
+	CHUNK_START	AUDM
+1:	
+	LONG2		AHIDB_AudioID,	0x001f0004
+	LONG2		AHIDB_Volume,	TRUE
+	LONG2		AHIDB_Panning,	TRUE
+	LONG2		AHIDB_Stereo,	TRUE
+	LONG2		AHIDB_HiFi,	FALSE
+	LONG2		AHIDB_MultTable,FALSE
+	LONG2		AHIDB_Name,	2f-1b
+	LONG		TAG_DONE
+2:
+	.asciz		"VOID:16 bit stereo++"
+	CHUNK_END
+		
+	FORM_END
+
+	.balign	4,0
+	.end
+
+	
