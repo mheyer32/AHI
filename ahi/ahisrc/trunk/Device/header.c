@@ -428,21 +428,32 @@ OpenLibs ( void )
      Strategy:
 
       1) If MorphOS is running, use it.
-      2) If WarpUp is running, use it.
-      4) If neither of them are running, try WarpUp.
+      2) If PowerUp is running, but not WarpUp, use the m68k core
+      3) If neither of them are running, try WarpUp.
 
   */
 
-  // Check if MorpOS is running.
-
-  Forbid();
-  MorphOSRes  = FindResident( "MorphOS" );
-  Permit();
-
-  if( MorphOSRes == NULL  )
+  // Check if MorpOS/PowerUp/WarpUp is running.
   {
-    // Open WarpUp
-    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
+    struct Library* ppclib     = NULL;
+    struct Library* powerpclib = NULL;
+
+    Forbid();
+    MorphOSRes  = FindResident( "MorphOS" );
+    
+    powerpclib = (struct Library *) FindName( &SysBase->LibList,
+                                              "powerpc.library" );
+    ppclib     = (struct Library *) FindName( &SysBase->LibList,
+                                              "ppc.library" );
+
+    Permit();
+
+    if( MorphOSRes == NULL && ! ( ppclib != NULL && powerpclib == NULL ) )
+    {
+      // Open WarpUp (but not if MorphOS or PowerUp is active)
+
+      PowerPCBase = OpenLibrary( "powerpc.library", 15 );
+    }
   }
 
   if( MorphOSRes != NULL )
@@ -451,17 +462,17 @@ OpenLibs ( void )
   }
   else if( PowerPCBase != NULL )
   {
-    ULONG* version = NULL;
-    ULONG* revision = NULL;
-
     MixBackend = MB_WARPUP;
 
     /* Load our code to PPC..  */
 
-    PPCObject = AHILoadObject( "DEVS:ahi.elf" );
+    PPCObject = AHILoadObject( "DEVS:ahi.device.elf" );
 
     if( PPCObject != NULL )
     {
+      ULONG* version = NULL;
+      ULONG* revision = NULL;
+
       int r = ~0;
 
       AHIGetELFSymbol( "__LIB_Version", (void*) &version );
@@ -469,11 +480,12 @@ OpenLibs ( void )
     
       if( version == NULL || revision == NULL )
       {
-        Req( "Unable to fetch version information from 'ahi.elf'." );
+        Req( "Unable to fetch version information from 'ahi.device.elf'." );
       }
       if( *version != Version || *revision != Revision )
       {
-        Req( "'ahi.elf' version %ld.%ld doesn't match 'ahi.device' %ld.%ld.",
+        Req( "'ahi.device.elf' version %ld.%ld doesn't match "
+             "'ahi.device' version %ld.%ld.",
              *version, *revision, Version, Revision );
 
         return FALSE;
@@ -523,6 +535,10 @@ OpenLibs ( void )
     {
       MixBackend = MB_NATIVE;
     }
+  }
+  else 
+  {
+    MixBackend = MB_NATIVE;
   }
 
   OpenahiCatalog(NULL, NULL);
