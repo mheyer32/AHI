@@ -240,6 +240,17 @@ interrupts. However, calling &ahi; functions from hardware interrupts
 calls that existed in &ahi6; (and only if no new &ahi; features are
 used). This should not really be a problem for anyone.</para>
 
+      <para>Note that using software interrupts is discouraged from now
+on. The reason is that using high-priority processes allow for all kinds
+of nice things to be directly plugged into the processing pipeline, like
+using streaming <trademark>DataTypes</trademark> as sound sources and
+easier application syncronisation (since a processing module is now
+allowed to <function>Wait()</function>). With todays fast processors,
+there should be no reason to process audio in interrupt context anymore,
+except in very rare and extremly low-latency cases. &ahi7; can do it
+both, and it is the application programmer that decides which mode of
+operation will be used, not the hardware driver programmer.</para>
+
       <para>Some ahi; BOOPSI attributes return an array of values from
 OM_GET. In this case, you have to lock the object before quering for the
 attribute in question. When you have inspected the array and perhaps
