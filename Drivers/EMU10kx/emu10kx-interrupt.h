@@ -19,6 +19,8 @@
 
 #include <config.h>
 
+#include <devices/ahi.h>
+
 ULONG
 EMU10kxInterrupt( struct AHIAudioCtrlDrv* audioctrl );
 
