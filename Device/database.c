@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.7  1998/03/13 10:16:48  lcs
+* Ingen aning..
+*
 * Revision 4.6  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -221,20 +224,19 @@ NextAudioID( REG(d0, ULONG id),
     {
       while(node != NULL)
       {
-        if(id == GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags))
+        ULONG thisid;
+        
+        thisid = GetTagData(AHIDB_AudioID,AHI_INVALID_ID,node->ahidbn_Tags);
+        node = (struct AHI_AudioMode *) node->ahidbn_MinNode.mln_Succ;
+
+        if(thisid == id)
         {
           break;
         }
-        node = (struct AHI_AudioMode *) node->ahidbn_MinNode.mln_Succ;
-      }
-
-      if(node)
-      {
-        node = (struct AHI_AudioMode *) node->ahidbn_MinNode.mln_Succ;
       }
     }
 
-    if(node)
+    if(node && node->ahidbn_MinNode.mln_Succ)
     {
       nextid = GetTagData(AHIDB_AudioID, AHI_INVALID_ID, node->ahidbn_Tags);
     }
