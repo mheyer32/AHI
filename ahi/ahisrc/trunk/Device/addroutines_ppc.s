@@ -372,6 +372,8 @@ AddBytesMono:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceMono
 	b	7f
 
@@ -535,6 +537,8 @@ AddByteStereo:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceStereo
 	b	7f
 
@@ -658,6 +662,8 @@ AddBytesStereo:
 	cmpwi	cr0,r13,0
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
+	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
 	bne+	2f
 	bl	AddSilenceStereo
 	b	7f
@@ -940,6 +946,8 @@ AddWordsMono:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceMono
 	b	7f
 
@@ -1093,6 +1101,8 @@ AddWordStereo:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceStereo
 	b	7f
 
@@ -1214,6 +1224,8 @@ AddWordsStereo:
 	cmpwi	cr0,r13,0
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
+	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
 	bne+	2f
 	bl	AddSilenceStereo
 	b	7f
@@ -1489,6 +1501,8 @@ AddBytesMonoB:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceMonoB
 	b	7f
 
@@ -1652,6 +1666,8 @@ AddByteStereoB:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceStereoB
 	b	7f
 
@@ -1775,6 +1791,8 @@ AddBytesStereoB:
 	cmpwi	cr0,r13,0
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
+	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
 	bne+	2f
 	bl	AddSilenceStereoB
 	b	7f
@@ -2058,6 +2076,8 @@ AddWordsMonoB:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceMonoB
 	b	7f
 
@@ -2211,6 +2231,8 @@ AddWordStereoB:
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
 	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
+	bne+	2f
 	bl	AddSilenceStereoB
 	b	7f
 
@@ -2332,6 +2354,8 @@ AddWordsStereoB:
 	cmpwi	cr0,r13,0
 	bne+	1f
 	cmpwi	cr0,r4,0		# Test if volume == 0
+	bne+	2f
+	cmpwi	cr0,r5,0		# Test if volume == 0
 	bne+	2f
 	bl	AddSilenceStereoB
 	b	7f
