@@ -1,6 +1,6 @@
 #  $Id$
 #
-#  Makefile.in for the user and developer documentation
+#  Makefile.in for the drivers
 #
 
 #
@@ -26,13 +26,6 @@ VPATH		= @srcdir@
 HAVE_OPENPCI	= @HAVE_OPENPCI@
 
 #
-# Files
-########################################
-
-TARGETS		= 
-
-
-#
 # Targets
 ########################################
 
@@ -44,7 +37,7 @@ ifneq ($(strip $(HAVE_OPENPCI)),)
 SUBDIRS		+= EMU10kx
 endif
 
-all:		$(TARGETS)
+all:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
 install:
@@ -52,7 +45,7 @@ install:
 
 clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) $(TARGETS) *.bak *~ \#*\# core
+	$(RM) *.bak *~ \#*\# core
 
 distclean:	clean
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
@@ -61,7 +54,7 @@ distclean:	clean
 maintainer-clean: distclean
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
-bindist:	$(TARGETS)
+bindist:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 	$(INSTALL) --directory $(DRIVERDIR) 
 	for d in $(SUBDIRS) Paula Toccata Wavetools; do \
