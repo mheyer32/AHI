@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.9  1997/01/31 20:22:24  lcs
+* Enabled stereo samples
+*
 * Revision 1.8  1997/01/30 19:51:20  lcs
 * Removed code for unsigned samples
 *
@@ -498,8 +501,8 @@ const static UWORD type2snd[] =
 {
   SND8,             // AHIST_M8S  (0)
   SND16,            // AHIST_M16S (1)
-  AHI_NOSOUND,      // AHIST_S8S  (2)
-  AHI_NOSOUND,      // AHIST_S16S (3)
+  SND8S,            // AHIST_S8S  (2)
+  SND16S,           // AHIST_S16S (3)
   AHI_NOSOUND,      // AHIST_M8U  (4)
   AHI_NOSOUND,
   AHI_NOSOUND,
@@ -579,19 +582,19 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
       error = AHIE_UNKNOWN;
     }
 
+    // Address to sample offset and length in bytes to length in samples
+
+    ioreq->ahir_Std.io_Data = (APTR) ((ULONG) ioreq->ahir_Std.io_Data
+                              / AHI_SampleFrameSize(ioreq->ahir_Type));
+    ioreq->ahir_Std.io_Length /= AHI_SampleFrameSize(ioreq->ahir_Type);
+
     switch(ioreq->ahir_Type)
     {
       case AHIST_M8S:
-        break;
-      case AHIST_M16S:
-
-        // Address to sample offset and length in bytes to length in samples
-
-        ioreq->ahir_Std.io_Data = (APTR) ((ULONG) ioreq->ahir_Std.io_Data >> 1);
-        ioreq->ahir_Std.io_Length >>= 1;
-        break;
       case AHIST_S8S:
+      case AHIST_M16S:
       case AHIST_S16S:
+        break;
       case AHIST_M32S:
       case AHIST_S32S:
       default:

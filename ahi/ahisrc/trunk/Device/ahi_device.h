@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.7  1997/01/31 20:23:05  lcs
+* Enabled stereo samples
+*
 * Revision 1.6  1997/01/29 23:34:38  lcs
 * *** empty log message ***
 *
@@ -69,8 +72,10 @@ struct NSDeviceQueryResult
 #define AHI_UNITS	1	/* Normal units, excluding AHI_NO_UNIT */
 #define AHI_PRI		50	/* Priority for the device process */
 
-#define SND8  0
-#define SND16 1
+#define SND8  	0
+#define SND16 	1
+#define SND8S  	2
+#define SND16S 	3
 
 #define PLAYERFREQ	50	/* How often the PlayerFunc is called */
 
