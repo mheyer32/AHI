@@ -1005,6 +1005,7 @@ FillReadBuffer ( struct AHIRequest *ioreq,
 
     switch (ioreq->ahir_Type)
     {
+#ifdef mc68000
       case AHIST_M8S:
         RecM8S(length,ioreq->ahir_Frequency,
             iounit->RecordBuffer,
@@ -1041,6 +1042,7 @@ FillReadBuffer ( struct AHIRequest *ioreq,
             &ioreq->ahir_Std.io_Offset,
             &ioreq->ahir_Std.io_Data);
         break;
+#endif
       default:
         ioreq->ahir_Std.io_Error = AHIE_BADSAMPLETYPE;
         remove = TRUE;

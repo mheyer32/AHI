@@ -28,6 +28,8 @@
 
 #include <devices/ahi.h>
 
+#ifdef mc68000
+
 #define RecArgs REG(d0, ULONG size),    \
                 REG(d1, ULONG add),     \
                 REG(a0, APTR src),      \
@@ -40,5 +42,7 @@ void ASMCALL RecM16S( RecArgs );
 void ASMCALL RecS16S( RecArgs );
 void ASMCALL RecM32S( RecArgs );
 void ASMCALL RecS32S( RecArgs );
+
+#endif
 
 #endif /* ahi_devsupp_h */

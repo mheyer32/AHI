@@ -1,10 +1,10 @@
 /* $Id$
 * $Log$
-* Revision 5.0  2000/11/28 00:15:34  lcs
-* Bumped CVS revision to 5.0.
+* Revision 5.1  2000/12/11 20:08:37  lcs
+* Made it build in MorphOS.
 *
-* Revision 4.5  2000/08/03 20:12:57  lcs
-* *** empty log message ***
+* Revision 5.0  2000/11/28 00:15:17  lcs
+* Bumped CVS revision to 5.0.
 *
 * Revision 4.3  1999/09/22 20:11:06  lcs
 * Removed some "uninitialized variable" warnings.
@@ -21,7 +21,7 @@
 */
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "./ahi.cd".
+   from "ahi.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
