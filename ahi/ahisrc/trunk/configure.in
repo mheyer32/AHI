@@ -112,24 +112,21 @@ AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROGS( ROBODOC, RoboDoc robodoc )
 AC_CHECK_PROGS( FLEXCAT, FlexCat flexcat )
-AC_CHECK_PROGS( FD2INLINE, FD2Inline fd2inline )
-AC_CHECK_PROGS( FD2PRAGMA, FD2Pragma fd2pragma )
+AC_CHECK_PROGS( SFDC, SFDC sfdc )
 AC_CHECK_PROGS( LHA, lha )
 
-if test -z "$FD2INLINE"; then
- AC_MSG_ERROR( fd2inline missing. )
-fi
-
-if test -z "$FD2PRAGMA"; then
- AC_MSG_WARN( fd2pragma missing. )
-else
- if test -n "`$FD2PRAGMA --help | grep -- --mode`"; then
-  AC_SUBST( FD2PRAGMA_PRE, -- )
- fi
+if test -z "$SFDC"; then
+ AC_MSG_ERROR( sfdc missing. )
 fi
 
 if test -z "$LHA"; then
  AC_MSG_WARN( lha missing. )
+else
+ if test -n "`$LHA 2>&1 | grep 'o.*compression method'`"; then
+  LHA="$LHA -ao5"
+ else
+  LHA="$LHA -a -r"
+ fi
 fi
 
 if test -z "$ROBODOC"; then
@@ -145,8 +142,10 @@ AC_SEARCH_LIBS( floor, m,,	    AC_MSG_ERROR( "libm is missing." ) )
 
 dnl Checks for header files.
 
-AC_CHECK_HEADER( CompilerSpecific.h, , AC_MSG_ERROR( "CompilerSpecific.h is missing." )) 
+AC_CHECK_HEADER( CompilerSpecific.h, , AC_MSG_ERROR( "CompilerSpecific.h is missing." ))
+AC_CHECK_HEADERS( libraries/openpci.h, HAVE_OPENPCI=1, AC_MSG_WARN( "libraries/openpci.h is missing." ))
 
+AC_SUBST(HAVE_OPENPCI)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 

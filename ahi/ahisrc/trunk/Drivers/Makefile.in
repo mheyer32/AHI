@@ -23,6 +23,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 
 VPATH		= @srcdir@
 
+HAVE_OPENPCI	= @HAVE_OPENPCI@
 
 #
 # Files
@@ -37,7 +38,11 @@ TARGETS		=
 
 .PHONY:		all clean distclean maintainer-clean bindist
 
-SUBDIRS		= EMU10kx Filesave Void
+SUBDIRS		= Filesave Void
+
+ifneq ($(strip $(HAVE_OPENPCI)),)
+SUBDIRS		+= EMU10kx
+endif
 
 all:		$(TARGETS)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done

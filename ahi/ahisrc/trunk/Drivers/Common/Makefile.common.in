@@ -35,8 +35,7 @@ ASFLAGS		= @ASFLAGS@
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 ARFLAGS         = @ARFLAGS@
 
-FD2INLINE	= @FD2INLINE@
-FD2INLINE_TARGET= --target=${host}
+SFDC		= @SFDC@
 
 LIBS		= @LIBS@
 
@@ -115,44 +114,32 @@ $(MODEFILE):	$(MODEFILE).o
 $(MODEFILE).o:	MODEFILE.s $(MODEFILE).s
 	gasp  $^ | $(AS) $(ASFLAGS) -o $@
 
-gatestubs1.c:	$(top_srcdir)/Include/FD/ahi_sub_lib.fd \
-		$(top_srcdir)/Include/C/clib/ahi_sub_protos.h
-	$(FD2INLINE) --mode=gatestubs --gateprefix=gw --libprefix=_ \
-	             $(FD2INLINE_TARGET) \
-	             $^ -o $@
+gatestubs1.c:	$(top_srcdir)/Include/SFD/ahi_sub_lib.sfd
+	$(SFDC) --mode=gatestubs --gateprefix=gw --libprefix=_ --libarg=last \
+	        --target=$(host) $^ -o $@
 
-gatestubs1.h:	$(top_srcdir)/Include/FD/ahi_sub_lib.fd \
-		$(top_srcdir)/Include/C/clib/ahi_sub_protos.h
-	$(FD2INLINE) --mode=gateproto --gateprefix=gw --libprefix=_ \
-	             $(FD2INLINE_TARGET) \
-	             $^ -o $@
+gatestubs1.h:	$(top_srcdir)/Include/SFD/ahi_sub_lib.sfd
+	$(SFDC) --mode=gateproto --gateprefix=gw --libprefix=_ --libarg=last \
+	        --target=$(host) $^ -o $@
 
 gatestubs1.o:	gatestubs1.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)
 
-gatestubs2.c:	lib.fd lib_protos.h
-	$(FD2INLINE) --mode=gatestubs --gateprefix=gw --libprefix=_ \
-	             $(FD2INLINE_TARGET) \
-	             $^ -o $@
+gatestubs2.c:	lib.sfd
+	$(SFDC) --mode=gatestubs --gateprefix=gw --libprefix=_ --libarg=last \
+	        --target=$(host) $^ -o $@
 
-gatestubs2.h:	lib.fd lib_protos.h
-	$(FD2INLINE) --mode=gateproto --gateprefix=gw --libprefix=_ \
-	             $(FD2INLINE_TARGET) \
-	             $^ -o $@
+gatestubs2.h:	lib.sfd
+	$(SFDC) --mode=gateproto --gateprefix=gw --libprefix=_ --libarg=last \
+	        --target=$(host) $^ -o $@
 
-#camdinline.h:	camd_drv.fd camd_drv_protos.h
-#	$(FD2INLINE) --mode=new $(FD2INLINE_TARGET) \
-#			$^ -o $@
+camdstubs.c:	camd_drv.sfd
+	$(SFDC) --mode=gatestubs --gateprefix=gw --libprefix=_ --libarg=last \
+	        --target=$(host) $^ -o $@
 
-camdstubs.c:	camd_drv.fd camd_drv_protos.h
-	$(FD2INLINE) --mode=gatestubs --gateprefix=gw --libprefix=_ \
-	             $(FD2INLINE_TARGET) \
-	             $^ -o $@
-
-camdstubs.h:	camd_drv.fd camd_drv_protos.h
-	$(FD2INLINE) --mode=gateproto --gateprefix=gw --libprefix=_ \
-	             $(FD2INLINE_TARGET) \
-	             $^ -o $@
+camdstubs.h:	camd_drv.sfd
+	$(SFDC) --mode=gateproto --gateprefix=gw --libprefix=_ --libarg=last \
+	        --target=$(host) $^ -o $@
 
 camdstubs.o:	camdstubs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)

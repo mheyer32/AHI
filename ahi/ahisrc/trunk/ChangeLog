@@ -1,5 +1,13 @@
 2003-07-24  Martin Blom  <martin@blom.org>
 
+	* No separate SAS/C and Storm C files anymore. The proto and
+	pragma files work for all compilers now.
+
+	* The build process no longer uses fd2inline and fd2pragma. I
+	switched to SFD files and sfdc instead.
+
+	* emu10kx.audio: Don't build unless OpenPCI is found.
+
 	* ahi.device: More embarrassing bugs fixed: Due to a type in the
 	Makefile, the powerpc assembler optimized mixing routines were
 	never included!!
