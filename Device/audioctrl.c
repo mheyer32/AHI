@@ -30,13 +30,15 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 #include <proto/dos.h>
+#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
+#endif
 #include <proto/ahi_sub.h>
 #include <clib/alib_protos.h>
 
-#include <strings.h>
+#include <string.h>
 
 #include "ahi_def.h"
 #include "audioctrl.h"
@@ -493,6 +495,13 @@ _AHI_AllocAudioA( struct TagItem* tags,
   if(!AHIsubBase)
     goto error;
 
+#ifdef __AMIGAOS4__
+  if ((IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) == NULL)
+  {    
+       goto error;
+  }
+#endif
+
   // Never allow drivers that are newer than ahi.device.
   if(AHIsubBase->lib_Version > Version)
     goto error;
@@ -724,6 +733,11 @@ _AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
 //KPrintF("Called AHIsub_FreeAudio()\n");
       AHIsub_FreeAudio((struct AHIAudioCtrlDrv *) audioctrl);
 //KPrintF("Closed AHIsubbase\n");
+#ifdef __AMIGAOS4__
+      DropInterface((struct Interface *) IAHIsub);
+      IAHIsub = NULL;
+#endif
+      
       CloseLibrary(AHIsubBase);
     }
 
