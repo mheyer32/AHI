@@ -242,6 +242,9 @@ struct patch_manager {
 #define VOL_SURROUND_REAR_L	0x22
 #define VOL_SURROUND_REAR_R	0x23
 
+/* AHI_FRONT-to-center and AHI_FRONT-to-LFE GPRs */
+#define VOL_FRONT_CENTER	0x24
+#define VOL_FRONT_LFE		0x25
 
 /* Temporary GPRs */
 #define RES_JUNK		0x7f;
@@ -272,6 +275,9 @@ struct patch_manager {
 #define RES_FRONT_REAR_R	0xa1
 #define RES_SURROUND_REAR_L	0xa2
 #define RES_SURROUND_REAR_R	0xa3
+#define RES_FRONT_CENTER	0xa4
+#define RES_FRONT_LFE		0xa5
+#define RES_FRONT_MONO		0xa6
 
 #else
 

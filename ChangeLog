@@ -1,3 +1,13 @@
+2004-10-28  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.20.
+
+	* emu10kx.audio: Added front channel downmix to center and LFE
+	when playing mono or stereo sounds, just like the driver used to
+	do for Audigy cards before. This is disabled in multichannel mode.
+
+	* emu10kx.audio: Boosted AHI output by 12 dB (!).
+
 2004-10-27  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.51.
