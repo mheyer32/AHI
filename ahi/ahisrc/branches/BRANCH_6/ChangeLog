@@ -4,7 +4,8 @@
 
 	* emu10kx.audio: Added front channel downmix to center and LFE
 	when playing mono or stereo sounds, just like the driver used to
-	do for Audigy cards before. This is disabled in multichannel mode.
+	do for Audigy cards before. This is disabled in multichannel
+	mode. [Marcin 'Morgoth' Kurek]
 
 	* emu10kx.audio: Boosted AHI output by 12 dB (!).
 
