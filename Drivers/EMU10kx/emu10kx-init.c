@@ -72,6 +72,7 @@ DriverInit( struct DriverBase* ahisubbase )
 
   InitSemaphore( &EMU10kxBase->semaphore );
 
+  EMU10kxBase->flush_caches = pci_bus() & ( GrexA1200Bus | GrexA4000Bus );
 
   /*** Count cards ***********************************************************/
 
