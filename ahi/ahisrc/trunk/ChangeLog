@@ -1,3 +1,8 @@
+2004-02-14  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Applied a new batch of AmigaOS 4.x pathches from
+	Davy. Thanks!
+
 2004-02-09  Martin Blom  <martin@blom.org>
 
 	* Released filesave.audio 5.5.
