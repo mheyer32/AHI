@@ -350,7 +350,7 @@ SetFreq ( REG( d0, UWORD channel ),
     cd->cd_DelayedAdd     = cd->cd_NextAdd;
     cd->cd_DelayedFreqOK  = cd->cd_NextFreqOK;
 
-    // cd->cd_Samples is also calculated when it actually happens...
+    // cd->cd_Samples is also calculated when it actually happens¹...
 
     cd->cd_DelayedSamples = CalcSamples( cd->cd_DelayedAdd,
                                          cd->cd_DelayedType,
@@ -362,11 +362,18 @@ SetFreq ( REG( d0, UWORD channel ),
 
     if( ( flags & AHISF_NODELAY ) || 
         ( cd->cd_AntiClickCount == 0 ) ||
-         !cd->cd_FreqOK || !cd->cd_SoundOK )
+        !cd->cd_FreqOK || !cd->cd_SoundOK )
     {
       cd->cd_Add     = cd->cd_DelayedAdd;
       cd->cd_FreqOK  = cd->cd_DelayedFreqOK;
-      cd->cd_Samples = cd->cd_DelayedSamples;
+
+      // ¹) Unless we're not using any delay, in which case it's recalculated
+      //    here instead.
+
+      cd->cd_Samples = CalcSamples( cd->cd_Add,
+                                    cd->cd_Type,
+                                    cd->cd_LastOffset,
+                                    cd->cd_Offset );
 
       cd->cd_AntiClickCount = 0;
     }

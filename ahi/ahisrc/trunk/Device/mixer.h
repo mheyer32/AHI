@@ -26,9 +26,10 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
-#include "addroutines.h"
 
 #ifndef VERSION68K
+
+#include "addroutines.h"
 
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );

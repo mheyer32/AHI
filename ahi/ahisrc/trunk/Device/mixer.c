@@ -819,6 +819,7 @@ MixGeneric ( struct Hook *Hook,
           {
             cd->cd_TempStartPointL = cd->cd_StartPointL;
             cd->cd_TempStartPointR = cd->cd_StartPointR;
+
             processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
                                                          cd->cd_ScaleLeft,
                                                          cd->cd_ScaleRight,
@@ -830,7 +831,6 @@ MixGeneric ( struct Hook *Hook,
                                                          cd->cd_Add,
                                                         &cd->cd_Offset, 
                                                          TRUE );
-//            CallDebug( audioctrl, processed );
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
           }
@@ -844,7 +844,7 @@ MixGeneric ( struct Hook *Hook,
           {
             // We either found a zero-crossing or looked as far as
             // we were allowed to.
-
+            
             // Note that the sample end was NOT reached! If it was,
             // cd_Samples will be zero and the second cd_AddRoutine
             // call below will have no effect, and the cd_Next#?
@@ -926,7 +926,7 @@ MixGeneric ( struct Hook *Hook,
                                                         &dstptr,
                                                          cd->cd_FirstOffsetI,
                                                          cd->cd_Add,
-                                                        &cd->cd_Offset, 
+                                                        &cd->cd_Offset,
                                                          FALSE );
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
