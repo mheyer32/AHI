@@ -324,6 +324,92 @@ ModeN:
 .e
 	CNOP	0,2
 
+*** AUDM
+ModeO:
+	dc.l	ID_AUDM
+	dc.l	.e-.s
+.s
+	dc.l	AHIDB_AudioID,		$00010010
+
+	dc.l	AHIDB_FileSaveFormat,	FORMAT_WAVE
+
+	dc.l	AHIDB_Volume,		TRUE
+	dc.l	AHIDB_Panning,		TRUE
+	dc.l	AHIDB_Stereo,		TRUE
+	dc.l	AHIDB_HiFi,		TRUE
+	dc.l	AHIDB_MultTable,	FALSE
+
+	dc.l	AHIDB_Name,		.name-.s
+	dc.l	TAG_DONE
+.name	dc.b	"Filesave:HiFi 16 bit stereo++, WAV",0
+.e
+	CNOP	0,2
+
+
+*** AUDM
+ModeP:
+	dc.l	ID_AUDM
+	dc.l	.e-.s
+.s
+	dc.l	AHIDB_AudioID,		$00010011
+
+	dc.l	AHIDB_FileSaveFormat,	FORMAT_WAVE
+
+	dc.l	AHIDB_Volume,		TRUE
+	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Stereo,		FALSE
+	dc.l	AHIDB_HiFi,		TRUE
+	dc.l	AHIDB_MultTable,	FALSE
+
+	dc.l	AHIDB_Name,		.name-.s
+	dc.l	TAG_DONE
+.name	dc.b	"Filesave:HiFi 16 bit mono, WAV",0
+.e
+	CNOP	0,2
+
+*** AUDM
+ModeQ:
+	dc.l	ID_AUDM
+	dc.l	.e-.s
+.s
+	dc.l	AHIDB_AudioID,		$00010012
+
+	dc.l	AHIDB_FileSaveFormat,	FORMAT_WAVE
+
+	dc.l	AHIDB_Volume,		TRUE
+	dc.l	AHIDB_Panning,		TRUE
+	dc.l	AHIDB_Stereo,		TRUE
+	dc.l	AHIDB_HiFi,		FALSE
+	dc.l	AHIDB_MultTable,	FALSE
+
+	dc.l	AHIDB_Name,		.name-.s
+	dc.l	TAG_DONE
+.name	dc.b	"Filesave:16 bit stereo++, WAV",0
+.e
+	CNOP	0,2
+
+
+*** AUDM
+ModeR:
+	dc.l	ID_AUDM
+	dc.l	.e-.s
+.s
+	dc.l	AHIDB_AudioID,		$00010013
+
+	dc.l	AHIDB_FileSaveFormat,	FORMAT_WAVE
+
+	dc.l	AHIDB_Volume,		TRUE
+	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Stereo,		FALSE
+	dc.l	AHIDB_HiFi,		FALSE
+	dc.l	AHIDB_MultTable,	FALSE
+
+	dc.l	AHIDB_Name,		.name-.s
+	dc.l	TAG_DONE
+.name	dc.b	"Filesave:16 bit mono, WAV",0
+.e
+	CNOP	0,2
+
 E:
 	CNOP	0,2
 END:

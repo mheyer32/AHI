@@ -34,6 +34,7 @@ struct filesave {
 #define FORMAT_AIFF		1
 #define FORMAT_AIFC		2
 #define FORMAT_S16		3
+#define FORMAT_WAVE		4
 
 /* AIFF, AIFC and 8SVX defs
    AIFF and AIFC defines was taken from Olaf `Olsen' Barthel's AIFF DataType. */
@@ -91,3 +92,23 @@ typedef struct {
 } FormatVersionHeader;
 
 #define AIFCVersion1 0xA2805140 		// "AIFC" file format version #1
+
+
+/* WAV file format */
+
+#define ID_RIFF MAKE_ID('R','I','F','F')
+#define ID_WAVE MAKE_ID('W','A','V','E')
+#define ID_fmt  MAKE_ID('f','m','t',' ')
+#define ID_data MAKE_ID('d','a','t','a')
+
+
+typedef struct {
+	unsigned short	formatTag;
+	unsigned short	numChannels;
+	unsigned long	samplesPerSec;
+	unsigned long	avgBytesPerSec;
+	unsigned short	blockAlign;
+	unsigned short	bitsPerSample;
+} FormatChunk;
+
+#define WAVE_PCM 1
