@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.20  1997/03/27 12:16:27  lcs
+* Major bug in the device interface code fixed.
+*
 * Revision 1.19  1997/03/20 02:07:02  lcs
 * Weiﬂ nicht?
 *
@@ -517,6 +520,7 @@ static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase )
           for(i = 0 ; i < iounit->Channels; i++)
           {
             v->NextOffset = FREE;
+            v++;
           }
           
           if(replyport = CreateMsgPort())

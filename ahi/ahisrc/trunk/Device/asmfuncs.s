@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.24  1997/03/27 12:16:27  lcs
+* Major bug in the device interface code fixed.
+*
 * Revision 1.23  1997/03/26 00:14:32  lcs
 * Echo is finally working!
 *
@@ -856,9 +859,14 @@ SetSound_nodebug
 *
 *           If the user has enabled "Fast Echo", AHI may take several short-
 *           cuts to increase the performance. This could include rounding the
-*           parameters to a power of two, or even to the extremes. Without
-*           "Fast Echo", this effect will suck some major CPU cycles on most
-*           sound hardware. (V3)
+*           parameters to a power of two, or even to the extremes. 
+*
+*           If you set ahiede_Mix to 0x10000 and ahiede_Cross to 0x0, much
+*           faster mixing rotines will be used, and "Fast Echo" will improve
+*           that even more.
+*
+*           Otherwise, even with "Fast Echo" turned on, this effect will 
+*           probably suck some major CPU cycles on most sound hardware. (V3)
 *
 *       AHIET_CHANNELINFO - Effect is a struct AHIEffChannelInfo, where
 *           ahieci_Func is pointing to a hook that will be called with the

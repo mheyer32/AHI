@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.4  1997/03/27 12:16:27  lcs
+* Major bug in the device interface code fixed.
+*
 * Revision 1.3  1997/03/26 00:14:32  lcs
 * Echo is finally working!
 *
@@ -128,59 +131,59 @@ __asm BOOL update_DSPEcho(
     switch(mode)
     {
       case 0:
-        KPrintF("do_DSPEchoMono16\n");
+//        KPrintF("do_DSPEchoMono16\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16;
         break;
       case 1:
-        KPrintF("do_DSPEchoStereo16\n");
+//        KPrintF("do_DSPEchoStereo16\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16;
         break;
       case 2:
-        KPrintF("do_DSPEchoMono32\n");
+//        KPrintF("do_DSPEchoMono32\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
         break;
       case 3:
-        KPrintF("do_DSPEchoStereo32\n");
+//        KPrintF("do_DSPEchoStereo32\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
       case 4:
-        KPrintF("do_DSPEchoMono16NCFM\n");
+//        KPrintF("do_DSPEchoMono16NCFM\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16NCFM;
         break;
       case 5:
-        KPrintF("do_DSPEchoStereo16NCFM\n");
+//        KPrintF("do_DSPEchoStereo16NCFM\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16NCFM;
         break;
       case 6:
-        KPrintF("do_DSPEchoMono32\n");
+//        KPrintF("do_DSPEchoMono32\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
         break;
       case 7:
-        KPrintF("do_DSPEchoStereo32\n");
+//        KPrintF("do_DSPEchoStereo32\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
       case 8:
-        KPrintF("do_DSPEchoMono16Fast\n");
+//        KPrintF("do_DSPEchoMono16Fast\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16Fast;
         break;
       case 9:
-        KPrintF("do_DSPEchoStereo16Fast\n");
+//        KPrintF("do_DSPEchoStereo16Fast\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16Fast;
         break;
       case 10:
-        KPrintF("do_DSPEchoMono32\n");
+//        KPrintF("do_DSPEchoMono32\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono32;
         break;
       case 11:
-        KPrintF("do_DSPEchoStereo32\n");
+//        KPrintF("do_DSPEchoStereo32\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo32;
         break;
       case 12:
-        KPrintF("do_DSPEchoMono16NCFMFast\n");
+//        KPrintF("do_DSPEchoMono16NCFMFast\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoMono16NCFMFast;
         break;
       case 13:
-        KPrintF("do_DSPEchoStereo16NCFMFast\n");
+//        KPrintF("do_DSPEchoStereo16NCFMFast\n");
         es->ahiecho_Code   = (void (*)(void)) do_DSPEchoStereo16NCFMFast;
         break;
     }
