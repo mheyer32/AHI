@@ -22,7 +22,7 @@ dnl Checks for programs.
 AC_PROG_INSTALL
 AC_PROG_CC
 AC_CHECK_PROG( RM, rm, rm )
-
+AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
 
 dnl Checks for libraries.
 
