@@ -1,3 +1,7 @@
+2001-12-22  Martin Blom  <martin@blom.org>
+
+	* Added a note about AHIA_PlayerFunc in the autodocs.
+
 2001-12-21  Martin Blom  <martin@blom.org>
 
 	* Released AHI preferences 5.3.
