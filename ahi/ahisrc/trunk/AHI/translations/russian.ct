@@ -1,26 +1,11 @@
-## version $VER: ahiprefs.catalog 4.5 (3.8.98) © Computer Bug (Ami1251)
+## version $VER: ahiprefs.catalog 4.6 (29.11.2000)
 ## language russian
 ## codeset 0
 ;
-## chunk AUTH Translated by Michael Malyshev <cbug@cch.pmc.ru>
+## chunk AUTH Translated by Alex Plotnicov <wcat@mail.ru> and Michael Malyshev <cbug@cch.pmc.ru>
 ;
+; The .ct file is generated from
 ; $Id$
-; $Log$
-; Revision 5.0  2000/11/28 00:13:30  lcs
-; Bumped CVS revision to 5.0.
-;
-; Revision 1.4  1999/08/29 23:44:09  lcs
-; Added support for ahigp_AntiClickTime.
-;
-; Revision 4.5  1997/04/27 16:16:06  lcs
-; Added "Mastervolume with(out) clipping".
-;
-; Revision 4.4  1997/04/23 21:08:31  lcs
-; Removed (Disabled)
-;
-; Revision 4.2  1997/04/07 01:36:51  lcs
-; Localized it, bug fixes
-;
 ;
 ; *** Menus ***
 ;
@@ -37,7 +22,7 @@ A\0Сохранить как...
 ;A\000Save As...
 ;
 msgItemAbout
-?\0О...
+?\0О программе...
 ;?\000About...
 ;
 msgItemQuit
@@ -45,7 +30,7 @@ Q\0Выход
 ;Q\000Quit
 ;
 msgMenuEdit
-\0Изменять
+\0Редактор
 ;\000Edit
 ;
 msgItemDefaults
@@ -73,11 +58,11 @@ msgMenuHelp
 ;\000Help
 ;
 msgItemHelp
-Помощь\0Помощь...
+Help\0Помощь...
 ;Help\000Help...
 ;
 msgItemUsersGuide
-H\0AHI User's guide...
+H\0Справка по AHI...
 ;H\000AHI User's guide...
 ;
 msgItemConceptIndex
@@ -107,12 +92,7 @@ msgUnitMusic
 ; *** Properties box ***
 ;
 msgProperties
-Режим ID\n\
-Запись\n\
-Автор\n\
-Copyright\n\
-Драйвер\n\
-Версия
+Режим ID\nЗапись\nАвтор\nАвторство\nДрайвер\nВерсия
 ;Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion
 ;
 msgPropRecordFull
@@ -120,7 +100,7 @@ msgPropRecordFull
 ;Full duplex
 ;
 msgPropRecordHalf
-Половина дуплекса
+Полудуплекс
 ;Half duplex
 ;
 msgPropRecordNone
@@ -134,27 +114,27 @@ msgOptions
 ;Options
 ;
 msgOptFrequency
-Частота
+_Частота
 ;_Frequency
 ;
 msgOptChannels
-Каналы
+_Каналы
 ;C_hannels
 ;
 msgOptNoChannels
-\0
+
 ;
 ;
 msgOptVolume
-Громкость
+_Громкость
 ;_Volume
 ;
 msgOptMonitor
-Монитор
+_Монитор
 ;_Monitor
 ;
 msgOptGain
-Доступ
+_Усиление
 ;_Gain
 ;
 msgOptMuted
@@ -162,7 +142,7 @@ msgOptMuted
 ;Muted
 ;
 msgOptInput
-Ввод
+_Ввод
 ;_Input
 ;
 msgOptNoInputs
@@ -170,7 +150,7 @@ msgOptNoInputs
 ;No inputs
 ;
 msgOptOutput
-Вывод
+В_ывод
 ;_Output
 ;
 msgOptNoOutputs
@@ -181,23 +161,23 @@ msgOptNoOutputs
 ; *** Global Options ***
 ;
 msgGlobalOptions
-Основные опции
+Основные установки
 ;Global options
 ;
 msgGlobOptDebugLevel
-Отладочный режим
+У_ровень отладки:
 ;_Debug level
 ;
 msgGlobOptEcho
-Эхо
+_Эхо
 ;_Echo
 ;
 msgGlobOptSurround
-Эввект окружения в "Быстрых" режимах
+Э_ффект присутствия режимов \"Fast\":
 ;Surround in "_Fast" modes
 ;
 msgGlobOptCPULimit
-Лимит использование процессора
+Ограничение _загрузки CPU:
 ;CPU usage _limit
 ;
 ; *** Debug levels ***
@@ -249,15 +229,15 @@ _Сохранить
 ;_Save
 ;
 msgButtonUse
-_Принять
+Пр_инять
 ;_Use
 ;
 msgButtonCancel
-_Отменить
+_Отмена
 ;_Cancel
 ;
 msgButtonOK
-OK
+О'кей
 ;OK
 ;
 ; *** Texts ***
@@ -268,42 +248,40 @@ msgTextProgramName
 ;
 ;You can use something like "%s%s\nCopyright ©%s\nEnglish translation by Your Name" here...
 msgTextCopyright
-%s%s\n\
-Copyright ©%s
+%s%s\nАвторство (c) %s\nРусский перевод: А. Плотников, О. Сергеев
 ;%s%s\nCopyright ©%s
 ;
 msgTextNoWindow
-Невозможно открыть окно.
+Не открыть окно.
 ;Unable to open window.
 ;
 msgTextNoFileRequester
-Не доступен файловый риквестер.
+Недоступен запросник файлов.
 ;Unable to allocate file requester.
 ;
 msgTextNoFind
-Невозможно найти `%s'!
+Не найти \"%s\"!
 ;Unable to find `%s'!
 ;
 msgTextNoOpen
-Невозможно открыть `%sґ версии %ld.
+Не открыть \"%s\" версии %ld.
 ;Unable to open `%sґ version %ld.
 ;
 ; *** Additions
 ;
 msgGlobOptMasterVol
-Громкость
+_Громкость
 ;_Master volume
 ;
 msgMVNoClip
-Без отсекания
+Без среза
 ;Without clipping
 ;
 msgMVClip
-С отсеканием
+Со срезом
 ;With clipping
 ;
 msgGlobOptACTime
-
-;Anti-click time (ms)
-; ***NEW***
+Защитное время блокировки щелчков
+;Default anti-click time
 ;
