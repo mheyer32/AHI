@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.13  1997/02/14 18:43:31  lcs
+* AHIR_DoDefaultMode added
+*
 * Revision 1.12  1997/02/12 15:32:45  lcs
 * Moved each autodoc header to the file where the function is
 *
@@ -76,16 +79,18 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt * );
 #define MY_IDCMPS (LISTVIEWIDCMP|SLIDERIDCMP|BUTTONIDCMP|IDCMP_SIZEVERIFY|IDCMP_NEWSIZE|IDCMP_REFRESHWINDOW|IDCMP_CLOSEWINDOW|IDCMP_MENUPICK|IDCMP_VANILLAKEY|IDCMP_RAWKEY)
 #define MY_INFOIDCMPS (LISTVIEWIDCMP|IDCMP_REFRESHWINDOW|IDCMP_CLOSEWINDOW)
 
-#define haveIDCMP 0x0001
-#define lockwin   0x0002
-#define freqgad   0x0004
-#define ownIDCMP  0x0008
+#define haveIDCMP   0x0001
+#define lockwin     0x0002
+#define freqgad     0x0004
+#define ownIDCMP    0x0008
+#define defaultmode 0x0010
 
 static struct TagItem reqboolmap[] =
 {
-  {AHIR_PrivateIDCMP, haveIDCMP},
-  {AHIR_SleepWindow,  lockwin},
-  {AHIR_DoMixFreq,    freqgad},
+  {AHIR_PrivateIDCMP,   haveIDCMP},
+  {AHIR_SleepWindow,    lockwin},
+  {AHIR_DoMixFreq,      freqgad},
+  {AHIR_DoDefaultMode,  defaultmode},
   {TAG_DONE, }
 };
 
@@ -148,7 +153,6 @@ struct AHIAudioModeRequesterExt
   struct MinList                InfoList;
   struct Menu                  *Menu;
   struct Catalog               *Catalog;
-
   struct Attrnode               AttrNodes[ATTRNODES];
 };
 
@@ -1083,6 +1087,15 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 *       AHIR_DoMixFreq (BOOL) - Set this tag to TRUE to cause the requester
 *           to display the frequency slider gadget. Default is FALSE.
 *
+*       AHIR_DoDefaultMode (BOOL) - Set this tag to TRUE to let the user
+*           select the mode she has set in the preferences program. If she
+*           selects this mode,  ahiam_AudioID will be AHI_DEFAULT_ID and
+*           ahiam_MixFreq will be AHI_DEFAULT_FREQ. Note that if you filter
+*           the mode list (see below), you must also check the mode (with
+*           AHI_BestAudioIDA()) before you use it since the user may change 
+*           the meaning of AHI_DEFAULT_MODE anytime, without your knowledge.
+*           Default is FALSE. (V3)
+*
 *       AHIR_FilterFunc (struct Hook *) - A function to call for each mode
 *           encountered. If the function returns TRUE, the mode is included
 *           in the file list, otherwise it is rejected and not displayed. The
@@ -1202,7 +1215,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
 
 // Add the users prefered mode
 
-  if(AHIBase->ahib_AudioMode != AHI_INVALID_ID) do
+  if((req->Flags & defaultmode) && (AHIBase->ahib_AudioMode != AHI_INVALID_ID)) do
   {
     if(req->FilterTags)
       if(!TestAudioID(AHIBase->ahib_AudioMode,req->FilterTags))
