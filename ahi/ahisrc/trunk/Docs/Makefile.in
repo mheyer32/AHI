@@ -59,8 +59,10 @@ maintainer-clean: distclean
 
 install:	$(TARGETS)
 	$(INSTALL) --directory $(usrdocdir) $(devdocdir)
-	$(INSTALL_DATA) ahidev.readme $(devdir)
-	$(INSTALL_DATA) ahiusr.readme $(usrdir)
+	$(INSTALL_DATA) ahidev.readme $(prefix)
+	$(INSTALL_DATA) ahidev.readme.info $(prefix)
+	$(INSTALL_DATA) ahiusr.readme $(prefix)
+	$(INSTALL_DATA) ahiusr.readme.info $(prefix)
 	for i in ahidev.guide ahidev.dvi ahidev.ps ahidev.html; do \
 	  $(INSTALL_DATA) $$i $(devdocdir); \
 	done

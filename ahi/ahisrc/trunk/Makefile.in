@@ -12,8 +12,10 @@
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 prefix		= @prefix@
-exec_prefix	= @exec_prefix@
-bindir		= @bindir@
+catdir		= ${prefix}/User/Catalogs
+
+INSTALL		= @INSTALL@
+INSTALL_DATA	= @INSTALL_DATA@
 
 CPPFLAGS	= @CPPFLAGS@
 CFLAGS		= @CFLAGS@
@@ -49,8 +51,10 @@ maintainer-clean:
 	      stamp-h stamp-h.in Makefile configure config.h.in
 
 install:
+	$(INSTALL) --directory $(catdir)
+	$(INSTALL_DATA) README.ATO $(catdir)
+	$(INSTALL_DATA) README.TRANSLATIONS $(catdir)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-
 
 revup:
 	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
