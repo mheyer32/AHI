@@ -53,6 +53,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.17  1998/10/25 15:38:30  lcs
+Added note about that paula.audio cannot behave exactly like filesave.audio.
+
 Revision 4.16  1998/10/25 13:31:50  lcs
 Added info about the paula.audio AHIpaulaFakeMixFreq variable.
 
@@ -934,10 +937,13 @@ will report the nearest possible mixing frequency that the Paula sound chip
 can use.
 
 Why would anyone want this, you may ask. Well, by setting the variable
-to @samp{1}, you will make @code{paula.audio} behave exactly like 
+to @samp{1}, you will make @code{paula.audio} behave more like 
 @code{filesave.audio}, which can be important if you are making music that
 you will later render and put on a CD, for example. Be warned, however, that
 setting this variable to @samp{1} can make the sound produced sound false!
+And please understand that @code{paula.audio} can never behave @emph{exactly} like
+@code{filesave.audio}, since Paula is unable to play an odd number of samples.
+
 
 @cindex AHIpaulaBufferLength variable
 @cindex MC68060 CPU
