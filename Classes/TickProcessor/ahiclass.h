@@ -1,5 +1,5 @@
-#ifndef AHI_Classes_MyProcessor_ahiclass_h
-#define AHI_Classes_MyProcessor_ahiclass_h
+#ifndef AHI_Classes_TickProcessor_ahiclass_h
+#define AHI_Classes_TickProcessor_ahiclass_h
 
 #include <classes/ahi_types.h>
 #include <exec/lists.h>
@@ -15,4 +15,4 @@ struct AHIClassData {
     Object* buffer;
 };
 
-#endif /* AHI_Classes_MyProcessor_ahiclass_h */
+#endif /* AHI_Classes_TickProcessor_ahiclass_h */

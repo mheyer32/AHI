@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <classes/ahi/processor/adder.h>
 
 #include <clib/alib_protos.h>

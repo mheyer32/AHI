@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <classes/ahi/processor/splitter.h>
 
 #include <clib/alib_protos.h>

@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <classes/ahi/buffer.h>
 #include <classes/ahi/lfo.h>
 #include <classes/ahi/processor/gain.h>
@@ -9,6 +11,7 @@
 
 #include <math.h>
 #include <stdio.h>
+#include <sys/time.h>
 
 #include <clib/alib_protos.h>
 #include <proto/ahi.h>
@@ -22,7 +25,7 @@ STRPTR ClassName = "test";
 struct Library* AHIBase;
 
 static int buffer_type = AHIST_F2;
-static int buffer_len  = 48000/32;
+static int buffer_len  = 48000/100;
 
 static struct ClassLibrary* libs[32];
 static int lib_count = 0;
@@ -113,25 +116,47 @@ execute(Object* proc, int seconds) {
     AHIBase = (struct Library*) ahirequest.ahir_Std.io_Device;
 
     {
+      struct timeval tv_start;
+      struct timeval tv_end;
+      UQUAD l_start;
+      UQUAD l_end;
+      ULONG msec;
+      ULONG hz;
       int i;
+      int j;
       Object* b = NULL;
 
       GetAttr(AHIA_Processor_Buffer, proc, (ULONG*) &b);
 
+      Printf("Start!\n");
+      gettimeofday(&tv_start, NULL);
+
       SetAttrs(proc, AHIA_Processor_Busy, TRUE, TAG_DONE);
       check_err(proc);
 
-      for (i = 0; i < 32; ++i) {
+      for (i = 0; i < 1000; ++i) {
 	// Set Timestamp
-	SetAttrs(b, AHIA_Buffer_TimestampLow, i * buffer_len, TAG_DONE);
+	SetAttrs(b, AHIA_Buffer_TimestampLow, j * buffer_len, TAG_DONE);
 	
-	DoMethod(proc, AHIM_Processor_Prepare, 0, 0, i * buffer_len);
-	DoMethod(proc, AHIM_Processor_Process, 0, 0, i * buffer_len);
-	check_err(proc);
+	for (j = 0; j < 100; ++j) {
+	  DoMethod(proc, AHIM_Processor_Prepare, 0, 0, j * buffer_len);
+	  DoMethod(proc, AHIM_Processor_Process, 0, 0, j * buffer_len);
+	}
       }
 
-      SetAttrs(proc, AHIA_Processor_Busy, FALSE, TAG_DONE);
       check_err(proc);
+      SetAttrs(proc, AHIA_Processor_Busy, FALSE, TAG_DONE);
+
+      gettimeofday(&tv_end, NULL);
+      check_err(proc);
+
+      l_start = tv_start.tv_sec * 1e6 + tv_start.tv_usec;
+      l_end = tv_end.tv_sec * 1e6 + tv_end.tv_usec;
+      msec = (l_end - l_start) / 1000 / i;
+      hz = 1e6 * i / (l_end - l_start);
+      Printf("i=%ld; j=%ld\n", i, j);
+      Printf("%ld iterations took %ld ms (%ld Hz)\n", j, msec, hz);
+	     
     }
     
     CloseDevice((struct IORequest*) &ahirequest);
