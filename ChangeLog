@@ -1,5 +1,8 @@
 2004-06-04  Martin Blom  <martin@blom.org>
 
+	* Removed BGUI and ClassAct preference support (for now at least,
+	ReAction support might be re-added later).
+
 	* Removed WarpUp support.
 
 	* Forked off BRANCH_6.
