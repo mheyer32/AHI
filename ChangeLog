@@ -1,5 +1,10 @@
 2001-12-14  Martin Blom  <martin@blom.org>
 
+	* AHI: It's now possible to test the selected audio mode by
+	pressing the "Play a test sound" button.
+
+2001-12-14  Martin Blom  <martin@blom.org>
+
 	* Released ahi.device 5.19.
 	
 	* When adding an audio mode file, ahi.device now verifies that the
