@@ -14,10 +14,8 @@
 
 void
 ReqA( const char*           text,
-      APTR                  args )
-{
-  struct EasyStruct es = 
-  {
+      APTR                  args ) {
+  struct EasyStruct es =  {
     sizeof (struct EasyStruct),
     0,
     (STRPTR) ClassName,
@@ -39,8 +37,7 @@ ReqA( const char*           text,
 AROS_UFH2( void,
 	   rawputchar_m68k,
 	   AROS_UFHA( UBYTE,            c,       D0 ),
-	   AROS_UFHA( struct ExecBase*, sysbase, A3 ) )
-{
+	   AROS_UFHA( struct ExecBase*, sysbase, A3 ) ) {
   AROS_USERFUNC_INIT
   __RawPutChar_WB( sysbase, c );
   AROS_USERFUNC_EXIT  
@@ -48,8 +45,7 @@ AROS_UFH2( void,
 
 #else
 
-static UWORD rawputchar_m68k[] = 
-{
+static UWORD rawputchar_m68k[] = {
   0x2C4B,             // MOVEA.L A3,A6
   0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
   0x4E75              // RTS
@@ -59,8 +55,7 @@ static UWORD rawputchar_m68k[] =
 
 void
 MyKPrintFArgs( const char*           fmt,
-	       APTR                  args )
-{
+	       APTR                  args ) {
   RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
 }
 
@@ -73,8 +68,7 @@ MyKPrintFArgs( const char*           fmt,
 AROS_UFH2( void,
 	   copychar_m68k,
 	   AROS_UFHA( UBYTE,  c,      D0 ),
-	   AROS_UFHA( UBYTE** buffer, A3 ) )
-{
+	   AROS_UFHA( UBYTE** buffer, A3 ) ) {
   AROS_USERFUNC_INIT
   *(*buffer++) = c;
   AROS_USERFUNC_EXIT  
@@ -82,8 +76,7 @@ AROS_UFH2( void,
 
 #else
 
-static UWORD copychar_m68k[] = 
-{
+static UWORD copychar_m68k[] = {
   0x2053,             //  MOVEA.L     (A3),A0
   0x10C0,             //  MOVE.B      D0,(A0)+
   0x2688,             //  MOVE.L      A0,(A3)
@@ -95,7 +88,6 @@ static UWORD copychar_m68k[] =
 void
 MySPrintFArgs( char*       buffer,
 	       const char* fmt,
-	       APTR        args )
-{
+	       APTR        args ) {
   RawDoFmt( fmt, args, (void (*)()) copychar_m68k, &buffer );
 }
