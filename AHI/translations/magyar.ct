@@ -3,6 +3,8 @@
 ## codeset 0
 ;
 ## chunk AUTH Dósa Márton (dm_@freemail.hu)
+;#language english
+;#version 4
 ;
 ;    AHI - Hardware independent audio subsystem
 ;    Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
@@ -332,17 +334,11 @@ msgFreqFmt
 
 ; %ld Hz
 ;
-; ***NEW***
-;
 msgChanFmt
 
 ; %ld
 ;
-; ***NEW***
-;
 msgVolFmt
 
 ; %+4.1f dB
-;
-; ***NEW***
 ;

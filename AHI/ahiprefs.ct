@@ -1,8 +1,10 @@
-## version $VER: ahiprefs.catalog 4.5 (dd.mm.yy)
-## language xxx
+## version $VER: <name>.ct 4.<rev> (12.01.05)
+## language nolanguage
 ## codeset 0
 ;
 ## chunk AUTH Translated by Your Name <you@tellus.universe>
+;#language english
+;#version 4
 ;
 ;    AHI - Hardware independent audio subsystem
 ;    Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
