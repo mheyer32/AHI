@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.12  1997/10/14 17:37:22  lcs
+* Moved the note about SoundFunc() from AHI_LoadSound() to AHI_AllocAudio().
+*
 * Revision 4.11  1997/10/14 17:06:41  lcs
 * Fixed an error in the AHI_LoadSound() autodocs.
 *
@@ -561,6 +564,9 @@ static __asm __interrupt void Sampler(
 *   EXAMPLE
 *
 *   NOTES
+*       SoundFunc will be called in the same manner as Paula interrupts
+*       occur; when the device has updated its internal variables and can
+*       accept new commands.
 *
 *   BUGS
 *
@@ -1693,10 +1699,6 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *       There is no need to place a sample array in Chip memory, but it
 *       MUST NOT be swapped out! Allocate your sample memory with the
 *       MEMF_PUBLIC flag set. 
-*
-*       SoundFunc will be called in the same manner as Paula interrupts
-*       occur; when the device has updated its internal variables and can
-*       accept new commands.
 *
 *   BUGS
 *       AHIST_INPUT does not fully work yet.
