@@ -81,6 +81,7 @@ AC_CHECK_TOOL( CC, gcc, : )
 AC_CHECK_TOOL( AS, as, : ) 
 AC_CHECK_TOOL( AR, ar, : )
 AC_CHECK_TOOL( RANLIB, ranlib, : )
+AC_CHECK_TOOL( STRIP, strip, : )
 
 AC_PROG_INSTALL
 #AC_PROG_CC
