@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.18  1997/03/15 09:51:52  lcs
+* Dynamic sample loading in the device: No more alignment restrictions.
+*
 * Revision 1.17  1997/02/18 22:26:49  lcs
 * Faster mixing routines for 16 bit samples when using tables.
 *
@@ -1488,6 +1491,16 @@ _InitMixroutine:
 	call	AllocVec
 	move.l	d0,ahiac_SoundDatas(a2)
 	beq	.error
+
+*** Update the SoundData structure
+	move.l	d0,a0
+	move.w	ahiac_Sounds(a2),d0
+	subq.w	#1,d0
+.updateSDloop
+	move.l	#AHIST_NOTYPE,sd_Type(a0)
+	add.w	#AHISoundData_SIZEOF,a0
+	dbf	d0,.updateSDloop
+
 	moveq	#TRUE,d0
 .exit	
 	popm	d1-a6

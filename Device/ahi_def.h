@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.10  1997/03/15 09:51:52  lcs
+* Dynamic sample loading in the device: No more alignment restrictions.
+*
 * Revision 1.9  1997/03/13 00:19:43  lcs
 * Up to 4 device units are now available.
 *
@@ -23,6 +26,9 @@
 * Initial revision
 *
 */
+
+#ifndef AHI_DEF_H
+#define AHI_DEF_H
 
 /*** Debug stuff ***/
 
@@ -139,3 +145,5 @@ struct AHIPrivAudioCtrl
 #define AHIACF_NOTIMING	(1L<<30)	/* private ahiac_Flags flag */
 #define AHIACB_POSTPROC 29		/* private ahiac_Flags flag */
 #define AHIACF_POSTPROC	(1L<<29)	/* private ahiac_Flags flag */
+
+#endif

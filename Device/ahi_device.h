@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.9  1997/03/15 09:51:52  lcs
+* Dynamic sample loading in the device: No more alignment restrictions.
+*
 * Revision 1.8  1997/03/13 00:19:43  lcs
 * Up to 4 device units are now available.
 *
@@ -71,11 +74,6 @@ struct NSDeviceQueryResult
 
 #define AHI_PRI		50	/* Priority for the device process */
 
-#define SND8  	0
-#define SND16 	1
-#define SND8S  	2
-#define SND16S 	3
-
 #define PLAYERFREQ	50	/* How often the PlayerFunc is called */
 
 #define AHICMD_END	CMD_NONSTD
@@ -109,9 +107,9 @@ struct Voice
 
 /* Special Offset values */
 
-#define FREE	0	/* Channel is not playing anything */
-#define	MUTE	-1	/* Channel will be muted when current sound is finished */
-#define PLAY	-2	/* Channel will play more when current sound is finished */
+#define FREE	-1	/* Channel is not playing anything */
+#define	MUTE	-2	/* Channel will be muted when current sound is finished */
+#define PLAY	-3	/* Channel will play more when current sound is finished */
 
 #define	MAXSOUNDS	128
 #define SOUND_FREE	0

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.18  1997/03/15 09:51:52  lcs
+* Dynamic sample loading in the device: No more alignment restrictions.
+*
 * Revision 1.17  1997/03/13 00:19:43  lcs
 * Up to 4 device units are now available.
 *
@@ -31,9 +34,6 @@
 * Revision 1.8  1997/02/01 19:44:18  lcs
 * Added stereo samples
 *
-* Revision 1.7  1997/01/29 23:34:38  lcs
-* *** empty log message ***
-*
 * Revision 1.6  1997/01/15 14:59:50  lcs
 * Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
 *
@@ -54,6 +54,9 @@
 * Initial revision
 *
 */
+
+
+//#define DEBUG
 
 #include "ahi_def.h"
 #include "localize.h"
@@ -501,9 +504,18 @@ static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase )
       NewList((struct List *)&iounit->RequestQueue);
       if(ReadConfig(iounit,AHIBase))
       {
-        if(iounit->Voices=AllocVec(
+        if(iounit->Voices = AllocVec(
             sizeof(struct Voice)*iounit->Channels,MEMF_PUBLIC|MEMF_CLEAR))
         {
+          int i;
+          struct Voice *v = iounit->Voices;
+          
+          // Mark all channels as free
+          for(i = 0 ; i < iounit->Channels; i++)
+          {
+            v->NextOffset = FREE;
+          }
+          
           if(replyport = CreateMsgPort())
           {
             AHIBase->ahib_Startup.Msg.mn_ReplyPort = replyport;
@@ -696,10 +708,6 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 {
   BOOL rc = FALSE;
-  struct AHISampleInfo snd8info   = {AHIST_M8S,0,0xffffffff};
-  struct AHISampleInfo snd16info  = {AHIST_M16S,0,0xffffffff};
-  struct AHISampleInfo snd8Sinfo   = {AHIST_S8S,0,0xffffffff};
-  struct AHISampleInfo snd16Sinfo  = {AHIST_S16S,0,0xffffffff};
   ULONG fullduplex=FALSE;
 
   /* Allocate the hardware */
@@ -707,7 +715,7 @@ BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
       AHIA_AudioID,       iounit->AudioMode,
       AHIA_MixFreq,       iounit->Frequency,
       AHIA_Channels,      iounit->Channels,
-      AHIA_Sounds,        4,
+      AHIA_Sounds,        MAXSOUNDS,
       AHIA_PlayerFunc,    &iounit->PlayerHook,
       AHIA_RecordFunc,    &iounit->RecordHook,
       AHIA_SoundFunc,     &iounit->SoundHook,
@@ -719,38 +727,33 @@ BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
     AHI_GetAudioAttrs(AHI_INVALID_ID,iounit->AudioCtrl,
       AHIDB_FullDuplex, &fullduplex,
       TAG_DONE);
-    iounit->FullDuplex=fullduplex;
+    iounit->FullDuplex = fullduplex;
 
-    /* Load sounds */
-    if((!AHI_LoadSound(SND8,AHIST_DYNAMICSAMPLE,&snd8info,iounit->AudioCtrl))
-    && (!AHI_LoadSound(SND16,AHIST_DYNAMICSAMPLE,&snd16info,iounit->AudioCtrl))
-    && (!AHI_LoadSound(SND8S,AHIST_DYNAMICSAMPLE,&snd8Sinfo,iounit->AudioCtrl))
-    && (!AHI_LoadSound(SND16S,AHIST_DYNAMICSAMPLE,&snd16Sinfo,iounit->AudioCtrl)))
+    /* Set hardware properties */
+    AHI_ControlAudio(iounit->AudioCtrl,
+        (iounit->MonitorVolume == -1 ? TAG_IGNORE : AHIC_MonitorVolume),
+        iounit->MonitorVolume,
+
+        (iounit->InputGain == -1 ? TAG_IGNORE : AHIC_InputGain),
+        iounit->InputGain,
+
+        (iounit->OutputVolume == -1 ? TAG_IGNORE : AHIC_OutputVolume),
+        iounit->OutputVolume,
+
+        (iounit->Input == -1 ? TAG_IGNORE : AHIC_Input),
+        iounit->Input,
+
+        (iounit->Output == -1 ? TAG_IGNORE : AHIC_Output),
+        iounit->Output,
+
+        TAG_DONE);
+
+    iounit->ChannelInfoStruct->ahie_Effect = AHIET_CHANNELINFO;
+    iounit->ChannelInfoStruct->ahieci_Func = &iounit->ChannelInfoHook;
+    iounit->ChannelInfoStruct->ahieci_Channels = iounit->Channels;
+    if(!AHI_SetEffect(iounit->ChannelInfoStruct, iounit->AudioCtrl))
     {
-      /* Set hardware properties */
-      AHI_ControlAudio(iounit->AudioCtrl,
-          (iounit->MonitorVolume == -1 ? TAG_IGNORE : AHIC_MonitorVolume),
-          iounit->MonitorVolume,
-
-          (iounit->InputGain == -1 ? TAG_IGNORE : AHIC_InputGain),
-          iounit->InputGain,
-
-          (iounit->OutputVolume == -1 ? TAG_IGNORE : AHIC_OutputVolume),
-          iounit->OutputVolume,
-
-          (iounit->Input == -1 ? TAG_IGNORE : AHIC_Input),
-          iounit->Input,
-
-          (iounit->Output == -1 ? TAG_IGNORE : AHIC_Output),
-          iounit->Output,
-
-          TAG_DONE);
-      iounit->ChannelInfoStruct->ahie_Effect = AHIET_CHANNELINFO;
-      iounit->ChannelInfoStruct->ahieci_Func = &iounit->ChannelInfoHook;
-      iounit->ChannelInfoStruct->ahieci_Channels = iounit->Channels;
-      if(!AHI_SetEffect(iounit->ChannelInfoStruct, iounit->AudioCtrl)) {
-        rc = TRUE;
-      }
+      rc = TRUE;
     }
   }
   return rc;
@@ -986,8 +989,14 @@ static __asm __interrupt void SoundFunc(
   if(voice->PlayingRequest)
   {
     voice->PlayingRequest->ahir_Std.io_Command = AHICMD_WRITTEN;
+#ifdef DEBUG
+    KPrintF("Marked 0x%08lx as written\n", voice->PlayingRequest);
+#endif
   }
   voice->PlayingRequest = voice->QueuedRequest;
+#ifdef DEBUG
+  KPrintF("New player: 0x%08lx\n", voice->PlayingRequest);
+#endif
   voice->QueuedRequest  = NULL;
 
   switch(voice->NextOffset)
@@ -1043,16 +1052,17 @@ static __asm __interrupt void ChannelInfoFunc(
   ULONG             *offsets = (ULONG *) &cimsg->ahieci_Offset;
   int i;
 
+  Disable();    // Not needed?
   voice = iounit->Voices;
   for(i = 0; i < iounit->Channels; i++)
   {
     if(voice->PlayingRequest)
     {
-      voice->PlayingRequest->ahir_Std.io_Actual =
-        *offsets - (ULONG) voice->PlayingRequest->ahir_Std.io_Data;
+      voice->PlayingRequest->ahir_Std.io_Actual = *offsets;
     }
     voice++;
     offsets++;
   }
+  Enable();
   return;
 }

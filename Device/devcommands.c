@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.15  1997/03/15 09:51:52  lcs
+* Dynamic sample loading in the device: No more alignment restrictions.
+*
 * Revision 1.14  1997/03/13 00:19:43  lcs
 * Up to 4 device units are now available.
 *
@@ -25,7 +28,7 @@
 * Fixed a race condition in PlayRequest()
 *
 * Revision 1.6  1997/01/15 14:59:50  lcs
-* Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
+* Added CMD_FLUSH, CMD_START, CMD_STOP and CMD_RESET
 *
 * Revision 1.5  1997/01/05 13:38:01  lcs
 * Fixed a bug (attaching a iorequest to a silent one) in NewWriter()
@@ -91,7 +94,7 @@ struct Node *FindNode(struct List *, struct Node *);
 
 
 
-/******************************************************************************
+/******************************************************************************
 ** DevBeginIO *****************************************************************
 ******************************************************************************/
 
@@ -136,7 +139,7 @@ __asm void DevBeginIO(
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AbortIO ********************************************************************
 ******************************************************************************/
 
@@ -184,7 +187,7 @@ __asm ULONG DevAbortIO(
           {
             Remove((struct Node *) ioreq);
 
-            if(GetExtras(ioreq)->Channel != NOCHANNEL)
+            if(ioreq->ahir_Extras && (GetExtras(ioreq)->Channel != NOCHANNEL))
             {
               iounit->Voices[GetExtras(ioreq)->Channel].PlayingRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
@@ -221,7 +224,7 @@ __asm ULONG DevAbortIO(
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** TermIO *********************************************************************
 ******************************************************************************/
 
@@ -229,7 +232,10 @@ __asm ULONG DevAbortIO(
 
 static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
+  struct AHIDevUnit *iounit;
   ULONG error = ioreq->ahir_Std.io_Error;
+
+  iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -238,6 +244,16 @@ static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 
   if(ioreq->ahir_Extras != NULL)
   {
+    int sound = GetExtras(ioreq)->Sound;
+
+    if((sound != AHI_NOSOUND) && (sound < MAXSOUNDS))
+    {
+#ifdef DEBUG
+      KPrintF("Unloading sound: %ld\n", sound);
+#endif
+      AHI_UnloadSound(sound, iounit->AudioCtrl);
+      iounit->Sounds[sound] = SOUND_FREE;
+    }
     FreeVec((APTR *)ioreq->ahir_Extras);
     ioreq->ahir_Extras = NULL;
   }
@@ -254,7 +270,7 @@ static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** PerformIO ******************************************************************
 ******************************************************************************/
 
@@ -306,7 +322,7 @@ void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** Findnode *******************************************************************
 ******************************************************************************/
 
@@ -330,7 +346,7 @@ struct Node *FindNode(struct List *list, struct Node *node)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** Devicequery ****************************************************************
 ******************************************************************************/
 
@@ -412,7 +428,7 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** StopCmd ********************************************************************
 ******************************************************************************/
 
@@ -467,7 +483,7 @@ static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** FlushCmd *******************************************************************
 ******************************************************************************/
 
@@ -547,7 +563,7 @@ static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 /* All the following functions are called within the unit process context */
 
 
-/******************************************************************************
+/******************************************************************************
 ** ResetCmd *******************************************************************
 ******************************************************************************/
 
@@ -606,7 +622,7 @@ static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** ReadCmd ********************************************************************
 ******************************************************************************/
 
@@ -721,7 +737,7 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** WriteCmd *******************************************************************
 ******************************************************************************/
 
@@ -767,7 +783,6 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *   NOTES
 *
 *   BUGS
-*       io_Data must be an even multiple of the sample frame size.
 *       32 bit samples are not allowed yet.
 *
 *   SEE ALSO
@@ -776,21 +791,6 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 ****************************************************************************
 *
 */
-
-const static UWORD type2snd[] =
-{
-  SND8,             // AHIST_M8S  (0)
-  SND16,            // AHIST_M16S (1)
-  SND8S,            // AHIST_S8S  (2)
-  SND16S,           // AHIST_S16S (3)
-  AHI_NOSOUND,      // AHIST_M8U  (4)
-  AHI_NOSOUND,
-  AHI_NOSOUND,
-  AHI_NOSOUND,
-  AHI_NOSOUND,      // AHIST_M32S (8)
-  AHI_NOSOUND,
-  AHI_NOSOUND       // AHIST_S32S (10)
-};
 
 static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
@@ -807,11 +807,6 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   /* Start playback if neccessary */
   if( ! iounit->IsPlaying)
   {
-
-#ifdef DEBUG
-    KPrintF("Not playing\n");
-#endif
-
     if( (! iounit->FullDuplex) && iounit->IsRecording)
     {
       error = AHIE_UNKNOWN;   // FIXIT!
@@ -822,10 +817,6 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
          AHIC_Play,TRUE,
          TAG_DONE);
     }
-
-#ifdef DEBUG
-    KPrintF("Playing\n");
-#endif
 
     if( ! error)
     {
@@ -839,19 +830,19 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   {
     error = AHIE_NOMEM;
   }
+  else
+  {
+    // Initialize the structure
+    GetExtras(ioreq)->Channel = NOCHANNEL;
+    GetExtras(ioreq)->Sound   = AHI_NOSOUND;
+  }
 
   if(iounit->IsPlaying && !error)
   {
     ioreq->ahir_Std.io_Actual = 0;
 
-#ifdef DEBUG
-    KPrintF("Testing freq\n");
-#endif
+    // Convert length in bytes to length in samples
 
-    // Address to sample offset and length in bytes to length in samples
-
-    ioreq->ahir_Std.io_Data = (APTR) ((ULONG) ioreq->ahir_Std.io_Data
-                              / AHI_SampleFrameSize(ioreq->ahir_Type));
     ioreq->ahir_Std.io_Length /= AHI_SampleFrameSize(ioreq->ahir_Type);
 
     switch(ioreq->ahir_Type)
@@ -867,10 +858,6 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
         error = AHIE_BADSAMPLETYPE;
     }
 
-#ifdef DEBUG
-    KPrintF("Error code is now: %ld\n", error);
-#endif
-
     if(! error)
     {
       NewWriter(ioreq, iounit, AHIBase);
@@ -885,7 +872,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** StartCmd *******************************************************************
 ******************************************************************************/
 
@@ -964,7 +951,7 @@ static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** FeedReaders ****************************************************************
 ******************************************************************************/
 
@@ -1015,7 +1002,7 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** FillReadBuffer *************************************************************
 ******************************************************************************/
 
@@ -1133,7 +1120,7 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** NewWriter ******************************************************************
 ******************************************************************************/
 
@@ -1142,103 +1129,134 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     struct AHIBase *AHIBase)
 {
-  int channel;
+  int channel, sound;
   BOOL delay = FALSE;
+  struct AHISampleInfo si;
 
 #ifdef DEBUG
   KPrintF("New writer\n");
 #endif
 
-  iounit=(struct AHIDevUnit *)ioreq->ahir_Std.io_Unit;
-  ObtainSemaphore(&iounit->ListLock);
+  si.ahisi_Type    = ioreq->ahir_Type;
+  si.ahisi_Address = ioreq->ahir_Std.io_Data;
+  si.ahisi_Length  = ioreq->ahir_Std.io_Length;
 
-#ifdef DEBUG
-  KPrintF("Got lock\n");
-#endif
-
-  if(ioreq->ahir_Link)
+  // Load the sound
+  
+  Forbid();
+  for(sound = 0; sound < MAXSOUNDS; sound++)
   {
-
-#ifdef DEBUG
-    KPrintF("Linked\n");
-#endif
-
-    // See if the linked request is playing, silent or waiting...
-
-    if(FindNode((struct List *) &iounit->PlayingList,
-        (struct Node *) ioreq->ahir_Link))
+    if(iounit->Sounds[sound] == SOUND_FREE)
     {
-      delay = TRUE;
-    }
-    else if(FindNode((struct List *) &iounit->SilentList,
-        (struct Node *) ioreq->ahir_Link))
-    {
-      delay = TRUE;
-    }
-    else if(FindNode((struct List *) &iounit->WaitingList,
-        (struct Node *) ioreq->ahir_Link))
-    {
-      delay = TRUE;
+      iounit->Sounds[sound] = SOUND_IN_USE;
+      break;
     }
   }
+  Permit();
 
-// NOTE: ahir_Link changes direction here. When the user set's it, she makes a new
-// request point to an old. We let the old point to the next (that's more natural,
-// anyway...) It the user tries to link more than one request to another, we fail.
-
-  if(delay)
-  {
+  if((sound < MAXSOUNDS) &&
+     (AHI_LoadSound(sound, AHIST_DYNAMICSAMPLE, &si, iounit->AudioCtrl)
+      == AHIE_OK)) {
 
 #ifdef DEBUG
-    KPrintF("Delayed\n");
+    KPrintF("Loaded new sound: %ld\n", sound);
 #endif
 
-    if( ! ioreq->ahir_Link->ahir_Link)
+    GetExtras(ioreq)->Sound = sound;
+
+    ObtainSemaphore(&iounit->ListLock);
+  
+    if(ioreq->ahir_Link)
     {
-      channel = GetExtras(ioreq->ahir_Link)->Channel;
-      GetExtras(ioreq)->Channel = channel;
-
-      ioreq->ahir_Link->ahir_Link = ioreq;
-      ioreq->ahir_Link = NULL;
-      Enqueue((struct List *) &iounit->WaitingList,(struct Node *) ioreq);
-
-      if(channel != NOCHANNEL)
+  
+#ifdef DEBUG
+      KPrintF("Linked\n");
+#endif
+  
+      // See if the linked request is playing, silent or waiting...
+  
+      if(FindNode((struct List *) &iounit->PlayingList,
+          (struct Node *) ioreq->ahir_Link))
       {
-        // Attach the request to the currently playing one
-
-        iounit->Voices[channel].QueuedRequest = ioreq;
-        iounit->Voices[channel].NextOffset  = PLAY;
-        iounit->Voices[channel].NextRequest = NULL;
-        AHI_Play(iounit->AudioCtrl,
-            AHIP_BeginChannel,  channel,
-            AHIP_LoopFreq,      ioreq->ahir_Frequency,
-            AHIP_LoopVol,       ioreq->ahir_Volume,
-            AHIP_LoopPan,       ioreq->ahir_Position,
-            AHIP_LoopSound,     type2snd[ioreq->ahir_Type],
-            AHIP_LoopOffset,    (ULONG) ioreq->ahir_Std.io_Data + ioreq->ahir_Std.io_Actual,
-            AHIP_LoopLength,    ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual,
-            AHIP_EndChannel,    NULL,
-            TAG_DONE);
+        delay = TRUE;
+      }
+      else if(FindNode((struct List *) &iounit->SilentList,
+          (struct Node *) ioreq->ahir_Link))
+      {
+        delay = TRUE;
+      }
+      else if(FindNode((struct List *) &iounit->WaitingList,
+          (struct Node *) ioreq->ahir_Link))
+      {
+        delay = TRUE;
       }
     }
-    else
-    { // She tried to add more than one requeste to unother
-      ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
-      TermIO(ioreq, AHIBase);
+  
+  // NOTE: ahir_Link changes direction here. When the user set's it, she makes a new
+  // request point to an old. We let the old point to the next (that's more natural,
+  // anyway...) It the user tries to link more than one request to another, we fail.
+  
+    if(delay)
+    {
+  
+#ifdef DEBUG
+      KPrintF("Delayed\n");
+#endif
+  
+      if( ! ioreq->ahir_Link->ahir_Link)
+      {
+        Disable();
+
+        channel = GetExtras(ioreq->ahir_Link)->Channel;
+        GetExtras(ioreq)->Channel = NOCHANNEL;
+  
+        ioreq->ahir_Link->ahir_Link = ioreq;
+        ioreq->ahir_Link = NULL;
+        Enqueue((struct List *) &iounit->WaitingList,(struct Node *) ioreq);
+  
+        if(channel != NOCHANNEL)
+        {
+          // Attach the request to the currently playing one
+  
+          iounit->Voices[channel].QueuedRequest = ioreq;
+          iounit->Voices[channel].NextOffset  = PLAY;
+          iounit->Voices[channel].NextRequest = NULL;
+          AHI_Play(iounit->AudioCtrl,
+              AHIP_BeginChannel,  channel,
+              AHIP_LoopFreq,      ioreq->ahir_Frequency,
+              AHIP_LoopVol,       ioreq->ahir_Volume,
+              AHIP_LoopPan,       ioreq->ahir_Position,
+              AHIP_LoopSound,     GetExtras(ioreq)->Sound,
+              AHIP_LoopOffset,    ioreq->ahir_Std.io_Actual,
+              AHIP_LoopLength,    ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual,
+              AHIP_EndChannel,    NULL,
+              TAG_DONE);
+        }
+        Enable();
+      }
+      else // She tried to add more than one request to another one
+      { 
+        ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
+        TermIO(ioreq, AHIBase);
+      }
     }
+    else // Sound is not delayed
+    {
+      ioreq->ahir_Link=NULL;
+      AddWriter(ioreq, iounit, AHIBase);
+    }
+
+    ReleaseSemaphore(&iounit->ListLock);
   }
-  else
+  else // No free sound found, or sound failed to load
   {
-    ioreq->ahir_Link=NULL;
-    AddWriter(ioreq, iounit, AHIBase);
+    ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
+    TermIO(ioreq, AHIBase);
   }
-
-  ReleaseSemaphore(&iounit->ListLock);
-
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AddWriter ******************************************************************
 ******************************************************************************/
 
@@ -1299,7 +1317,7 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** PlayRequest ****************************************************************
 ******************************************************************************/
 
@@ -1310,7 +1328,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
 {
 
 #ifdef DEBUG
-  KPrintF("PlayRequest\n");
+  KPrintF("PlayRequest(%ld, 0x%08lx)\n", channel, ioreq);
 #endif
 
   // Start the sound
@@ -1319,15 +1337,18 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
 
   if(ioreq->ahir_Link)
   {
-    struct Voice        *v = & iounit->Voices[channel];
+    struct Voice        *v = &iounit->Voices[channel];
     struct AHIRequest   *r = ioreq->ahir_Link;
 
-    v->NextSound     = type2snd[r->ahir_Type];
+#ifdef DEBUG
+    KPrintF("It has a link! 0x%08lx\n", ioreq->ahir_Link);
+#endif
+
+    v->NextSound     = GetExtras(r)->Sound;
     v->NextVolume    = r->ahir_Volume;
     v->NextPan       = r->ahir_Position;
     v->NextFrequency = r->ahir_Frequency;
-    v->NextOffset    = (ULONG) r->ahir_Std.io_Data
-                     + r->ahir_Std.io_Actual;
+    v->NextOffset    = r->ahir_Std.io_Actual;
     v->NextLength    = r->ahir_Std.io_Length
                      - r->ahir_Std.io_Actual;
     v->NextRequest   = r;
@@ -1349,8 +1370,8 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
       AHIP_Freq,          ioreq->ahir_Frequency,
       AHIP_Vol,           ioreq->ahir_Volume,
       AHIP_Pan,           ioreq->ahir_Position,
-      AHIP_Sound,         type2snd[ioreq->ahir_Type],
-      AHIP_Offset,        (ULONG) ioreq->ahir_Std.io_Data+ioreq->ahir_Std.io_Actual,
+      AHIP_Sound,         GetExtras(ioreq)->Sound,
+      AHIP_Offset,        ioreq->ahir_Std.io_Actual,
       AHIP_Length,        ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual,
       AHIP_EndChannel,    NULL,
       TAG_DONE);
@@ -1363,10 +1384,13 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
   // IO Request. Quite ugly, no?
 
   while(iounit->Voices[channel].PlayingRequest == NULL);
+#ifdef DEBUG
+  KPrintF("Exiting PlayRequest()\n");
+#endif
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** RethinkPlayers *************************************************************
 ******************************************************************************/
 
@@ -1408,7 +1432,7 @@ void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** RemPlayers *****************************************************************
 ******************************************************************************/
 
@@ -1433,7 +1457,7 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
     {
 
 #ifdef DEBUG
-      KPrintF("removing %08lx\n", ioreq);
+      KPrintF("Removing %08lx\n", ioreq);
 #endif
 
       Remove((struct Node *) ioreq);
@@ -1459,7 +1483,7 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** UpdateSilentPlayers ********************************************************
 ******************************************************************************/
 
