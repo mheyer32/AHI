@@ -44,15 +44,20 @@
 /* We use global library bases instead of storing them in DriverBase, since
    I don't want to modify the original sources more than necessary. */
 
+#ifdef __AMIGAOS4__
+struct Library*   SysBase;
+struct Library*   DOSBase;
+struct Library*   Utility;
+#else
 struct ExecBase*   SysBase;
 struct DosLibrary* DOSBase;
-#ifndef __AMIGAOS4__
 struct Library*    OpenPciBase;
 #endif
+
 struct DriverBase* AHIsubBase;
 
 #ifdef __AMIGAOS4__
-struct ExpansionBase*       ExpansionBase = NULL;
+struct Library*             ExpansionBase = NULL;
 struct ExpansionIFace*      IExpansion    = NULL;
 struct DOSIFace*            IDOS          = NULL;
 struct AHIsubIFace*         IAHIsub       = NULL;
@@ -137,7 +142,13 @@ DriverInit( struct DriverBase* ahisubbase )
        return FALSE;
   }
   
-  IUtility = SysBase->UtilityInterface;
+  if ((IUtility = (struct UtilityIFace *) GetInterface((struct Library *) UtilityBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open IUtility interface!\n");
+       return FALSE;
+  }
+
+  EMU10kxBase->flush_caches = TRUE;
 
 #else
 

@@ -386,6 +386,12 @@ RecordInterrupt( struct EMU10kxData* dd )
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
+#ifdef __AMIGAOS4__
+  ULONG  CacheCommand = CACRF_InvalidateD;
+#else
+  ULONG  CacheCommand = CACRF_ClearD;
+#endif
+
 
   struct AHIRecordMessage rm =
   {
@@ -397,14 +403,20 @@ RecordInterrupt( struct EMU10kxData* dd )
   int   i   = 0;
   WORD* ptr = dd->current_record_buffer;
 
+#ifndef __AMIGAOS4__
+  // As OS4 can do invalidate only, we don't need to do flushing here.
+  // Between the invalidate at the end, DMA and entering this interrupt code,
+  // nobody should have touched this half of the record buffer.
+ 
   if( EMU10kxBase->flush_caches )
   {
     // This is used to invalidate the cache
 
     CacheClearE( dd->current_record_buffer,
 		 RECORD_BUFFER_SAMPLES / 2 * 4,
-		 CACRF_ClearD );
+		 CacheCommand );
   }
+#endif
 
   while( i < RECORD_BUFFER_SAMPLES / 2 * 2 )
   {
@@ -414,20 +426,19 @@ RecordInterrupt( struct EMU10kxData* dd )
     ++ptr;
   }
 
+  CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
+
   if( EMU10kxBase->flush_caches )
   {
-    // This is used to make sure the call above doesn't pushes dirty data
+    // This is used to make sure the call above doesn't pushe dirty data
     // the next time it's called. God help us if dd->current_record_buffer
     // is not a the beginning of a cache line and there are dirty data
-    // in the DMA buffer before or after the current buffer. Ok I will stop
-    // talking now. Thanks for listening.
+    // in the DMA buffer before or after the current buffer.
     
     CacheClearE( dd->current_record_buffer,
 		 RECORD_BUFFER_SAMPLES / 2 * 4,
-		 CACRF_ClearD );
+		 CacheCommand );
   }
-
-  CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
 
   dd->record_interrupt_enabled = TRUE;
 }

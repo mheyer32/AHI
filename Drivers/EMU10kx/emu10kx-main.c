@@ -517,6 +517,11 @@ _AHIsub_Start( ULONG                   flags,
 
     SaveMixerState( dd );
     UpdateMonitorMixer( dd );
+    
+    #ifdef __AMIGAOS4__
+    // invalidate the whole record_buffer just to be on the safe side
+    CacheClearE( dd->record_buffer, RECORD_BUFFER_SAMPLES * 4, CACRF_InvalidateD );
+    #endif
 
     sblive_writeptr( &dd->card, ADCBA, 0, dd->record_dma_handle );
     sblive_writeptr( &dd->card, ADCBS, 0, RECORD_BUFFER_SIZE_VALUE );
