@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.8  1997/01/30 19:51:20  lcs
+* Removed code for unsigned samples
+*
 * Revision 1.7  1997/01/29 13:44:33  lcs
 * Fixed a race condition in PlayRequest()
 *
@@ -589,7 +592,6 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
         break;
       case AHIST_S8S:
       case AHIST_S16S:
-      case AHIST_M8U:
       case AHIST_M32S:
       case AHIST_S32S:
       default:
@@ -729,8 +731,6 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
       case AHIST_S16S:
         length >>= 2;
         break;
-      case AHIST_M8U:
-        break;
       case AHIST_M32S:
         length >>= 2;
         break;
@@ -778,19 +778,6 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
             &ioreq->ahir_Std.io_Offset,
             &ioreq->ahir_Std.io_Data);
         break;
-      case AHIST_M8U:
-      {
-        BYTE *p = ioreq->ahir_Std.io_Data;
-        int i;
-
-        RecM8S(length,ioreq->ahir_Frequency,
-            iounit->RecordBuffer,
-            &ioreq->ahir_Std.io_Offset,
-            &ioreq->ahir_Std.io_Data);
-        for(i = length; i; i--)
-          *p ^= 0x80;
-        break;
-      }
       case AHIST_M32S:
         RecM32S(length,ioreq->ahir_Frequency,
             iounit->RecordBuffer,
