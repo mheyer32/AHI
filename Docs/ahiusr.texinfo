@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.4  2003/01/23 23:23:23  martin
+Updated the list of supported sound cards.
+
 Revision 5.3  2003/01/23 23:15:45  martin
 Updated the Acknowledgments chapter. Added Donors and Honourable
 mention sections. Updated my address.
@@ -781,17 +784,27 @@ uncompressed @dfn{IFF-AIFC}, 16 bit stereo at 44.1 kHz.
 
 @cindex Drivers
 @cindex Sound card drivers
+
+@cindex AmigaXL
 @cindex Aura
 @cindex Clarity
 @cindex Concierto
-@cindex Delfina DSP
-@cindex Delfina Lite
+@cindex Delfina
 @cindex DraCo Motion
+@cindex ESS Solo-1
+@cindex ForteMedia FM801
 @cindex Maestro Pro
-@cindex Melody MPEG
+@cindex Melody
 @cindex Paula
 @cindex Prelude
+@cindex Repulse
+@cindex SoundBlaster 128
+@cindex SoundBlaster Live!
+@cindex Sunrize
+@cindex Terratec 128i PCI
+@cindex Terratec 512i digital
 @cindex Toccata
+@cindex VIA AC97
 @cindex Wavetools
 
 @sc{Ahi} uses a set of hardware drivers for each sound card.  This means
@@ -800,25 +813,45 @@ time of writing, the following sound cards are supported:
 
 @itemize @bullet
 @item
+AmigaXL
+@item
 Aura (sampling only)
 @item
 Clarity (sampling only)
 @item
 Concierto
 @item
-Delfina DSP and Delfina Lite
+Delfina
 @item
 DraCo Motion
 @item
+ESS Solo-1
+@item
+ForteMedia FM801
+@item
 Maestro Pro
 @item
-Melody MPEG
+Melody
 @item
 Paula (the built-in audio)
 @item
 Prelude
 @item
+Repulse
+@item
+SoundBlaster 128
+@item
+SoundBlaster Live!
+@item
+Sunrize
+@item
+Terratec 128i PCI
+@item
+Terratec 512i digital
+@item
 Toccata
+@item
+VIA AC97
 @item
 Wavetools
 @end itemize
