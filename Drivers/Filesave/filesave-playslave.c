@@ -77,44 +77,41 @@ htobe_long( unsigned long x )
 ** The slave process **********************************************************
 ******************************************************************************/
 
-#undef SysBase
-
 void SlaveEntry(void)
 {
-  struct ExecBase*        SysBase = *SysBasePtr;
   struct AHIAudioCtrlDrv* AudioCtrl;
   struct DriverBase*      AHIsubBase;
   struct FilesaveBase*    FilesaveBase;
 
   struct EIGHTSVXheader EIGHTSVXheader = // All NULLs will be filled later.
   { 
-    ID_FORM, NULL, ID_8SVX,
+    ID_FORM, 0, ID_8SVX,
     ID_VHDR, sizeof(Voice8Header),
     {
-      NULL,
       0,
       0,
-      NULL,
+      0,
+      0,
       1,
       sCmpNone,
       0x10000
     },
-    ID_BODY, NULL
+    ID_BODY, 0
   };
 
   struct AIFFheader AIFFheader = // All NULLs will be filled later.
   { 
-    ID_FORM, NULL, ID_AIFF,
+    ID_FORM, 0, ID_AIFF,
     ID_COMM, sizeof(CommonChunk),
     {
-      NULL,
-      NULL,
+      0,
+      0,
       16,
       {
         0, { 0, 0 }
       }
     },
-    ID_SSND, NULL,
+    ID_SSND, 0,
     {
       0,
       0
@@ -123,15 +120,15 @@ void SlaveEntry(void)
 
   struct AIFCheader AIFCheader = // All NULLs will be filled later.
   { 
-    ID_FORM, NULL, ID_AIFC,
+    ID_FORM, 0, ID_AIFC,
     ID_FVER, sizeof(FormatVersionHeader), 
     {
       AIFCVersion1
     },
     ID_COMM, sizeof(ExtCommonChunk),
     {
-      NULL,
-      NULL,
+      0,
+      0,
       16,
       {
         0, { 0, 0 }
@@ -140,7 +137,7 @@ void SlaveEntry(void)
       { sizeof("not compressed") - 1,
 	'n','o','t',' ','c','o','m','p','r','e','s','s','e','d' }
     },
-    ID_SSND, NULL,
+    ID_SSND, 0,
     {
       0,
       0
@@ -150,18 +147,18 @@ void SlaveEntry(void)
   struct STUDIO16FILE S16header = // All NULLs will be filled later.
   {
     S16FID,
-    NULL,
+    0,
     S16FINIT,
     S16_VOL_0,
     0,
     0,
-    NULL,
     0,
     0,
-    NULL,
-    NULL,
     0,
-    NULL,
+    0,
+    0,
+    0,
+    0,
     0,
     {
       0
@@ -170,7 +167,7 @@ void SlaveEntry(void)
 
   struct WAVEheader WAVEheader = // All NULLs will be filled later.
   {
-    ID_RIFF, NULL, ID_WAVE,
+    ID_RIFF, 0, ID_WAVE,
     ID_fmt, __htole_long( sizeof(FormatChunk) ),
     {
       __htole_short( WAVE_PCM ),
@@ -180,7 +177,7 @@ void SlaveEntry(void)
       0,
       __htole_short( 16 )
     },
-    ID_data, NULL
+    ID_data, 0
   };
 
   struct EasyStruct req =
@@ -193,7 +190,7 @@ void SlaveEntry(void)
     "OK",
   };
 
-  BPTR lock = NULL,cd = NULL,file = NULL, file2 = NULL;
+  BPTR lock = 0,cd = 0,file = 0, file2 = 0;
   LONG maxVolume = 0;
   ULONG signals, i, samplesAdd =0, samples = 0, length = 0;
   ULONG offset = 0, bytesInBuffer = 0, samplesWritten = 0, bytesWritten = 0;
@@ -325,7 +322,7 @@ void SlaveEntry(void)
       {
         break;
       }
-      if(file2 != NULL) {
+      if(file2 != 0) {
         if((ULONG) Write(file2, dd->fs_SaveBuffer2, bytesInBuffer) != bytesInBuffer)
         {
           break;
@@ -477,7 +474,7 @@ void SlaveEntry(void)
   }
 
   Write(file, dd->fs_SaveBuffer, bytesInBuffer);
-  if(file2 != NULL)
+  if(file2 != 0)
   {
     Write(file2, dd->fs_SaveBuffer2, bytesInBuffer);
   }
@@ -520,7 +517,7 @@ void SlaveEntry(void)
       S16header.S16F_SAMPLES0 =
       S16header.S16F_SAMPLES1 = samplesWritten;
       S16header.S16F_SAMPLES2 = samplesWritten - 1;
-      if (file2 == NULL)
+      if (file2 == 0)
       {
         S16header.S16F_PAN = S16_PAN_MID;
       }
@@ -531,7 +528,7 @@ void SlaveEntry(void)
 
       Seek(file, 0, OFFSET_BEGINNING);
       Write(file, &S16header, sizeof S16header);
-      if(file2 != NULL)
+      if(file2 != 0)
       {
         S16header.S16F_PAN = S16_PAN_RIGHT;
         Seek(file2,0,OFFSET_BEGINNING);

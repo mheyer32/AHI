@@ -20,11 +20,8 @@
 ** The record slave process ***************************************************
 ******************************************************************************/
 
-#undef SysBase
-
 void RecSlaveEntry(void)
 {
-  struct ExecBase*        SysBase = *SysBasePtr;
   struct AHIAudioCtrlDrv* AudioCtrl;
   struct DriverBase*      AHIsubBase;
   struct FilesaveBase*    FilesaveBase;
