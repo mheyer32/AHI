@@ -19,7 +19,6 @@
 @c ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
 
 @ifinfo
-
 This file documents AHI release @value{ahiver}, a hardware independent
 audio subsystem for Amiga. The version number of this document is
 @value{docver}.
@@ -39,10 +38,10 @@ paragraph not being relevant to the printed manual).
 @end ignore
 Permission is granted to copy and distribute modified versions of this
 manual under the conditions for verbatim copying, provided also that the
-sections entitled ``Distribution'', ``GNU General Public License'' and
-``GNU Library General Public License'' are included exactly as in the
-original, and provided that the entire resulting derived work is
-distributed under the terms of a permission notice identical to this one.
+sections entitled ``Distribution'', ``GPL'' and ``LGPL'' are included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
 
 Permission is granted to copy and distribute translations of this manual
 into another language, under the above conditions for modified versions,
@@ -64,8 +63,8 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
-Revision 4.14  1999/09/19 13:44:57  lcs
-*** empty log message ***
+Revision 4.15  1999/09/19 14:05:03  lcs
+Some polishing.
 
 Revision 4.12  1999/09/19 13:10:18  lcs
 Fixed some typos.
@@ -133,10 +132,10 @@ all copies.
 
 Permission is granted to copy and distribute modified versions of this
 manual under the conditions for verbatim copying, provided also that the
-sections entitled ``Distribution'', ``GNU General Public License'' and
-``GNU Library General Public License'' are included exactly as in the
-original, and provided that the entire resulting derived work is
-distributed under the terms of a permission notice identical to this one.
+sections entitled ``Distribution'', ``GPL'' and ``LGPL'' are included
+exactly as in the original, and provided that the entire resulting
+derived work is distributed under the terms of a permission notice
+identical to this one.
 
 Permission is granted to copy and distribute translations of this manual
 into another language, under the above conditions for modified versions,
@@ -270,8 +269,8 @@ Copyright @copyright{} 1994-1999 Martin Blom
 
 @sc{Ahi} is available under a dual license. The device itself is under
 the ``GNU Library General Public License'' (@pxref{LGPL}), while the
-utility programs and the @sc{AUDIO} device is covered by the ``GNU
-General Public License'' (@pxref{GPL}).
+utility programs and the @code{AUDIO:} device is covered by the ``GNU General
+Public License'' (@pxref{GPL}).
 
 If you use this software in a commercial or shareware product, please
 consider giving the author (@pxref{The Author})---and preferably each one
