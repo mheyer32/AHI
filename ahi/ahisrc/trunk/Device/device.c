@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.13  1997/02/10 02:23:06  lcs
+* Infowindow in the requester added.
+*
 * Revision 1.12  1997/02/04 15:44:30  lcs
 * AHIDB_MaxChannels didn't work in AHI_BestAudioID()
 *
@@ -185,7 +188,7 @@ __asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
     return FALSE;
   }
 
-  OpenAHICatalog(NULL, NULL);
+  OpenahiCatalog(NULL, NULL);
 
   return TRUE;
 }
@@ -201,7 +204,7 @@ __asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
 __asm void CloseLibs(register __a6 struct ExecBase *SysBase)
 {
 
-  CloseAHICatalog();
+  CloseahiCatalog();
   CloseLibrary(UtilityBase);
   if(TimerIO)
     CloseDevice((struct IORequest *) TimerIO);

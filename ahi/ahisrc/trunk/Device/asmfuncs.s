@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.15  1997/02/10 02:23:06  lcs
+* Infowindow in the requester added.
+*
 * Revision 1.14  1997/02/09 19:02:01  lcs
 * Hertz was misspelled!
 *
@@ -2154,15 +2157,12 @@ UnloadSound_nodebug
 *
 *       AHIR_InitialInfoOpened (BOOL) - Whether to open the property
 *           information window automatically. Default is FALSE.
-*           This tag does not work yet.
 *
 *       AHIR_InitialInfoLeftEdge (WORD) - Initial left edge of information
 *           window.
-*           This tag does not work yet.
 *
 *       AHIR_InitialInfoTopEdge (WORD) - Initial top edge of information
 *           window.
-*           This tag does not work yet.
 *
 *       AHIR_DoMixFreq (BOOL) - Set this tag to TRUE to cause the requester
 *           to display the frequency slider gadget. Default is FALSE.
@@ -2205,7 +2205,6 @@ UnloadSound_nodebug
 *       may not be the only ones a driver supports, but just a selection.
 *
 *   BUGS
-*       The information window is not inplemented.
 *
 *   SEE ALSO
 *      AHI_AllocAudioRequestA(), AHI_FreeAudioRequest()
