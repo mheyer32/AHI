@@ -1,9 +1,9 @@
 2003-11-23  Martin Blom  <martin@blom.org>
 
-	* Released emu10kx.audio 5.11.
+	* Released emu10kx.audio 5.11 and 5.12.
 
-	* emu10kx.audio: Begans re-sync with the latest Linux drivers in
-	order to make it work on Audigy cards.
+	* emu10kx.audio: Resynced with the latest Linux drivers in order
+	to make it work on Audigy cards.
 
 2003-10-31  Martin Blom  <martin@blom.org>
 
