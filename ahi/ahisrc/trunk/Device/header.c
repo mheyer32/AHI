@@ -608,6 +608,7 @@ OpenLibs ( void )
        "should use the m68k version for now.\n"
        "\n"
        "Totally unoptimized! It's big and slow.\n"
+       "You *have* to use \"AddAudioModes REFRESH\".\n"
        "\n"
        "Detailed bug reports and patches are welcome.\n"
 	 "/Martin Blom <martin@blom.org>\n" );
