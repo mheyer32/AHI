@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.12  2000/11/27 22:58:46  lcs
+ * Fixed a lame rounding problem with maxcpu and anticlicktime.
+ *
  * Revision 4.11  2000/06/05 20:28:37  lcs
  * Fixed configure problems with separate build directories.
  *
@@ -895,9 +898,9 @@ void EventLoop(void)
         globalprefs.ahigp_DisableSurround  = surround;
         globalprefs.ahigp_DisableEcho      = (echo == 2);
         globalprefs.ahigp_FastEcho         = (echo == 1);
-        globalprefs.ahigp_MaxCPU           = ((cpu << 16) + 100) / 100;
+        globalprefs.ahigp_MaxCPU           = ((cpu << 16) + 50) / 100;
         globalprefs.ahigp_ClipMasterVolume = clip;
-        globalprefs.ahigp_AntiClickTime    = ((actime << 16) + 1000) / 1000;
+        globalprefs.ahigp_AntiClickTime    = ((actime << 16) + 500) / 1000;
 
         break;
       }
