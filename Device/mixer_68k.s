@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 4.10  1997/10/11 15:54:59  lcs
+* Bug fixes in the HiFi routines. There was also debug code left (!),
+* that disabled stereo.
+*
 * Revision 4.9  1997/07/30 00:04:15  lcs
 * Removed distortion when playing sounds backwards in HiFi mode.
 *
@@ -1988,7 +1992,7 @@ AddBytesMVH:
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2055,7 +2059,7 @@ AddBytesSVPH:
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2116,8 +2120,6 @@ AddWordMVH:
 * d2.l	-65536..65536
 AddWordSVPH:
  IFGE	__CPU-68020
-	move.l	#65536,d1
-	move.l	#32768,d2
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2142,7 +2144,6 @@ AddWordSVPH:
 
 	move.l	a0,d7
 	muls.l	d1,d7
-	asr.l	#1,d7
 	add.l	d7,(a4)+
 
 	move.l	a0,d7
@@ -2198,7 +2199,7 @@ AddWordsMVH:
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2259,7 +2260,7 @@ AddWordsSVPH:
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2411,7 +2412,7 @@ AddBytesMVHB:
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2477,7 +2478,7 @@ AddBytesSVPHB:
 	move.b	1(a3,d3.l*2),d7
 	lsl.w	#8,d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2616,7 +2617,7 @@ AddWordsMVHB:
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
@@ -2676,7 +2677,7 @@ AddWordsSVPHB:
 .got_sampleR
 	move.w	2(a3,d3.l*4),d7
 	ext.l	d7
-	move.l	d7,cd_TempLastSampleL(a5)
+	move.l	d7,cd_TempLastSampleR(a5)
 	sub.l	a0,d7
 	asr.l	#1,d7
 	muls.l	d4,d7
