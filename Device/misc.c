@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -34,6 +32,13 @@
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/timer.h>
+
+#if defined( ENABLE_WARPUP )
+# include <powerpc/powerpc.h>
+# include <powerpc/memoryPPC.h>
+# include <proto/powerpc.h>
+#include "elfloader.h"
+#endif
 
 #include "ahi_def.h"
 #include "header.h"
@@ -121,16 +126,15 @@ ReqA( const char* text, APTR args )
 ** SprintfA *******************************************************************
 ******************************************************************************/
 
-static UWORD struffChar[] =
-{
-  0x16c0,     // moveb %d0,%a3@+
-  0x4e75      // rts
-};
-
 char*
 SprintfA( char *dst, const char *fmt, ULONG* args )
 {
 #ifndef __AMIGAOS4__
+  static const UWORD struffChar[] =
+  {
+    0x16c0,     // moveb %d0,%a3@+
+    0x4e75      // rts
+  };
   return RawDoFmt( (UBYTE*) fmt,
                    args, 
                    (void(*)(void)) &struffChar,
@@ -174,7 +178,7 @@ AHIObtainSemaphore( struct SignalSemaphore* sigSem )
   struct Task *me;
 
   Disable(); // Not Forbid()!
-  me=SysBase->ThisTask;
+  me = FindTask(NULL);
   sigSem->ss_QueueCount++;
   if( sigSem->ss_QueueCount == 0 )
   {
@@ -284,6 +288,135 @@ AHIAttemptSemaphore( struct SignalSemaphore* sigSem )
 
 
 /******************************************************************************
+** AHIAllocVec ****************************************************************
+******************************************************************************/
+
+APTR
+AHIAllocVec( ULONG byteSize, ULONG requirements )
+{
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      return AllocVec( byteSize, requirements );
+
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+    {
+      APTR v;
+
+      v = AllocVec32( byteSize, requirements );
+      CacheClearU();
+      return v;
+    }
+#endif
+  }
+
+  Req( "Internal error: Unknown MixBackend in AHIAllocVec()." );
+  return NULL;
+}
+
+/******************************************************************************
+** AHIFreeVec *****************************************************************
+******************************************************************************/
+
+void
+AHIFreeVec( APTR memoryBlock )
+{
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      FreeVec( memoryBlock );
+      return;
+
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      FreeVec32( memoryBlock );
+      return;
+#endif
+  }
+
+  Req( "Internal error: Unknown MixBackend in AHIFreeVec()." );
+}
+
+
+/******************************************************************************
+** AHILoadObject **************************************************************
+******************************************************************************/
+
+void*
+AHILoadObject( const char* objname )
+{
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      Req( "Internal error: Illegal MixBackend in AHILoadObject()" );
+      return NULL;
+
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+    {
+      void* o;
+
+      o = ELFLoadObject( objname );
+      CacheClearU();
+
+      return o;
+    }
+#endif
+  }
+
+  Req( "Internal error: Unknown MixBackend in AHILoadObject()." );
+  return NULL;
+}
+
+/******************************************************************************
+** AHIUnLoadObject ************************************************************
+******************************************************************************/
+
+void
+AHIUnloadObject( void* obj )
+{
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
+      return;
+
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      ELFUnLoadObject( obj );
+      return;
+#endif
+  }
+
+  Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
+}
+
+/******************************************************************************
+** AHIGetELFSymbol ************************************************************
+******************************************************************************/
+
+BOOL
+AHIGetELFSymbol( const char* name,
+                 void** ptr )
+{
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
+      return FALSE;
+
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      return ELFGetSymbol( PPCObject, name, ptr );
+#endif
+  }
+
+  Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
+  return FALSE;
+}
+
+/******************************************************************************
 **** Endian support code. *****************************************************
 ******************************************************************************/
 
@@ -358,20 +491,20 @@ PreTimer( struct AHIPrivAudioCtrl* audioctrl )
     return FALSE;
   }
 
+  mixer_time = (audioctrl->ahiac_Timer.ExitTime.ev_lo -
+		audioctrl->ahiac_Timer.EntryTime.ev_lo);
+
   pretimer_period = audioctrl->ahiac_Timer.EntryTime.ev_lo;
 
   ReadEClock( &audioctrl->ahiac_Timer.EntryTime );
 
   pretimer_period = audioctrl->ahiac_Timer.EntryTime.ev_lo - pretimer_period;
 
-  mixer_time = pretimer_period - ( audioctrl->ahiac_Timer.ExitTime.ev_lo
-                                   - audioctrl->ahiac_Timer.EntryTime.ev_lo );
-
   if( pretimer_period != 0 )
   {
     audioctrl->ahiac_UsedCPU = ( mixer_time << 8 ) / pretimer_period;
 
-    return ( audioctrl->ahiac_UsedCPU <= audioctrl->ahiac_MaxCPU );
+    return ( audioctrl->ahiac_UsedCPU > audioctrl->ahiac_MaxCPU );
   }
   else
   {

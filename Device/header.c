@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -44,6 +42,16 @@
 #include "device.h"
 #endif
 
+#ifdef __amithlon__
+# define RTF_NATIVE (1<<3)
+# define FUNCARRAY_32BIT_NATIVE 0xfffefffe
+#endif
+
+#if defined( __AMIGAOS4__ ) && !defined( CPU )
+// Remove when the build process work on OS4
+# define CPU "603e"
+#endif
+
 static BOOL
 OpenLibs ( void );
 
@@ -52,14 +60,17 @@ CloseLibs ( void );
 
 #define GetSymbol( name ) AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
+#undef Req
+#define Req( msg ) ReqA( msg, NULL )
+
 /******************************************************************************
 ** Device entry ***************************************************************
 ******************************************************************************/
 
 #if defined( __amithlon__ )
-__asm( "\
-         .text;\
-         .byte 0x4e, 0xfa, 0x00, 0x03\
+__asm( "\n\
+         .text;\n\
+         .byte 0x4e, 0xfa, 0x00, 0x03\n\
          jmp _start" );
 #endif
 
@@ -78,8 +89,6 @@ ULONG   __amigappc__=1;  // deprecated, used in MOS 0.4
 ** Device resident structure **************************************************
 ******************************************************************************/
 
-extern const char DevName[];
-extern const char IDString[];
 static const APTR InitTable[4];
 
 #if defined( __AMIGAOS4__  )
@@ -88,7 +97,7 @@ static struct TagItem libCreateTags[];
 
 // This structure must reside in the text segment or the read-only data segment!
 // "const" makes it happen.
-static const struct Resident RomTag =
+const struct Resident RomTag =
 {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
@@ -96,7 +105,7 @@ static const struct Resident RomTag =
 #if defined( __MORPHOS__ ) 
   RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
 #elif defined( __amithlon__ )
-  RTF_PPC | RTF_AUTOINIT,
+  RTF_NATIVE | RTF_AUTOINIT,
 #elif defined( __AMIGAOS4__ )
   RTF_NATIVE | RTF_AUTOINIT,
 #else
@@ -105,8 +114,8 @@ static const struct Resident RomTag =
   VERSION,
   NT_DEVICE,
   0,                      /* priority */
-  (BYTE *) DevName,
-  (BYTE *) IDString,
+  (BYTE *) &DevName[0],
+  (BYTE *) &IDString[6],
 #if defined( __AMIGAOS4__ )
   libCreateTags
 #else
@@ -122,11 +131,23 @@ static const struct Resident RomTag =
 ** Globals ********************************************************************
 ******************************************************************************/
 
+const ULONG  DriverVersion  = 2;
+const ULONG  Version        = VERSION;
+const ULONG  Revision       = REVISION;
+
+const char DevName[]  = AHINAME;
+const char IDString[] = "$VER: " AHINAME " " VERS
+                        " ©1994-2004 Martin Blom. " CPU " version.\r\n";
+
+
+#if !defined( __AMIGAOS4__ )
 struct ExecBase           *SysBase        = NULL;
-struct AHIBase            *AHIBase        = NULL;
 struct DosLibrary         *DOSBase        = NULL;
-struct Library            *GadToolsBase   = NULL;
 struct GfxBase            *GfxBase        = NULL;
+#endif
+
+struct AHIBase            *AHIBase        = NULL;
+struct Library            *GadToolsBase   = NULL;
 struct Library            *IFFParseBase   = NULL;
 struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
@@ -134,8 +155,10 @@ struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 
 #if defined( __AMIGAOS4__ )
+struct Library            *SysBase        = NULL;
+struct Library            *DOSBase        = NULL;
+struct Library            *GfxBase        = NULL;
 struct ExecIFace          *IExec          = NULL;
-struct AHIIFace           *IAHI           = NULL;
 struct DOSIFace           *IDOS           = NULL;
 struct GadToolsIFace      *IGadTools      = NULL;
 struct GraphicsIFace      *IGraphics      = NULL;
@@ -144,137 +167,135 @@ struct IntuitionIFace     *IIntuition     = NULL;
 struct LocaleIFace        *ILocale        = NULL;
 struct TimerIFace         *ITimer         = NULL;
 struct UtilityIFace       *IUtility       = NULL;
-struct AHIsubIFace        *IAHIsub        = NULL;
 #endif
 
 struct Resident           *MorphOSRes     = NULL;
 static struct timerequest *TimerIO        = NULL;
 
-ADDFUNC* AddByteMonoPtr                   = NULL;
-ADDFUNC* AddByteStereoPtr                 = NULL;
-ADDFUNC* AddBytesMonoPtr                  = NULL;
-ADDFUNC* AddBytesStereoPtr                = NULL;
-ADDFUNC* AddWordMonoPtr                   = NULL;
-ADDFUNC* AddWordStereoPtr                 = NULL;
-ADDFUNC* AddWordsMonoPtr                  = NULL;
-ADDFUNC* AddWordsStereoPtr                = NULL;
-ADDFUNC* AddLongMonoPtr                   = NULL;
-ADDFUNC* AddLongStereoPtr                 = NULL;
-ADDFUNC* AddLongsMonoPtr                  = NULL;
-ADDFUNC* AddLongsStereoPtr                = NULL;
-ADDFUNC* AddByteMonoBPtr                  = NULL;
-ADDFUNC* AddByteStereoBPtr                = NULL;
-ADDFUNC* AddBytesMonoBPtr                 = NULL;
-ADDFUNC* AddBytesStereoBPtr               = NULL;
-ADDFUNC* AddWordMonoBPtr                  = NULL;
-ADDFUNC* AddWordStereoBPtr                = NULL;
-ADDFUNC* AddWordsMonoBPtr                 = NULL;
-ADDFUNC* AddWordsStereoBPtr               = NULL;
-ADDFUNC* AddLongMonoBPtr                  = NULL;
-ADDFUNC* AddLongStereoBPtr                = NULL;
-ADDFUNC* AddLongsMonoBPtr                 = NULL;
-ADDFUNC* AddLongsStereoBPtr               = NULL;
-
-ADDFUNC* AddLofiByteMonoPtr               = NULL;
-ADDFUNC* AddLofiByteStereoPtr             = NULL;
-ADDFUNC* AddLofiBytesMonoPtr              = NULL;
-ADDFUNC* AddLofiBytesStereoPtr            = NULL;
-ADDFUNC* AddLofiWordMonoPtr               = NULL;
-ADDFUNC* AddLofiWordStereoPtr             = NULL;
-ADDFUNC* AddLofiWordsMonoPtr              = NULL;
-ADDFUNC* AddLofiWordsStereoPtr            = NULL;
-ADDFUNC* AddLofiLongMonoPtr               = NULL;
-ADDFUNC* AddLofiLongStereoPtr             = NULL;
-ADDFUNC* AddLofiLongsMonoPtr              = NULL;
-ADDFUNC* AddLofiLongsStereoPtr            = NULL;
-ADDFUNC* AddLofiByteMonoBPtr              = NULL;
-ADDFUNC* AddLofiByteStereoBPtr            = NULL;
-ADDFUNC* AddLofiBytesMonoBPtr             = NULL;
-ADDFUNC* AddLofiBytesStereoBPtr           = NULL;
-ADDFUNC* AddLofiWordMonoBPtr              = NULL;
-ADDFUNC* AddLofiWordStereoBPtr            = NULL;
-ADDFUNC* AddLofiWordsMonoBPtr             = NULL;
-ADDFUNC* AddLofiWordsStereoBPtr           = NULL;
-ADDFUNC* AddLofiLongMonoBPtr              = NULL;
-ADDFUNC* AddLofiLongStereoBPtr            = NULL;
-ADDFUNC* AddLofiLongsMonoBPtr             = NULL;
-ADDFUNC* AddLofiLongsStereoBPtr           = NULL;
-
-const ULONG  DriverVersion  = 2;
-const ULONG  Version        = VERSION;
-const ULONG  Revision       = REVISION;
-
-const ULONG	 __LIB_Version  = VERSION;
-const ULONG	 __LIB_Revision = REVISION;
-
-const char DevName[]   = AHINAME;
-const char IDString[]  = AHINAME " " VERS "\r\n";
-
-#ifndef __AMIGAOS4__
-static const char VersTag[] =
- "$VER: " AHINAME " " VERS " ©1994-2003 Martin Blom. "
- CPU 
- " version.\r\n";
-#else
-static const char VersTag[] =
- "$VER: " AHINAME " " VERS " ©1994-2003 Martin Blom. "
- "603e" 
- " version.\r\n";
+#if defined( ENABLE_WARPUP )
+struct Library            *PowerPCBase    = NULL;
+void                      *PPCObject      = NULL;
+const ULONG               __LIB_Version  = VERSION;
+const ULONG               __LIB_Revision = REVISION;
 #endif
 
-/* linker can use symbol b for symbol a if a is not defined */
-#define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
+enum MixBackend_t          MixBackend     = MB_NATIVE;
 
-ALIAS( __UtilityBase, UtilityBase );
+ADDFUNC* AddByteMonoPtr                   = AddByteMono;
+ADDFUNC* AddByteStereoPtr                 = AddByteStereo;
+ADDFUNC* AddByte71Ptr                     = AddByte71;
+ADDFUNC* AddBytesMonoPtr                  = AddBytesMono;
+ADDFUNC* AddBytesStereoPtr                = AddBytesStereo;
+ADDFUNC* AddBytes71Ptr                    = AddBytes71;
+ADDFUNC* AddWordMonoPtr                   = AddWordMono;
+ADDFUNC* AddWordStereoPtr                 = AddWordStereo;
+ADDFUNC* AddWord71Ptr                     = AddWord71;
+ADDFUNC* AddWordsMonoPtr                  = AddWordsMono;
+ADDFUNC* AddWordsStereoPtr                = AddWordsStereo;
+ADDFUNC* AddWords71Ptr                    = AddWords71;
+ADDFUNC* AddLongMonoPtr                   = AddLongMono;
+ADDFUNC* AddLongStereoPtr                 = AddLongStereo;
+ADDFUNC* AddLong71Ptr                     = AddLong71;
+ADDFUNC* AddLongsMonoPtr                  = AddLongsMono;
+ADDFUNC* AddLongsStereoPtr                = AddLongsStereo;
+ADDFUNC* Add71MonoPtr                     = Add71Mono;
+ADDFUNC* Add71StereoPtr                   = Add71Stereo;
+ADDFUNC* AddLongs71Ptr                    = AddLongs71;
+ADDFUNC* Add7171Ptr                       = Add7171;
+
+ADDFUNC* AddByteMonoBPtr                  = AddByteMonoB;
+ADDFUNC* AddByteStereoBPtr                = AddByteStereoB;
+ADDFUNC* AddByte71BPtr                    = AddByte71B;
+ADDFUNC* AddBytesMonoBPtr                 = AddBytesMonoB;
+ADDFUNC* AddBytesStereoBPtr               = AddBytesStereoB;
+ADDFUNC* AddBytes71BPtr                   = AddBytes71B;
+ADDFUNC* AddWordMonoBPtr                  = AddWordMonoB;
+ADDFUNC* AddWordStereoBPtr                = AddWordStereoB;
+ADDFUNC* AddWord71BPtr                    = AddWord71B;
+ADDFUNC* AddWordsMonoBPtr                 = AddWordsMonoB;
+ADDFUNC* AddWordsStereoBPtr               = AddWordsStereoB;
+ADDFUNC* AddWords71BPtr                   = AddWords71B;
+ADDFUNC* AddLongMonoBPtr                  = AddLongMonoB;
+ADDFUNC* AddLongStereoBPtr                = AddLongStereoB;
+ADDFUNC* AddLong71BPtr                    = AddLong71B;
+ADDFUNC* AddLongsMonoBPtr                 = AddLongsMonoB;
+ADDFUNC* AddLongsStereoBPtr               = AddLongsStereoB;
+ADDFUNC* AddLongs71BPtr                   = AddLongs71B;
+ADDFUNC* Add71MonoBPtr                    = Add71MonoB;
+ADDFUNC* Add71StereoBPtr                  = Add71StereoB;
+ADDFUNC* Add7171BPtr                      = Add7171B;
+
+ADDFUNC* AddLofiByteMonoPtr               = AddLofiByteMono;
+ADDFUNC* AddLofiByteStereoPtr             = AddLofiByteStereo;
+ADDFUNC* AddLofiBytesMonoPtr              = AddLofiBytesMono;
+ADDFUNC* AddLofiBytesStereoPtr            = AddLofiBytesStereo;
+ADDFUNC* AddLofiWordMonoPtr               = AddLofiWordMono;
+ADDFUNC* AddLofiWordStereoPtr             = AddLofiWordStereo;
+ADDFUNC* AddLofiWordsMonoPtr              = AddLofiWordsMono;
+ADDFUNC* AddLofiWordsStereoPtr            = AddLofiWordsStereo;
+ADDFUNC* AddLofiLongMonoPtr               = AddLofiLongMono;
+ADDFUNC* AddLofiLongStereoPtr             = AddLofiLongStereo;
+ADDFUNC* AddLofiLongsMonoPtr              = AddLofiLongsMono;
+ADDFUNC* AddLofiLongsStereoPtr            = AddLofiLongsStereo;
+ADDFUNC* AddLofiByteMonoBPtr              = AddLofiByteMonoB;
+ADDFUNC* AddLofiByteStereoBPtr            = AddLofiByteStereoB;
+ADDFUNC* AddLofiBytesMonoBPtr             = AddLofiBytesMonoB;
+ADDFUNC* AddLofiBytesStereoBPtr           = AddLofiBytesStereoB;
+ADDFUNC* AddLofiWordMonoBPtr              = AddLofiWordMonoB;
+ADDFUNC* AddLofiWordStereoBPtr            = AddLofiWordStereoB;
+ADDFUNC* AddLofiWordsMonoBPtr             = AddLofiWordsMonoB;
+ADDFUNC* AddLofiWordsStereoBPtr           = AddLofiWordsStereoB;
+ADDFUNC* AddLofiLongMonoBPtr              = AddLofiLongMonoB;
+ADDFUNC* AddLofiLongStereoBPtr            = AddLofiLongStereoB;
+ADDFUNC* AddLofiLongsMonoBPtr             = AddLofiLongsMonoB;
+ADDFUNC* AddLofiLongsStereoBPtr           = AddLofiLongsStereoB;
 
 /******************************************************************************
 ** Device code ****************************************************************
 ******************************************************************************/
+
+#ifndef __AMIGAOS4__
+
+static __inline void DeleteLibrary(struct Library *base) {
+  FreeMem((APTR)(((char*)base)-base->lib_NegSize),base->lib_NegSize+base->lib_PosSize);
+}
+
+#endif
 
 struct AHIBase*
 _DevInit( struct AHIBase*  device,
 	  APTR             seglist,
 	  struct ExecBase* sysbase )
 {
-  SysBase = sysbase;
   AHIBase = device;
+  SysBase = sysbase;
 
-#ifndef __AMIGAOS4__
-  AHIBase->ahib_Library.lib_Node.ln_Type = NT_DEVICE;
-  AHIBase->ahib_Library.lib_Node.ln_Name = (STRPTR) DevName;
-  AHIBase->ahib_Library.lib_Flags        = LIBF_SUMUSED | LIBF_CHANGED;
-  AHIBase->ahib_Library.lib_Version      = VERSION;
-  AHIBase->ahib_Library.lib_IdString     = (STRPTR) IDString;
-#endif
-  AHIBase->ahib_Library.lib_Revision     = REVISION;
+  device->ahib_Library.lib_Revision = REVISION;
   
-  AHIBase->ahib_SysLib  = sysbase;
-  AHIBase->ahib_SegList = (BPTR) seglist;
+  device->ahib_SysLib  = sysbase;
+  device->ahib_SegList = (BPTR) seglist;
 
 #if defined( __mc68000__ )
   // Make sure we're running on a M68020 or better
   
-  if( ( SysBase->AttnFlags & AFF_68020 ) == 0 )
+  if( ( sysbase->AttnFlags & AFF_68020 ) == 0 )
   {
     Alert( ( AN_Unknown | ACPU_InstErr ) & (~AT_DeadEnd) );
-
-    FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
-             device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
+    DeleteLibrary( &device->ahib_Library );
     return NULL;
   }
 #endif
 
-  InitSemaphore( &AHIBase->ahib_Lock );
+  InitSemaphore( &device->ahib_Lock );
 
   if( !OpenLibs() )
   {
     CloseLibs();
-    FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
-             device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
+    DeleteLibrary( &device->ahib_Library );
     return NULL;
   }
 
-  return AHIBase;
+  return device;
 }
 
 
@@ -293,8 +314,7 @@ _DevExpunge( struct AHIBase* device )
 
     CloseLibs();
 
-    FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
-             device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
+    DeleteLibrary( &device->ahib_Library );
   }
   else
   {
@@ -566,7 +586,7 @@ OpenLibs ( void )
 
   /* Timer Device */
 
-  TimerIO = (struct timerequest *) AllocVec( sizeof(struct timerequest),
+  TimerIO = (struct timerequest *) AllocMem( sizeof(struct timerequest),
                                              MEMF_PUBLIC | MEMF_CLEAR );
 
   if( TimerIO == NULL)
@@ -607,13 +627,11 @@ OpenLibs ( void )
        return FALSE;
   }
 
-
   if ((IDOS = (struct DOSIFace *) GetInterface((struct Library *) DOSBase, "main", 1, NULL)) == NULL)
   {
        Req("Couldn't open IDOS interface!\n");
        return FALSE;
   }
-
 
   if ((IGraphics = (struct GraphicsIFace *) GetInterface((struct Library *) GfxBase, "main", 1, NULL)) == NULL)
   {
@@ -621,13 +639,11 @@ OpenLibs ( void )
        return FALSE;
   }
   
-
   if ((IGadTools = (struct GadToolsIFace *) GetInterface((struct Library *) GadToolsBase, "main", 1, NULL)) == NULL)
   {
        Req("Couldn't open IGadTools interface!\n");
        return FALSE;
   }
-
 
   if ((IIFFParse = (struct IFFParseIFace *) GetInterface((struct Library *) IFFParseBase, "main", 1, NULL)) == NULL)
   {
@@ -635,7 +651,6 @@ OpenLibs ( void )
        return FALSE;
   }
 
-  
   if ((ILocale = (struct LocaleIFace *) GetInterface((struct Library *) LocaleBase, "main", 1, NULL)) == NULL)
   {
        Req("Couldn't open ILocale interface!\n");
@@ -653,35 +668,55 @@ OpenLibs ( void )
        Req("Couldn't open Utility interface!\n");
        return FALSE;
   }
-
 #endif
 
+
+#if 0
   // Fill in some defaults...
 
   AddByteMonoPtr         = AddByteMono;
   AddByteStereoPtr       = AddByteStereo;
+  AddByte71Ptr           = AddByte71;
   AddBytesMonoPtr        = AddBytesMono;
   AddBytesStereoPtr      = AddBytesStereo;
+  AddBytes71Ptr          = AddBytes71;
   AddWordMonoPtr         = AddWordMono;
   AddWordStereoPtr       = AddWordStereo;
+  AddWord71Ptr           = AddWord71;
   AddWordsMonoPtr        = AddWordsMono;
   AddWordsStereoPtr      = AddWordsStereo;
+  AddWords71Ptr          = AddWords71;
   AddLongMonoPtr         = AddLongMono;
   AddLongStereoPtr       = AddLongStereo;
+  AddLong71Ptr           = AddLong71;
   AddLongsMonoPtr        = AddLongsMono;
   AddLongsStereoPtr      = AddLongsStereo;
+  Add71MonoPtr           = Add71Mono;
+  Add71StereoPtr         = Add71Stereo;
+  AddLongs71Ptr          = AddLongs71;
+  Add7171Ptr             = Add7171;
+ 
   AddByteMonoBPtr        = AddByteMonoB;
   AddByteStereoBPtr      = AddByteStereoB;
+  AddByte71BPtr          = AddByte71B;
   AddBytesMonoBPtr       = AddBytesMonoB;
   AddBytesStereoBPtr     = AddBytesStereoB;
+  AddBytes71BPtr         = AddBytes71B;
   AddWordMonoBPtr        = AddWordMonoB;
   AddWordStereoBPtr      = AddWordStereoB;
+  AddWord71BPtr          = AddWord71B;
   AddWordsMonoBPtr       = AddWordsMonoB;
   AddWordsStereoBPtr     = AddWordsStereoB;
+  AddWords71BPtr         = AddWords71B;
   AddLongMonoBPtr        = AddLongMonoB;
   AddLongStereoBPtr      = AddLongStereoB;
+  AddLong71BPtr          = AddLong71B;
   AddLongsMonoBPtr       = AddLongsMonoB;
   AddLongsStereoBPtr     = AddLongsStereoB;
+  AddLongs71BPtr         = AddLongs71B;
+  Add71MonoBPtr          = Add71MonoB;
+  Add71StereoBPtr        = Add71StereoB;
+  Add7171BPtr            = Add7171B;
 
   AddLofiByteMonoPtr     = AddLofiByteMono;
   AddLofiByteStereoPtr   = AddLofiByteStereo;
@@ -707,16 +742,188 @@ OpenLibs ( void )
   AddLofiLongStereoBPtr  = AddLofiLongStereoB;
   AddLofiLongsMonoBPtr   = AddLofiLongsMonoB;
   AddLofiLongsStereoBPtr = AddLofiLongsStereoB;
+#endif
+
+  /* MorphOS/PowerUp/WarpOS loading
+
+     Strategy:
+
+      1) If MorphOS is running, use it.
+      2) If PowerUp is running, but not WarpUp, use the m68k core
+      3) If neither of them are running, try WarpUp.
+
+  */
+
+  // Check if MorpOS/PowerUp/WarpUp is running.
+  {
+#if defined( ENABLE_WARPUP )
+    struct Library* ppclib     = NULL;
+    struct Library* powerpclib = NULL;
+#endif
+
+    Forbid();
+    MorphOSRes  = FindResident( "MorphOS" );
+    
+#if defined( ENABLE_WARPUP )
+    powerpclib = (struct Library *) FindName( &SysBase->LibList,
+                                              "powerpc.library" );
+    ppclib     = (struct Library *) FindName( &SysBase->LibList,
+                                              "ppc.library" );
+#endif
+
+    Permit();
+
+#if defined( ENABLE_WARPUP )
+    if( MorphOSRes == NULL && ! ( ppclib != NULL && powerpclib == NULL ) )
+    {
+      // Open WarpUp (but not if MorphOS or PowerUp is active)
+
+      PowerPCBase = OpenLibrary( "powerpc.library", 15 );
+    }
+#endif
+  }
+
+  if( MorphOSRes != NULL )
+  {
+    MixBackend  = MB_NATIVE;
+  }
+
+#if defined( ENABLE_WARPUP )
+
+  else if( PowerPCBase != NULL )
+  {
+    MixBackend = MB_WARPUP;
+
+    /* Load our code to PPC..  */
+
+    PPCObject = AHILoadObject( "DEVS:ahi.device.elf" );
+
+    if( PPCObject != NULL )
+    {
+      ULONG* version = NULL;
+      ULONG* revision = NULL;
+
+      int r = ~0;
+
+      AHIGetELFSymbol( "__LIB_Version", (void*) &version );
+      AHIGetELFSymbol( "__LIB_Revision", (void*) &revision );
+    
+      if( version != NULL && revision != NULL )
+      {
+        if( *version == VERSION && *revision == REVISION )
+        {
+          r &= GetSymbol( AddByteMono     );
+          r &= GetSymbol( AddByteStereo   );
+          r &= GetSymbol( AddBytesMono    );
+          r &= GetSymbol( AddBytesStereo  );
+          r &= GetSymbol( AddWordMono     );
+          r &= GetSymbol( AddWordStereo   );
+          r &= GetSymbol( AddWordsMono    );
+          r &= GetSymbol( AddWordsStereo  );
+          r &= GetSymbol( AddLongMono     );
+          r &= GetSymbol( AddLongStereo   );
+          r &= GetSymbol( AddLongsMono    );
+          r &= GetSymbol( AddLongsStereo  );
+          r &= GetSymbol( AddByteMonoB    );
+          r &= GetSymbol( AddByteStereoB  );
+          r &= GetSymbol( AddBytesMonoB   );
+          r &= GetSymbol( AddBytesStereoB );
+          r &= GetSymbol( AddWordMonoB    );
+          r &= GetSymbol( AddWordStereoB  );
+          r &= GetSymbol( AddWordsMonoB   );
+          r &= GetSymbol( AddWordsStereoB );
+          r &= GetSymbol( AddLongMonoB    );
+          r &= GetSymbol( AddLongStereoB  );
+          r &= GetSymbol( AddLongsMonoB   );
+          r &= GetSymbol( AddLongsStereoB );
+
+          r &= GetSymbol( AddLofiByteMono     );
+          r &= GetSymbol( AddLofiByteStereo   );
+          r &= GetSymbol( AddLofiBytesMono    );
+          r &= GetSymbol( AddLofiBytesStereo  );
+          r &= GetSymbol( AddLofiWordMono     );
+          r &= GetSymbol( AddLofiWordStereo   );
+          r &= GetSymbol( AddLofiWordsMono    );
+          r &= GetSymbol( AddLofiWordsStereo  );
+          r &= GetSymbol( AddLofiLongMono     );
+          r &= GetSymbol( AddLofiLongStereo   );
+          r &= GetSymbol( AddLofiLongsMono    );
+          r &= GetSymbol( AddLofiLongsStereo  );
+          r &= GetSymbol( AddLofiByteMonoB    );
+          r &= GetSymbol( AddLofiByteStereoB  );
+          r &= GetSymbol( AddLofiBytesMonoB   );
+          r &= GetSymbol( AddLofiBytesStereoB );
+          r &= GetSymbol( AddLofiWordMonoB    );
+          r &= GetSymbol( AddLofiWordStereoB  );
+          r &= GetSymbol( AddLofiWordsMonoB   );
+          r &= GetSymbol( AddLofiWordsStereoB );
+          r &= GetSymbol( AddLofiLongMonoB    );
+          r &= GetSymbol( AddLofiLongStereoB  );
+          r &= GetSymbol( AddLofiLongsMonoB   );
+          r &= GetSymbol( AddLofiLongsStereoB );
+
+          if( r != 0 )
+          {
+            char buffer[ 2 ] = "0";
+        
+            GetVar( "PowerPC/UseDisable", buffer, sizeof buffer, 0 );
+        
+            if( buffer[ 0 ] == '1' )
+            {
+              // OK, then...
+            }
+            else
+            {
+              Req( "The WarpUp variable 'PowerPC/UseDisable' must be '1'." );
+
+              AHIUnloadObject( PPCObject );
+              PPCObject  = NULL;
+              MixBackend = MB_NATIVE;
+            }
+          }
+          else
+          {
+            Req( "Unable to fetch all symbols from ELF object." );
+
+            AHIUnloadObject( PPCObject );
+            PPCObject  = NULL;
+            MixBackend = MB_NATIVE;
+          }
+        }
+        else
+        {
+          Req( "'ahi.device.elf' version %ld.%ld doesn't match "
+               "'ahi.device' version %ld.%ld.",
+               *version, *revision, VERSION, REVISION );
+
+          AHIUnloadObject( PPCObject );
+          PPCObject  = NULL;
+          MixBackend = MB_NATIVE;
+        }
+      }
+      else
+      {
+        Req( "Unable to fetch version information from 'ahi.device.elf'." );
+
+        AHIUnloadObject( PPCObject );
+        PPCObject  = NULL;
+        MixBackend = MB_NATIVE;
+      }
+    }
+    else
+    {
+      MixBackend = MB_NATIVE;
+    }
+  }
+
+#endif
+
+  else 
+  {
+    //MixBackend = MB_NATIVE;
+  }
 
   OpenahiCatalog(NULL, NULL);
-
-/* #if defined( __amithlon__ ) */
-/*   Req( "This is a *beta* release of AHI/x86,\n" */
-/*        "using the generic 'C' mixing routines.\n" */
-/*        "\n" */
-/*        "Detailed bug reports and patches are welcome.\n" */
-/* 	 "/Martin Blom <martin@blom.org>\n" ); */
-/* #endif */
 
   return TRUE;
 }
@@ -734,66 +941,42 @@ CloseLibs ( void )
 {
   CloseahiCatalog();
 
-  CloseLibrary( (struct Library *) UtilityBase );
-  if( TimerIO  != NULL )
+#if defined( ENABLE_WARPUP )
+  if( PPCObject != NULL )
   {
-    CloseDevice( (struct IORequest *) TimerIO );
-  }
-  FreeVec( TimerIO );
-
-
-#ifdef __AMIGAOS4__
-  if (IIntuition)
-  {
-       DropInterface((struct Interface *) IIntuition );
+    AHIUnloadObject( PPCObject );
   }
 
-
-  if (IDOS)
-  {
-       DropInterface((struct Interface *) IDOS );
-  }
-
-
-  if (IGraphics)
-  {
-       DropInterface((struct Interface *) IGraphics );
-  }
-  
-
-  if (IGadTools)
-  {
-       DropInterface((struct Interface *) IGadTools );
-  }
-
-
-  if (IIFFParse)
-  {
-       DropInterface((struct Interface *) IIFFParse );
-  }
-
-  
-  if (ILocale)
-  {
-       DropInterface((struct Interface *) ILocale );
-  }
-
-  if (ITimer)
-  {
-       DropInterface((struct Interface *) ITimer );
-  }
-  
-  if (IUtility)
-  {
-       DropInterface((struct Interface *) IUtility );
-  }
+  CloseLibrary( PowerPCBase );
 #endif
 
+#ifdef __AMIGAOS4__
+  DropInterface((struct Interface *) IUtility );
+  DropInterface((struct Interface *) ITimer );
+  DropInterface((struct Interface *) ILocale );
+  DropInterface((struct Interface *) IIFFParse );
+  DropInterface((struct Interface *) IGadTools );
+  DropInterface((struct Interface *) IGraphics );
+  DropInterface((struct Interface *) IDOS );
+  DropInterface((struct Interface *) IIntuition );
+#endif
+
+  CloseLibrary( (struct Library *) UtilityBase );
+
+  if( TimerIO != NULL )
+  {
+    if( TimerBase != NULL )
+    {
+      CloseDevice( (struct IORequest *) TimerIO );
+    }
+
+    FreeMem( TimerIO, sizeof(struct timerequest) );
+  }
 
   CloseLibrary( (struct Library *) LocaleBase );
-  CloseLibrary( (struct Library *) IntuitionBase );
   CloseLibrary( IFFParseBase );
   CloseLibrary( GadToolsBase );
   CloseLibrary( (struct Library *) GfxBase );
   CloseLibrary( (struct Library *) DOSBase );
+  CloseLibrary( (struct Library *) IntuitionBase );
 }
