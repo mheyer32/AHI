@@ -20,14 +20,14 @@ CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
 LIBS		= @LIBS@
 
-VPATH		= @srcdir@
+VPATH		= @srcdir@:@srcdir@/../Common
 
 
 #
 # Files
 ########################################
 
-OBJECTS		= test.o
+OBJECTS		= test.o util.o
 EXECUTABLE	= test
 
 
