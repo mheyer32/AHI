@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.11  1997/10/14 17:06:41  lcs
+* Fixed an error in the AHI_LoadSound() autodocs.
+*
 * Revision 4.10  1997/10/11 15:58:13  lcs
 * Boolean variables are compared using XNOR now, not ==.
 *
@@ -1656,7 +1659,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *
 *       info - Depends on type:
 *           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
-*               ahisi_Type - Format of samples (only two supported).
+*               ahisi_Type - Format of samples (four formats are supported).
 *                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
 *                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V4). 
 *                   AHIST_M16S: Mono, 16 bit signed (WORDs).
