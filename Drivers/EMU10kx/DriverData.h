@@ -26,44 +26,115 @@
 #include "hwaccess.h"
 #include "voicemgr.h"
 
-#define RECORD_BUFFER_SAMPLES 4096
+#define RECORD_BUFFER_SAMPLES     4096
+#define RECORD_BUFFER_SIZE_VALUE  ADCBS_BUFSIZE_16384
+#define TIMER_INTERRUPT_FREQUENCY 1000
 
 struct DriverData
 {
-    BOOL                requested;
-    BOOL                enabled;
-    BOOL                master_enabled;
+    /*** PCI/EMU10kx initialization progress **********************************/
+
+    /** TRUE if I/O and interrupt resources claimed */
+    BOOL                pci_requested;
+
+    /** TRUE if PCI device is enabled */
+    BOOL                pci_enabled;
+
+    /** TRUE if bus mastering is activated */
+    BOOL                pci_master_enabled;
+
+    /** TRUE if the EMU10kx chip has been initialized */
     BOOL                emu10k1_initialized;
+
     
+    /*** Playback/recording interrupts ****************************************/
+    
+    /** TRUE when playback is enabled */
+    BOOL                is_playing;
+
+    /** TRUE when recording is enabled */
+    BOOL                is_recording;
+
+    /** The main (hardware) interrupt */
     struct Interrupt    interrupt;
+
+    /** TRUE if the hardware interrupt has been added to the PCI subsystem */
     BOOL                interrupt_added;
 
-    struct Interrupt    software_interrupt;
-    UWORD               pad;
+    /** The playback software interrupt */
+    struct Interrupt    playback_interrupt;
+
+    /** TRUE if the hardware interrupt may Cause() playback_interrupt */
+    BOOL                playback_interrupt_enabled;
+
+    /** The recording software interrupt */
+    struct Interrupt    record_interrupt;
+
+    /** TRUE if the hardware interrupt may Cause() playback_interrupt */
+    BOOL                record_interrupt_enabled;
+
+    
+    /*** EMU10kx structures ***************************************************/
     
     struct emu10k1_card card;
     struct emu_voice    voice;
-    
-    APTR                mixbuffer;
+
     BOOL                voice_buffer_allocated;
     BOOL                voice_allocated;
     BOOL                voice_started;
+    UWORD               pad;
 
-    BOOL                mixing_enabled;
+    
+    /*** Playback interrupt variables *****************************************/
 
+    /** The mixing buffer (a cyclic buffer filled by AHI) */
+    APTR                mix_buffer;
+
+    /** The length of each playback buffer in sample frames */
     ULONG               current_length;
+    
+    /** The length of each playback buffer in sample bytes */
     ULONG               current_size;
+
+    /** Where (inside the cyclic buffer) we're currently writing */
     APTR                current_buffer;
+
+    /** The offset (inside the cyclic buffer) we're currently writing */
     ULONG               current_position;
 
+
+    /*** Recording interrupt variables ****************************************/
+
+    /** The recording buffer (simple double buffering is used */
+    APTR                record_buffer;
+
+    /** The DMA handle for the record buffer */
+    dma_addr_t          record_dma_handle;
+    
+    /** Analog mixer variables ************************************************/
+
+    /** The currently selected input */
     UWORD               input;
+
+    /** The currently selected output */
     UWORD               output;
+
+    /** The current (recording) monitor volume */
     Fixed               monitor_volume;
+
+    /** The current (recording) input gain */
     Fixed               input_gain;
+
+    /** The current (playback) output volume */
     Fixed               output_volume;
 
+    /** The hardware register value corresponding to monitor_volume */
     UWORD               monitor_volume_bits;
+
+    /** The hardware register value corresponding to input_gain */
     UWORD               input_gain_bits;
+
+    /** The hardware register value corresponding to output_volume */
     UWORD               output_volume_bits;
 };
 
