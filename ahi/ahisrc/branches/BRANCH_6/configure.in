@@ -181,6 +181,7 @@ AC_OUTPUT(Makefile
           Device/Makefile
           Docs/Makefile
           Drivers/Makefile
+          Drivers/ac97/Makefile
           Drivers/AROS/Makefile
           Drivers/Common/Makefile.common
           Drivers/Device/Makefile
