@@ -35,6 +35,14 @@ revup:
 	Increases the revision of the distribution.
 
 
+When you add code, please remember a few things:
+
+  · Avoid TAB characters, if possible.
+  · The TAB size is 8.
+  · The indent level is 2.
+  · Compiler warnings are NOT acceptable.
+
+
 Required programs/packages that I'm aware of:
 
 From GeekGadgets
@@ -50,5 +58,6 @@ Other tools
 ~~~~~~~~~~~
 FD2Pragma
 FlexCat
+Makedepend
 PhxAss
 RoboDoc
