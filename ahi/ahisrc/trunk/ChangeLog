@@ -1,4 +1,15 @@
+2004-07-06  Martin Blom  <martin@blom.org>
+
+	* Implemented ahi-driver.class.
+
+2004-06-21  Martin Blom  <martin@blom.org>
+
+	* gain.ahi-processor now modifies the gain softly to the new value
+	when changed.
+
 2004-06-20  Martin Blom  <martin@blom.org>
+
+	* Implemented splitter.ahi-processor.
 
 	* Implemented adder.ahi-processor.
 

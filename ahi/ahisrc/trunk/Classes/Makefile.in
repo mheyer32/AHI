@@ -20,7 +20,9 @@ VPATH		= @srcdir@
 
 .PHONY:		all clean distclean maintainer-clean bindist
 
-SUBDIRS		= AHI Buffer LFO Processor AdderProcessor GainProcessor TickProcessor test
+SUBDIRS		= AHI Buffer Driver LFO Processor \
+		  AdderProcessor GainProcessor SplitterProcessor TickProcessor \
+		  test
 
 all:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done

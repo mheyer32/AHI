@@ -4232,7 +4232,7 @@ EOF
 fi
 done
 
-ac_config_files="$ac_config_files AHI/Makefile AHI-Handler/Makefile AddAudioModes/Makefile Classes/Makefile Classes/test/Makefile Classes/Common/Makefile.common Classes/AHI/Makefile Classes/Buffer/Makefile Classes/LFO/Makefile Classes/Processor/Makefile Classes/AdderProcessor/Makefile Classes/GainProcessor/Makefile Classes/TickProcessor/Makefile Device/Makefile Docs/Makefile Drivers/Makefile Drivers/AROS/Makefile Drivers/Common/Makefile.common Drivers/Device/Makefile Drivers/EMU10kx/Makefile Drivers/Filesave/Makefile Drivers/Void/Makefile Examples/Makefile Examples/Device/PlayTest/Makefile Examples/Extras/CloneAudioModes/Makefile Examples/Low-level/PlaySineEverywhere/Makefile Examples/Low-level/ScanAudioModes/Makefile Include/Makefile Makefile"
+ac_config_files="$ac_config_files AHI/Makefile AHI-Handler/Makefile AddAudioModes/Makefile Classes/Makefile Classes/test/Makefile Classes/Common/Makefile.common Classes/AHI/Makefile Classes/Buffer/Makefile Classes/Driver/Makefile Classes/LFO/Makefile Classes/Processor/Makefile Classes/AdderProcessor/Makefile Classes/GainProcessor/Makefile Classes/SplitterProcessor/Makefile Classes/TickProcessor/Makefile Device/Makefile Docs/Makefile Drivers/Makefile Drivers/AROS/Makefile Drivers/Common/Makefile.common Drivers/Device/Makefile Drivers/EMU10kx/Makefile Drivers/Filesave/Makefile Drivers/Void/Makefile Examples/Makefile Examples/Device/PlayTest/Makefile Examples/Extras/CloneAudioModes/Makefile Examples/Low-level/PlaySineEverywhere/Makefile Examples/Low-level/ScanAudioModes/Makefile Include/Makefile Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4548,10 +4548,12 @@ do
   "Classes/Common/Makefile.common" ) CONFIG_FILES="$CONFIG_FILES Classes/Common/Makefile.common" ;;
   "Classes/AHI/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/AHI/Makefile" ;;
   "Classes/Buffer/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/Buffer/Makefile" ;;
+  "Classes/Driver/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/Driver/Makefile" ;;
   "Classes/LFO/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/LFO/Makefile" ;;
   "Classes/Processor/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/Processor/Makefile" ;;
   "Classes/AdderProcessor/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/AdderProcessor/Makefile" ;;
   "Classes/GainProcessor/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/GainProcessor/Makefile" ;;
+  "Classes/SplitterProcessor/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/SplitterProcessor/Makefile" ;;
   "Classes/TickProcessor/Makefile" ) CONFIG_FILES="$CONFIG_FILES Classes/TickProcessor/Makefile" ;;
   "Device/Makefile" ) CONFIG_FILES="$CONFIG_FILES Device/Makefile" ;;
   "Docs/Makefile" ) CONFIG_FILES="$CONFIG_FILES Docs/Makefile" ;;
@@ -4570,7 +4572,7 @@ do
   "Include/Makefile" ) CONFIG_FILES="$CONFIG_FILES Include/Makefile" ;;
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
-  *) { { echo "$as_me:4573: error: invalid argument: $ac_config_target" >&5
+  *) { { echo "$as_me:4575: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
   esac
@@ -4816,7 +4818,7 @@ done; }
   esac
 
   if test x"$ac_file" != x-; then
-    { echo "$as_me:4819: creating $ac_file" >&5
+    { echo "$as_me:4821: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
     rm -f "$ac_file"
   fi
@@ -4834,7 +4836,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:4837: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:4839: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -4847,7 +4849,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:4850: error: cannot find input file: $f" >&5
+           { { echo "$as_me:4852: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -4884,10 +4886,12 @@ s,@INSTALL@,$ac_INSTALL,;t t
     Classes/Common/Makefile.common ) echo timestamp > stamp-h ;;
     Classes/AHI/Makefile ) echo timestamp > stamp-h ;;
     Classes/Buffer/Makefile ) echo timestamp > stamp-h ;;
+    Classes/Driver/Makefile ) echo timestamp > stamp-h ;;
     Classes/LFO/Makefile ) echo timestamp > stamp-h ;;
     Classes/Processor/Makefile ) echo timestamp > stamp-h ;;
     Classes/AdderProcessor/Makefile ) echo timestamp > stamp-h ;;
     Classes/GainProcessor/Makefile ) echo timestamp > stamp-h ;;
+    Classes/SplitterProcessor/Makefile ) echo timestamp > stamp-h ;;
     Classes/TickProcessor/Makefile ) echo timestamp > stamp-h ;;
     Device/Makefile ) echo timestamp > stamp-h ;;
     Docs/Makefile ) echo timestamp > stamp-h ;;
@@ -4940,7 +4944,7 @@ for ac_file in : $CONFIG_HEADERS; do test "x$ac_file" = x: && continue
   * )   ac_file_in=$ac_file.in ;;
   esac
 
-  test x"$ac_file" != x- && { echo "$as_me:4943: creating $ac_file" >&5
+  test x"$ac_file" != x- && { echo "$as_me:4947: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
 
   # First look for the input files in the build tree, otherwise in the
@@ -4951,7 +4955,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:4954: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:4958: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -4964,7 +4968,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:4967: error: cannot find input file: $f" >&5
+           { { echo "$as_me:4971: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -5081,7 +5085,7 @@ cat >>$CONFIG_STATUS <<\EOF
   rm -f $tmp/in
   if test x"$ac_file" != x-; then
     if cmp -s $ac_file $tmp/config.h 2>/dev/null; then
-      { echo "$as_me:5084: $ac_file is unchanged" >&5
+      { echo "$as_me:5088: $ac_file is unchanged" >&5
 echo "$as_me: $ac_file is unchanged" >&6;}
     else
       ac_dir=`$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
