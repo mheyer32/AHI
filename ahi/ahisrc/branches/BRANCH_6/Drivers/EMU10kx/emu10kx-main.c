@@ -502,7 +502,7 @@ _AHIsub_Start( ULONG                   flags,
 	return AHIE_UNKNOWN;
     }
 
-    if( dd->card.is_audigy ) {
+    if( dd->card.is_audigy )
       adcctl |= A_ADCCR_LCHANENABLE | A_ADCCR_RCHANENABLE;
     else
       adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;

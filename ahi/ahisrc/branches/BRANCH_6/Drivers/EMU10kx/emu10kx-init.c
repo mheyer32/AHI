@@ -32,11 +32,14 @@
 /* We use global library bases instead of storing them in DriverBase, since
    I don't want to modify the original sources more than necessary. */
 
-struct ExecBase*   SysBase;
-struct DosLibrary* DOSBase;
 struct DriverBase* AHIsubBase;
 
-#ifdef __AMIGAOS4__
+#ifndef __AMIGAOS4__
+struct ExecBase*   SysBase;
+struct DosLibrary* DOSBase;
+#else
+struct Library*   SysBase;
+struct Library*   DOSBase;
 struct DOSIFace*            IDOS          = NULL;
 struct AHIsubIFace*         IAHIsub       = NULL;
 struct ExecIFace*           IExec         = NULL;

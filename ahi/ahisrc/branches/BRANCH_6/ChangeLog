@@ -1,3 +1,7 @@
+2005-03-26  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Added small patch from Davy.
+
 2005-03-24  Martin Blom  <martin@blom.org>
 
 	* emu10kx.audio: Removed unnecessary OS4-only interrupt disable
