@@ -169,5 +169,6 @@ AC_OUTPUT(Makefile
           Drivers/Void/Makefile
 	  Examples/Makefile
 	  Examples/Extras/CloneAudioModes/Makefile
+	  Examples/Low-level/PlaySineEverywhere/Makefile
           Include/Makefile,
           echo timestamp > stamp-h)
