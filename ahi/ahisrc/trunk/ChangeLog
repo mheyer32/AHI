@@ -1,5 +1,7 @@
 2004-01-25  Martin Blom  <martin@blom.org>
 
+	* Released emu10kx.audio 5.16.
+
 	* emu10kx.audio: Applied AmigaOS 4 patches (with minor
 	modifications) from Davy Wentzler.
 
