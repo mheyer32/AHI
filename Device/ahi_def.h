@@ -199,13 +199,10 @@ struct AHIChannelData
   LONG    cd_TempLastSampleL;     /* for linear interpolation routines */
   LONG    cd_LastSampleR;         /* for linear interpolation routines */
   LONG    cd_TempLastSampleR;     /* for linear interpolation routines */
-  LONG    cd_LastScaledSampleL;   /* for anticlick */
-  LONG    cd_LastScaledSampleR;   /* for anticlick */
 
   struct AHIChannelData *cd_Succ; /* For the wet and dry lists */
   UWORD   cd_ChannelNo;
   UWORD   cd_Pad;
-  LONG    cd_AntiClickCount;
 } __attribute__  ((packed));
 
 #else
@@ -213,6 +210,7 @@ struct AHIChannelData
 struct AHIChannelData
 {
   UWORD   cd_EOS;                 /* $FFFF: Sample has reached end */
+
   UBYTE   cd_FreqOK;              /* $00: Freq=0 ; $FF: Freq<>0 */
   UBYTE   cd_SoundOK;             /* $00: No sound set ; $FF: S. OK. */
   APTR    cd_DataStart;
@@ -226,7 +224,6 @@ struct AHIChannelData
   APTR    cd_AddRoutine;
   ULONG   cd_Type;
 
-  UWORD   cd_NextEOS;             /* Not in use */
   UBYTE   cd_NextFreqOK;
   UBYTE   cd_NextSoundOK;
   APTR    cd_NextDataStart;
@@ -240,14 +237,29 @@ struct AHIChannelData
   APTR    cd_NextAddRoutine;
   ULONG   cd_NextType;
 
+  UBYTE   cd_DelayedFreqOK;
+  UBYTE   cd_DelayedSoundOK;
+  APTR    cd_DelayedDataStart;
+  Fixed64 cd_DelayedOffset;
+  Fixed64 cd_DelayedAdd;
+  Fixed64 cd_DelayedLastOffset;
+  Fixed   cd_DelayedScaleLeft;
+  Fixed   cd_DelayedScaleRight;
+  Fixed   cd_DelayedVolumeLeft;
+  Fixed   cd_DelayedVolumeRight;
+  APTR    cd_DelayedAddRoutine;
+  ULONG   cd_DelayedType;
+
   LONG    cd_Samples;             /* Samples left to store (down-counter) */
   LONG    cd_FirstOffsetI;        /* for linear interpolation routines */
+
+  LONG    cd_DelayedSamples;
+  LONG    cd_DelayedFirstOffsetI;
+
   LONG    cd_LastSampleL;         /* for linear interpolation routines */
   LONG    cd_TempLastSampleL;     /* for linear interpolation routines */
   LONG    cd_LastSampleR;         /* for linear interpolation routines */
   LONG    cd_TempLastSampleR;     /* for linear interpolation routines */
-  LONG    cd_LastScaledSampleL;   /* for anticlick */
-  LONG    cd_LastScaledSampleR;   /* for anticlick */
 
   struct AHIChannelData *cd_Succ; /* For the wet and dry lists */
   UWORD   cd_ChannelNo;

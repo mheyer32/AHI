@@ -56,6 +56,10 @@ AHILoadObject( const char* objname );
 void
 AHIUnLoadObject( void* obj );
 
+BOOL
+AHIGetELFSymbol( const char* name,
+                 void** ptr );
+
 #endif /* VERSION68K */
 
 #endif /* _MISC_H_ */

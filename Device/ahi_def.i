@@ -159,13 +159,10 @@ SOFFSET     SET     SOFFSET+F64_SIZEOF
 	LONG	cd_TempLastSampleL	;for linear interpolation routines
 	LONG	cd_LastSampleR		;for linear interpolation routines
 	LONG	cd_TempLastSampleR	;for linear interpolation routines
-	LONG	cd_LastScaledSampleL	;for anticlick
-	LONG	cd_LastScaledSampleR	;for anticlick
 
 	APTR	cd_Succ			;For the wet and dry lists
 	UWORD	cd_ChannelNo
 	UWORD	cd_Pad
-	LONG	cd_AntiClickCount
 
 	LABEL	AHIChannelData_SIZEOF
 

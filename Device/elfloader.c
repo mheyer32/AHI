@@ -504,6 +504,29 @@ ELFUnLoadObject( void* obj )
   freeelfobj(elfobj);
 }
 
+BOOL
+ELFGetSymbol( void* obj,
+              const char* name, 
+              void** ptr )
+{
+  struct PPCObjectInfo oi =
+  {
+    0,
+    NULL,
+    PPCELFINFOTYPE_SYMBOL,
+    STT_SECTION,
+    STB_GLOBAL,
+    0
+  };
+
+  BOOL rc;
+
+  oi.Name = (char*) name;
+  rc = scanElfSymbols( (struct ElfObject*) obj, &oi, FALSE );
+  *ptr = (void*) oi.Address;
+
+  return rc;
+}
 
 
 static void freeelfobj(struct ElfObject *elfobj)
@@ -573,7 +596,7 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
 {
   ULONG addr = info->Address;
   char *name = info->Name;
-
+kprintf( "scanElfSymbols( 0x%08lx, 0x%08lx, %ld\n", eo, info, relmode );
   if (relmode) {
     int i,j;
     struct ELFSection *es;
@@ -603,8 +626,8 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
   else {
     struct Elf32_Sym *stab = eo->symtab;
     int i = eo->nsyms;
-
     while (--i) {
+kprintf( "i=%ld\n", i );
       if (getsyminfo(eo,info,++stab)) {
         if (!name) {
           if (info->Size) {
@@ -617,6 +640,7 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
           }
         }
         else {
+kprintf( "comparing %s and %s\n", name,info->Name );
           if (!strcmp(name,info->Name))
             return (TRUE);
         }
