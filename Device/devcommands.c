@@ -244,6 +244,15 @@ TermIO ( struct AHIRequest *ioreq,
     KPrintF("Terminating IO Request 0x%08lx", (ULONG) ioreq);
   }
 
+  if( ioreq->ahir_Std.io_Command == CMD_WRITE )
+  {
+    // Update master volume if we're terminating a write request
+    UpdateMasterVolume( iounit, AHIBase );
+
+    // Convert io_Actual to bytes
+    ioreq->ahir_Std.io_Actual *= AHI_SampleFrameSize(ioreq->ahir_Type);
+  }
+  
   if(ioreq->ahir_Extras != 0)
   {
     int  sound  = GetExtras(ioreq)->Sound;
@@ -259,15 +268,6 @@ TermIO ( struct AHIRequest *ioreq,
     FreeVec( extras );
   }
 
-  if( ioreq->ahir_Std.io_Command == CMD_WRITE )
-  {
-    // Update master volume if we're terminating a write request
-    UpdateMasterVolume( iounit, AHIBase );
-
-    // Convert io_Actual to bytes
-    ioreq->ahir_Std.io_Actual *= AHI_SampleFrameSize(ioreq->ahir_Type);
-  }
-  
   if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
   {
       ReplyMsg(&ioreq->ahir_Std.io_Message);
@@ -1596,15 +1596,17 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
   struct Library*    AHIsubBase;
 
   AHIsubBase = ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_SubLib;
-  
+
+  KPrintF("Update\n");
   AHIObtainSemaphore(&iounit->Lock);
 
   for(ioreq1 = (struct AHIRequest*) iounit->PlayingList.mlh_Head;
       ioreq1->ahir_Std.io_Message.mn_Node.ln_Succ;
       ioreq1 = (struct AHIRequest*) ioreq1->ahir_Std.io_Message.mn_Node.ln_Succ)
   {
-    ULONG id = ioreq1->ahir_Private[1];
-    int   c  = 0;
+    ULONG id     = ioreq1->ahir_Private[1];
+    int   c      = 0;
+    LONG  maxdiv = 1;
 
 /*     KPrintF( "Checking id %08lx on request %08lx... ", id, ioreq1 ); */
     
@@ -1615,14 +1617,27 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
       if( ioreq2->ahir_Private[1] == id )
       {
 	++c;
+
+	if( GetExtras(ioreq2) && GetExtras(ioreq2)->VolumeDiv > maxdiv )
+	{
+	  maxdiv = GetExtras(ioreq2)->VolumeDiv;
+	}
       }
     }
 
-/*     KPrintF( "%ld requests -> Vol %05lx => %05lx\n", */
-/* 	     c, ioreq1->ahir_Volume, */
-/* 	     ioreq1->ahir_Volume / GetExtras(ioreq1)->VolumeDiv ); */
+    if( maxdiv < c )
+    {
+      maxdiv = c;
+    }
 
-    GetExtras(ioreq1)->VolumeDiv = c;
+    if( GetExtras(ioreq1)->VolumeDiv < maxdiv )
+    {
+      GetExtras(ioreq1)->VolumeDiv = maxdiv;
+    }
+
+/*     KPrintF( "%ld requests, maxdiv = %ld -> Vol %05lx => %05lx\n", */
+/* 	     c, maxdiv, ioreq1->ahir_Volume, */
+/* 	     ioreq1->ahir_Volume / GetExtras(ioreq1)->VolumeDiv ); */
   }
 
   // Now update the volume as quickly as possible ...
@@ -1633,11 +1648,14 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
       ioreq1->ahir_Std.io_Message.mn_Node.ln_Succ;
       ioreq1 = (struct AHIRequest*) ioreq1->ahir_Std.io_Message.mn_Node.ln_Succ)
   {
-    AHI_SetVol( GetExtras(ioreq1)->Channel,
-	    ioreq1->ahir_Volume / GetExtras(ioreq1)->VolumeDiv,
-	    ioreq1->ahir_Position,
-	    iounit->AudioCtrl,
-	    AHISF_IMM );
+    if( GetExtras(ioreq1)->Channel != NOCHANNEL )
+    {
+      AHI_SetVol( GetExtras(ioreq1)->Channel,
+		  ioreq1->ahir_Volume / GetExtras(ioreq1)->VolumeDiv,
+		  ioreq1->ahir_Position,
+		  iounit->AudioCtrl,
+		  AHISF_IMM );
+    }
   } 
 
   AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
