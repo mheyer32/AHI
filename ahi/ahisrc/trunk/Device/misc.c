@@ -27,14 +27,17 @@
 
 #include <exec/lists.h>
 #include <exec/nodes.h>
-#include <powerpc/powerpc.h>
-#include <powerpc/memoryPPC.h>
 #include <intuition/intuition.h>
 
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/timer.h>
-#include <proto/powerpc.h>
+
+#if defined( ENABLE_WARPUP )
+# include <powerpc/powerpc.h>
+# include <powerpc/memoryPPC.h>
+# include <proto/powerpc.h>
+#endif
 
 #include "ahi_def.h"
 #include "header.h"

@@ -27,7 +27,7 @@ AS		= @AS@
 AR              = @AR@
 RANLIB          = @RANLIB@
 
-CPPFLAGS	= @CPPFLAGS@ -I${srcdir}
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${srcdir}
 CFLAGS		= @CFLAGS@
 ASFLAGS		= @ASFLAGS@
 LDFLAGS		= @LDFLAGS@ -nostartfiles
