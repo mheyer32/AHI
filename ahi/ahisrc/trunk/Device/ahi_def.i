@@ -1,20 +1,4 @@
 * $Id$
-* $Log$
-* Revision 4.7  1998/01/29 23:09:47  lcs
-* Playing with anticlick
-*
-* Revision 4.6  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.5  1998/01/12 20:07:28  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.4  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.3  1997/10/11 15:58:13  lcs
-* Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
-*
 
 	IFND    AHI_DEF_I
 AHI_DEF_I	SET	1
@@ -65,14 +49,6 @@ SOFFSET     SET     SOFFSET+F64_SIZEOF
 
 AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 
-* Message passed to the Unit Process at
-* startup time.
-
-	STRUCTURE StartupMessage,0
-	STRUCT	Msg,MN_SIZE
-	APTR	Unit
-	LABEL	StartupMessage_SIZEOF
-
 	BITDEF	AHIB,NOSURROUND,0
 	BITDEF	AHIB,NOECHO,1
 	BITDEF	AHIB,FASTECHO,2
@@ -87,7 +63,6 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	APTR	ahib_AudioCtrl
 	STRUCT	ahib_DevUnits,AHI_UNITS*4
 	STRUCT  ahib_Lock,SS_SIZE
-	STRUCT	ahib_Startup,StartupMessage_SIZEOF
 	ULONG	ahib_AudioMode
 	ULONG	ahib_Frequency
 	Fixed	ahib_MonitorVolume

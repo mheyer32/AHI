@@ -1,21 +1,7 @@
-/* $Id$
-* $Log$
-* Revision 4.8  1998/06/23 21:17:22  lcs
-* Now always sets IoErr().
-*
-* Revision 4.7  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.6  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.5  1997/10/23 01:10:03  lcs
-* Better debug output.
-*
-*/
+/* $Id$ */
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
 
 #include <math.h>
 #include <exec/memory.h>
@@ -24,28 +10,22 @@
 #include <intuition/intuition.h>
 #include <intuition/intuitionbase.h>
 #include <libraries/gadtools.h>
-
-#include "localize.h"
-
-#include <string.h>
-
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/gadtools.h>
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <string.h>
 
-#ifndef  noprotos
+#include "ahi_def.h"
+#include "localize.h"
+#include "asmfuncs.h"
+#include "modeinfo.h"
+#include "debug.h"
 
-#ifndef _GENPROTO
-#include "requester_protos.h"
-#endif
 
-#include "asmfuncs_protos.h"
-#include "modeinfo_protos.h"
-#include "debug_protos.h"
-#endif
+struct AHIAudioModeRequesterExt;
 
 static void OpenInfoWindow( struct AHIAudioModeRequesterExt * );
 static void CloseInfoWindow( struct AHIAudioModeRequesterExt * );
@@ -67,11 +47,11 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt * );
 
 static struct TagItem reqboolmap[] =
 {
-  {AHIR_PrivateIDCMP,   haveIDCMP},
-  {AHIR_SleepWindow,    lockwin},
-  {AHIR_DoMixFreq,      freqgad},
-  {AHIR_DoDefaultMode,  defaultmode},
-  {TAG_DONE, }
+  { AHIR_PrivateIDCMP,   haveIDCMP   },
+  { AHIR_SleepWindow,    lockwin     },
+  { AHIR_DoMixFreq,      freqgad     },
+  { AHIR_DoDefaultMode,  defaultmode },
+  { TAG_DONE,            0           }
 };
 
 #define LASTMODEITEM  1
@@ -158,10 +138,10 @@ static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
 
   if(id != AHI_DEFAULT_ID)
   {
-    AHI_GetAudioAttrs(id, NULL,
-      AHIDB_FrequencyArg,level,
-      AHIDB_Frequency,&freq,
-      TAG_DONE);
+    AHI_GetAudioAttrs( id, NULL,
+                       AHIDB_FrequencyArg, level,
+                       AHIDB_Frequency,    (ULONG) &freq,
+                       TAG_DONE );
   }
   else
   {
@@ -235,10 +215,10 @@ static void GetSliderAttrs(struct AHIAudioModeRequesterExt *req, LONG *levels, L
   *level=0;
   
   AHI_GetAudioAttrs(req->tempAudioID, NULL,
-      AHIDB_Frequencies,  levels,
+      AHIDB_Frequencies,  (ULONG) levels,
       AHIDB_IndexArg,     (req->tempAudioID == AHI_DEFAULT_ID ? 
                               AHIBase->ahib_Frequency : req->tempFrequency),
-      AHIDB_Index,        level,
+      AHIDB_Index,        (ULONG) level,
       TAG_DONE);
 
   if(*level >= *levels)
@@ -246,7 +226,7 @@ static void GetSliderAttrs(struct AHIAudioModeRequesterExt *req, LONG *levels, L
 
   AHI_GetAudioAttrs(req->tempAudioID, NULL,
       AHIDB_FrequencyArg, *level,
-      AHIDB_Frequency,    &req->tempFrequency,
+      AHIDB_Frequency,    (ULONG) &req->tempFrequency,
       TAG_DONE);
 }
 
@@ -379,10 +359,10 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
           GTSL_Min,0,
           GTSL_Max,sliderlevels-1,
           GTSL_Level,sliderlevel,
-          GTSL_LevelFormat,FREQTEXT2,
+          GTSL_LevelFormat, (ULONG) FREQTEXT2,
           GTSL_MaxLevelLen,FREQLEN2,
           GTSL_LevelPlace,PLACETEXT_RIGHT,
-          GTSL_DispFunc, IndexToFrequency,
+          GTSL_DispFunc, (ULONG) IndexToFrequency,
           GA_RelVerify,TRUE,
           GA_Disabled,!sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID),
           TAG_DONE);
@@ -399,7 +379,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
     ng.ng_Flags=PLACETEXT_ABOVE;
     gad=CreateGadget(LISTVIEW_KIND,gad,&ng,
         GTLV_ScrollWidth,(fontwidth>8 ? fontwidth*2 : 18),
-        GTLV_Labels,(struct List *) req->list,
+        GTLV_Labels, (ULONG) req->list,
         GTLV_ShowSelected,NULL,
         ((selected == ~0) || (GadToolsBase->lib_Version >= 39) ? TAG_IGNORE : GTLV_Top),selected,
         (selected == ~0 ? TAG_IGNORE : GTLV_MakeVisible),selected,
@@ -573,7 +553,7 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
             sliderlevel=sliderlevels-1;
           AHI_GetAudioAttrs(req->tempAudioID, NULL,
               AHIDB_FrequencyArg,sliderlevel,
-              AHIDB_Frequency,&req->tempFrequency,
+              AHIDB_Frequency, (ULONG) &req->tempFrequency,
               TAG_DONE);
           SetSelected(req,FALSE);
           break;
@@ -584,7 +564,7 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
             sliderlevel=0;
           AHI_GetAudioAttrs(req->tempAudioID, NULL,
               AHIDB_FrequencyArg,sliderlevel,
-              AHIDB_Frequency,&req->tempFrequency,
+              AHIDB_Frequency, (ULONG) &req->tempFrequency,
               TAG_DONE);
           SetSelected(req,FALSE);
           break;
@@ -603,7 +583,7 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
         case FREQSLIDER:
           AHI_GetAudioAttrs(req->tempAudioID, NULL,
               AHIDB_FrequencyArg,code,
-              AHIDB_Frequency,&req->tempFrequency,
+              AHIDB_Frequency, (ULONG) &req->tempFrequency,
               TAG_DONE);
           break;
         case LISTVIEW:
@@ -723,8 +703,8 @@ static void OpenInfoWindow( struct AHIAudioModeRequesterExt *req )
       WA_Top,               req->Req.ahiam_InfoTopEdge,
       WA_Width,             req->Req.ahiam_InfoWidth,
       WA_Height,            req->Req.ahiam_InfoHeight,
-      WA_Title,             GetString(msgReqInfoTitle, req->Catalog),
-      WA_CustomScreen,      req->Window->WScreen,
+      WA_Title,             (ULONG) GetString(msgReqInfoTitle, req->Catalog),
+      WA_CustomScreen,      (ULONG) req->Window->WScreen,
       WA_PubScreenFallBack, TRUE,
       WA_DragBar,           TRUE,
       WA_DepthGadget,       TRUE,
@@ -789,15 +769,15 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
   if(req->InfoWindow)
   {
     AHI_GetAudioAttrs(id, NULL,
-      AHIDB_Stereo,       &stereo,
-      AHIDB_Panning,      &pan,
-      AHIDB_HiFi,         &hifi,
-      AHIDB_Record,       &record,
-      AHIDB_FullDuplex,   &fullduplex,
-      AHIDB_Bits,         &bits,
-      AHIDB_MaxChannels,  &channels,
-      AHIDB_MinMixFreq,   &minmix,
-      AHIDB_MaxMixFreq,   &maxmix,
+      AHIDB_Stereo,       (ULONG) &stereo,
+      AHIDB_Panning,      (ULONG) &pan,
+      AHIDB_HiFi,         (ULONG) &hifi,
+      AHIDB_Record,       (ULONG) &record,
+      AHIDB_FullDuplex,   (ULONG) &fullduplex,
+      AHIDB_Bits,         (ULONG) &bits,
+      AHIDB_MaxChannels,  (ULONG) &channels,
+      AHIDB_MinMixFreq,   (ULONG) &minmix,
+      AHIDB_MaxMixFreq,   (ULONG) &maxmix,
       TAG_DONE);
 
     GT_SetGadgetAttrs(req->InfoListViewGadget, req->InfoWindow, NULL,
@@ -841,7 +821,7 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
     }
 
     GT_SetGadgetAttrs(req->InfoListViewGadget, req->InfoWindow, NULL,
-        GTLV_Labels, &req->InfoList,
+        GTLV_Labels, (ULONG) &req->InfoList,
         TAG_DONE);
   }
 }
@@ -942,7 +922,7 @@ AllocAudioRequestA( REG(a0, struct TagItem *tags),
     req->Req.ahiam_InfoWidth  = 280;
     req->Req.ahiam_InfoHeight = 112;
 
-    req->PubScreenName        = (char *) -1;
+    req->PubScreenName        = (STRPTR) -1;
 
     FillReqStruct(req,tags);
   }
@@ -1144,11 +1124,11 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
 {
   struct AHIAudioModeRequesterExt *req=(struct AHIAudioModeRequesterExt *)req_in;
   struct MinList list;
-  struct IDnode *node,*node2;
-  ULONG screenTag=TAG_IGNORE,screenData,id=AHI_INVALID_ID;
+  struct IDnode *node = NULL, *node2 = NULL;
+  ULONG screenTag=TAG_IGNORE,screenData = NULL ,id=AHI_INVALID_ID;
   BOOL  rc=TRUE;
   struct Requester lockreq;
-  BOOL  locksuxs;
+  BOOL  locksuxs = FALSE;
   WORD zipcoords[4];
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
@@ -1206,7 +1186,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
       Sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
-          AHIDB_Name,node->node.ln_Name,
+          AHIDB_Name, (ULONG) node->node.ln_Name,
           TAG_DONE);
       // Insert node alphabetically
       for(node2=(struct IDnode *)req->list->mlh_Head;node2->node.ln_Succ;node2=(struct IDnode *) node2->node.ln_Succ)
@@ -1258,7 +1238,7 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
     screenTag=(ULONG)WA_CustomScreen;
     screenData=(ULONG)req->Screen;
   }
-  else if(req->PubScreenName != (char *) -1)
+  else if(req->PubScreenName != (STRPTR) -1)
   {
     screenTag=(ULONG)WA_PubScreenName;
     screenData=(ULONG)req->PubScreenName;
@@ -1280,10 +1260,10 @@ AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
     WA_Top,req->Req.ahiam_TopEdge,
     WA_Width,req->Req.ahiam_Width,
     WA_Height,req->Req.ahiam_Height,
-    WA_Zoom,zipcoords,
+    WA_Zoom, (ULONG) zipcoords,
     WA_MaxWidth,~0,
     WA_MaxHeight,~0,
-    WA_Title,req->TitleText,
+    WA_Title, (ULONG) req->TitleText,
     screenTag,screenData,
     WA_PubScreenFallBack,TRUE,
     WA_SizeGadget,TRUE,

@@ -1,46 +1,23 @@
-/* $Id$
-* $Log$
-* Revision 4.8  1999/01/12 02:22:02  lcs
-* Began the move to GNU make.
-*
-* Revision 4.7  1998/03/13 10:16:48  lcs
-* Ingen aning..
-*
-* Revision 4.6  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.5  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.4  1997/10/23 01:10:03  lcs
-* Better debug output.
-*
-*/
+/* $Id$ */
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
 
 #include <exec/memory.h>
 #include <exec/semaphores.h>
 #include <dos/dostags.h>
 #include <dos/dos.h>
 #include <libraries/iffparse.h>
-#include <strings.h>
-
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/iffparse.h>
 #include <proto/utility.h>
+#include <strings.h>
 
-#ifndef  noprotos
+#include "ahi_def.h"
+#include "database.h"
+#include "debug.h"
 
-#ifndef _GENPROTO
-#include "database_protos.h"
-#endif
-
-#include "debug_protos.h"
-
-#endif
 
 static ULONG AddModeFile ( UBYTE *filename );
 
@@ -615,9 +592,9 @@ AddModeFile ( UBYTE *filename )
   struct TagItem *tag,*tstate;
   struct TagItem extratags[]=
   {
-    AHIDB_Driver, NULL,
-    AHIDB_Data, NULL,
-    TAG_MORE,   NULL
+    { AHIDB_Driver, NULL },
+    { AHIDB_Data, NULL },
+    { TAG_MORE,   NULL }
   };
   ULONG rc=FALSE;
 

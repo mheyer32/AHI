@@ -1,21 +1,4 @@
 * $Id$
-* $Log$
-* Revision 4.4  1998/01/12 20:07:28  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.3  1997/08/02 17:11:59  lcs
-* Right. Now echo should work!
-*
-* Revision 4.2  1997/08/02 16:32:39  lcs
-* Fixed a memory trashing error. Will change it yet again now...
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.1  1997/03/24 12:43:09  lcs
-* Initial revision
-*
-*
 
 	IFND    AHI_DSP_I
 AHI_DSP_I	SET	1

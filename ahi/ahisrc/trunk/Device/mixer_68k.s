@@ -1,60 +1,5 @@
 ;/* $Id$
-* $Log$
-* Revision 4.14  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.13  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.12  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-* Renamed from addroutines.a.
-*
-* Revision 4.11  1997/11/23 13:03:06  lcs
-* Fixed a bug in SelectAddRoutine() that caused distortion when both
-* HiFi and Tables was selected.
-*
-* Revision 4.10  1997/10/11 15:54:59  lcs
-* Bug fixes in the HiFi routines. There was also debug code left (!),
-* that disabled stereo.
-*
 
-	IF	0
-
-*******************************************************************************
-** C function prototypes ******************************************************
-*******************************************************************************
-
-*/
-
-#include <CompilerSpecific.h>
-#include "ahi_def.h"
-
-BOOL ASMCALL InitMixroutine ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
-void ASMCALL calcMasterVolumeTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-BOOL ASMCALL initSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-void ASMCALL calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-BOOL ASMCALL initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-void ASMCALL calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
-
-void ASMCALL SelectAddRoutine ( REG(d0, Fixed VolumeLeft), REG(d1, Fixed VolumeRight), REG(d2, ULONG SampleType), REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a0, LONG *ScaleLeft), REG(a1, LONG *ScaleRight), REG(a3, void **AddRoutine) ) {}
-
-
-void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
-LONG ASMCALL CalcSamples ( REG(d0, LONG AddI), REG(d1, ULONG AddF ), REG(d2, ULONG Type), REG(d3, LONG LastOffsetI), REG(d4, ULONG LastOffsetF), REG(d5, LONG OffsetI), REG(d6, ULONG OffsetF) ) {}
-
-;/*     Comment terminated at the end of the file!
-
-	ENDC	* IF 0
-
-*******************************************************************************
-** Assembly code **************************************************************
-*******************************************************************************
-
- IFD	_PHXASS_
-
-DEBUG	EQU	0	;no debug 
- ENDC
 
 	include	exec/exec.i
 	include	lvo/exec_lib.i
@@ -81,6 +26,8 @@ DEBUG	EQU	0	;no debug
 
 TABLEMAXVOL	EQU	32
 TABLESHIFT	EQU	11	(TABLEMAXVOL<<TABLESHIFT == 0x10000)
+
+	section	.text,code
 
 ;-----------------------------------------
 
@@ -5282,5 +5229,3 @@ AddWordsSVPTB:
 	rts
 
 ;------------------------------------------------------------------------------
-
-;	C comment terminating here... */

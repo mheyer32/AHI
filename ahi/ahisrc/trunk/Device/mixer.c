@@ -1,51 +1,17 @@
-/* $Id$
-* $Log$
-* Revision 4.1  1999/01/12 02:22:11  lcs
-* Began the move to GNU make.
-*
-* Revision 4.4  1998/01/29 23:09:47  lcs
-* Playing with anticlick
-*
-* Revision 4.3  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.2  1998/01/12 20:07:28  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.1  1997/12/21 17:40:21  lcs
-* Rewrote the routines in C and gathered all sound files in one file.
-*
-*/
+/* $Id$ */
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
-#include "dsp.h"
 
 #include <exec/memory.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-
 #include <math.h>
 
-#ifndef noprotos
-
-#ifndef _GENPROTO
-#include "mixer_generic_protos.h"
-#endif
-
-#include "asmfuncs_protos.h"
-
-#endif
-
-#define ADDARGS LONG      Samples,\
-                Fixed     ScaleLeft,\
-                Fixed     ScaleRight,\
-                Fixed64  *Offset,\
-                Fixed64   Add,\
-                struct    AHIPrivAudioCtrl *audioctrl,\
-                void     *Src,\
-                void    **Dst,\
-                struct    AHIChannelData *cd
+#include "ahi_def.h"
+#include "dsp.h"
+#include "mixer.h"
+#include "asmfuncs.h"
 
 
 static void
@@ -65,8 +31,6 @@ CallAddRoutine ( LONG samples,
                  struct AHIChannelData *cd,
                  struct AHIPrivAudioCtrl *audioctrl );
 
-
-typedef void (ADDFUNC)(ADDARGS);
 
 static void AddSilence ( ADDARGS );
 static void AddSilenceB ( ADDARGS );

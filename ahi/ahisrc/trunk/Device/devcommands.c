@@ -1,28 +1,10 @@
-/* $Id$
-* $Log$
-* Revision 4.13  1998/03/13 10:16:48  lcs
-* Now uses signals in PlayRequest(), instead of busy-waiting or Delay().
-*
-* Revision 4.12  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.11  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-* Fixed a bug that showed up when C optimizing was turned on.
-*
-* Revision 4.10  1997/10/23 01:10:03  lcs
-* Better debug output.
-*
-* Revision 4.9  1997/10/16 10:20:56  lcs
-* Removed a KPrintF("Oops!");.... SIGH!
-*
-*/
+/* $Id$ */
 
 //#define DEBUG
 //#define DEBUG_R
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
 
 #include <dos/dos.h>
 #include <exec/errors.h>
@@ -31,19 +13,12 @@
 #include <exec/memory.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
-
 #include <math.h>
 
-#ifndef  noprotos
-
-#ifndef _GENPROTO
-#include "devcommands_protos.h"
-#endif
-
-#include "device_protos.h"
-#include "devsupp_protos.h"
-
-#endif
+#include "ahi_def.h"
+#include "devcommands.h"
+#include "device.h"
+#include "devsupp.h"
 
 
 static void TermIO(struct AHIRequest *, struct AHIBase *);
@@ -693,7 +668,7 @@ ReadCmd ( struct AHIRequest *ioreq,
   if(iounit->IsRecording)
   {
     AHI_ControlAudio(iounit->AudioCtrl,
-        AHIC_MixFreq_Query,&mixfreq,
+        AHIC_MixFreq_Query, (ULONG) &mixfreq,
         TAG_DONE);
 
     ioreq->ahir_Std.io_Actual = 0;

@@ -1,25 +1,4 @@
-/* $Id$
-* $Log$
-* Revision 4.14  1999/01/12 02:22:04  lcs
-* Began the move to GNU make.
-*
-* Revision 4.13  1998/03/13 10:16:48  lcs
-* Now uses signals in PlayRequest(), instead of busy-waiting or Delay().
-*
-* Revision 4.12  1998/01/29 23:09:47  lcs
-* Playing with anticlick
-*
-* Revision 4.11  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.10  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.9  1997/10/23 01:10:03  lcs
-* Better debug output.
-*
-*/
-
+/* $Id$ */
 
 //#define DEBUG
 //#define DEBUG_R
@@ -36,26 +15,28 @@
 #include <dos/dostags.h>
 #include <libraries/iffparse.h>
 #include <prefs/prefhdr.h>
-
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/iffparse.h>
-
 #include <stddef.h>
 
 #include "ahi_def.h"
 #include "localize.h"
 #include "version.h"
+#include "device.h"
+#include "devcommands.h"
 
-#ifndef  noprotos
+/*
+** Message passed to the Unit Process at
+** startup time.
+*/
 
-#ifndef _GENPROTO
-#include "device_protos.h"
-#endif
+struct StartupMessage
+{
+        struct Message           Msg;
+        struct AHIDevUnit       *Unit;
+};
 
-#include "devcommands_protos.h"
-
-#endif
 
 static struct AHIDevUnit *InitUnit(ULONG , struct AHIBase *);
 static void ExpungeUnit(struct AHIDevUnit *, struct AHIBase *);
@@ -161,9 +142,9 @@ void ASMCALL DevProcEntry ( void );
 ** Globals ********************************************************************
 ******************************************************************************/
 
-const char DevName[]  = AHINAME;
-const char IDString[] = "ahi.device " VERS "\r\n";
-const char VersTag[]  = "$VER: ahi.device " VERS " "
+const char *DevName   = AHINAME;
+const char *IDString  = "ahi.device " VERS "\r\n";
+const char *VersTag   = "$VER: ahi.device " VERS " "
                         "©1994-1999 Martin Blom. "
 #ifdef mc68060
                         "68060"
@@ -194,22 +175,23 @@ const char VersTag[]  = "$VER: ahi.device " VERS " "
                         " version.\r\n";
 
 
+struct ExecBase           *SysBase        = NULL;
 struct AHIBase            *AHIBase        = NULL;
 struct DosLibrary         *DOSBase        = NULL;
 struct Library            *GadToolsBase   = NULL;
 struct GfxBase            *GfxBase        = NULL;
 struct Library            *IFFParseBase   = NULL;
 struct IntuitionBase      *IntuitionBase  = NULL;
-struct Library            *LocaleBase     = NULL;
-struct Library            *TimerBase      = NULL;
-struct Library            *UtilityBase    = NULL;
+struct LocaleBase         *LocaleBase     = NULL;
+struct Device             *TimerBase      = NULL;
+struct UtilityBase        *UtilityBase    = NULL;
 
 static struct timerequest *TimerIO        = NULL;
 static struct timeval     *timeval        = NULL;
 
-ULONG			                 DriverVersion  = 2;
-ULONG			                 Version        = VERSION;
-ULONG			                 Revision       = REVISION;
+const ULONG			           DriverVersion  = 2;
+const ULONG			           Version        = VERSION;
+const ULONG			           Revision       = REVISION;
 
 
 /******************************************************************************
@@ -225,7 +207,9 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 
   /* DOS Library */
 
-  if((DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 37)) == NULL)
+  DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 37);
+
+  if( DOSBase == NULL)
   {
     Alert(AN_Unknown|AG_OpenLib|AO_DOSLib);
     return FALSE;
@@ -233,7 +217,9 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 
   /* Graphics Library */
 
-  if((GfxBase = (struct GfxBase *) OpenLibrary("graphics.library", 37)) == NULL)
+  GfxBase = (struct GfxBase *) OpenLibrary("graphics.library", 37);
+
+  if( GfxBase == NULL)
   {
     Alert(AN_Unknown|AG_OpenLib|AO_GraphicsLib);
     return FALSE;
@@ -241,7 +227,9 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 
   /* GadTools Library */
 
-  if((GadToolsBase = OpenLibrary("gadtools.library", 37)) == NULL)
+  GadToolsBase = OpenLibrary("gadtools.library", 37);
+
+  if( GadToolsBase == NULL)
   {
     Alert(AN_Unknown|AG_OpenLib|AO_GadTools);
     return FALSE;
@@ -249,7 +237,9 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 
   /* IFFParse Library */
 
-  if((IFFParseBase = OpenLibrary("iffparse.library", 37)) == NULL)
+  IFFParseBase = OpenLibrary("iffparse.library", 37);
+
+  if( IFFParseBase == NULL)
   {
     Alert(AN_Unknown|AG_OpenLib|AO_Unknown);
     return FALSE;
@@ -257,8 +247,9 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 
   /* Intuition Library */
 
-  if((IntuitionBase = (struct IntuitionBase *) 
-      OpenLibrary("intuition.library", 37)) == NULL)
+  IntuitionBase = (struct IntuitionBase *) OpenLibrary("intuition.library", 37);
+
+  if( IntuitionBase == NULL)
   {
     Alert(AN_Unknown|AG_OpenLib|AO_Intuition);
     return FALSE;
@@ -266,35 +257,45 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 
   /* Locale Library */
 
-  LocaleBase = OpenLibrary("locale.library", 38);
+  LocaleBase = (struct LocaleBase*) OpenLibrary("locale.library", 38);
 
   /* Timer Device */
 
-  if((TimerIO = (struct timerequest *) AllocVec(sizeof(struct timerequest),
-      MEMF_PUBLIC | MEMF_CLEAR)) == NULL)
+  TimerIO = (struct timerequest *) AllocVec( sizeof(struct timerequest),
+                                             MEMF_PUBLIC | MEMF_CLEAR );
+
+  if( TimerIO == NULL)
   {
     Alert(AN_Unknown|AG_NoMemory);
     return FALSE;
   }
 
-  if((timeval = (struct timeval *) AllocVec(sizeof(struct timeval),
-      MEMF_PUBLIC | MEMF_CLEAR)) == NULL)
+  timeval = (struct timeval *) AllocVec( sizeof(struct timeval),
+                                         MEMF_PUBLIC | MEMF_CLEAR);
+
+  if( timeval == NULL)
   {
     Alert(AN_Unknown|AG_NoMemory);
     return FALSE;
   }
 
-  if(OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *) TimerIO, 0))
+  if( OpenDevice( "timer.device",
+                  UNIT_MICROHZ,
+                  (struct IORequest *)
+                  TimerIO,
+                  0) != 0 )
   {
     Alert(AN_Unknown|AG_OpenDev|AO_TimerDev);
     return FALSE;
   }
 
-  TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
+  TimerBase = (struct Device *) TimerIO->tr_node.io_Device;
 
   /* Utility Library */
 
-  if((UtilityBase = OpenLibrary("utility.library", 37)) == NULL)
+  UtilityBase = (struct UtilityBase *) OpenLibrary("utility.library", 37);
+
+  if( UtilityBase == NULL)
   {
     Alert(AN_Unknown|AG_OpenLib|AO_UtilityLib);
     return FALSE;
@@ -318,17 +319,16 @@ CloseLibs ( REG(a6, struct ExecBase *SysBase) )
 {
 
   CloseahiCatalog();
-  CloseLibrary(UtilityBase);
-  if(TimerIO)
-    CloseDevice((struct IORequest *) TimerIO);
-  FreeVec(timeval);
-  FreeVec(TimerIO);
-  CloseLibrary(LocaleBase);
-  CloseLibrary((struct Library *) IntuitionBase);
-  CloseLibrary(IFFParseBase);
-  CloseLibrary(GadToolsBase);
-  CloseLibrary((struct Library *) GfxBase);
-  CloseLibrary((struct Library *) DOSBase);
+  CloseLibrary( (struct Library *) UtilityBase );
+  if(TimerIO) CloseDevice( (struct IORequest *) TimerIO );
+  FreeVec( timeval );
+  FreeVec( TimerIO );
+  CloseLibrary( (struct Library *) LocaleBase );
+  CloseLibrary( (struct Library *) IntuitionBase );
+  CloseLibrary( IFFParseBase );
+  CloseLibrary( GadToolsBase );
+  CloseLibrary( (struct Library *) GfxBase );
+  CloseLibrary( (struct Library *) DOSBase );
 
 }
 
@@ -574,14 +574,6 @@ InitUnit ( ULONG unit,
            struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
-  struct TagItem NPTags[]=
-  {
-    { NP_Entry,     0       },
-    { NP_Name,      0       },
-    { NP_Priority,  AHI_PRI },
-    { TAG_DONE,     0       }
-  };
-  struct MsgPort *replyport;
 
   if( unit == AHI_NO_UNIT )
   {
@@ -596,7 +588,7 @@ InitUnit ( ULONG unit,
 
       iounit->Unit.unit_MsgPort.mp_Node.ln_Type = NT_MSGPORT;
       iounit->Unit.unit_MsgPort.mp_Flags = PA_IGNORE;
-      iounit->Unit.unit_MsgPort.mp_Node.ln_Name = DevName;
+      iounit->Unit.unit_MsgPort.mp_Node.ln_Name = (STRPTR) DevName;
       iounit->UnitNum = unit;
       InitSemaphore(&iounit->ListLock);
       NewList((struct List *)&iounit->ReadList);
@@ -610,7 +602,8 @@ InitUnit ( ULONG unit,
             sizeof(struct Voice)*iounit->Channels,MEMF_PUBLIC|MEMF_CLEAR)))
         {
           int i;
-          struct Voice *v = iounit->Voices;
+          struct Voice   *v = iounit->Voices;
+          struct MsgPort *replyport;
           
           // Mark all channels as free
           for(i = 0 ; i < iounit->Channels; i++)
@@ -619,18 +612,30 @@ InitUnit ( ULONG unit,
             v++;
           }
           
-          if((replyport = CreateMsgPort()))
+          replyport = CreateMsgPort();
+
+          if( replyport != NULL )
           {
-            AHIBase->ahib_Startup.Msg.mn_ReplyPort = replyport;
-            AHIBase->ahib_Startup.Unit = iounit;
+            struct StartupMessage sm =
+            {
+              {
+                { NULL, NULL, NT_UNKNOWN, 0, NULL },
+                replyport, sizeof(struct StartupMessage),
+              },
+              iounit
+            };
 
-            NPTags[0].ti_Data = (ULONG) &DevProcEntry;
-            NPTags[1].ti_Data = (ULONG) &DevName;       /* Process name */
+            iounit->Process = CreateNewProcTags( NP_Entry,    (ULONG) &DevProcEntry,
+                                                 NP_Name,     (ULONG) DevName,
+                                                 NP_Priority, AHI_PRI,
+                                                 TAG_DONE );
 
-            if((iounit->Process = CreateNewProc(NPTags)))
+            if( iounit->Process != NULL )
             {
   
-                PutMsg(&iounit->Process->pr_MsgPort,&AHIBase->ahib_Startup.Msg);
+                PutMsg( &iounit->Process->pr_MsgPort,
+                        &sm.Msg );
+
                 WaitPort(replyport);
                 GetMsg(replyport);
             }
@@ -747,7 +752,8 @@ ReadConfig ( struct AHIDevUnit *iounit,
               if(globalprefs->ahigp_FastEcho)
                 AHIBase->ahib_Flags |= AHIBF_FASTECHO;
                 
-              if(ahig->sp_Size > offsetof(struct AHIGlobalPrefs, ahigp_MaxCPU))
+              if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs,
+                                                    ahigp_MaxCPU) )
               {
                 AHIBase->ahib_MaxCPU = globalprefs->ahigp_MaxCPU;
               }
@@ -756,7 +762,8 @@ ReadConfig ( struct AHIDevUnit *iounit,
                 AHIBase->ahib_MaxCPU = 0x10000 * 90 / 100;
               }
 
-              if(ahig->sp_Size > offsetof(struct AHIGlobalPrefs, ahigp_ClipMasterVolume))
+              if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
+                                                    ahigp_ClipMasterVolume) )
               {
                 if(globalprefs->ahigp_ClipMasterVolume)
                   AHIBase->ahib_Flags |= AHIBF_CLIPPING;
@@ -852,16 +859,16 @@ AllocHardware ( struct AHIDevUnit *iounit,
       AHIA_MixFreq,       iounit->Frequency,
       AHIA_Channels,      iounit->Channels,
       AHIA_Sounds,        MAXSOUNDS,
-      AHIA_PlayerFunc,    &iounit->PlayerHook,
-      AHIA_RecordFunc,    &iounit->RecordHook,
-      AHIA_SoundFunc,     &iounit->SoundHook,
+      AHIA_PlayerFunc,    (ULONG) &iounit->PlayerHook,
+      AHIA_RecordFunc,    (ULONG) &iounit->RecordHook,
+      AHIA_SoundFunc,     (ULONG) &iounit->SoundHook,
       TAG_DONE);
 
   if(iounit->AudioCtrl != NULL)
   {
     /* Full duplex? */
     AHI_GetAudioAttrs(AHI_INVALID_ID,iounit->AudioCtrl,
-      AHIDB_FullDuplex, &fullduplex,
+      AHIDB_FullDuplex, (ULONG) &fullduplex,
       TAG_DONE);
     iounit->FullDuplex = fullduplex;
 

@@ -1,60 +1,51 @@
-/* $Id$
-* $Log$
-* Revision 4.2  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.1  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-*
-*/
+/* $Id$ */
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
-#include "localize.h"
 
 #include <exec/memory.h>
 #include <exec/alerts.h>
 #include <utility/utility.h>
 #include <utility/tagitem.h>
-
 #include <proto/exec.h>
 #include <proto/utility.h>
-#include <strings.h>
 
-#ifndef  noprotos
+#include "ahi_def.h"
+#include "localize.h"
+#include "modeinfo.h"
+#include "audioctrl.h"
+#include "database.h"
+#include "debug.h"
 
-#ifndef _GENPROTO
-#include "modeinfo_protos.h"
-#endif
 
-#include "audioctrl_protos.h"
-#include "database_protos.h"
-#include "debug_protos.h"
-
-#endif
-
-// Makes 'in' fit the given bounds.
+// Boolean comparison macros
 
 #define XOR(a,b) ((a && !b) || (!a && b))
 #define XNOR(a,b) (! XOR(a,b))
 
 
+// NUL-terminating string copy
 
+static int
+stccpy( char *to, const char *from, int n )
+{
+  int i = 1;
+
+  if( n == 0 ) return 0;
+
+  while( *from && i < n )
+  {
+    *to++ = *from++;
+    i++;
+  }
+  *to = '\0';
+  
+  return i;
+}
 
 /******************************************************************************
-** TestAudioID & DizzyTestAudioID *********************************************
+** DizzyTestAudioID & TestAudioID *********************************************
 ******************************************************************************/
-
-// tags may be NULL
-
-BOOL TestAudioID(ULONG id, struct TagItem *tags )
-{
-  if(DizzyTestAudioID(id, tags) != 0x10000)
-    return FALSE;
-  else
-    return TRUE;
-}
 
 // tags may be NULL
 
@@ -75,20 +66,20 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
     id = AHIBase->ahib_AudioMode;
   }
 
-  AHI_GetAudioAttrs(id, NULL,
-      AHIDB_Volume, &volume,
-      AHIDB_Stereo, &stereo,
-      AHIDB_Panning, &panning,
-      AHIDB_HiFi,&hifi,
-      AHIDB_PingPong,&pingpong,
-      AHIDB_Record,&record,
-      AHIDB_Bits,&bits,
-      AHIDB_MaxChannels,&channels,
-      AHIDB_MinMixFreq,&minmix,
-      AHIDB_MaxMixFreq,&maxmix,
-      AHIDB_Realtime,&realtime,
-      AHIDB_FullDuplex,&fullduplex,
-      TAG_DONE);
+  AHI_GetAudioAttrs( id, NULL,
+                     AHIDB_Volume,      (ULONG) &volume,
+                     AHIDB_Stereo,      (ULONG) &stereo,
+                     AHIDB_Panning,     (ULONG) &panning,
+                     AHIDB_HiFi,        (ULONG) &hifi,
+                     AHIDB_PingPong,    (ULONG) &pingpong,
+                     AHIDB_Record,      (ULONG) &record,
+                     AHIDB_Bits,        (ULONG) &bits,
+                     AHIDB_MaxChannels, (ULONG) &channels,
+                     AHIDB_MinMixFreq,  (ULONG) &minmix,
+                     AHIDB_MaxMixFreq,  (ULONG) &maxmix,
+                     AHIDB_Realtime,    (ULONG) &realtime,
+                     AHIDB_FullDuplex,  (ULONG) &fullduplex,
+                     TAG_DONE );
 
   tstate = tags;
 
@@ -178,6 +169,16 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
     return (Fixed) ((hits<<16)/total);
   else
     return (Fixed) 0x10000;
+}
+
+// tags may be NULL
+
+BOOL TestAudioID(ULONG id, struct TagItem *tags )
+{
+  if(DizzyTestAudioID(id, tags) != 0x10000)
+    return FALSE;
+  else
+    return TRUE;
 }
 
 

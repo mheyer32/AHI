@@ -1,56 +1,4 @@
 ;/* $Id$
-* $Log$
-* Revision 4.8  1998/01/13 20:24:04  lcs
-* Generic c version of the mixer finished.
-*
-* Revision 4.7  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.6  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.5  1997/08/02 17:11:59  lcs
-* Right. Now echo should work!
-* Also fixed a bug in the 32 bit stereo echo code.
-*
-* Revision 4.4  1997/08/02 16:32:39  lcs
-* Fixed a memory trashing error. Will change it yet again now...
-*
-
-	IF	0
-
-*******************************************************************************
-** C function prototypes ******************************************************
-*******************************************************************************
-
-*/
-
-#include <CompilerSpecific.h>
-#include "ahi_def.h"
-
-#define REGS REG(a0, struct Echo *es),\
-             REG(a1, void *buf),\
-             REG(a2, struct AHIPrivAudioCtrl *audioctrl)
-
-void ASMCALL do_DSPEchoMono16 ( REGS ) {}
-void ASMCALL do_DSPEchoMono16Fast ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16 ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16Fast ( REGS ) {}
-void ASMCALL do_DSPEchoMono32 ( REGS ) {}
-void ASMCALL do_DSPEchoStereo32 ( REGS ) {}
-void ASMCALL do_DSPEchoMono16NCFM ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16NCFM ( REGS ) {}
-void ASMCALL do_DSPEchoMono16NCFMFast ( REGS ) {}
-void ASMCALL do_DSPEchoStereo16NCFMFast ( REGS ) {}
-
-;/*     Comment terminated at the end of the file!
-
-	ENDC	* IF 0
-
-*******************************************************************************
-** Assembly code **************************************************************
-*******************************************************************************
-
 
 	include	exec/types.i
 	include	exec/macros.i
@@ -69,6 +17,7 @@ void ASMCALL do_DSPEchoStereo16NCFMFast ( REGS ) {}
 	XDEF	_do_DSPEchoMono16NCFMFast
 	XDEF	_do_DSPEchoStereo16NCFMFast
 
+	section	.text,code
 
 ***
 *** DSPECHO
@@ -798,5 +747,3 @@ _do_DSPEchoStereo16NCFMFast:
 	dbf	d7,.echoloop
 	DSPECHO_POST
  ENDC
-
-;	C comment terminating here... */

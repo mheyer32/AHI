@@ -1,3 +1,4 @@
+/* $Id$ */
 
 #ifndef _MODEINFO_H_
 #define _MODEINFO_H_

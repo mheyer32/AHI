@@ -1,65 +1,23 @@
-/* $Id$
-* $Log$
-* Revision 4.20  1999/01/12 02:22:00  lcs
-* Began the move to GNU make.
-*
-* Revision 4.19  1998/08/01 02:14:41  lcs
-* Changed DEVS:ahi to DEVS:AHI
-*
-* Revision 4.18  1998/01/29 23:09:47  lcs
-* Playing with anticlick
-*
-* Revision 4.17  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.16  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-* Renamed from cfuncs.c to audioctrl.c.
-*
-* Revision 4.15  1997/11/23 13:03:06  lcs
-* Just debugging..
-*
-* Revision 4.14  1997/10/23 01:10:03  lcs
-* Better debug output.
-*
-* Revision 4.13  1997/10/21 15:55:18  lcs
-* Updated the audiodocs for AHI_AllocAudio().
-*
-* Revision 4.12  1997/10/14 17:37:22  lcs
-* Moved the note about SoundFunc() from AHI_LoadSound() to AHI_AllocAudio().
-*
-* Revision 4.11  1997/10/14 17:06:41  lcs
-* Fixed an error in the AHI_LoadSound() autodocs.
-*
-* Revision 4.10  1997/10/11 15:58:13  lcs
-* Boolean variables are compared using XNOR now, not ==.
-*
-*/
+/* $Id$ */
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
 
 #include <exec/memory.h>
 #include <exec/alerts.h>
 #include <utility/utility.h>
 #include <utility/tagitem.h>
-
 #include <proto/exec.h>
 #include <proto/utility.h>
 #include <strings.h>
 
-#ifndef  noprotos
+#include "ahi_def.h"
+#include "audioctrl.h"
+#include "mixer.h"
+#include "asmfuncs.h"
+#include "database.h"
+#include "debug.h"
 
-#ifndef _GENPROTO
-#include "audioctrl_protos.h"
-#endif
-
-#include "mixer_protos.h"
-#include "asmfuncs_protos.h"
-#include "database_protos.h"
-#include "debug_protos.h"
-
-#endif
 
 // Makes 'in' fit the given bounds.
 
@@ -124,7 +82,7 @@ RecalcBuff ( Fixed freq, struct AHIPrivAudioCtrl *audioctrl )
 #define DEFPLAYERFREQ (50<<16)
 
 static ULONG
-DummyHook()
+DummyHook( void )
 {
   return 0;
 }
@@ -141,14 +99,14 @@ static struct Hook DefPlayerHook =
 
 static struct TagItem boolmap[] =
 {
-  { AHIDB_Volume,   AHIACF_VOL },
-  { AHIDB_Panning,  AHIACF_PAN },
-  { AHIDB_Stereo,   AHIACF_STEREO },
-  { AHIDB_HiFi,     AHIACF_HIFI },
-  { AHIDB_PingPong, AHIACF_PINGPONG },
-  { AHIDB_Record,   AHIACF_RECORD },
-  { AHIDB_MultTable,AHIACF_MULTTAB },
-  { TAG_DONE, }
+  { AHIDB_Volume,    AHIACF_VOL },
+  { AHIDB_Panning,   AHIACF_PAN },
+  { AHIDB_Stereo,    AHIACF_STEREO },
+  { AHIDB_HiFi,      AHIACF_HIFI },
+  { AHIDB_PingPong,  AHIACF_PINGPONG },
+  { AHIDB_Record,    AHIACF_RECORD },
+  { AHIDB_MultTable, AHIACF_MULTTAB },
+  { TAG_DONE,        NULL }
 };
 
 
@@ -214,7 +172,7 @@ CreateAudioCtrl(struct TagItem *tags)
     if(audioctrl->ac.ahiac_MaxPlayerFreq < 65536)
       audioctrl->ac.ahiac_MaxPlayerFreq <<= 16;
 
-    if(audioctrl->ac.ahiac_AntiClickSamples == ~0)
+    if(audioctrl->ac.ahiac_AntiClickSamples == ~0UL)
       audioctrl->ac.ahiac_AntiClickSamples = AHIBase->ahib_AntiClickSamples;
 
     if((audiodb=LockDatabase()))
@@ -228,8 +186,13 @@ CreateAudioCtrl(struct TagItem *tags)
           audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
         }
 #endif
-        stpcpy(stpcpy(stpcpy(audioctrl->ahiac_DriverName,"DEVS:AHI/"),
-            (char *)GetTagData(AHIDB_Driver,(ULONG)"",dbtags)),".audio");
+        strcpy( audioctrl->ahiac_DriverName,
+                "DEVS:AHI/" );
+        strcat( audioctrl->ahiac_DriverName,
+                (char *) GetTagData( AHIDB_Driver, (ULONG) "", dbtags ) );
+        strcat( audioctrl->ahiac_DriverName,
+                ".audio" );
+
         error=FALSE;
       }
       UnlockDatabase(audiodb);

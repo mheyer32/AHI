@@ -1,17 +1,4 @@
 * $Id$
-* $Log$
-* Revision 4.7  1999/01/12 02:22:09  lcs
-* Began the move to GNU make.
-*
-* Revision 4.6  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.5  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.4  1997/07/15 00:52:05  lcs
-* This is the second bugfix release of AHI 4.
-*
 
 	include	exec/exec.i
 	include	lvo/exec_lib.i
@@ -21,7 +8,7 @@
 
 	include	macros.i
 
-;	section	text,code
+	section	.text,code
 
 *******************************************************************************
 ** Start **********************************************************************
@@ -138,13 +125,15 @@ dataTable:
 ** initRoutine ****************************************************************
 *******************************************************************************
 
+	XREF	_SysBase
 	XREF	_AHIBase
 	XREF	_OpenLibs
 
 initRoutine:
 	movem.l	d1-d2/a0-a1/a5-a6,-(sp)
-	move.l	d0,_AHIBase
 	move.l	d0,a5
+	move.l	a5,_AHIBase
+	move.l	a6,_SysBase
 	move.l	a6,ahib_SysLib(a5)
 	move.l	a0,ahib_SegList(a5)
 
@@ -223,16 +212,3 @@ Null:
 _DevProcEntry:
 	move.l	_AHIBase,a6
 	jmp	_DevProc
-
-
-*******************************************************************************
-** kprint_macro ***************************************************************
-*******************************************************************************
-
-	XDEF	kprint_macro
-	XREF	KPrintF
-kprint_macro:
-	movem.l	d0-d1/a0-a1,-(sp)
-	jsr	KPrintF
-	movem.l	(sp)+,d0-d1/a0-a1
-	rts

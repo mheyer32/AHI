@@ -1,64 +1,4 @@
-;/*
-* $Id$
-* $Log$
-* Revision 4.4  1998/01/12 20:05:03  lcs
-* More restruction, mixer in C added. (Just about to make fraction 32 bit!)
-*
-* Revision 4.3  1997/12/21 17:41:50  lcs
-* Major source cleanup, moved some functions to separate files.
-*
-* Revision 4.2  1997/04/14 01:50:39  lcs
-* Spellchecked
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.4  1997/03/24 12:41:51  lcs
-* Echo rewritten
-*
-* Revision 1.3  1997/02/18 22:26:49  lcs
-* Fixed a bug in CMD_READ?
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
-*
-	IF	0
-
-*******************************************************************************
-** C function prototypes ******************************************************
-*******************************************************************************
-
-*/
-
-#include <CompilerSpecific.h>
-#include <devices/ahi.h>
-
-#define RecArgs REG(d0, ULONG size),    \
-                REG(d1, ULONG add),     \
-                REG(a0, APTR src),      \
-                REG(a2, ULONG *offset), \
-                REG(a3, void **dest)
-
-void ASMCALL  RecM8S( RecArgs ) {}
-void ASMCALL  RecS8S( RecArgs ) {}
-void ASMCALL RecM16S( RecArgs ) {}
-void ASMCALL RecS16S( RecArgs ) {}
-void ASMCALL RecM32S( RecArgs ) {}
-void ASMCALL RecS32S( RecArgs ) {}
-
-ULONG ASMCALL MultFixed ( REG(d0, ULONG a),
-                          REG(d1, Fixed b) ) {}
-void ASMCALL asmRecordFunc ( REG(d0, ULONG samples),
-                             REG(a0, void *data),
-                             REG(a1, void *buffer) ) {}
-
-;/*     Comment terminated at the end of the file!
-
-	ENDC
-
-*******************************************************************************
-** Assembly code **************************************************************
-*******************************************************************************
+;/* $Id$
 
 	include exec/types.i
 	include	macros.i
@@ -72,6 +12,8 @@ void ASMCALL asmRecordFunc ( REG(d0, ULONG samples),
 
 	XDEF	_MultFixed
 	XDEF	_asmRecordFunc
+
+	section	.text,code
 
 * Not the best routines (fraction does not get saved between calls,
 * loads of byte writes, no interpolation etc), but who cares? 
@@ -510,7 +452,4 @@ _asmRecordFunc:
 	ENDC
 
 	rts
-
-;	C comment terminating here... */
-
 
