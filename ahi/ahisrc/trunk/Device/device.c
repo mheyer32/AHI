@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.7  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.6  1997/05/11 01:06:46  lcs
 * Forgot to remove debug statements...
 *
@@ -675,6 +678,12 @@ BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
               else
               {
                 AHIBase->ahib_MaxCPU = 0x10000 * 90 / 100;
+              }
+
+              if(ahig->sp_Size > offsetof(struct AHIGlobalPrefs, ahigp_ClipMasterVolume))
+              {
+                if(globalprefs->ahigp_ClipMasterVolume)
+                  AHIBase->ahib_Flags |= AHIBF_CLIPPING;
               }
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);

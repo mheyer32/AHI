@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.7  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.6  1997/05/08 23:59:58  lcs
 * Fixed problem with IO/Requests that didn't get replied, and
 * lockup problem with CMD_START.
@@ -485,6 +488,9 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *       applications. Make sure the code between CMD_STOP and CMD_START
 *       runs as fast as possible!
 *
+*       Unlike most (all?) other devices, CMD_STOP and CMD_START do nest in
+*       ahi.device.
+*
 *   BUGS
 *
 *   SEE ALSO
@@ -925,6 +931,8 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *   EXAMPLE
 *
 *   NOTES
+*       Unlike most (all?) other devices, CMD_STOP and CMD_START do nest in
+*       ahi.device.
 *
 *   BUGS
 *

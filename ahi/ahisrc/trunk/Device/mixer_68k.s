@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.5  1997/06/02 18:15:02  lcs
+* Added optional clipping when using master volume > 100%.
+*
 * Revision 4.4  1997/04/22 01:35:21  lcs
 * This is release 4! Finally.
 *
@@ -71,6 +74,7 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 
 	XDEF	initcode
 
+	XDEF	calcMasterVolumeTable
 	XDEF	_initSignedTable
 	XDEF	calcSignedTable
 	XDEF	_initUnsignedTable
@@ -338,6 +342,50 @@ initcode:
  ENDC
 	rts
 
+;in:
+* a2	AHIAudioCtrl
+* a5	AHIBase
+calcMasterVolumeTable:
+	pushm	std
+
+	btst.b	#AHIACB_CLIPPING-24,ahiac_Flags(a2)
+	beq	.exit
+
+	btst	#AHIACB_HIFI,ahiac_Flags+3(a2)
+	bne	.exit
+
+	move.l	ahib_SysLib(a5),a6
+	move.l	ahiac_MasterVolumeTable(a2),d0
+	bne	.gottable
+	move.l	#65536*2,d0
+	moveq	#MEMF_PUBLIC,d1
+	call	AllocVec
+	move.l	d0,ahiac_MasterVolumeTable(a2)
+	beq	.exit
+
+.gottable
+	move.l	d0,a0
+	moveq	#0,d0
+	move.l	ahiac_SetMasterVolume(a2),d1
+	lsr.l	#8,d1
+.loop
+	move.w	d0,d2
+	muls.w	d1,d2
+	asr.l	#8,d2
+	cmp.l	#32767,d2
+	ble	.noposclip
+	move.w	#32767,d2
+.noposclip
+	cmp.l	#-32768,d2
+	bge	.nonegclip
+	move.w	#-32768,d2
+.nonegclip
+	move.w	d2,(a0)+
+	addq.w	#1,d0
+	bne	.loop
+.exit
+	popm	std
+	rts
 
 ;in:
 * a2	ptr to AHIAudioCtrl
@@ -1001,10 +1049,17 @@ _Mix:
 	beq	.exit
 	btst.b	#AHIACB_POSTPROC-24,ahiac_Flags(a2)
 	beq	.nextchannel
+
+*** AHIET_MASTERVOLUME
+	bsr	DoMasterVolume
+
 	move.l	a4,a1			;New block
 	bra	.nextchannel
 
 .exit
+
+*** AHIET_MASTERVOLUME
+	bsr	DoMasterVolume
 
 *** AHIET_OUTPUTBUFFER
 	move.l	ahiac_EffOutputBufferStruct(a2),d0
@@ -1041,6 +1096,80 @@ _Mix:
 	rts
 
 
+;in:
+* a1	Buffer
+* a2	Audioctrl
+DoMasterVolume
+	pushm	d0-d2/a0-a1
+
+	btst.b	#AHIACB_CLIPPING-24,ahiac_Flags(a2)
+	beq	.noclipping
+
+	move.l	ahiac_BuffSamples(a2),d0
+	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
+	beq	.notstereo
+	lsl.l	#1,d0
+.notstereo
+
+	btst.b	#AHIACB_HIFI,ahiac_Flags+3(a2)
+	bne	.32bit
+	move.l	ahiac_MasterVolumeTable(a2),d1
+	move.l	d1,a0
+	beq	.16bit
+
+.16bittable
+	moveq	#0,d1
+.16bittable_loop
+	move.w	(a1),d1
+	move.w	(a0,d1.l*2),(a1)+
+	subq.l	#1,d0
+	bne	.16bittable_loop
+	bra	.exit
+
+.16bit
+	move.l	ahiac_SetMasterVolume(a2),d1
+	lsr.l	#8,d1
+.16bit_loop
+	move.w	(a1),d2
+	muls.w	d1,d2
+	asr.l	#8,d2
+	cmp.l	#32767,d2
+	ble	.16bit_noposclip
+	move.w	#32767,d2
+.16bit_noposclip
+	cmp.l	#-32768,d2
+	bge	.16bit_nonegclip
+	move.w	#-32768,d2
+.16bit_nonegclip
+	move.w	d2,$dff180
+	move.w	d2,(a1)+
+	subq.l	#1,d0
+	bne	.16bit_loop
+	bra	.exit
+
+.32bit
+	move.l	ahiac_SetMasterVolume(a2),d1
+	lsr.l	#8,d1
+.32bit_loop
+	move.l	(a1),d2
+	asr.l	#8,d2
+	muls.l	d1,d2
+	bvc	.32bit_store
+	bpl	.32bit_negclip
+	move.l	#$7fffffff,d2		; MAXINT
+	bra	.32bit_store
+.32bit_negclip
+	move.l	#$80000000,d2		; MININT
+.32bit_store
+	move.l	d2,(a1)+
+	subq.l	#1,d0
+	bne	.32bit_loop
+	bra	.exit
+.exit
+
+.noclipping
+	popm	d0-d2/a0-a1
+	rts
 
 ;in:
 * d0	AddI
