@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.13  1997/10/21 15:55:18  lcs
+* Updated the audiodocs for AHI_AllocAudio().
+*
 * Revision 4.12  1997/10/14 17:37:22  lcs
 * Moved the note about SoundFunc() from AHI_LoadSound() to AHI_AllocAudio().
 *
@@ -470,13 +473,15 @@ static __asm __interrupt void Sampler(
 *
 *   TAGS
 *
-*       AHIA_AudioID (ULONG) - The audio mode to use (AHI_DEFAULT_ID is the
-*           user's default mode. It's a good value to use the first time she
-*           starts your application.
+*       AHIA_AudioID (ULONG) - The audio mode to use. Default is
+*           AHI_DEFAULT_ID. (AHI_DEFAULT_ID is the ID the user has selected
+*           in the preferences program. It's a good value to use the first
+*           time she starts your application.)
 *
 *       AHIA_MixFreq (ULONG) - Desired mixing frequency. The actual
 *           mixing rate may or may not be exactly what you asked for.
-*           AHI_DEFAULT_FREQ is the user's prefered frequency.
+*           Default is AHI_DEFAULT_FREQ. (AHI_DEFAULT_FREQ is the user's
+*           prefered frequency.)
 *
 *       AHIA_Channels (UWORD) - Number of channel to use. The actual
 *           number of channels used will be equal or grater than the
@@ -494,17 +499,22 @@ static __asm __interrupt void Sampler(
 *               A1 - (struct AHISoundMessage *)
 *           The hook may be called from an interrupt, so normal interrupt
 *           restrictions apply.
+*
 *           The called function should follow normal register conventions,
 *           which means that d2-d7 and a2-a6 must be preserved.
+*
+*           Default is NULL.
 *
 *       AHIA_PlayerFunc (struct Hook *) - A function to be called at regular
 *           intervals. By using this hook there is no need for music players
 *           to use other timing, such as VBLANK or CIA timers. But the real
 *           reason it's present is that it makes it possible to do non-
 *           realtime mixing to disk.
+*
 *           Using this interrupt source is currently the only supported way
 *           to ensure that no mixing occurs between calls to AHI_SetVol(),
 *           AHI_SetFreq() or AHI_SetSound().
+*
 *           If the sound playback is done without mixing, 'realtime.library'
 *           is used to provide timing. The function receives the following
 *           parameters:
@@ -514,8 +524,11 @@ static __asm __interrupt void Sampler(
 *           Do not assume A1 contains any particular value!
 *           The hook may be called from an interrupt, so normal interrupt
 *           restrictions apply.
+*
 *           The called function should follow normal register conventions,
 *           which means that d2-d7 and a2-a6 must be preserved.
+*
+*           Default is NULL.
 *
 *       AHIA_PlayerFreq (Fixed) - If non-zero, enables timing and specifies
 *           how many times per second PlayerFunc will be called. This must
@@ -526,13 +539,15 @@ static __asm __interrupt void Sampler(
 *           problem. Note that the data type is Fixed, not integer. 50 Hz is
 *           50<<16.
 *
+*           Default is a reasonable value. Don't depend on it.
+*
 *       AHIA_MinPlayerFreq (Fixed) - The minimum frequency (AHIA_PlayerFreq)
-*           you will use. You should always supply this if you are using the
-*           device's interrupt feature!
+*           you will use. You MUST supply this if you are using the device's
+*           interrupt feature!
 *
 *       AHIA_MaxPlayerFreq (Fixed) - The maximum frequency (AHIA_PlayerFreq)
-*           you will use. You should always supply this if you are using the
-*           device's interrupt feature!
+*           you will use. You MUST supply this if you are using the device's
+*           interrupt feature!
 *
 *       AHIA_RecordFunc (struct Hook *) - This function will be called
 *           regularly when sampling is turned on (see AHI_ControlAudioA())
@@ -552,11 +567,14 @@ static __asm __interrupt void Sampler(
 *           restrictions apply. Signal a process if you wish to save the
 *           buffer to disk. The called function should follow normal register
 *           conventions, which means that d2-d7 and a2-a6 must be preserved.
-*       *** NOTE: The function MUST return NULL (in d0). This was previously
+*
+*           NOTE: The function MUST return NULL (in d0). This was previously
 *           not documented. Now you know.
 *
+*           Default is NULL.
+*
 *       AHIA_UserData (APTR) - Can be used to initialize the ahiac_UserData
-*           field.
+*           field. Default is 0.
 *
 *   RESULT
 *       A pointer to an AHIAudioCtrl structure or NULL if an error occured.
