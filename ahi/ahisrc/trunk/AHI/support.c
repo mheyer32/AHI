@@ -474,7 +474,8 @@ struct List *GetModes(struct AHIUnitPrefs *prefs) {
             AHIDB_Realtime,   (ULONG) &realtime,
             TAG_DONE);
 
-        if((prefs->ahiup_Unit == AHI_NO_UNIT) || realtime ) {
+        if((prefs->ahiup_Unit == AHI_NO_UNIT) ||
+	   (realtime && (id & 0x00ff0000) != 0x00030000 /* Argh!! */)) {
           // Insert node alphabetically
           for(node = list->lh_Head;
               node->ln_Succ;
