@@ -1,36 +1,4 @@
-/* $Id$
- * $Log$
- * Revision 4.2  1997/04/09 01:55:32  lcs
- * Much improved error handling.
- *
- * Revision 4.1  1997/04/02  22:46:37  lcs
- * Bumped to version 4
- *
- * Revision 1.8  1997/03/27  12:11:25  lcs
- * Never mind! Bah.
- *
- * Revision 1.7  1997/03/26  13:32:43  lcs
- * Added UNIT to the template, and set taskpri to 5.
- *
- * Revision 1.6  1997/02/01  14:10:08  lcs
- * A couple of bugs fixed.
- *
- * Revision 1.5  1997/01/29  15:44:49  lcs
- * It's "finished"!
- *
- * Revision 1.4  1997/01/24  23:20:47  lcs
- * Writing seem to work too...
- *
- * Revision 1.3  1997/01/23  19:55:50  lcs
- * Added AIFF and AIFC saving.
- *
- * Revision 1.2  1997/01/21  23:56:21  lcs
- * Reading seem to work okay now.
- *
- * Revision 1.1  1997/01/17  23:34:28  lcs
- * Initial revision
- *
- */
+/* $Id$ */
 
 /*
  * This code is written using DICE, and is based on the DosHan example
