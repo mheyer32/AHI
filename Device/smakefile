@@ -1,0 +1,181 @@
+# $Id$
+# $Log$
+# Revision 1.1  1996/12/21 13:05:12  lcs
+# Initial revision
+#
+
+##
+## Definitions
+##
+###############################################################################
+
+CPU	= 68030
+OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
+TARGET	= AHI:User/Devs/ahi.device
+
+RCSFILES= addroutines.a asmfuncs.a devsupp.a footer.a header.a\
+cfuncs.c database.c devcommands.c device.c requester.c\
+ahi_def.h ahi_def.i ahi_device.h smakefile
+
+OBJECTS	= header.o device.o devcommands.o devsupp.o\
+asmfuncs.o cfuncs.o addroutines.o\
+requester.o database.o footer.o
+
+CCOMP	= SC:c/sc
+CFLAGS	= DEBUG=FULL DATA=FARONLY PARAMETERS=REGISTERS NOSTACKCHECK UNSIGNEDCHARS\
+COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS MEMORYSIZE=HUGE STRINGSECTION=CODE\
+GST=include:all.gst CPU=$(CPU) $(OPTIMIZE)
+
+ASM	= Programmering:PhxAss/Bin/PhxAss
+AFLAGS	= SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
+
+#ASM	= Program:Programmering/Assembler/Barfly/BAsm
+#AFLAGS	= -OD6+ -sa+ -s1+ -sf+ -x+ -q+ -uo+ -dMC020=1
+
+LINKER	= SC:c/slink
+LFLAGS	= NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
+DEBUG	= LIB:debug.lib LIB:amiga.lib
+
+##
+## Target
+##
+###############################################################################
+
+$(TARGET): $(OBJECTS)
+	$(LINKER) $(LFLAGS) TO $(TARGET) FROM $(OBJECTS) LIB LIB:sc.lib $(DEBUG)
+
+##
+## Revision counter
+##
+###############################################################################
+
+ahi_rev.i: header.a device.c devcommands.c asmfuncs.a cfuncs.c
+ahi_rev.i: addroutines.a requester.c database.c footer.a
+	@revup VERSION 3 PROJECTNAME ahi ASM TINY
+
+
+##
+## All objects
+##
+###############################################################################
+
+header.o: header.a ahi_def.i ahi_rev.i
+	$(ASM) $(AFLAGS) header.a
+
+device.o: device.c ahi_def.h ahi_device.h
+	$(CCOMP) $(CFLAGS) device.c
+
+devcommands.o: devcommands.c ahi_def.h ahi_device.h
+	$(CCOMP) $(CFLAGS) devcommands.c
+
+devsupp.o: devsupp.a
+	$(ASM) $(AFLAGS) devsupp.a
+
+asmfuncs.o: asmfuncs.a ahi_def.i
+	$(ASM) $(AFLAGS) asmfuncs.a
+
+cfuncs.o: cfuncs.c ahi_def.h
+	$(CCOMP) $(CFLAGS) cfuncs.c
+
+database.o: database.c ahi_def.h
+	$(CCOMP) $(CFLAGS) database.c
+
+addroutines.o: addroutines.a ahi_def.i
+	$(ASM) $(AFLAGS) addroutines.a
+
+requester.o: requester.c ahi_def.h
+	$(CCOMP) $(CFLAGS) requester.c
+
+footer.o: footer.a
+	$(ASM) $(AFLAGS) footer.a
+
+##
+## Prototypes
+##
+###############################################################################
+
+protos: device_protos.h cfuncs_protos.h database_protos.h requester_protos.h\
+	devcommands_protos.h devsupp_protos.h
+
+device_protos.h: device.c
+	$(CCOMP) GPROTO $(CFLAGS) device.c
+
+devcommands_protos.h: devcommands.c
+	$(CCOMP) GPROTO $(CFLAGS) devcommands.c
+
+devsupp_protos.h: devsupp.a
+	$(CCOMP) GPROTO $(CFLAGS) CSOURCE devsupp.a
+
+cfuncs_protos.h: cfuncs.c
+	$(CCOMP) GPROTO $(CFLAGS) cfuncs.c
+
+database_protos.h: database.c
+	$(CCOMP) GPROTO $(CFLAGS) database.c
+
+requester_protos.h: requester.c
+	$(CCOMP) GPROTO $(CFLAGS) requester.c
+
+
+##
+## Build include files
+##
+###############################################################################
+
+includes:
+	# Assembler library offsets
+	Programmering:DevKit/lvo ahi EQUATES > AHI:Developer/include/lvo/ahi_lib.i
+	Programmering:DevKit/lvo ahi_sub EQUATES > AHI:Developer/include/lvo/ahi_sub_lib.i
+	# SAS/C pragmas
+	fd2pragma AHI:Developer/include/fd/ahi_lib.fd\
+	          AHI:Developer/include/sas/pragmas/ahi_pragmas.h
+	fd2pragma AHI:Developer/include/fd/ahi_sub_lib.fd\
+	          AHI:Developer/include/sas/pragmas/ahi_sub_pragmas.h 
+	fixpragma.rexx AHI:Developer/include/sas/pragmas/ahi_pragmas.h
+	# ADE gcc inlines
+	fd2inline AHI:Developer/include/fd/ahi_lib.fd\
+	          AHI:Developer/include/clib/ahi_protos.h\
+	       -o AHI:Developer/include/ade/inline/ahi.h
+	fd2inline AHI:Developer/include/fd/ahi_sub_lib.fd\
+	          AHI:Developer/include/clib/ahi_sub_protos.h\
+	       -o AHI:Developer/include/ade/inline/ahi_sub.h
+
+##
+## Build autodoc files
+##
+###############################################################################
+
+autodocs:
+#	robodoc >NIL: AHI:Developer/__ahi/asmfuncs.a ahi.doc GUIDE SORT GENXREF T:ahi.xref
+#	robodoc >NIL: AHI:Developer/drivers/paula/paula_audio.a ahi_sub.doc GUIDE SORT GENXREF T:ahi_sub.xref
+	robodoc AHI:Developer/__ahi/asmfuncs.a ahi.doc TOC SORT #XREF T:ahi_sub.xref
+	robodoc AHI:Developer/__ahi/asmfuncs.a ahi.guide GUIDE SORT #XREF T:ahi_sub.xref
+	robodoc AHI:Developer/__ahi/asmfuncs.a ahi.html HTML SORT ;XREF T:ahi_sub.xref
+	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.doc TOC SORT #XREF T:ahi.xref
+	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.guide GUIDE SORT #XREF T:ahi.xref
+	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.html HTML SORT #XREF T:ahi.xref
+	--move ahi.doc ahi.guide ahi.html ahi_sub.doc ahi_sub.guide ahi_sub.html AHI:Developer/Docs/ QUIET
+	--delete T:ahi.xref T:ahi_sub.xref QUIET
+
+##
+## Check in all files
+##
+###############################################################################
+
+ci:
+	ci -l $(RCSFILES)
+
+##
+## Check out all files
+##
+###############################################################################
+
+co:
+	co -l $(RCSFILES)
+
+##
+## Remove all objects
+##
+###############################################################################
+
+clean:
+	--delete \#?.o QUIET
