@@ -1,3 +1,10 @@
+2004-11-08  Martin Blom  <martin@blom.org>
+
+ 	* Released AHI-Handler 5.5.
+
+	* AHI-Handler: Fixed bad IFF chunk lengths for AIFF/AIFC
+	files. [Stefan Haubenthal]
+
 2004-11-03  Martin Blom  <martin@blom.org>
 
  	* Released AHI-Handler 5.4.
