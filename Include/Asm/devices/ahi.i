@@ -2,12 +2,12 @@
 DEVICES_AHI_I		SET	1
 
 **
-**	$VER: ahi.i 5.1 (3.6.00)
+**	$VER: ahi.i 5.2 (4.3.01)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi.device definitions
 **
-**	(C) Copyright 1994-200 Martin Blom
+**	(C) Copyright 1994-2001 Martin Blom
 **	All Rights Reserved.
 **
 **
@@ -360,9 +360,10 @@ AHI_MIXFREQ		EQU ~0			; Special frequency for AHI_SetFreq()
 AHI_NOSOUND		EQU ~0			; Turns a channel off
 
  ; Set#? Flags
-	BITDEF	AHIS,IMM,0
+	BITDEF	AHIS,IMM,0			; Trigger action immediately
+	BITDEF	AHIS,NODELAY,1			; Don't wait for zero-crossing 
 
-AHISF_NONE		EQU 0			; New for V5
+AHISF_NONE		EQU 0			; No flags (V5)
 
 
  ; Effect types
