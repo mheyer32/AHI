@@ -640,7 +640,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
 
     case AHIDB_Annotation:
       return (LONG)
-	"Based on the Linux kernel driver. Funded by Hyperion Entertainment.";
+	"Funded by Hyperion Entertainment. Based on the Linux driver.";
 
     case AHIDB_Record:
       return TRUE;
