@@ -45,6 +45,8 @@ extern struct AHIBase           *AHIBase;
 
 /*** Definitions ***/
 
+typedef long long int   Fixed64;
+
 #define AHI_UNITS       4       /* Normal units, excluding AHI_NO_UNIT */
 
 #define AHIBB_NOSURROUND        (0)

@@ -568,7 +568,7 @@ _AHI_GetAudioAttrsA( ULONG                    id,
     else // no valid audioctrl
        rc=FALSE;
     if(id != AHI_INVALID_ID)
-      FreeVec(audioctrl);
+      AHIFreeVec(audioctrl);
     if(AHIsubBase)
       CloseLibrary(AHIsubBase);
     UnlockDatabase(audiodb);

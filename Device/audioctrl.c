@@ -149,8 +149,24 @@ CreateAudioCtrl(struct TagItem *tags)
   struct TagItem *dbtags;
   BOOL   error=TRUE;
 
-  audioctrl = AllocVec( sizeof( struct AHIPrivAudioCtrl ),
-			MEMF_PUBLIC | MEMF_CLEAR );
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+#endif
+  }
+
+  audioctrl = AHIAllocVec( sizeof( struct AHIPrivAudioCtrl ),
+                           data_flags );
 
   if( audioctrl != NULL )
   {
@@ -240,7 +256,7 @@ CreateAudioCtrl(struct TagItem *tags)
 
   if(error)
   {
-    FreeVec(audioctrl);
+    AHIFreeVec(audioctrl);
     return NULL;
   }
   else
@@ -735,7 +751,7 @@ _AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
     FreeVec( audioctrl->ac.ahiac_PreTimerFunc );
     FreeVec( audioctrl->ac.ahiac_PostTimerFunc );
 
-    FreeVec( audioctrl );
+    AHIFreeVec( audioctrl );
   }
   return 0;
 }

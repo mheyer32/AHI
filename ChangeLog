@@ -1,25 +1,6 @@
-2004-06-07  Martin Blom  <martin@blom.org>
+2004-06-08  Martin Blom  <martin@blom.org>
 
-	* Implemented gain.ahi-processor.
-
-2004-06-06  Martin Blom  <martin@blom.org>
-
-	* Added error codes and handling.
-
-	* Implemented ahi.class, ahi-buffer.class and ahi-processor.class.
-
-2004-06-05  Martin Blom  <martin@blom.org>
-
-	* Imported new include files (classes etc).
-
-2004-06-04  Martin Blom  <martin@blom.org>
-
-	* Removed BGUI and ClassAct preference support (for now at least,
-	ReAction support might be re-added later).
-
-	* Removed WarpUp support.
-
-	* Forked off BRANCH_6.
+	* Added missing TAG_DONEs to ScanAudioModes.
 
 2004-06-02  Martin Blom  <martin@blom.org>
 
