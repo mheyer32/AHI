@@ -140,6 +140,6 @@ struct AIFFHeader {
   SampledSoundHeader    SSNDchunk;
 };
 
-#if !defined (__mc68000__) && defined (__GCC__)
-# pragma pack
+#if !defined (__mc68000__) && defined (__GNUC__)
+# pragma pack()
 #endif

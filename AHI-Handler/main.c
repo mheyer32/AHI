@@ -772,13 +772,13 @@ void ulong2extended (ULONG in, extended *ex)
 
 void FillAIFFheader(struct HandlerData *data) {
 
-  AIFFHeader.FORMsize = sizeof(AIFFHeader) + data->totallength - 8;
+  AIFFHeader.FORMsize = data->totallength - 8;
   AIFFHeader.COMMchunk.numChannels = data->channels;
   AIFFHeader.COMMchunk.numSampleFrames = 
       data->totallength / AHI_SampleFrameSize(data->type);
   AIFFHeader.COMMchunk.sampleSize = data->bits;
   ulong2extended(data->freq, &AIFFHeader.COMMchunk.sampleRate);
-  AIFFHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength;
+  AIFFHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength - sizeof(AIFFHeader);
 }
 
 
@@ -788,13 +788,13 @@ void FillAIFFheader(struct HandlerData *data) {
 
 void FillAIFCheader(struct HandlerData *data) {
 
-  AIFCHeader.FORMsize = sizeof(AIFCHeader) + data->totallength - 8;
+  AIFCHeader.FORMsize = data->totallength - 8;
   AIFCHeader.COMMchunk.numChannels = data->channels;
   AIFCHeader.COMMchunk.numSampleFrames = 
       data->totallength / AHI_SampleFrameSize(data->type);
   AIFCHeader.COMMchunk.sampleSize = data->bits;
   ulong2extended(data->freq, &AIFCHeader.COMMchunk.sampleRate);
-  AIFCHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength;
+  AIFCHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength - sizeof(AIFFHeader);
 }
 
 
