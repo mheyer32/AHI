@@ -2,9 +2,14 @@
 
 * $Id$
 * $Log$
-* Revision 4.27  2001/09/28 20:52:17  lcs
-* I broke the DMA playback mode in the last update. Fixed now.
+* Revision 4.28  2002/01/06 09:46:10  martin
+* When opening timer.device (used in the DMA mode), I didn't clear the flags
+* parameter and opened UNIT_MICROHZ instead of UNIT_ECLOCK.  [Sigbjørn
+* Skjæret]
 *
+* triggered a bug that could make the driver lose track of the
+* AHIsub_Disable and AHIsub_Enable nesting.  Also, these functions
+* was not "thread safe" (they are not actually called from a thread
 * but rather an interrupt).
 *
 * Now uses "rx" to launch the rexx script.
@@ -4481,7 +4486,7 @@ DMA_Start:
 	move.b	d0,p_TimerDev(a3)
 	bne	.notimer
 
-	moveq	#0,d0
+	move.l	p_TimerReq(a3),a0
 	move.l	IO_DEVICE(a0),pb_TimerLib(a5)
 
 	push	a6

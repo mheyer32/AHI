@@ -5,6 +5,10 @@
 	the mixing routines, but is already about 2.5 times faster native
 	(compared to the JIT-compiled 4.180 version). I like it.
 
+	* paula.audio: When opening timer.device (used in the DMA mode),
+	I didn't clear the flags parameter and opened UNIT_MICROHZ instead
+	of UNIT_ECLOCK. [Sigbjørn Skjæret]
+
 2002-01-03  Martin Blom  <martin@blom.org>
 
 	* toccata.audio: The PreTimer() and PostTimer() calls did not pass
