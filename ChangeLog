@@ -1,11 +1,18 @@
+2005-04-06  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Harry's ixemul/SIGBREAKF_CTRL_F fix seem to have
+	fixed the infamous DisplayBeep()/IPrefs/sound.datatype/whatever
+	bug that several people have reported. This must be my lucky week.
+	[Luca "Hexaae" Longone]
+
 2005-04-05  Martin Blom  <martin@blom.org>
 
 	* Device/header.c: The __attribute__ is back again. [Davy
 	Wentzler]
 
-	* Oh, I forgot to mention: That PreTimer/PostTimer fix Gunther
-	helped with in January with made the Concierto driver work again!
-	Fett med credz till Gunther!!
+	* ahi.device/concierto.audio: Oh, I forgot to mention: That
+	PreTimer/PostTimer fix Gunther helped with in January with made
+	the Concierto driver work again!  Fett med credz till Gunther!!
 
 2005-04-03  Martin Blom  <martin@blom.org>
 
