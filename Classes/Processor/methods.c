@@ -116,6 +116,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
       case AHIA_Processor_Disabled:
 	AHIClassData->disabled = tag->ti_Data;
+	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	break;
 	
       case AHIA_Processor_AddChild: {

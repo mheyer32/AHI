@@ -57,7 +57,8 @@ namespace AHI {
       /* Disable processing (pass-through) when TRUE. */
       _AHIA(_P, Disabled,	(_AHIA_Dummy+22)),	/* OM_NEW,
 							   OM_SET,
-							   OM_GET */
+							   OM_GET,
+							   OM_NOTIFY */
 
       /* Add a child processor object.  This special attribute can be
 	 specified more than once during object creation to add

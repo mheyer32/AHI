@@ -1,6 +1,8 @@
 #ifndef AHI_Classes_GainProcessor_methods_h
 #define AHI_Classes_GainProcessor_methods_h
 
+#include <classes/ahi/processor/gain.h>
+
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg);
 
@@ -17,12 +19,9 @@ ULONG
 MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg);
 
 BOOL
-MethodSetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg);
+MethodSetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance* msg);
 
 BOOL
-MethodGetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg);
-
-BOOL
-MethodSetAllGain(Class* class, Object* object, struct AHIP_GainProcessor_GainAll* msg);
+MethodGetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance* msg);
 
 #endif /* AHI_Classes_GainProcessor_methods_h */

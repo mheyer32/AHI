@@ -34,38 +34,33 @@ namespace AHI {
       enum {
 	
 	/* The number of discrete channels that can be manipulated */
-	_AHIA(_P, Channels,	(_AHIA_Dummy+38))	/* OM_GET */
+	_AHIA(_P, Channels,	(_AHIA_Dummy+38)),	/* OM_GET */
 
+	/* The "master" gain (dbFixed) */
+	_AHIA(_P, Gain,		(_AHIA_Dummy+83))	/* OM_NEW,
+							   OM_SET,
+							   OM_GET,
+							   OM_NOTIFY */
       };
       
 /*****************************************************************************/
 
       enum {
 
-	/* Set gain for x channels. Returns TRUE on success. */
-	_AHIM(_P, Set,		(_AHIM_Dummy+14)),
+	/* Set relative gain for x channels. Returns TRUE on success. */
+	_AHIM(_P, SetBalance,	(_AHIM_Dummy+14)),
 
-	/* Get gain for x channels. Returns TRUE on success. */
-	_AHIM(_P, Get,		(_AHIM_Dummy+15)),
-
-
-	/* Set gain for all channels. Returns TRUE on success. */
-	_AHIM(_P, SetAll,	(_AHIM_Dummy+27))
+	/* Get relative gain for x channels. Returns TRUE on success. */
+	_AHIM(_P, GetBalance,	(_AHIM_Dummy+15))
 
       };
 
 
-      /* AHIM_GainProcessor_Set and AHIM_GainProcessor_Get */
-      struct _AHIP(_P, Gain) {
+      /* AHIM_GainProcessor_SetBalance and AHIM_GainProcessor_GetBalance */
+      struct _AHIP(_P, Balance) {
 	ULONG		MethodID;
 	ULONG		Channels;
 	dBFixed*	Gains;
-      };
-
-      /* AHIM_GainProcessor_SetAll */
-      struct _AHIP(_P, GainAll ) {
-	ULONG		MethodID;
-	dBFixed		Gain;
       };
 
       /* Just some utility constants for dBFixed */

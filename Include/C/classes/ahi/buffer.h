@@ -86,11 +86,14 @@ namespace AHI {
        /* Calculate buffer requirements. */
        _AHIM(_P, SampleFrameSize,	(_AHIM_Dummy+44)),
 
+       /* Load buffer from memory */
+       _AHIM(_P, Load,			(_AHIM_Dummy+45))
+       
      };
 
 /*****************************************************************************/
 
-     /* AHIM_SampleFrameSize */
+     /* AHIM_Buffer_SampleFrameSize */
      struct _AHIP(_P, SampleFrameSize) {
        ULONG		MethodID;
        ULONG		SampleType;
@@ -98,6 +101,14 @@ namespace AHI {
        struct TagItem*	ExtraTags;
      };
 
+
+     /* AHIM_Buffer_load */
+     struct _AHIP(_P, Load) {
+       ULONG		MethodID;
+       APTR		Data;
+       ULONG		SampleType;
+     };
+     
 /*****************************************************************************/
 
      enum {

@@ -92,17 +92,14 @@ AHIClassDispatch(Class*  class,
       result = MethodProcess(class, object, (struct AHIP_Processor_Process*) msg);
       break;
 
-    case AHIM_GainProcessor_Set:
-      result = MethodSetGain(class, object, (struct AHIP_GainProcessor_Gain*) msg);
+    case AHIM_GainProcessor_SetBalance:
+      result = MethodSetBalance(class, object,
+				(struct AHIP_GainProcessor_Balance*) msg);
       break;
 
-    case AHIM_GainProcessor_Get:
-      result = MethodGetGain(class, object, (struct AHIP_GainProcessor_Gain*) msg);
-      break;
-
-    case AHIM_GainProcessor_SetAll:
-      result = MethodSetAllGain(class, object,
-				(struct AHIP_GainProcessor_GainAll*) msg);
+    case AHIM_GainProcessor_GetBalance:
+      result = MethodGetBalance(class, object,
+				(struct AHIP_GainProcessor_Balance*) msg);
       break;
       
     default:
