@@ -17,12 +17,16 @@
 
 @c *** Variables ***
 
-@set ahiver 4.7
+@set ahiver 4.9
 
 @c *** Version history ***
 
 @c $Id$
 @c $Log$
+@c Revision 4.9  1997/09/28 04:31:56  lcs
+@c Added notes about Maestor Pro and Melody MPEG. Added Thorsten Hansen
+@c to the contributors section. And some other minor things.
+@c
 @c Revision 4.8  1997/09/18 00:51:00  lcs
 @c Added Maestro Pro stuff.
 @c
@@ -786,7 +790,26 @@ delivered with @sc{Ahi}.
 @table @code
 
 @item delfina.audio
-Requires @code{delfina.library}.
+Requires @code{delfina.library} version 4 or greater @footnote{The latest
+version of the Delfina software can be found at Petsoff Limited
+Partnership's WWW page:  @url{http://www.sci.fi/~petsoff}.}.
+
+
+@item maestropro.audio
+Requires @code{maestix.library} version 40.10 or greater @footnote{
+@code{maestix.library} is available from AmiNet, for example @*
+@url{ftp://ftp.germany.aminet.org/pub/aminet/util/libs/Maestix.lha}.}.  For
+more information about this driver as well as the most recent version of
+@code{maestix.library}, please visit the author's WWW page @footnote{
+Richard Körber's WWW page:  @url{http://www.is-koeln.de/einwohner/shred}.}.
+
+
+@item melody.audio
+Requires @code{melodympeg.device} version 1.40 or greater @footnote{
+@code{melodympeg.device} and the latest version of this driver can be found
+at the Kato Development Group's WWW page:
+@url{http://home.pages.de/~kato}.}.
+
 
 @cindex CyberSound
 @cindex DAC calibration
@@ -799,7 +822,7 @@ is read and used for the 14 bit DAC calibration.
 
 The 14 bit modes cannot be used for recording, but the 8 bit modes supports
 both generic parallel port samplers as well as both the Aura and Clarity
-sound cards.
+samplers.
 
 @cindex AHIpaulaFilterFreq variable
 
@@ -1213,6 +1236,9 @@ The following people has contributed to the @sc{Ahi} project with code:
 
 @item Stéphane Barbaray @email{opty@@club-internet.fr}
 The MUI version of the preferences program.
+
+@item Thorsten Hansen @email{hansen_t@@informatik.fh-hamburg.de}
+The Melody MPEG driver.
 
 @item Richard Körber @email{shred@@chessy.aworld.de}
 The Maestro Pro driver.
