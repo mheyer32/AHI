@@ -1,3 +1,17 @@
+2003-07-30  Martin Blom  <martin@blom.org>
+
+	* Bumped revision of emu10kx.audio to 5.7.
+
+	* Bumped revision of filesave.audio to 5.3.
+
+	* Bumped revision of void.audio to 5.6
+
+	* Bumped revision of AHI-Handler to 5.3.
+
+	* Bumped revision of AddAudioModes to 5.5.
+
+	* Released AHI preferences 5.11.
+
 2003-07-28  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.42.
