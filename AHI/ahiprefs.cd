@@ -255,3 +255,12 @@ msgSM3dB (//)
 msgSM6dB (//)
 -6 dB
 ;
+msgFreqFmt (//15)
+%ld Hz
+;
+msgChanFmt (//15)
+%ld
+;
+msgVolFmt (//15)
+%+4.1f dB
+;

@@ -132,3 +132,9 @@ Grabar en dúplex completo
 msgReqInfoMultiChannel
 
 ; 7.1 multichannel
+msgFreqFmt
+
+; %lu Hz
+;
+; ***NEW***
+;

@@ -41,6 +41,7 @@ const struct FC_Type _msgReqInfoHiFi = { 21, "HiFi mixing" };
 const struct FC_Type _msgReqInfoRecordHalf = { 22, "Record in half duplex" };
 const struct FC_Type _msgReqInfoRecordFull = { 23, "Record in full duplex" };
 const struct FC_Type _msgReqInfoMultiChannel = { 24, "7.1 multichannel" };
+const struct FC_Type _msgFreqFmt = { 25, "%lu Hz" };
 
 static struct Catalog *ahi_Catalog = NULL;
 

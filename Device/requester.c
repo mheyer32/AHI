@@ -160,7 +160,7 @@ static const struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 #define FREQSLIDER    3
 #define LISTVIEW      4
 
-#define FREQTEXT2     "%lu Hz"
+#define FREQTEXT2     GetString(msgFreqFmt, req->Catalog) //"%lu Hz"
 #define FREQLEN2      (5+3) // 5 digits + space + "Hz"
 
 LONG IndexToFrequency( struct Gadget *gad, WORD level )
@@ -569,6 +569,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, const struct TextAt
       ng.ng_GadgetText = GetString(msgReqFrequency, req->Catalog);
       ng.ng_GadgetID=FREQSLIDER;
       ng.ng_Flags=PLACETEXT_LEFT;
+      KPrintF("FREQTEXT2='%s'\n",FREQTEXT2);
       gad=CreateGadget(SLIDER_KIND,gad,&ng,
           GTSL_Min,0,
           GTSL_Max,sliderlevels-1,

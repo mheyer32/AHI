@@ -132,3 +132,9 @@ msgReqInfoRecordFull
 msgReqInfoMultiChannel
 Многоканальный 7.1
 ; 7.1 multichannel
+msgFreqFmt
+
+; %lu Hz
+;
+; ***NEW***
+;
