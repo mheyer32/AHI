@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.4  1997/04/14 01:50:39  lcs
+# *** empty log message ***
+#
 # Revision 4.3  1997/04/07 13:12:35  lcs
 # Better handling of catalog files now (no need to change the makefile
 # when new translations are added).
@@ -62,20 +65,21 @@ requester.c ahi.cd C_c_AHI.sd C_h_AHI.sd
 
 RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h smakefile
 
-OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
-device.o devsupp.o dspecho.o dspinit.o footer.o localize.o\
-requester.o header.o 
+OBJECTS = header.o asmfuncs.o addroutines.o dspinit.o dspecho.o cfuncs.o\
+database.o requester.o devcommands.o device.o devsupp.o localize.o\
+footer.o
 
 CCOMP	= SC:c/sc
-CFLAGS	= DEBUG=FULL DATA=FARONLY PARAMETERS=REGISTERS NOSTACKCHECK UNSIGNEDCHARS\
-COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS MEMORYSIZE=HUGE STRINGSECTION=CODE\
-GST=include:all.gst CPU=$(CPU) $(OPTIMIZE)
+CFLAGS = DEBUG=FULL CODE=FAR DATA=FARONLY ABSFUNCPOINTER PARAMETERS=REGISTERS\
+NOSTACKCHECK UNSIGNEDCHARS COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS\
+MEMORYSIZE=HUGE STRINGSECTION=CODE GST=include:all.gst CPU=$(CPU)\
+$(OPTIMIZE)
 
 ASM	= Programmering:PhxAss/Bin/PhxAss
 AFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
 
 LINKER	= SC:c/slink
-LFLAGS	= ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
+LFLAGS	= ADDSYM NOALVS NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy #STRIPDEBUG
 DEBUG	= LIB:debug.lib LIB:amiga.lib
 
 
@@ -128,7 +132,7 @@ asmfuncs.o:	asmfuncs.a ahi_def.i
 cfuncs.o:	cfuncs.c localize.h ahi_def.h
 database.o:	database.c ahi_def.h
 devcommands.o:	devcommands.c ahi_def.h ahi_device.h
-device.o:	device.c ahi_def.h ahi_device.h
+device.o:	device.c localize.h ahi_def.h ahi_device.h
 devsupp.o:	devsupp.a
 dspinit.o:	dspinit.c ahi_def.h dsp.h
 dspecho.o:	dspecho.a ahi_def.i dsp.i
