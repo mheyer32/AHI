@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.2  1997/04/02 22:48:03  lcs
+* One last V3 changed to V4
+*
 * Revision 4.1  1997/04/02 22:28:11  lcs
 * Bumped to version 4
 *
@@ -913,7 +916,7 @@ SetSound_nodebug
 *       Unlike the other functions whose names begin with "AHI_Set", this
 *       function may NOT be called from an interrupt (or AHI Hook).
 *
-*       Previous to V3, this call always returned AHIE_OK.
+*       Previous to V4, this call always returned AHIE_OK.
 *
 *   BUGS
 *       The idea of updating the source structure instead of allocating
