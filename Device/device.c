@@ -257,13 +257,18 @@ _DevOpen ( struct AHIRequest* ioreq,
 
 // One more check...
 
-  if((unit != AHI_NO_UNIT) && (ioreq->ahir_Version >= Version))
+  if((unit != AHI_NO_UNIT) && (ioreq->ahir_Version >= 4))
   {
     if(ioreq->ahir_Std.io_Message.mn_Length < sizeof(struct AHIRequest))
     {
       Req( "Bad parameters to OpenDevice()." );
       ioreq->ahir_Std.io_Error=IOERR_OPENFAIL;
       return IOERR_OPENFAIL;
+    }
+    else
+    {
+/*       KPrintF( "Tagging %08lx on task %08lx\n", ioreq, FindTask(0)); */
+      ioreq->ahir_Private[1] = (ULONG) ioreq;
     }
   }
 
@@ -310,8 +315,6 @@ _DevOpen ( struct AHIRequest* ioreq,
 
   if(!error)
   {
-/*     KPrintF( "Tagging %08lx on task %08lx\n", ioreq, FindTask(0)); */
-    ioreq->ahir_Private[1] = (ULONG) ioreq;
     ioreq->ahir_Std.io_Unit=(struct Unit *) iounit;
     if(iounit)    // Is NULL for AHI_NO_UNIT
       iounit->Unit.unit_OpenCnt++;

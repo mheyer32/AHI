@@ -1,3 +1,8 @@
+2004-06-12  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Avoid memory trashing when opening AHI_NO_UNIT using
+	a V2-sized AHIRequest. [Harry Sintonen]
+
 2004-06-09  Martin Blom  <martin@blom.org>
 
 	* Released device.audio 5.1.
