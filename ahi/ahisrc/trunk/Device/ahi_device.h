@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.3  1997/01/04 13:26:41  lcs
+* Debugged CMD_WRITE
+*
 * Revision 1.2  1996/12/21 23:08:47  lcs
 * AHICMD_FINISHED => AHICMD_WRITTEN
 * New stuff in the Voice structure
@@ -65,6 +68,7 @@ struct NSDeviceQueryResult
 #define AHICMD_WRITTEN	(0x8000 | CMD_WRITE)
 
 #define ahir_Channel	ahir_Pad1
+#define NOCHANNEL	65535
 
 struct Voice
 {
