@@ -17,12 +17,15 @@
 
 @c *** Variables ***
 
-@set ahiver 4.9
+@set ahiver 4.10
 
 @c *** Version history ***
 
 @c $Id$
 @c $Log$
+@c Revision 4.10  1997/09/30 13:11:09  lcs
+@c Added reasons why "Fast" or "Hifi" modes should be used.
+@c
 @c Revision 4.9  1997/09/28 04:31:56  lcs
 @c Added notes about Maestor Pro and Melody MPEG. Added Thorsten Hansen
 @c to the contributors section. And some other minor things.
@@ -987,6 +990,14 @@ a 16 bit sound will only be played at volume levels of 100%, 50%, 25%,
 routines will be used.  You can use the preferences program
 (@pxref{Advanced settings}) to disable surround sounds for ``fast'' modes.
 
+``Fast'' modes are useful if you wish to use as little CPU power as
+possible, but don't mind spending some memory to reach that goal.  They are
+also very useful when playing 16 bit audio streams---from a sample or MPEG
+player, for example---since that usually doesn't involve volume scaling
+and frequency recalculation. However, if used for playing streams, make
+sure the mixing frequency is the same as the stream frequency!
+
+
 @cindex HiFi Mono (audio mode)
 @cindex HiFi Stereo (audio mode)
 @cindex HiFi Stereo++ (audio mode)
@@ -1000,6 +1011,10 @@ routines will be used.  You can use the preferences program
 using 32 bits internally and linear interpolation.  They are also
 @emph{much} slower than the other modes.  ``HiFi'' modes turn on master
 volume with clipping automatically (@pxref{Advanced settings}).
+
+``HiFi'' modes are useful when you're playing music---@dfn{MIDI} songs or
+@dfn{modules}, for example---and want the best possible quality @sc{Ahi}
+has to offer.
 
 @end table
 
