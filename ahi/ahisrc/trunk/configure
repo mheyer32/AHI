@@ -3340,7 +3340,7 @@ EOF
  ;;
 esac
 
-ac_config_files="$ac_config_files Makefile AHI/Makefile AddAudioModes/Makefile Device/Makefile Docs/Makefile Drivers/EMU10kx/Makefile Examples/Extras/CloneAudioModes/Makefile Include/Makefile"
+ac_config_files="$ac_config_files Makefile AHI/Makefile AHI-Handler/Makefile AddAudioModes/Makefile Device/Makefile Docs/Makefile Drivers/EMU10kx/Makefile Examples/Extras/CloneAudioModes/Makefile Include/Makefile"
 ac_config_commands="$ac_config_commands default"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -3653,6 +3653,7 @@ do
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "AHI/Makefile" ) CONFIG_FILES="$CONFIG_FILES AHI/Makefile" ;;
+  "AHI-Handler/Makefile" ) CONFIG_FILES="$CONFIG_FILES AHI-Handler/Makefile" ;;
   "AddAudioModes/Makefile" ) CONFIG_FILES="$CONFIG_FILES AddAudioModes/Makefile" ;;
   "Device/Makefile" ) CONFIG_FILES="$CONFIG_FILES Device/Makefile" ;;
   "Docs/Makefile" ) CONFIG_FILES="$CONFIG_FILES Docs/Makefile" ;;
@@ -3661,7 +3662,7 @@ do
   "Include/Makefile" ) CONFIG_FILES="$CONFIG_FILES Include/Makefile" ;;
   "default" ) CONFIG_COMMANDS="$CONFIG_COMMANDS default" ;;
   "config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config.h" ;;
-  *) { { echo "$as_me:3664: error: invalid argument: $ac_config_target" >&5
+  *) { { echo "$as_me:3665: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
   esac
@@ -3904,7 +3905,7 @@ done; }
   esac
 
   if test x"$ac_file" != x-; then
-    { echo "$as_me:3907: creating $ac_file" >&5
+    { echo "$as_me:3908: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
     rm -f "$ac_file"
   fi
@@ -3922,7 +3923,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:3925: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:3926: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -3935,7 +3936,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:3938: error: cannot find input file: $f" >&5
+           { { echo "$as_me:3939: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -3996,7 +3997,7 @@ for ac_file in : $CONFIG_HEADERS; do test "x$ac_file" = x: && continue
   * )   ac_file_in=$ac_file.in ;;
   esac
 
-  test x"$ac_file" != x- && { echo "$as_me:3999: creating $ac_file" >&5
+  test x"$ac_file" != x- && { echo "$as_me:4000: creating $ac_file" >&5
 echo "$as_me: creating $ac_file" >&6;}
 
   # First look for the input files in the build tree, otherwise in the
@@ -4007,7 +4008,7 @@ echo "$as_me: creating $ac_file" >&6;}
       -) echo $tmp/stdin ;;
       [\\/$]*)
          # Absolute (can't be DOS-style, as IFS=:)
-         test -f "$f" || { { echo "$as_me:4010: error: cannot find input file: $f" >&5
+         test -f "$f" || { { echo "$as_me:4011: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          echo $f;;
@@ -4020,7 +4021,7 @@ echo "$as_me: error: cannot find input file: $f" >&2;}
            echo $srcdir/$f
          else
            # /dev/null tree
-           { { echo "$as_me:4023: error: cannot find input file: $f" >&5
+           { { echo "$as_me:4024: error: cannot find input file: $f" >&5
 echo "$as_me: error: cannot find input file: $f" >&2;}
    { (exit 1); exit 1; }; }
          fi;;
@@ -4137,7 +4138,7 @@ cat >>$CONFIG_STATUS <<\EOF
   rm -f $tmp/in
   if test x"$ac_file" != x-; then
     if cmp -s $ac_file $tmp/config.h 2>/dev/null; then
-      { echo "$as_me:4140: $ac_file is unchanged" >&5
+      { echo "$as_me:4141: $ac_file is unchanged" >&5
 echo "$as_me: $ac_file is unchanged" >&6;}
     else
       ac_dir=`$as_expr X"$ac_file" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \

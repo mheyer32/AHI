@@ -1,3 +1,9 @@
+2003-01-20  Martin Blom  <martin@blom.org>
+
+	* AHI-Handler: Now part of build tree, ported to gcc, GPL:ed and
+	will no longer accept 24 bit AIFF/AIFC files (which AHI cannot
+	play -- 32 bit files are still accepted).
+
 2003-01-19  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.31. This is actually all I had in mind for
