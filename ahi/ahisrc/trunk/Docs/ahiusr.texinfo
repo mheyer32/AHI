@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.5  2003/02/08 14:14:18  martin
+Wrote about the "Paula:DMA 8 bit stereo" mode.
+
 Revision 5.4  2003/01/23 23:23:23  martin
 Updated the list of supported sound cards.
 
@@ -914,6 +917,15 @@ is read and used for the 14 bit DAC calibration.
 The 14 bit modes cannot be used for recording, but the 8 bit modes supports
 both generic parallel port samplers as well as both the Aura and Clarity
 samplers.
+
+@cindex DMA
+
+The so-called @samp{Paula:DMA 8 bit stereo} mode uses Paula's built-in
+DMA engine to play the sounds; no software mixing at all is
+performed. Because of this, only four channels are available and no
+stereo panning is available (just like all other plain ``stereo''
+modes). In addition, the only mixing frequency available is Paula's
+master clock.
 
 @cindex AHIpaulaFilterFreq variable
 
