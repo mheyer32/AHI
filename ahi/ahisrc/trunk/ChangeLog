@@ -1,3 +1,11 @@
+2001-09-24  Martin Blom  <martin@blom.org>
+
+	* ahi.device:  A missing 'break' statment made AbortIO() return
+	IOERR_NOCMD on CMD_WRITE requests.
+
+	* ahi.device:  Fixed a non-fatal race condition in DevAbortIO().
+	It just made the source code look prettier ... :)
+
 2001-09-16  Martin Blom  <martin@blom.org>
 
 	* Released paula.audio version 4.26.

@@ -162,6 +162,11 @@ DevAbortIO( struct AHIRequest* ioreq,
 
             if(ioreq->ahir_Extras && (GetExtras(ioreq)->Channel != NOCHANNEL))
             {
+              if(iounit->AudioCtrl)
+              {
+                AHIsub_Disable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
+              }
+
               iounit->Voices[GetExtras(ioreq)->Channel].PlayingRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].NextRequest = NULL;
@@ -175,6 +180,11 @@ DevAbortIO( struct AHIRequest* ioreq,
               else
               {
                 iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = FREE;
+              }
+
+              if(iounit->AudioCtrl)
+              {
+                AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
               }
             }
 
