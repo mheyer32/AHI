@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.7  1997/01/29 13:44:33  lcs
+* Fixed a race condition in PlayRequest()
+*
 * Revision 1.6  1997/01/15 14:59:50  lcs
 * Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
 *
@@ -21,6 +24,8 @@
 *
 */
 
+//#define DEBUG
+
 #include "ahi_def.h"
 #include <dos/dos.h>
 #include <exec/errors.h>
@@ -31,8 +36,10 @@
 
 #include <math.h>
 
+#ifndef  noprotos
 #ifndef _GENPROTO
 #include "devcommands_protos.h"
+#endif
 #endif
 
 #include "device_protos.h"
@@ -60,7 +67,6 @@ void UpdateSilentPlayers( struct AHIDevUnit *, struct AHIBase *);
 
 // Should be moved to a separate file... IMHO.
 struct Node *FindNode(struct List *, struct Node *);
-
 
 /******************************************************************************
 ** DevBeginIO *****************************************************************
@@ -515,6 +521,11 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   /* Start playback if neccessary */
   if( ! iounit->IsPlaying)
   {
+
+#ifdef DEBUG
+    KPrintF("Not playing\n");
+#endif
+
     if( (! iounit->FullDuplex) && iounit->IsRecording)
     {
       error = AHIE_UNKNOWN;   // FIXIT!
@@ -526,15 +537,26 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
          TAG_DONE);
     }
 
+#ifdef DEBUG
+    KPrintF("Playing\n");
+#endif
+
     if( ! error)
     {
       int i = iounit->StopCnt;
+
+#ifdef DEBUG
+      KPrintF("No error, stopcnt=%ld\n",i);
+#endif
 
       iounit->IsPlaying = TRUE;
 
       iounit->StopCnt = 0;
       while(i--)
       {
+#ifdef DEBUG
+        KPrintF("Stopping\n");
+#endif
         // beware, invalid IORequest to StopCmd!
         StopCmd(ioreq, AHIBase);
       }
@@ -544,6 +566,10 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   if(iounit->IsPlaying)     // (error == 0)
   {
     ioreq->ahir_Std.io_Actual = 0;
+
+#ifdef DEBUG
+    KPrintF("Testing freq\n");
+#endif
 
     if(ioreq->ahir_Frequency >= 262144)
     {
@@ -569,6 +595,10 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
       default:
         error = AHIE_BADSAMPLETYPE;
     }
+
+#ifdef DEBUG
+    KPrintF("Error code is now: %ld\n", error);
+#endif
 
     if(! error)
     {
@@ -645,15 +675,23 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
     FillReadBuffer(ioreq, iounit, AHIBase);
   }
 
-  // Check if Reader-list is empty. If so, stop recording.
+  // Check if Reader-list is empty. If so, stop recording (after a small delay).
 
   if( ! iounit->ReadList.mlh_Head->mln_Succ )
   {
-    AHI_ControlAudio(iounit->AudioCtrl,
-        AHIC_Record,FALSE,
-        TAG_DONE);
-    iounit->IsRecording = FALSE;
+    if(--iounit->RecordOffDelay == 0)
+    {
+      AHI_ControlAudio(iounit->AudioCtrl,
+          AHIC_Record,FALSE,
+          TAG_DONE);
+      iounit->IsRecording = FALSE;
+    }
   }
+  else
+  {
+    iounit->RecordOffDelay = 1;  // FIXIT!!!
+  }
+
   ReleaseSemaphore(&iounit->ListLock);
 }
 
@@ -802,11 +840,24 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
   int channel;
   BOOL delay = FALSE;
 
+#ifdef DEBUG
+  KPrintF("New writer\n");
+#endif
+
   iounit=(struct AHIDevUnit *)ioreq->ahir_Std.io_Unit;
   ObtainSemaphore(&iounit->ListLock);
 
+#ifdef DEBUG
+  KPrintF("Got lock\n");
+#endif
+
   if(ioreq->ahir_Link)
   {
+
+#ifdef DEBUG
+    KPrintF("Linked\n");
+#endif
+
     // See if the linked request is playing, silent or waiting...
 
     if(FindNode((struct List *) &iounit->PlayingList,
@@ -832,6 +883,11 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 
   if(delay)
   {
+
+#ifdef DEBUG
+    KPrintF("Delayed\n");
+#endif
+
     if( ! ioreq->ahir_Link->ahir_Link)
     {
       channel = ioreq->ahir_Link->ahir_Channel;
@@ -890,6 +946,10 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 {
   int channel;
 
+#ifdef DEBUG
+  KPrintF("Addwriter\n");
+#endif
+
   // Search for a free channel, and use if found
 
   for(channel = 0; channel < iounit->Channels; channel++)
@@ -943,6 +1003,11 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 static void PlayRequest(int channel, struct AHIRequest *ioreq,
     struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
 {
+
+#ifdef DEBUG
+  KPrintF("PlayRequest\n");
+#endif
+
   // Start the sound
 
   ioreq->ahir_Channel = channel;
@@ -968,6 +1033,10 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
     iounit->Voices[channel].NextRequest = NULL;
   }
 
+#ifdef DEBUG
+  KPrintF("Starting it\n");
+#endif
+
   iounit->Voices[channel].PlayingRequest = NULL;
   iounit->Voices[channel].QueuedRequest = ioreq;
   AHI_Play(iounit->AudioCtrl,
@@ -980,6 +1049,15 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
       AHIP_Length,        ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual,
       AHIP_EndChannel,    NULL,
       TAG_DONE);
+
+  // This is a workaround for a race condition.
+  // The problem can occur if a delayed request follows immediately after
+  // this one, before the sample interrupt routine has been called, and
+  // overwrites QueuedRequest. The result is that this sound is never
+  // marked as finished, and the application will wait forever on the
+  // IO Request. Quite ugly, no?
+
+  while(iounit->Voices[channel].PlayingRequest == NULL);
 }
 
 
@@ -996,6 +1074,10 @@ void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
 {
   struct MinList templist;
   struct AHIRequest *ioreq;
+
+#ifdef DEBUG
+  KPrintF("RethinkPlayers\n");
+#endif
 
   NewList((struct List *) &templist);
 
@@ -1032,6 +1114,10 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
 {
   struct AHIRequest *ioreq, *node;
 
+#ifdef DEBUG
+  KPrintF("RemPlayers\n");
+#endif
+
   node = (struct AHIRequest *) list->lh_Head;
   while(node->ahir_Std.io_Message.mn_Node.ln_Succ)
   {
@@ -1040,6 +1126,11 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
 
     if(ioreq->ahir_Std.io_Command == AHICMD_WRITTEN)
     {
+
+#ifdef DEBUG
+      KPrintF("removing %08lx\n", ioreq);
+#endif
+
       Remove((struct Node *) ioreq);
 
       if(ioreq->ahir_Link)
