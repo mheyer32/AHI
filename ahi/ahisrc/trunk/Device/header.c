@@ -478,57 +478,75 @@ OpenLibs ( void )
       AHIGetELFSymbol( "__LIB_Version", (void*) &version );
       AHIGetELFSymbol( "__LIB_Revision", (void*) &revision );
     
-      if( version == NULL || revision == NULL )
+      if( version != NULL && revision != NULL )
+      {
+        if( *version == Version && *revision == Revision )
+        {
+          r &= GetSymbol( AddByteMono     );
+          r &= GetSymbol( AddByteStereo   );
+          r &= GetSymbol( AddBytesMono    );
+          r &= GetSymbol( AddBytesStereo  );
+          r &= GetSymbol( AddWordMono     );
+          r &= GetSymbol( AddWordStereo   );
+          r &= GetSymbol( AddWordsMono    );
+          r &= GetSymbol( AddWordsStereo  );
+          r &= GetSymbol( AddByteMonoB    );
+          r &= GetSymbol( AddByteStereoB  );
+          r &= GetSymbol( AddBytesMonoB   );
+          r &= GetSymbol( AddBytesStereoB );
+          r &= GetSymbol( AddWordMonoB    );
+          r &= GetSymbol( AddWordStereoB  );
+          r &= GetSymbol( AddWordsMonoB   );
+          r &= GetSymbol( AddWordsStereoB );
+
+          r &= GetSymbol( AddLofiByteMono     );
+          r &= GetSymbol( AddLofiByteStereo   );
+          r &= GetSymbol( AddLofiBytesMono    );
+          r &= GetSymbol( AddLofiBytesStereo  );
+          r &= GetSymbol( AddLofiWordMono     );
+          r &= GetSymbol( AddLofiWordStereo   );
+          r &= GetSymbol( AddLofiWordsMono    );
+          r &= GetSymbol( AddLofiWordsStereo  );
+          r &= GetSymbol( AddLofiByteMonoB    );
+          r &= GetSymbol( AddLofiByteStereoB  );
+          r &= GetSymbol( AddLofiBytesMonoB   );
+          r &= GetSymbol( AddLofiBytesStereoB );
+          r &= GetSymbol( AddLofiWordMonoB    );
+          r &= GetSymbol( AddLofiWordStereoB  );
+          r &= GetSymbol( AddLofiWordsMonoB   );
+          r &= GetSymbol( AddLofiWordsStereoB );
+
+          if( r != 0 )
+          {
+            // OK, then...
+          }
+          else
+          {
+            Req( "Unable to fetch all symbols from ELF object." );
+
+            AHIUnloadObject( PPCObject );
+            PPCObject  = NULL;
+            MixBackend = MB_NATIVE;
+          }
+        }
+        else
+        {
+          Req( "'ahi.device.elf' version %ld.%ld doesn't match "
+               "'ahi.device' version %ld.%ld.",
+               *version, *revision, Version, Revision );
+
+          AHIUnloadObject( PPCObject );
+          PPCObject  = NULL;
+          MixBackend = MB_NATIVE;
+        }
+      }
+      else
       {
         Req( "Unable to fetch version information from 'ahi.device.elf'." );
-      }
-      if( *version != Version || *revision != Revision )
-      {
-        Req( "'ahi.device.elf' version %ld.%ld doesn't match "
-             "'ahi.device' version %ld.%ld.",
-             *version, *revision, Version, Revision );
 
-        return FALSE;
-      }
-
-      r &= GetSymbol( AddByteMono     );
-      r &= GetSymbol( AddByteStereo   );
-      r &= GetSymbol( AddBytesMono    );
-      r &= GetSymbol( AddBytesStereo  );
-      r &= GetSymbol( AddWordMono     );
-      r &= GetSymbol( AddWordStereo   );
-      r &= GetSymbol( AddWordsMono    );
-      r &= GetSymbol( AddWordsStereo  );
-      r &= GetSymbol( AddByteMonoB    );
-      r &= GetSymbol( AddByteStereoB  );
-      r &= GetSymbol( AddBytesMonoB   );
-      r &= GetSymbol( AddBytesStereoB );
-      r &= GetSymbol( AddWordMonoB    );
-      r &= GetSymbol( AddWordStereoB  );
-      r &= GetSymbol( AddWordsMonoB   );
-      r &= GetSymbol( AddWordsStereoB );
-
-      r &= GetSymbol( AddLofiByteMono     );
-      r &= GetSymbol( AddLofiByteStereo   );
-      r &= GetSymbol( AddLofiBytesMono    );
-      r &= GetSymbol( AddLofiBytesStereo  );
-      r &= GetSymbol( AddLofiWordMono     );
-      r &= GetSymbol( AddLofiWordStereo   );
-      r &= GetSymbol( AddLofiWordsMono    );
-      r &= GetSymbol( AddLofiWordsStereo  );
-      r &= GetSymbol( AddLofiByteMonoB    );
-      r &= GetSymbol( AddLofiByteStereoB  );
-      r &= GetSymbol( AddLofiBytesMonoB   );
-      r &= GetSymbol( AddLofiBytesStereoB );
-      r &= GetSymbol( AddLofiWordMonoB    );
-      r &= GetSymbol( AddLofiWordStereoB  );
-      r &= GetSymbol( AddLofiWordsMonoB   );
-      r &= GetSymbol( AddLofiWordsStereoB );
-
-      if( r == 0 )
-      {
-        Req( "Unable to fetch all symbols from ELF object." );
-        return FALSE;
+        AHIUnloadObject( PPCObject );
+        PPCObject  = NULL;
+        MixBackend = MB_NATIVE;
       }
     }
     else

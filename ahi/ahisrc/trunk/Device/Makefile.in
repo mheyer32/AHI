@@ -128,7 +128,7 @@ endif
 all:		$(TARGET) $(srcdir)/ahi.ct $(CATALOGS)
 
 mostlyclean:
-	$(RM) $(TARGETS) *.o *.bak *~ \#*\# core Makefile.dep Makefile.opt
+	$(RM) $(TARGETS) *.o *.a *.bak *~ \#*\# core Makefile.dep Makefile.opt
 
 clean:		mostlyclean
 	$(RM) $(CATALOGS) localize.c localize.h version.h version.i \
