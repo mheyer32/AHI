@@ -1,3 +1,10 @@
+2003-06-20  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.2.
+
+	* emu10kx.audio: Ported to use the common driver architecture
+	shared with void, filesave and now emu10kx.
+
 2003-05-03  Martin Blom  <martin@blom.org>
 
 	* Minor Makefile fixes for building in the the source tree.
