@@ -2,6 +2,9 @@
 
 * $Id$
 * $Log$
+* Revision 4.2  2001/04/12 14:25:31  lcs
+* Always use calibration tables for 14-bit output.
+*
 * Revision 4.1  1997/12/02 09:35:21  lcs
 * First RCS'ed version.
 *
@@ -44,7 +47,7 @@ ModeA:
 	dc.l	AHIDB_AudioID,		$00020001
 
 	dc.l	AHIDB_Paula14Bit,	TRUE
-	dc.l	AHIDB_PaulaTable,	FALSE
+	dc.l	AHIDB_PaulaTable,	TRUE
 
 	dc.l	AHIDB_Volume,		TRUE
 	dc.l	AHIDB_Panning,		TRUE
@@ -54,7 +57,7 @@ ModeA:
 
 	dc.l	AHIDB_Name,		.name-.s
 	dc.l	TAG_DONE
-.name	dc.b	"Paula:14 bit stereo++",0
+.name	dc.b	"Paula:14 bit stereo++ calibrated",0
 .e
 	CNOP	0,2
 
@@ -88,7 +91,7 @@ ModeC:
 	dc.l	AHIDB_AudioID,		$00020003
 
 	dc.l	AHIDB_Paula14Bit,	TRUE
-	dc.l	AHIDB_PaulaTable,	FALSE
+	dc.l	AHIDB_PaulaTable,	TRUE
 
 	dc.l	AHIDB_Volume,		TRUE
 	dc.l	AHIDB_Panning,		FALSE
@@ -98,7 +101,7 @@ ModeC:
 
 	dc.l	AHIDB_Name,		.name-.s
 	dc.l	TAG_DONE
-.name	dc.b	"Paula:14 bit stereo",0
+.name	dc.b	"Paula:14 bit stereo calibrated",0
 .e
 	CNOP	0,2
 
@@ -132,7 +135,7 @@ ModeE:
 	dc.l	AHIDB_AudioID,		$00020005
 
 	dc.l	AHIDB_Paula14Bit,	TRUE
-	dc.l	AHIDB_PaulaTable,	FALSE
+	dc.l	AHIDB_PaulaTable,	TRUE
 
 	dc.l	AHIDB_Volume,		TRUE
 	dc.l	AHIDB_Panning,		FALSE
@@ -142,7 +145,7 @@ ModeE:
 
 	dc.l	AHIDB_Name,		.name-.s
 	dc.l	TAG_DONE
-.name	dc.b	"Paula:14 bit mono",0
+.name	dc.b	"Paula:14 bit mono calibrated",0
 .e
 	CNOP	0,2
 
