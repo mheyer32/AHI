@@ -313,7 +313,7 @@ SetFreq ( UWORD                    channel,
       add = ((freq << 16) / audioctrl->ac.ahiac_MixFreq) << shift;
     }
   }
-
+  
   AHIsub_Disable(&audioctrl->ac);
 
   cd->cd_NextAdd = (Fixed64) add << 16;
@@ -488,8 +488,7 @@ SetSound ( UWORD                    channel,
                                  | 0xffffffffLL;
       /* Low cd->cd_NextOffset already 0 */
     }
-//    KPrintF("o: %lx L: %lx lo: %08lx:%08lx\n", offset, length,
-//	    (int)(cd->cd_NextLastOffset>>32),(int)cd->cd_NextLastOffset);
+
     SelectAddRoutine( cd->cd_NextVolumeLeft,
                       cd->cd_NextVolumeRight,
                       cd->cd_NextType,

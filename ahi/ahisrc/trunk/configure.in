@@ -39,7 +39,7 @@ case $host in
  i?86be-pc-amithlon)
   : ${CPU="i686"}
   linkerflags="-noixemul -r"
-  optflags="-mcpu=${CPU} -O0"
+  optflags="-mcpu=${CPU} -O2"
   asflags="-m${CPU} --defsym CPU=${CPU}"
  ;;
  m68k-unknown-amigaos)
