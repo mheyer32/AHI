@@ -464,8 +464,8 @@ SamplerFunc( struct Hook*             hook,
 */
 
 struct AHIAudioCtrl*
-AllocAudioA( struct TagItem* tags,
-             struct AHIBase* AHIBase )
+_AHI_AllocAudioA( struct TagItem* tags,
+		  struct AHIBase* AHIBase )
 {
   struct AHIPrivAudioCtrl* audioctrl;
   struct Library *AHIsubBase;
@@ -697,8 +697,8 @@ error:
 */
 
 ULONG
-FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
-           struct AHIBase*          AHIBase )
+_AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
+		struct AHIBase*          AHIBase )
 {
   struct Library *AHIsubBase;
   int i;
@@ -785,7 +785,7 @@ FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
 */
 
 ULONG
-KillAudio( struct AHIBase* AHIBase )
+_AHI_KillAudio( struct AHIBase* AHIBase )
 {
   UWORD i;
 
@@ -909,9 +909,9 @@ KillAudio( struct AHIBase* AHIBase )
 */
 
 ULONG
-ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
-               struct TagItem*          tags,
-               struct AHIBase*          AHIBase )
+_AHI_ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
+		    struct TagItem*          tags,
+		    struct AHIBase*          AHIBase )
 {
   ULONG *ptr, playflags=0, stopflags=0, rc=AHIE_OK;
   UBYTE update=FALSE;

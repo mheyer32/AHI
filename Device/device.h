@@ -181,14 +181,14 @@ struct AHIDevUnit
 };
 
 ULONG
-DevOpen ( ULONG              unit,
-          ULONG              flags,
-          struct AHIRequest* ioreq,
-          struct AHIBase*    AHIBase );
+_DevOpen ( ULONG              unit,
+	   ULONG              flags,
+	   struct AHIRequest* ioreq,
+	   struct AHIBase*    AHIBase );
 
 BPTR
-DevClose ( struct AHIRequest* ioreq,
-           struct AHIBase*    AHIBase );
+_DevClose ( struct AHIRequest* ioreq,
+	    struct AHIBase*    AHIBase );
 
 BOOL
 ReadConfig ( struct AHIDevUnit *iounit,

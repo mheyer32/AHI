@@ -984,8 +984,7 @@ Mix( struct Hook*             unused_Hook,
         */
 
         dst = (char *) dst + audioctrl->ac.ahiac_BuffSamples * 
-                             SampleFrameSize( audioctrl->ac.ahiac_BuffType,
-                                              AHIBase );
+	  _AHI_SampleFrameSize( audioctrl->ac.ahiac_BuffType, AHIBase );
       }
 
       continue; /* while(TRUE) */

@@ -4,6 +4,7 @@
 ==basetype struct Library *
 ==libname ahi.device
 ==include <exec/types.h>
+==include <exec/devices.h>
 ==include <utility/tagitem.h>
 ==include <devices/ahi.h>
 ==bias 42

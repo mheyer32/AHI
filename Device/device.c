@@ -230,10 +230,10 @@ ChannelInfoFunc( struct Hook*              hook,
 // exec.library/OpenDevice().
 
 ULONG
-DevOpen ( ULONG              unit,
-          ULONG              flags,
-          struct AHIRequest* ioreq,
-          struct AHIBase*    AHIBase )
+_DevOpen ( ULONG              unit,
+	   ULONG              flags,
+	   struct AHIRequest* ioreq,
+	   struct AHIBase*    AHIBase )
 {
   ULONG rc = 0;
   BOOL  error = FALSE;
@@ -382,8 +382,8 @@ DevOpen ( ULONG              unit,
 // exec.library/CloseDevice().
 
 BPTR
-DevClose ( struct AHIRequest* ioreq,
-           struct AHIBase*    AHIBase )
+_DevClose ( struct AHIRequest* ioreq,
+	    struct AHIBase*    AHIBase )
 {
   struct AHIDevUnit *iounit;
   BPTR  seglist=0;
@@ -419,7 +419,7 @@ DevClose ( struct AHIRequest* ioreq,
   if(!AHIBase->ahib_Library.lib_OpenCnt)
   {
     if(AHIBase->ahib_Library.lib_Flags & LIBF_DELEXP)
-      seglist=DevExpunge(AHIBase);
+      seglist=_DevExpunge(AHIBase);
   }
   return seglist;
 }

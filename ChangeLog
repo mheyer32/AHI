@@ -1,5 +1,8 @@
 2003-07-24  Martin Blom  <martin@blom.org>
 
+	* ahi.device: Most of the library function gates are now
+	auto-generated.
+
 	* Nuked files that are now auto-generated (FD and clib includes).
 
 	* No separate SAS/C and Storm C files anymore. The proto and

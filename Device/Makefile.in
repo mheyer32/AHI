@@ -20,6 +20,7 @@ DEVSDIR		= ${DISTDIR}/User/Devs
 CATDIR		= ${DISTDIR}/User/Catalogs
 
 build_os	= @build_os@
+host		= @host@
 host_cpu	= @host_cpu@
 
 CC		= @CC@
@@ -42,6 +43,9 @@ INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 INSTALL_DATA	= @INSTALL_DATA@
 
+SFDC		= @SFDC@
+SFDC_TARGET	= --target=${host}
+
 FLEXCAT		= @FLEXCAT@
 
 ifeq ($(strip $(FLEXCAT)),)
@@ -57,7 +61,8 @@ ENABLE_WARPUP	= @ENABLE_WARPUP@
 LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
-OBJECTS		= header.o gateway.o device.o devcommands.o devsupp.o \
+OBJECTS		= header.o gateway.o gatestubs1.o gatestubs2.o \
+		  device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  audioctrl.o effectinit.o sound.o misc.o dspecho.o \
 		  mixer.o 
@@ -74,6 +79,8 @@ ifeq ($(host_cpu),powerpc)
 OBJECTS		+= addroutines_ppc.o
 endif
 
+GENERATED	= version.h \
+		  gatestubs1.c gatestubs1.h gatestubs2.c gatestubs2.h
 
 #
 # Targets
@@ -89,7 +96,7 @@ mostlyclean:
 	$(RM) $(TARGET) *.o *.a *.bak *~ \#*\# core Makefile.dep
 
 clean:		mostlyclean
-	$(RM) $(CATALOGS) version.h
+	$(RM) $(CATALOGS) $(GENERATED)
 
 distclean:	clean
 	$(RM) Makefile
@@ -153,6 +160,22 @@ version.h:	version.rev version.date
 	 echo "#define REVISION $$rev" >> $@ && \
 	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
 
+gatestubs1.c:	$(top_srcdir)/Include/SFD/ahi_lib.sfd
+	$(SFDC) $(SFDC_TARGET) --mode=gatestubs $^ --output $@ \
+	        --gateprefix=gw --libprefix=_ --libarg=last
+
+gatestubs2.c:	ahi_internal_lib.sfd
+	$(SFDC) $(SFDC_TARGET) --mode=gatestubs $^ --output $@ \
+	        --gateprefix=gw --libprefix=_ --libarg=last
+
+gatestubs1.h:	$(top_srcdir)/Include/SFD/ahi_lib.sfd
+	$(SFDC) $(SFDC_TARGET) --mode=gateproto $^ --output $@ \
+	        --gateprefix=gw --libprefix=_ --libarg=last
+
+gatestubs2.h:	ahi_internal_lib.sfd
+	$(SFDC) $(SFDC_TARGET) --mode=gateproto $^ --output $@ \
+	        --gateprefix=gw --libprefix=_ --libarg=last
+
 $(srcdir)/localize.c:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd $(srcdir)/localize.c=$(srcdir)/C_c_AHI.sd 
 
@@ -186,7 +209,7 @@ depend:
 	$(RM) Makefile.dep
 	$(MAKE) Makefile.dep
 
-Makefile.dep:	$(DEPENDENCIES) version.h
+Makefile.dep:	$(DEPENDENCIES) $(GENERATED)
 	@echo Making $@
 	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
 
