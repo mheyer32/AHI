@@ -39,4 +39,6 @@ BOOL WriteIcon(char * );
 void FreeList(struct List * );
 struct Node * GetNode(int , struct List * );
 
+BOOL PlaySound(struct AHIUnitPrefs *);
+
 #endif /* _SUPPORT_H_ */
