@@ -1,10 +1,10 @@
 # $Id$
 # $Log$
+# Revision 4.14  1997/11/23 13:06:18  lcs
+# Reordered the object files (problem with 16 bit offsets).
+#
 # Revision 4.13  1997/10/23 01:10:03  lcs
 # Better debug output.
-#
-# Revision 4.12  1997/10/11 15:58:13  lcs
-# *** empty log message ***
 #
 # Revision 4.11  1997/07/15 02:40:40  lcs
 # Well, close. Fixed for the new fd2pragma version.
@@ -90,7 +90,7 @@ requester.c ahi.cd C_c_AHI.sd C_h_AHI.sd
 
 RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h smakefile
 
-OBJECTS = header.o asmfuncs.o addroutines.o effectinit.o dspecho.o cfuncs.o\
+OBJECTS = header.o addroutines.o effectinit.o dspecho.o cfuncs.o asmfuncs.o \
 debug.o database.o requester.o devcommands.o device.o devsupp.o localize.o\
 footer.o
 
