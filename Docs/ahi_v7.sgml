@@ -1,0 +1,186 @@
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook V4.1//EN" [
+
+<!-- <!ENTITY % figures       SYSTEM "figurer.ent">
+ %figures;
+-->
+ <!ENTITY ahi            "<acronym>AHI</acronym>">
+ <!ENTITY ahi4           "<acronym>AHI</acronym> version 4">
+ <!ENTITY ahi6           "<acronym>AHI</acronym> version 6">
+ <!ENTITY ahi7           "<acronym>AHI</acronym> version 7">
+]>
+
+<book lang="en">
+  <?dbhtml filename="index.html">
+  <bookinfo>
+    <title>&ahi7;</title>
+    <subtitle>An overview</subtitle>
+
+    <releaseinfo>Version 0.1</releaseinfo>
+    <pubdate>2004-07-07</pubdate>
+    
+    <author>
+      <firstname>Martin</firstname>
+      <surname>Blom</surname>
+    </author>
+
+    <abstract>
+      <title>Abstract</title>
+
+      <para>For years, the Amiga lacked a decent audio subsystem. To
+fill this void, work on &ahi; started in autumn 1994 by a Swedish
+computer science student named Martin Blom. In 1997, &ahi4; was released
+and there was much rejoicing.</para>
+
+      <para>Since then, basically nothing happened to &ahi;. Work on
+&ahi6; started, but the changes were minor. What's worse, nothing
+happened to Amiga audio in general either. With Commodore dead and all
+other owners doing a great job killing themselves too, &ahi; had to
+serve the Amiga community for years past its best-before date and even
+to this date, there is no viable alternative available.</para>
+
+      <para>&ahi7; is an attempt to change that.</para>
+    </abstract>
+  </bookinfo>
+
+  <toc>
+  </toc>
+
+<!--  <lot>
+  </lot> -->
+
+  <chapter>
+    <title>Introduction</title>
+
+    <para>A long time has passed since &ahi; was first created. In 1994,
+when work began (although at slow pace), the Amiga 4000, with its 25 MHz
+68040 processor, was still state of the art and even the PC was not
+really that much faster (the 486 chip had reached 100 MHz but the rest
+of the architecture was pretty boring). </para>
+
+    <para>The 25 MHz 68040 managed around 22 MIPS and 3 MFLOPS, while a
+100 MHz 486 could execute around 80 MIPS and 6.5 MFLOPS<footnote>
+	<para>MFLOPS according to the flops.c MFLOPS(4) benchmark,
+consisting of 42.9% adds, 2.2% subs and 54.9% muls.</para>
+      </footnote>
+. For comparison, the Amiga 500's 68000 and Amiga 1200's 68020
+processors were rated at about 1 and 5 MIPS, respectively, and had no
+floating point hardware at all.</para>
+
+    <para>Today, in 2004, one could say that the situation is quite
+different. A 600 MHz PowerPC G3 processor delivers around 300 MFLOPS
+using the same benchmark, a 2.0 GHz Pentium4 delivers 650 MFLOPS, a 1.8
+GHz PowerPC G5 processor 1500 MFLOPS and a 2.0 GHz Athlon64 processor
+1550 MFLOPS.</para>
+
+    <para>So what are we going to do with all this new-found
+performance? I'd say, lets spend it on audio processing!</para>
+
+  </chapter>
+
+  <chapter>
+    <title>Goals</title>
+
+    <para>So if one were to update &ahi; to fit a modern computing
+platform, what would one change? Well, here are a few things that comes
+to mind.</para>
+
+    <section>
+      <title>Multichannel audio</title>
+
+      <para>&ahi6; added limited support for multichannel audio, but
+it's more like an emergency solution than anything else. &ahi7; handles
+up to 64 channels.</para>
+    </section>
+
+    <section>
+      <title>Modularity</title>
+
+      <para>An often requested feature for &ahi; has been a way for
+developers to insert custom signal processing plug-ins into &ahi;. In
+&ahi7;, everything is modularized into BOOPSI objects and
+developers can write both public and private plug-ins.</para>
+
+      <para>Using the standard BOOPSI notification system, it is
+possible to connect modules to eachother and have them control
+parameters of other modules. For example, there is a Low-Frequency
+Oscillator that is driven by a master clock derived from the audio
+sample clock. This LFO can control aribitary parameters of other
+modules, such as the gain module or frequency resampler module to create
+tremolo or vibrary effects. Once connected, everything happens
+automatically.</para>
+
+      <para>All modules can have a GUI panel where the parameters can be
+controlled by the user. &ahi7; builds the GUI panel automatically, using
+ether ReAction or <acronym>MUI</acronym>, depending on the OS. It is
+also possible for the module developer to create a custom GUI panel if
+so desired.</para>
+    </section>
+
+    <section>
+      <title>Dynamic range</title>
+
+      <para>&ahi6; added support for bit depths larger than 16, but some
+calculations were still 16 bit. &ahi7; uses 32 bit floating point for
+all sample calculations, yielding unlimited dynamic range and 25 bit
+(more than 150 dB) audio resolution.</para>
+
+      <para>Using floating point in all of the audio processing pipeline
+simplifies things tremendously. &ahi4; had 80 different mixing
+routines. In &ahi6;, I tried to reduce the number but still ended up
+with almost 60 once 32 bit samples and multichannel support was added
+(add the 32 m68k assembly implementations and you end up with even more
+than in &ahi4;). &ahi7; will have <emphasis>three</emphasis>, not
+counting special-case optimization.</para>
+
+      <para>Another benefit of using floating point math is that you
+never have to worry about overflows in the calculations. Finally, 32 bit
+floats are well suited for vector processing with AltiVec, SSE2 or even
+GPU offloading some day in the future.</para>
+    </section>
+
+    <section>
+      <title>Adapt to hardware changes</title>
+
+      <para>Using audio mode descriptions in &ahi; turned out not to be
+a very good idea. If the user added a second sound card, he or she would
+have to create an addition mode file and place in
+<filename>DEVS:AudioModes</filename>. &ahi7; solves this problem by
+generating the audio modes on the fly. It is also possible to add
+hardware at run time and automatically make the new modes
+available.</para>
+
+      <para>Speaking of audio modes, inputs and outputs now have
+separate audio modes, so it is possible to allocate just the hardware
+required to record something and leave the playback hardware free for
+other applications.</para>
+    </section>
+    
+    <section>
+      <title>3D audio</title>
+
+      <para>The audio processing pipeline can handle almost any sound
+format, both in the time domain and in the frequency domain. There are
+sound formats defined for first and second order Ambisonics, a general
+encoder and a decoder that can handle common Ambisonics speaker
+positions.</para>
+
+      <para>While not planned at this time, it would be possible to add
+modules for automatic doppler and reverberation calculations. (One could
+argue that this task is better handled by OpenAL than &ahi;.)</para>
+    </section>
+
+    <section>
+      <title>Backward compatible</title>
+
+      <para>Needless to say, &ahi7; is fully backward compatible, both
+when it comes to applications and drivers. It's even possible to use
+&ahi7; drivers with &ahi4; using a wrapper driver.</para>
+    </section>
+  </chapter>
+
+  <chapter>
+    <title>System overview</title>
+
+    <para>...</para>
+  </chapter>
+</book>
