@@ -905,8 +905,8 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][0] = 0x19;
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][1] = 0x1a;
 
-#ifndef AHI
 	left = right = 67;
+#ifndef AHI
 	card->ac97.mixer_state[SOUND_MIXER_OGAIN] = (right << 8) | left;
 
 	card->ac97.supported_mixers |= SOUND_MASK_OGAIN;
@@ -920,7 +920,9 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_PCM][0] = 6;
 	mgr->ctrl_gpr[SOUND_MIXER_PCM][1] = 7;
 
-#ifndef AHI
+#ifdef AHI
+	left = right = 100;
+#else
 	left = card->ac97.mixer_state[SOUND_MIXER_PCM] & 0xff;
 	right = (card->ac97.mixer_state[SOUND_MIXER_PCM] >> 8) & 0xff;
 #endif
@@ -932,8 +934,8 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_DIGITAL1][0] = 0xd;
 	mgr->ctrl_gpr[SOUND_MIXER_DIGITAL1][1] = 0xf;
 
-#ifndef AHI
 	left = right = 67;
+#ifndef AHI
 	card->ac97.mixer_state[SOUND_MIXER_DIGITAL1] = (right << 8) | left; 
 
 	card->ac97.supported_mixers |= SOUND_MASK_DIGITAL1;
