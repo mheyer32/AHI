@@ -37,11 +37,11 @@
 # include <powerpc/powerpc.h>
 # include <powerpc/memoryPPC.h>
 # include <proto/powerpc.h>
+#include "elfloader.h"
 #endif
 
 #include "ahi_def.h"
 #include "header.h"
-#include "elfloader.h"
 #include "misc.h"
 
 
