@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.9  1997/02/02 22:38:25  lcs
+# *** empty log message ***
+#
 # Revision 1.8  1997/02/02 22:35:50  lcs
 # Localized it
 #
@@ -31,9 +34,9 @@ OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
 TARGET	= AHI:User/Devs/ahi.device
 
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
-device.c devsupp.a dspecho.a footer.a header.a localize.c requester.c
+device.c devsupp.a dspecho.a footer.a header.a requester.c
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h AHI.sd smakefile
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h AHI.cd smakefile
 
 OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
 device.o devsupp.o dspecho.o footer.o localize.o requester.o header.o 
