@@ -1,5 +1,9 @@
 2003-05-01  Martin Blom  <martin@blom.org>
 
+	* ahi.device: Fixed an interpolation but in the mixing routines
+	for 32 bit samples that appeared when 32 bit samples were used
+	with other sample types.
+
 	* The PlaySineEverywhere example now plays the sine using all
 	available sample types (mono/stereo, 8/16/32 bits). It also slides
 	the pan from the extreme left to the extreme right.
