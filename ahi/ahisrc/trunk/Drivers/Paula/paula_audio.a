@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.24  1999/01/23 22:12:00  lcs
-* Added code to mix in a task and not an interrupt (AHIpaulaMixTaskPri).
+* Revision 4.25  2000/11/15 20:45:07  lcs
+* Checking in...
 *
+*
+* Revision 4.22  1998/11/12 22:38:53  lcs
+* Much improved timing! No more make-buffer-size-divisible-by-4 anymore...
 *
 * Revision 4.21  1998/10/25 13:13:48  lcs
 * Added the AHIpaulaFakeMixFreq variable.
@@ -3106,7 +3109,6 @@ MixTask:
 
 	btst	#SIGBREAKB_CTRL_C,d0
 	bne	.quit
-	PRINTF	0,"."
 
 	btst	#SIGBREAKB_CTRL_D,d0
 	beq	.loop
@@ -3409,6 +3411,7 @@ CONVERT_PRE	MACRO
 	move.l	d0,d7
 
 	move.l	p_DoubleBufferOffset(a6),d0
+	lea	p_AudPtrs(a6,d0.l),a0
 	movem.l	(a0)+,d2/d3/d4/d5		;get all 4 buffer pointers
 
  IFEQ BETTERTIMING-1
@@ -3423,6 +3426,7 @@ CONVERT_PRE	MACRO
 	tst.l	d7
 	beq	.no_skip
 	add.l	ahiac_BuffSamples(a2),d6	;Faked # of mixed samples
+	bra	.skip
 .no_skip
 
 	movem.l	p_MixHookRegs(a6),a0/a1/a3
@@ -3440,6 +3444,7 @@ CONVERT_PRE	MACRO
 
  IFEQ BETTERTIMING-1
 	move.l	ahiac_BuffSamples(a2),d0
+	add.l	p_LoopLeftovers(a6),d0
 	move.l	d0,d1
 	and.l	#~3,d0
 	sub.l	d0,d1
@@ -3507,6 +3512,7 @@ CONVERT_POST	MACRO
 	move.l	d6,d0
 	PRINTF	4,"I have played %ld samples", d0
 	lea	custom,a0
+	popm	std
 	ENDM
 
 ; Exit code here
