@@ -481,7 +481,8 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
   int              ret;
 
   card_num = ( GetTagData( AHIDB_AudioID, 0, tagList) & 0x0000f000 ) >> 12;
-  
+
+  // FIXME: This shoule be non-cachable, DMA-able memory
   dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
 
   if( dd == NULL )
@@ -507,8 +508,8 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
     do
     {
       dd->card.pci_dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-						   PCI_DEVICE_ID_CREATIVE_EMU10K1,
-						   dd->card.pci_dev );
+					  PCI_DEVICE_ID_CREATIVE_EMU10K1,
+					  dd->card.pci_dev );
     } while( dd->card.pci_dev != 0 && card_num-- != 0 );
 
     if( dd->card.pci_dev == NULL )
@@ -761,10 +762,11 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
       return AHIE_NOMEM;
     }
 
-    dd->voice_buffer_allocated = TRUE;
-
     memset( dd->voice.mem.addr, 0, dma_buffer_size * 2 );
 
+    dd->voice_buffer_allocated = TRUE;
+
+    
     dd->voice.usage = VOICE_USAGE_PLAYBACK;
 
     if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
@@ -1282,11 +1284,6 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
       }
     }
     
-    /* Flush to RAM */
-  
-    CacheClearE( dd->current_buffer, dd->current_size, CACRF_ClearD );
-
-
     /* Update 'current_buffer' */
 
     dd->current_buffer = dst;

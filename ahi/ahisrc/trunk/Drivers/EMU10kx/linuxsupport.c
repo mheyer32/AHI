@@ -29,6 +29,7 @@ AllocPages( size_t size, ULONG req )
 {
   void* address;
 
+  // FIXME: This shoule be non-cachable, DMA-able memory
   address = AllocMem( size + PAGE_SIZE - 1, req & ~MEMF_CLEAR );
 
   if( address != NULL )
