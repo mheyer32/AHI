@@ -1,5 +1,8 @@
 2005-03-26  Martin Blom  <martin@blom.org>
 
+	* emu10kx.audio: Added write-only (for now) access to internal
+	DSP volume registers via the AC97 mixer interface.
+
 	* configure.in: Temporarily added -msoft-float to OS4 compiler
 	flags.
 
