@@ -1,3 +1,15 @@
+2004-06-02  Martin Blom  <martin@blom.org>
+
+	* Released AHI preferences 5.12.
+
+	* AHI: Added a not-so-beautiful hack to make sure modes from
+	device.audio modes does not show up in the Unit mode lists.
+
+	* Released device.audio 5.0.
+
+	* Added a new driver, device.audio, that plays sound using one of
+	AHI's units. And there was much rejoicing.
+
 2004-06-01  Martin Blom  <martin@blom.org>
 
 	* Added the good old ScanAudioModes to the example collection.

@@ -23,7 +23,8 @@ struct DeviceData
     struct Process*	mastertask;
     struct Process*	slavetask;
     struct DeviceBase*	ahisubbase;
-    APTR		mixbuffer;
+    APTR                mixbuffers[ 2 ];
+    ULONG               unit;
 };
 
 
