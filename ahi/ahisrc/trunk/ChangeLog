@@ -1,3 +1,8 @@
+2004-02-19  Martin Blom  <martin@blom.org>
+
+	* Docs: Added note about AddAudioModes and sound card/AC97
+	initializing.
+
 2004-02-14  Martin Blom  <martin@blom.org>
 
 	* ahi.device: I forgot to update dspechofuncs_68k.s when removing
