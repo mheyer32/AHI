@@ -45,11 +45,9 @@ VPATH		= @srcdir@
 ########################################
 
 OBJECTS		= ahi.o support.o ahiprefs_Cat.o
-OBJECTS_BGUI	= gui_bgui.o
-OBJECTS_CA	= gui_ca.o
 OBJECTS_MUI	= gui_mui.o
 
-EXECUTABLES	= AHI_MUI # AHI_BGUI AHI_CA
+EXECUTABLES	= AHI_MUI
 
 LANGUAGES	= $(notdir $(basename $(wildcard ${srcdir}/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
@@ -116,12 +114,6 @@ Makefile: Makefile.in ../config.status
 #
 # Rules
 ########################################
-
-AHI_BGUI:	$(OBJECTS) $(OBJECTS_BGUI)
-	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
-
-AHI_CA:		$(OBJECTS) $(OBJECTS_CA)
-	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
