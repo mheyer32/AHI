@@ -412,8 +412,6 @@ PreTimer( struct AHIPrivAudioCtrl* audioctrl )
   ULONG pretimer_period;  // Clocks between PreTimer calls
   ULONG mixer_time;       // Clocks spent in mixer
 
-  return FALSE;
-
   pretimer_period = audioctrl->ahiac_Timer.EntryTime.ev_lo;
 
   ReadEClock( &audioctrl->ahiac_Timer.EntryTime );
