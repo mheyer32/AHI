@@ -79,8 +79,7 @@ namespace AHI {
 /*****************************************************************************/
 
       enum {
-	_AHIE(_P, TooManyChannels,	(_AHIE_Dummy+7)),
-	_AHIE(_P, InvalidSampleType,	(_AHIE_Dummy+8))
+	_AHIE(_P, TooManyChannels,	(_AHIE_Dummy+7))
       };
 
 /*****************************************************************************/

@@ -134,12 +134,13 @@ namespace AHI {
      enum {
        _AHIE(_P, ObjectNotReady,		(_AHIE_Dummy+5)),
        _AHIE(_P, ObjectBusy,			(_AHIE_Dummy+6)),
+       _AHIE(_P, InvalidSampleType,		(_AHIE_Dummy+8)),
        _AHIE(_P, TooManyChildren,		(_AHIE_Dummy+9)),
        _AHIE(_P, MultipleParents,		(_AHIE_Dummy+11)),
        _AHIE(_P, DifferentOwner,		(_AHIE_Dummy+12)),
        _AHIE(_P, NotMember,			(_AHIE_Dummy+13)),
        _AHIE(_P, NullMember,			(_AHIE_Dummy+14))
-     };
+      };
 
 /*****************************************************************************/
 
