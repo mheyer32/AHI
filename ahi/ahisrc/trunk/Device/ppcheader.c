@@ -59,6 +59,7 @@ main( void )
     
     if( signals & SIGBREAKF_CTRL_D )
     {
+      audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
       entry( NULL, audioctrl->ahiac_PPCMixBuffer, audioctrl );
     }
 
@@ -74,20 +75,22 @@ entry( struct Hook *Hook,
        void *dst, 
        struct AHIPrivAudioCtrl *audioctrl )
 {
+  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_START );
+
   audioctrl->ahiac_PPCCommand = AHIAC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
   MixGeneric( Hook, dst, audioctrl );
-  
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_QUIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_FINISHED;
 
+  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+
+  audioctrl->ahiac_PPCCommand = AHIAC_COM_FINISHED;
   return 0;
 }
 

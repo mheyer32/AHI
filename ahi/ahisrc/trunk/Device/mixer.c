@@ -243,7 +243,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   struct ModuleArgs mod =
   {
     IF_CACHEFLUSHNO, 0, 0,
-    IF_CACHEFLUSHNO, 0, 0,
+    IF_CACHEFLUSHNO | IF_ASYNC, 0, 0,
 
     (ULONG) Hook, (ULONG) audioctrl->ahiac_PPCMixBuffer, (ULONG) audioctrl,
     0, 0, 0, 0,
@@ -263,13 +263,22 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
   PPCSignalTask( audioctrl->ahiac_PPCTask, SIGBREAKF_CTRL_D );
-//kprintf( "Signalled\n" );
+
+  audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
-//kprintf( "Waited\n" );
 #else
+
+  audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
+//kprintf( "1: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
 
   res = PPCRunKernelObject( PPCObject, &mod );
 //kprintf( "Ran KernelObject\n" );
+
+  audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
+//kprintf( "2: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
+  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
+//kprintf( "Waited\n" );
+//kprintf( "3: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
 
 #endif
 
@@ -452,7 +461,7 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
           else
           {
 
-kprintf( "Starting task\n");
+//kprintf( "Starting task\n");
             audioctrl->ahiac_PPCTask = PPCCreateTaskTags( PPCObject,
                 PPCTASKTAG_STARTUP_MSG, (ULONG) audioctrl->ahiac_PPCStartupMsg,
                 PPCTASKTAG_STARTUP_MSGDATA, (ULONG) audioctrl,
@@ -462,7 +471,7 @@ kprintf( "Starting task\n");
             {
               rc = FALSE;
             }
-kprintf( "Started task: %ld\n", rc);
+//kprintf( "Started task: %ld\n", rc);
 
           }
         }
@@ -517,13 +526,13 @@ kprintf( "Started task: %ld\n", rc);
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
-kprintf( "CleanUpMixroutine\n" );
+//kprintf( "CleanUpMixroutine\n" );
 #ifdef USE_PPC_PROCESS
   if( audioctrl->ahiac_PPCStartupMsg != NULL )
   { 
     if( audioctrl->ahiac_PPCTask != NULL )
     {
-kprintf( "Breaking\n" );
+//kprintf( "Breaking\n" );
       PPCSignalTask( audioctrl->ahiac_PPCTask, SIGBREAKF_CTRL_C );
 
       while( TRUE )
@@ -532,12 +541,12 @@ kprintf( "Breaking\n" );
 
         if( PPCMsg == audioctrl->ahiac_PPCStartupMsg )
         {
-kprintf( "Get startupmessage\n" );
+//kprintf( "Get startupmessage\n" );
           break;
         }
         else
         {
-kprintf( "Waiting\n" );
+//kprintf( "Waiting\n" );
           PPCWaitPort( audioctrl->ahiac_M68KPort );
         }
       }
@@ -551,7 +560,7 @@ kprintf( "Waiting\n" );
     while( PPCDeletePort( audioctrl->ahiac_M68KPort ) == FALSE);
   }
 
-kprintf( "ok\n" );
+//kprintf( "ok\n" );
 #endif
 
   RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
