@@ -1,5 +1,5 @@
-#ifndef AHI_Classes_AHIRootClass_methods_h
-#define AHI_Classes_AHIRootClass_methods_h
+#ifndef AHI_Classes_AHI_methods_h
+#define AHI_Classes_AHI_methods_h
 
 LONG
 MethodNew(Class* class, Object* object, struct opSet* msg);
@@ -19,4 +19,4 @@ MethodLock(Class* class, Object* object, Msg msg);
 void
 MethodUnlock(Class* class, Object* object, Msg msg);
 
-#endif /* AHI_Classes_AHIRootClass_methods_h */
+#endif /* AHI_Classes_AHI_methods_h */

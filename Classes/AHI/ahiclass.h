@@ -1,5 +1,5 @@
-#ifndef AHI_Classes_AHIRootClass_ahiclass_h
-#define AHI_Classes_AHIRootClass_ahiclass_h
+#ifndef AHI_Classes_AHI_ahiclass_h
+#define AHI_Classes_AHI_ahiclass_h
 
 #include <exec/semaphores.h>
 
@@ -20,4 +20,4 @@ struct AHIClassData {
     char                   error_message[128];
 };
 
-#endif /* AHI_Classes_AHIRootClass_ahiclass_h */
+#endif /* AHI_Classes_AHI_ahiclass_h */
