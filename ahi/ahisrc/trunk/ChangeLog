@@ -1,3 +1,9 @@
+2004-02-09  Martin Blom  <martin@blom.org>
+
+	* Released filesave.audio 5.5.
+
+	* filesave.audio: Applied AOS4 patches from Davy Wentzler.
+
 2004-02-04  Martin Blom  <martin@blom.org>
 
 	* Released aros.audio 5.1.
