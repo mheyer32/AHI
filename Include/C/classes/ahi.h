@@ -95,7 +95,13 @@ namespace AHI {
     _AHIA(_P, ParameterArray,	(_AHIA_Dummy+79)),		/* OM_GET */
 
     /* The number of parametes for this class */
-    _AHIA(_P, Parameters,	(_AHIA_Dummy+80))		/* OM_GET */
+    _AHIA(_P, Parameters,	(_AHIA_Dummy+80)),		/* OM_GET */
+    
+      /* Add an object to the notification list. This special
+	 attribute can be specified more than once during object
+	 creation to add several notification objects, as if they were
+	 added by AHIM_AddNotify. */
+    _AHIA(_P, AddNotify,	(_AHIA_Dummy+95))		/* OM_NEW */
     
     /* Other supported attributes: 
 
