@@ -12,20 +12,6 @@
 #include "util.h"
 #include "version.h"
 
-#if 0
-
-static inline float
-fixed2float(Fixed x) {
-  return x / 65536.0;
-}
-
-static inline Fixed
-float2fixed(float x) {
-  return (Fixed) (x * 65536.0);
-}
-
-#else
-
 static inline float
 dbfixed2float(dBFixed x) {
   return pow(10, x / 65536.0 / 20.0);
@@ -36,7 +22,22 @@ float2dbfixed(float x) {
   return (dBFixed) (20 * 65536 * log10(x));
 }
 
-#endif
+
+static void
+recalc_sweeps(struct AHIClassData* AHIClassData) {
+  if (AHIClassData->length > 0 &&
+      AHIClassData->balance != NULL &&
+      AHIClassData->gains != NULL &&
+      AHIClassData->sweeps != NULL) {
+    ULONG c;
+    float step = 1.0f / AHIClassData->length;
+
+    for (c = 0; c <  AHIClassData->channels; ++c) {
+      float gain = AHIClassData->balance[c] * AHIClassData->gain;
+      AHIClassData->sweeps[c] = pow(AHIClassData->gains[c]/gain, step);
+    }
+  }
+}
 
 /******************************************************************************
 ** MethodNew ******************************************************************
@@ -66,8 +67,10 @@ MethodDispose(Class* class, Object* object, Msg msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  FreeVec(AHIClassData->balance);
-  FreeVec(AHIClassData->gains);
+
+  FreeVec(AHIClassData->balance); AHIClassData->balance = NULL;
+  FreeVec(AHIClassData->gains);   AHIClassData->gains   = NULL;
+  FreeVec(AHIClassData->sweeps);  AHIClassData->sweeps  = NULL;
 }
 
 
@@ -95,33 +98,37 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
       case AHIA_Buffer_Length:
 	AHIClassData->length = tag->ti_Data;
+	recalc_sweeps(AHIClassData);
 	check_ready = TRUE;
 	break;
 
       case AHIA_Buffer_SampleType: {
 	ULONG st = tag->ti_Data;
 
-	FreeVec(AHIClassData->gains);
-	AHIClassData->gains = NULL;
-	FreeVec(AHIClassData->balance);
-	AHIClassData->balance = NULL;
+	FreeVec(AHIClassData->balance); AHIClassData->balance = NULL;
+	FreeVec(AHIClassData->gains);   AHIClassData->gains   = NULL;
+	FreeVec(AHIClassData->sweeps);  AHIClassData->sweeps  = NULL;
+
 	AHIClassData->channels = 0;
 	
 	if ((st & AHIST_TYPE_MASK) ==
 	    (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
+	  int size = sizeof (float) * AHIClassData->channels;
+	  
 	  AHIClassData->channels = AHIST_C_DECODE(st);
-	  AHIClassData->gains = AllocVec( sizeof (float) * AHIClassData->channels,
-					  MEMF_PUBLIC);
-	  AHIClassData->balance = AllocVec( sizeof (float) * AHIClassData->channels,
-					    MEMF_PUBLIC);
+	  AHIClassData->balance  = AllocVec(size, MEMF_PUBLIC);
+	  AHIClassData->gains    = AllocVec(size, MEMF_PUBLIC);
+	  AHIClassData->sweeps   = AllocVec(size, MEMF_PUBLIC);
 
-	  if (AHIClassData->gains != NULL &&
-	      AHIClassData->balance != NULL) {
+	  if (AHIClassData->balance != NULL &&
+	      AHIClassData->gains != NULL &&
+	      AHIClassData->sweeps != NULL) {
 	    ULONG c;
 
 	    for (c = 0; c < AHIClassData->channels; ++c) {
-	      AHIClassData->gains[c] = AHIClassData->gain;
 	      AHIClassData->balance[c] = 1.0f;
+	      AHIClassData->gains[c]   = AHIClassData->gain;
+	      AHIClassData->sweeps[c]  = 1.0f;
 	    }
 	  }
 	  else {
@@ -144,13 +151,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	ULONG c;
 
 	AHIClassData->gain = dbfixed2float(tag->ti_Data);
-
-	if (AHIClassData->gains != NULL && AHIClassData->balance != NULL) {
-	  for (c = 0; c <  AHIClassData->channels; ++c) {
-	    AHIClassData->gains[c] = AHIClassData->balance[c] * AHIClassData->gain;
-	  }
-	}
-
+	recalc_sweeps(AHIClassData);
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
       }
 	
@@ -161,8 +162,9 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   if (check_ready) {
     SetSuperAttrs(class, object,
-		  AHIA_Processor_Ready, (AHIClassData->gains != NULL &&
-					 AHIClassData->balance != NULL &&
+		  AHIA_Processor_Ready, (AHIClassData->balance != NULL &&
+					 AHIClassData->gains != NULL &&
+					 AHIClassData->sweeps != NULL &&
 					 AHIClassData->data != NULL &&
 					 AHIClassData->length > 0 &&
 					 AHIClassData->channels > 0),
@@ -248,13 +250,20 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
 	ULONG  c;
 	ULONG  s;
 	ULONG  i;
-	float* data = AHIClassData->data;
-	float* gain = AHIClassData->gains;
+	float* data  = AHIClassData->data;
+	float* gain  = AHIClassData->gains;
+	float* sweep = AHIClassData->sweeps;
 
 	for (s = 0, i = 0; s < AHIClassData->length; ++s) {
 	  for (c = 0; c < AHIClassData->channels; ++c, ++i) {
 	    data[i] *= gain[c];
+	    gain[c] *= sweep[c];
 	  }
+	}
+
+	// Reset sweep factors
+	for (c = 0; c < AHIClassData->channels; ++c, ++i) {
+	  sweep[c] = 1.0;
 	}
       }
       break;
@@ -275,16 +284,16 @@ MethodSetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance
   ULONG c;
   
   if (msg->Channels > AHIClassData->channels ||
-      AHIClassData->balance == NULL ||
-      AHIClassData->gains == NULL) {
+      AHIClassData->balance == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
 
   for (c = 0; c <  msg->Channels; ++c) {
     AHIClassData->balance[c] = dbfixed2float(msg->Gains[c]);
-    AHIClassData->gains[c]   = AHIClassData->balance[c] * AHIClassData->gain;
   }
+
+  recalc_sweeps(AHIClassData);
 
   return TRUE;
 }
@@ -300,7 +309,8 @@ MethodGetBalance(Class* class, Object* object, struct AHIP_GainProcessor_Balance
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
   ULONG c;
 
-  if (msg->Channels > AHIClassData->channels || AHIClassData->balance == NULL) {
+  if (msg->Channels > AHIClassData->channels ||
+      AHIClassData->balance == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
