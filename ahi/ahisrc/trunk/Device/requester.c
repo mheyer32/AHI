@@ -1,13 +1,13 @@
 /* $Id$
 * $Log$
+* Revision 1.7  1997/02/04 22:14:27  lcs
+* The users preffered audio mode can now be selected in the requester
+*
 * Revision 1.6  1997/02/03 16:21:23  lcs
 * AHIR_Locale should work now
 *
 * Revision 1.5  1997/02/02 22:35:50  lcs
 * Localized it
-*
-* Revision 1.4  1997/01/29 23:34:38  lcs
-* *** empty log message ***
 *
 * Revision 1.3  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
@@ -130,11 +130,19 @@ static struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 
 static __stdargs __saveds LONG IndexToFrequency( struct Gadget *gad, WORD level)
 {
-  LONG freq=0;
-  AHI_GetAudioAttrs(((struct AHIAudioModeRequesterExt *)gad->UserData)->tempAudioID, NULL,
-    AHIDB_FrequencyArg,level,
-    AHIDB_Frequency,&freq,
-    TAG_DONE);
+  LONG  freq = 0;
+  ULONG id   = ((struct AHIAudioModeRequesterExt *)gad->UserData)->tempAudioID;
+  if(id != AHI_DEFAULT_ID)
+  {
+    AHI_GetAudioAttrs(id, NULL,
+      AHIDB_FrequencyArg,level,
+      AHIDB_Frequency,&freq,
+      TAG_DONE);
+  }
+  else
+  {
+    freq = AHIBase->ahib_Frequency;
+  }
   return freq;
 }
 
@@ -201,6 +209,7 @@ static void GetSliderAttrs(struct AHIAudioModeRequesterExt *req, LONG *levels, L
 {
   *levels=0;
   *level=0;
+  
   AHI_GetAudioAttrs(req->tempAudioID, NULL,
       AHIDB_Frequencies,levels,
       AHIDB_IndexArg,req->tempFrequency,
@@ -631,8 +640,15 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
       }
     }
   }
-  req->Req.ahiam_AudioID=req->tempAudioID;
-  req->Req.ahiam_MixFreq=req->tempFrequency;
+  req->Req.ahiam_AudioID = req->tempAudioID;
+  if(req->tempAudioID != AHI_DEFAULT_FREQ)
+  {
+    req->Req.ahiam_MixFreq = req->tempFrequency;
+  }
+  else
+  {
+    req->Req.ahiam_MixFreq = AHIBase->ahib_Frequency;
+  }
   return rc;
 }
 
@@ -653,14 +669,14 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
   if(req=AllocVec(sizeof(struct AHIAudioModeRequesterExt),MEMF_CLEAR))
   {
 // Fill in defaults
-    req->Req.ahiam_LeftEdge=30;
-    req->Req.ahiam_TopEdge=20;
-    req->Req.ahiam_Width=318;
-    req->Req.ahiam_Height=198;
-    req->Req.ahiam_AudioID=AHI_INVALID_ID;
-    req->Req.ahiam_MixFreq=AHIBase->ahib_Frequency;
-    req->Req.ahiam_InfoWidth=280;
-    req->Req.ahiam_InfoHeight=112;
+    req->Req.ahiam_LeftEdge   = 30;
+    req->Req.ahiam_TopEdge    = 20;
+    req->Req.ahiam_Width      = 318;
+    req->Req.ahiam_Height     = 198;
+    req->Req.ahiam_AudioID    = AHI_INVALID_ID;
+    req->Req.ahiam_MixFreq    = AHIBase->ahib_Frequency;
+    req->Req.ahiam_InfoWidth  = 280;
+    req->Req.ahiam_InfoHeight = 112;
 
     FillReqStruct(req,tags);
   }
@@ -716,6 +732,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
 
 
 // Scan audio database for modes and create list
+
   req->list=&list;
   NewList((struct List *)req->list);
   while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
@@ -745,6 +762,29 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
       Insert((struct List *) req->list,(struct Node *)node,node2->node.ln_Pred);
     }
   }
+
+// Add the users prefered mode
+
+  if(AHIBase->ahib_AudioMode != AHI_INVALID_ID) do
+  {
+    if(req->FilterTags)
+      if(!TestAudioID(AHIBase->ahib_AudioMode,req->FilterTags))
+        continue;
+    if(req->FilterFunc)
+      if(!CallHookPkt(req->FilterFunc,req,(APTR)id))
+        continue;
+
+    if(node=AllocVec(sizeof(struct IDnode),MEMF_ANY))
+    {
+      node->node.ln_Type=NT_USER;
+      node->node.ln_Pri=0;
+      node->node.ln_Name=node->name;
+      node->ID = AHI_DEFAULT_ID;
+      Sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog),id);
+      AddTail((struct List *) req->list, (struct Node *)node);
+    }
+  } while(FALSE);
+
   if(NULL == ((struct IDnode *)req->list->mlh_Head)->node.ln_Succ)
   {
     // List is empty, no audio modes!
