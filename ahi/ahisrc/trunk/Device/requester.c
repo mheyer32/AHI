@@ -57,6 +57,9 @@ struct VSPrite;
 #include "debug.h"
 #include "gateway.h"
 
+#define min(a,b) (((a)<(b))?(a):(b))
+#define max(a,b) (((a)>(b))?(a):(b))
+
 struct AHIAudioModeRequesterExt;
 
 static void OpenInfoWindow( struct AHIAudioModeRequesterExt * );
@@ -232,6 +235,7 @@ CalculateWindowSizePos( struct AHIAudioModeRequesterExt* req,
   WORD width  = 318;
   WORD height = 198;
 
+#ifdef ASL_SEMAPHORE_NAME /* Don't break if no v45 includes found */
   Forbid();
   asl_semaphore = (struct AslSemaphore*) FindSemaphore( ASL_SEMAPHORE_NAME );
 
@@ -275,6 +279,7 @@ CalculateWindowSizePos( struct AHIAudioModeRequesterExt* req,
       asl_semaphore = NULL;
     }
   }
+#endif
 
   // Set default main window size
   if( req->Req.ahiam_Width == -1 )
@@ -284,6 +289,7 @@ CalculateWindowSizePos( struct AHIAudioModeRequesterExt* req,
     req->Req.ahiam_Height = height;
 
 
+#ifdef ASL_SEMAPHORE_NAME /* Don't break if no v45 includes found */
   if( asl_semaphore != NULL )
   {
     switch( asl_semaphore->as_SizePosition & ASLPOS_MASK )
@@ -343,7 +349,8 @@ CalculateWindowSizePos( struct AHIAudioModeRequesterExt* req,
 	break;
     }
   } 
-      
+#endif
+
   // Set default main window position
   if( req->Req.ahiam_LeftEdge == -1 )
     req->Req.ahiam_LeftEdge = left;

@@ -29,6 +29,7 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include "version.h"
 
@@ -242,7 +243,7 @@ main( void )
     {
       ULONG          id;
       ULONG          bestid = INVALID_ID;
-      int            minper = MAXINT;
+      int            minper = INT_MAX;
       struct Screen *screen = NULL;
 
       static const struct ColorSpec colorspecs[] =

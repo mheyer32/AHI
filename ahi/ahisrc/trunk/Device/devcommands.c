@@ -709,7 +709,7 @@ ReadCmd ( struct AHIRequest *ioreq,
           struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
-  ULONG error,mixfreq = 0;
+  ULONG error=AHIE_OK,mixfreq = 0;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
