@@ -233,9 +233,18 @@ NextAudioID( ULONG           id,
       }
     }
 
-    if(node && node->ahidbn_MinNode.mln_Succ)
+    while(node && node->ahidbn_MinNode.mln_Succ)
     {
-      nextid = GetTagData(AHIDB_AudioID, AHI_INVALID_ID, node->ahidbn_Tags);
+      if( GetTagData( AHIDB_MultTable, FALSE, node->ahidbn_Tags ) )
+      {
+	// Pretend the "Fast" modes are not here
+	node = (struct AHI_AudioMode*) node->ahidbn_MinNode.mln_Succ;
+      }
+      else
+      {
+	nextid = GetTagData(AHIDB_AudioID, AHI_INVALID_ID, node->ahidbn_Tags);
+	break;
+      }
     }
 
     UnlockDatabase(audiodb);
@@ -312,7 +321,6 @@ AddAudioMode( struct TagItem* DBtags,
 
   if(audiodb != NULL)
   {
-    BOOL fast = FALSE;
 
 // Find total size
 
@@ -335,21 +343,10 @@ AddAudioMode( struct TagItem* DBtags,
           driverlength  = strlen((UBYTE *)tag->ti_Data)+1;
           nodesize     += driverlength;
           break;
-
-        case AHIDB_MultTable:
-          fast = tag->ti_Data;
-          break;
       }
 
       nodesize += sizeof(struct TagItem);
       tagitems++;
-    }
-
-    if( fast )
-    {
-      // Silently filter away all fast modes!
-      rc = TRUE;
-      goto unlock;
     }
 
     nodesize += sizeof(struct TagItem);  // The last TAG_END

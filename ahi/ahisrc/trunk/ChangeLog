@@ -1,3 +1,15 @@
+2002-01-20  Martin Blom  <martin@blom.org>
+
+	* The '-s' flag is not used when stripping the binaries anymore.
+	This way, the Amithlon binaries can be stripped too.
+
+	* ahi.device: Say hello to the "Fast" modes again. This time,
+	instead of being removed, they are added to the database but never
+	returned by AHI_NextAudioID(), meaning that they will never show
+	up in mode requesters etc. They are still available in
+	AHI_AllocAudio(), though, and behave just like the "non-HiFi"
+	modes: one multiplication/sample and no assembler optimization.
+	
 2002-01-06  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.21.
@@ -118,7 +130,7 @@
 
 2001-09-24  Martin Blom  <martin@blom.org>
 
-	* ahi.device:  A missing 'break' statment made AbortIO() return
+	* ahi.device:  A missing 'break' statement made AbortIO() return
 	IOERR_NOCMD on CMD_WRITE requests.
 
 	* ahi.device:  Fixed a non-fatal race condition in DevAbortIO().
