@@ -52,19 +52,54 @@ When you add code, please remember a few things:
 Required programs/packages that I'm aware of:
 
 From GeekGadgets
-~~~~~~~~~~~~~~~~
-autoconf
-m68k-amigaos-gcc
-make
-ppc-amigaos-gcc
-tex
-texinfo
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+autoconf                 autoconf-2.13-bin.tgz
+gcc/egcs                 gcc-2.95.1-bin020.tgz
+make                     make-3.77-bin.tgz
+ppctools                 ppctools-bin.tgz
+unixtex                  unixtex-6.1b-bin?.tgz
+texinfo                  texinfo-3.12-bin.tgz
 
 Other tools
-~~~~~~~~~~~
+¯¯¯¯¯¯¯¯¯¯¯
 FD2Pragma
 FlexCat
 Makedepend
 PhxAss
 RoboDoc
 UnixDirs3 (when using separate build directories)
+
+
+Building a libgcc.a for ppctools-bin
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+In order to build an ahi.so that works with WarpUp, you'll need to build
+libgcc.a.  Here is how I did that on a Linux box.  I suppose it works under
+AmigaOS as well.
+
+1) Get binutils-2.7.tar.gz and gcc-2.7.2.1.tar.gz from your local GNU
+   mirror.
+
+2) mkdir source; mkdir build; mkdir build/ppc-gcc; mkdir build/ppc-binutils
+
+3) Unpack the sources into the "source" directory.
+
+4) Go to build/ppc-binutils and write (change prefix and host to fit your
+   system):
+
+   $ ../../source/binutils-2.7/configure --target=ppc-unknown-elf \
+   > --host=i386-unknown-linux --prefix=/home/lcs/gg
+   $ make
+   $ make install
+
+   If you get errors from bad prototypes, just uncomment them and retry
+   (I had problems with strdup and a few more).
+
+5) Go to build/ppc-gcc and write (change prefix and host to fit your
+   system):
+
+   $ ../../source/gcc-2.7.2.1/configure --target=ppc-unknown-elf \
+   > --host=i386-unknown-linux --prefix=/home/lcs/gg
+   $ make LIBGCC2_INCLUDES=-Dinhibit_libc libgcc.a
+
+6) Copy the file libgcc.a to ade:ppc-amigaos/lib/libgcc.a or
+   gg:ppc-amigaos/lib/libgcc.a
