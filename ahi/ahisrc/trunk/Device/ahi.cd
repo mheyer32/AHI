@@ -1,5 +1,10 @@
+#language english
+#version 0
 ; $Id$
 ; $Log$
+; Revision 1.4  1997/02/20 10:26:13  lcs
+; New Flexcat caused some problems
+;
 ; Revision 1.3  1997/02/10 02:23:06  lcs
 ; Infowindow in the requester added.
 ;
@@ -10,8 +15,6 @@
 ; Initial revision
 ;
 ;
-#language english
-#version 0
 ;
 ; Input and Output connector name
 ;
