@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.2  1997/01/04 20:19:56  lcs
+* ahiac_EffChannelInfoStruct added
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -86,6 +89,7 @@ AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
 	Fixed	ahiac_MasterVolume;
 	APTR	ahiac_EffOutputBufferStruct	* struct AHIEffOutputBuffer *
 	APTR	ahiac_EffDSPEchoStruct		* struct AHIEcho *
+	APTR	ahiac_EffChannelInfoStruct	* struct AHIChannelInfo *
 	APTR	ahiac_WetList
 	APTR	ahiac_DryList
 	UBYTE	ahiac_WetOrDry
