@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.4  1997/01/15 14:59:50  lcs
+* Removed most of the unsigned addroutines
+*
 * Revision 1.3  1997/01/04 20:25:02  lcs
 * ...I forgot: AHIET_CHANNELINFO effect added
 *
@@ -14,7 +17,7 @@
  IFD	_PHXASS_
 
 DEBUG	EQU	0	;no debug 
-ALIGN	EQU	1	;move code to even 128 bit boundary
+ALIGN	EQU	0	;move code to even 128 bit boundary
 
  ELSE
 
@@ -33,7 +36,6 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 	XREF	_UtilityBase
 
 	XDEF	initcode
-	XDEF	logtable
 
 	XDEF	initSignedTable
 	XDEF	calcSignedTable
@@ -274,23 +276,6 @@ channeldatas:
 ;in:
 * a6	ExecBase
 initcode:
-
-* Init ²log-table
-	lea	logtable(pc),a0
-	clr.w	(a0)+
-	moveq	#1,d0
-	moveq	#1,d1
-.1
-	move.l	d0,d2
-	subq.l	#1,d2
-.2
-	move.b	d1,(a0)+
-	dbf	d2,.2
-	lsl.b	#1,d0
-	addq.b	#1,d1
-	cmp.b	#9,d1
-	bne.b	.1
-
  IFNE	ALIGN
 * Align Add#? routines to even 16-byte address
 	lea	AlignStart(pc),a0
@@ -320,9 +305,11 @@ initcode:
 ;in:
 * a2	ptr to AHIAudioCtrl
 * a5	ptr to AHIBase
+;out:
+* d0	TRUE on success
 initSignedTable:
-	pushm	d0-a6
-
+	pushm	d1-a6
+	
 	move.l	ahiac_Flags(a2),d0
 	btst.l	#AHIACB_MULTTAB,d0
 	beq.b	.notable
@@ -338,11 +325,16 @@ initSignedTable:
 	moveq	#MEMF_PUBLIC,d1			;may be accessed from interrupts
 	call	AllocVec
 	move.l	d0,ahiac_MultTableS(a2)
-	beq.b	.notable
+	beq.b	.error
 	bsr.b	calcSignedTable
 .notable
-	popm	d0-a6
+	moveq	#TRUE,d0
+.exit
+	popm	d1-a6
 	rts
+.error
+	moveq	#FALSE,d0
+	bra	.exit
 
 * Create multiplication table for use with signed bytes/words.
 *
@@ -399,11 +391,16 @@ calcSignedTable:
 ;in:
 * a2	ptr to AHIAudioCtrl
 * a5	ptr to AHIBase
+;out:
+* d0	TRUE on success
 initUnsignedTable:
-	pushm	d0-a6
+	pushm	d1-a6
 	move.l	ahiac_Flags(a2),d0
-	btst.l	#AHIACB_MULTTAB,d0
-	beq.b	.notable
+
+; Unsigned samples unconditionally uses tables!
+;	btst.l	#AHIACB_MULTTAB,d0
+;	beq.b	.notable
+
 	tst.l	ahiac_MultTableU(a2)
 	bne.b	.notable			;there is already a table!
 
@@ -412,27 +409,37 @@ initUnsignedTable:
  ELSE
  	base	exec
  ENDC
-	move.l	#256*(TABLEMAXVOL+1)*2,d0	;incude highest volume, too!
+
+	move.l	#256*(TABLEMAXVOL+1)*4,d0	;incude highest volume, too!
+						;*4 => Look like the signed table!
 	moveq	#MEMF_PUBLIC,d1			;may be accessed from interrupts
 	call	AllocVec
 	move.l	d0,ahiac_MultTableU(a2)
-	beq.b	.notable
+	beq.b	.error
 	bsr.b	calcUnsignedTable
 .notable
-	popm	d0-a6
+	moveq	#TRUE,d0
+.exit
+	popm	d1-a6
 	rts
+.error
+	moveq	#FALSE,d0
+	bra	.exit
 
 * Create multiplication table for use with unsigned bytes
+* Note: The table has valid values in every other word. This is
+* done in order to be able to use the same mixing routines for
+* both signed and unsigned samples.
 * Usage: a0 points to correct line in table
 *
 *        d1 is unsigned byte with bits 8-15 cleared:
-*        move.w  0(a0,d1.w*2),d2		;d2 is signed!
+*        move.w  0(a0,d1.w*4),d2		;d2 is signed!
 calcUnsignedTable:
 	pushm	d0-d4/a0
 	move.l	ahiac_MultTableU(a2),d0
 	beq.b	.notable
 	move.l	d0,a0
-	add.l	#256*(TABLEMAXVOL+1)*2,a0
+	add.l	#256*(TABLEMAXVOL+1)*4,a0
 	move.w	ahiac_Channels2(a2),d3
 	lsl.w	#8,d3
 	move.l	ahiac_MasterVolume(a2),d4	; Range: (0 .. 1.0 .. ??) * 65536
@@ -448,6 +455,7 @@ calcUnsignedTable:
 	muls.w	d4,d2				; *((Mastervolume*65536)/256)
 	asl.l	#TABLESHIFT-8,d2
 	divs.w	d3,d2				; /(Channels*256)
+	clr.w	-(a0)				; Insert dummy value
 	move.w	d2,-(a0)
 
 	dbf	d1,.11
@@ -460,7 +468,7 @@ calcUnsignedTable:
 ;in:
 * d0	VolumeLeft (Fixed)
 * d1	VolumeRight (Fixed)
-* d2	SampleType with AHIST_LOOP bit set or cleared
+* d2	SampleType
 * a2	AudioCtrl
 ;out:
 * d0	ScaleLeft
@@ -471,7 +479,6 @@ SelectAddRoutine:
 
 	pea	sa_exit(pc)			;return address
 
-	and.l	#~AHIST_LOOP,d2			;Don't care about that bit.
 	move.l	d2,d3
 	and.l	#~AHIST_BW,d2
 	move.l	d2,d6
@@ -484,17 +491,17 @@ SelectAddRoutine:
 
 * Check for volume 0
 	tst.l	ahiac_MasterVolume(a2)
-	beq.b	.off
+	beq	.off
 	tst.l	d0
-	bne.b	.not_off
+	bne	.not_off
 	tst.l	d1
-	bne.b	.not_off
+	bne	.not_off
 .off
 	bra	FixVolSilence
 .not_off
  IFGE	__CPU-68020
 	btst.l	#AHIACB_HIFI,d4
-	bne.w	sa_hifi
+	bne	sa_hifi
  ENDC
 
 	cmp.l	#AHIST_M8U,d6
@@ -507,6 +514,7 @@ sa_signed:
 	bmi	sa_signed_notable
 	tst.l	ahiac_MultTableS(a2)
 	bne	sa_signed_table
+
 sa_signed_notable
  IFGE	__CPU-68020
 	muls.l	d5,d0
@@ -532,63 +540,48 @@ sa_signed_notable
 	move.l	d0,d1
 	pop	d0
  ENDC
+
 	btst.l	#AHIACB_STEREO,d4
-	bne.b	.stereo
+	bne	.stereo
 	cmp.l	#AHIST_M8S,d6
-	bne.b	.mono16
-	bsr	d0ispowerof2
-	beq	FixVolByteM
-	bra	FixVolByteMV
-.mono16
-	bsr	d0ispowerof2
-	beq	FixVolWordM
+	beq	FixVolByteMV
 	bra	FixVolWordMV
+
 .stereo
 	cmp.l	#AHIST_M8S,d6
-	bne.b	.stereo16
+	bne	.stereo16
+
 	tst.l	d0
-	beq.b	.onlyright8
+	beq	FixVolByteSVr
 	tst.l	d1
-	beq.b	.onlyleft8
+	beq	FixVolByteSVl
 	bra	FixVolByteSVP
-.onlyright8
-	bsr	d1ispowerof2
-	beq	FixVolByteSr
-	bra	FixVolByteSVr
-.onlyleft8
-	bsr	d0ispowerof2
-	beq	FixVolByteSl
-	bra	FixVolByteSVl
+
 .stereo16
 	tst.l	d0
-	beq.b	.onlyright16
+	beq	FixVolWordSVr
 	tst.l	d1
-	beq.b	.onlyleft16
+	beq	FixVolWordSVl
 	bra	FixVolWordSVP
-.onlyright16
-	bsr	d1ispowerof2
-	beq	FixVolWordSr
-	bra	FixVolWordSVr
-.onlyleft16
-	bsr	d0ispowerof2
-	beq	FixVolWordSl
-	bra	FixVolWordSVl
 
 
 sa_signed_table:
 	btst.l	#AHIACB_STEREO,d4
-	bne.b	.stereo
+	bne	.stereo
 	cmp.l	#AHIST_M8S,d6
 	bne	FixVolWordMVT
 	bra	FixVolByteMVT
+
 .stereo
 	cmp.l	#AHIST_M8S,d6
-	bne.b	.stereo16
+	bne	.stereo16
+
 	tst.l	d0
 	beq	FixVolByteSVTr
 	tst.l	d1
 	beq	FixVolByteSVTl
 	bra	FixVolByteSVPT	
+
 .stereo16
 	tst.l	d0
 	beq	FixVolWordSVTr
@@ -599,59 +592,14 @@ sa_signed_table:
 
 sa_unsigned:
 	tst.l	d0
-	bmi	sa_unsigned_notable
+	bmi	FixVolSilence		;Error
 	tst.l	d1
-	bmi	sa_unsigned_notable
+	bmi	FixVolSilence		;Error
 	tst.l	ahiac_MultTableU(a2)
-	bne.b	sa_unsigned_table
-sa_unsigned_notable
- IFGE	__CPU-68020
-	muls.l	d5,d0
-	divs.l	d2,d0
-	muls.l	d5,d1
-	divs.l	d2,d1
- ELSE
-	move.l	_UtilityBase(pc),a0
-	
-	push	d1
-	move.l	d5,d1
-	jsr	_LVOSMult32(a0)
-	move.l	d2,d1
-	jsr	_LVOSDivMod32(a0)
-	pop	d1
+	beq	FixVolSilence		;Error
 
-	push	d0
-	move.l	d1,d0
-	move.l	d5,d1
-	jsr	_LVOSMult32(a0)
-	move.l	d2,d1
-	jsr	_LVOSDivMod32(a0)
-	move.l	d0,d1
-	pop	d0
- ENDC
 	btst.l	#AHIACB_STEREO,d4
-	bne.b	.stereo
-	bsr.w	d0ispowerof2
-	beq	FixVolUByteM
-	bra	FixVolUByteMV
-.stereo
-	tst.l	d0
-	beq.b	.onlyright
-	tst.l	d1
-	beq.b	.onlyleft
-	bra	FixVolUByteSVP
-.onlyright
-	bsr.w	d1ispowerof2
-	beq	FixVolUByteSr
-	bra	FixVolUByteSVr
-.onlyleft
-	bsr.w	d0ispowerof2
-	beq	FixVolUByteSl
-	bra	FixVolUByteSVl
-
-sa_unsigned_table:
-	btst.l	#AHIACB_STEREO,d4
-	bne.b	.stereo
+	bne	.stereo
 	bra	FixVolUByteMVT
 .stereo
 	tst.l	d0
@@ -659,6 +607,7 @@ sa_unsigned_table:
 	tst.l	d1
 	beq	FixVolUByteSVTl
 	bra	FixVolUByteSVPT	
+
 
  IFGE	__CPU-68020
 sa_hifi:
@@ -688,56 +637,6 @@ sa_exit:
 sa_quit:
 	popm	d3-a6
 	rts
-
-;out:
-* z	set if power of 2
-d1ispowerof2:
-	pushm	d0-d1
-	move.l	d1,d0
-	bra.b	ispowerof2
-d0ispowerof2:
-	pushm	d0-d1
-ispowerof2:
-	cmp.l	#$10000,d0
-	beq	.exit
-	cmp.l	#$8000,d0
-	beq.b	.exit
-	cmp.l	#$4000,d0
-	beq.b	.exit
-	cmp.l	#$2000,d0
-	beq.b	.exit
-	cmp.l	#$1000,d0
-	beq.b	.exit
-	cmp.l	#$800,d0
-	beq.b	.exit
-	cmp.l	#$400,d0
-	beq.b	.exit
-	cmp.l	#$200,d0
-	beq.b	.exit
-	cmp.l	#$100,d0
-	beq.b	.exit
-	cmp.l	#$80,d0
-	beq.b	.exit
-	cmp.l	#$40,d0
-	beq.b	.exit
-	cmp.l	#$20,d0
-	beq.b	.exit
-	cmp.l	#$10,d0
-	beq.b	.exit
-	cmp.l	#$8,d0
-	beq.b	.exit
-	cmp.l	#$4,d0
-	beq.b	.exit
-	cmp.l	#$2,d0
-	beq.b	.exit
-	cmp.l	#$1,d0
-	beq	.exit
-.exit
-	popm	d0-d1			;does not trash CCR! D1 är med för att assemblern inte ska få för sej att optimera!
-	rts
-
-
-
 
 
 *
@@ -776,45 +675,18 @@ _Mix:
 	tst.w	cd_EOS(a5)
 	beq	.notEOS
 
-* Loop sound
-	move.l	cd_Type(a5),d1
-	cmp.l	#AHIST_NOTYPE,d1
-	beq	.loop_exit
-	and.l	#AHIST_LOOP,d1
-	beq	.loop_exit
-	move.l	cd_LCommand(a5),d1
-	beq	.loop_exit			;LCommand=0 => Loop forever
-	not.l	d1
-	bne	.loop_not_off
-	clr.b	cd_SoundOK(a5)			;LCommand=~0 => Turn channel off
-	bra	.loop_exit
-.loop_not_off
-	subq.w	#1,cd_LCommand+2(a5)
-	bne	.loop_exit
- * Advance to next structure
-	move.l	cd_LAddress(a5),a3
-	add.w	#AHIMultiLoop_SIZEOF,a3
-	move.l	a3,cd_LAddress(a5)
-	move.l	(a3)+,cd_LCommand(a5)
-	move.l	(a3)+,d0
-	move.l	d0,cd_NextOffsetI(a5)
-	add.l	(a3)+,d0
-	move.l	d0,cd_NextLastOffsetI(a5)
-.loop_exit
-
 * Call Sound Hook
-	pushm	d0/a1
-	move.l	ahiac_SoundFunc(a2),d0	;a2 ready
+	move.l	ahiac_SoundFunc(a2),d1
 	beq	.noSoundFunc
-	move.l	d0,a0
+	pushm	d0/a1
+	move.l	d1,a0
 	lea	cd_ChannelNo(a5),a1
 	move.l	h_Entry(a0),a3
-	jsr	(a3)
-.noSoundFunc
+	jsr	(a3)			;a2 ready
 	popm	d0/a1
+.noSoundFunc
 	clr.w	cd_EOS(a5)		;clear EOS flag
 .notEOS
-
 
 	movem.l	(a5),d1/d3/d4/d5/d6/a3	;Flags,OffsI,OffsF,AddI,AddF,DataStart
 	not.w	d1			;FreqOK and SoundOK must both be $FF
@@ -1598,45 +1470,8 @@ FixVolSilence:
 .fw
 	rts
 
-FixVolByteM:
-	moveq	#1,d2
-	cmp.l	#$10000,d0
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d0,d2
-.ok
-	cmp.w	#256,d2
-	bhi.b	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#8,d0
-	sub.b	(a0,d2.w),d0
-	lea	OffsByteM(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolUByteM:
-	moveq	#1,d2
-	cmp.l	#$10000,d0
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d0,d2
-.ok
-	cmp.w	#256,d2
-	bhi.b	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#8,d0
-	sub.b	(a0,d2.w),d0
-	lea	OffsUByteM(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
 FixVolByteMV:
+	add.l	d1,d0
 	lsr.l	#8,d0
 	lea	OffsByteMV(pc),a0
 	and.w	#AHIST_BW,d3
@@ -1646,6 +1481,7 @@ FixVolByteMV:
 	rts
 
 FixVolByteMVH:
+	add.l	d1,d0
 	lea	OffsByteMVH(pc),a0
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
@@ -1653,16 +1489,8 @@ FixVolByteMVH:
 .fw
 	rts
 
-FixVolUByteMV:
-	lsr.l	#8,d0
-	lea	OffsUByteMV(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
 FixVolUByteMVH:
+	add.l	d1,d0
 	lea	OffsUByteMVH(pc),a0
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
@@ -1671,6 +1499,7 @@ FixVolUByteMVH:
 	rts
 
 FixVolByteMVT:
+	add.l	d1,d0
 	move.l	ahiac_MultTableS(a2),a0
 	lsr.l	#TABLESHIFT-(8+2),d0
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
@@ -1683,87 +1512,12 @@ FixVolByteMVT:
 	rts
 
 FixVolUByteMVT:
+	add.l	d1,d0
 	move.l	ahiac_MultTableU(a2),a0
-	lsr.l	#TABLESHIFT-(8+1),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+1),d0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
-	lea	OffsUByteMVT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSl:
-	moveq	#1,d2
-	cmp.l	#$10000,d0
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d0,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#8,d0
-	sub.b	(a0,d2.w),d0
-	lea	OffsByteSl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSr:
-	moveq	#1,d2
-	cmp.l	#$10000,d1
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d1,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#8,d1
-	sub.b	(a0,d2.w),d1
-	lea	OffsByteSr(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolUByteSl:
-	moveq	#1,d2
-	cmp.l	#$10000,d0
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d0,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#8,d0
-	sub.b	(a0,d2.w),d0
-	lea	OffsUByteSl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolUByteSr:
-	moveq	#1,d2
-	cmp.l	#$10000,d1
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d1,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#8,d1
-	sub.b	(a0,d2.w),d1
-	lea	OffsUByteSr(pc),a0
+	lea	OffsByteMVT(pc),a0		;Reuse!
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
 	add.w	#OffsetBackward,a0
@@ -1806,33 +1560,6 @@ FixVolByteSVPH:
 .fw
 	rts
 
-FixVolUByteSVl:
-	lsr.l	#8,d0
-	lea	OffsUByteSVl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolUByteSVr:
-	lsr.l	#8,d1
-	lea	OffsUByteSVr(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolUByteSVP:
-	lsr.l	#8,d0
-	lsr.l	#8,d1
-	lea	OffsUByteSVP(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
 
 FixVolUByteSVPH:
 	lea	OffsUByteSVPH(pc),a0
@@ -1883,10 +1610,10 @@ FixVolByteSVPT:
 
 FixVolUByteSVTl:
 	move.l	ahiac_MultTableU(a2),a0
-	lsr.l	#TABLESHIFT-(8+1),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+1),d0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
-	lea	OffsUByteSVTl(pc),a0
+	lea	OffsByteSVTl(pc),a0		;Reuse!
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
 	add.w	#OffsetBackward,a0
@@ -1895,10 +1622,10 @@ FixVolUByteSVTl:
 
 FixVolUByteSVTr:
 	move.l	ahiac_MultTableU(a2),a0
-	lsr.l	#TABLESHIFT-(8+1),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+1),d1
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
 	add.l	a0,d1
-	lea	OffsUByteSVTr(pc),a0
+	lea	OffsByteSVTr(pc),a0		;Reuse!
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
 	add.w	#OffsetBackward,a0
@@ -1907,32 +1634,13 @@ FixVolUByteSVTr:
 
 FixVolUByteSVPT:
 	move.l	ahiac_MultTableU(a2),a0
-	lsr.l	#TABLESHIFT-(8+1),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+1),d0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
-	lsr.l	#TABLESHIFT-(8+1),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+1),d1
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
 	add.l	a0,d1
-	lea	OffsUByteSVPT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolWordM:
-	moveq	#1,d2
-	cmp.l	#$10000,d0
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d0,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#0,d0
-	move.b	(a0,d2.w),d0
-	lea	OffsWordM(pc),a0
+	lea	OffsByteSVPT(pc),a0		;Reuse!
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
 	add.w	#OffsetBackward,a0
@@ -1940,6 +1648,7 @@ FixVolWordM:
 	rts
 
 FixVolWordMV:
+	add.l	d1,d0
  IFGE	__CPU-68020
 	lsr.l	#1,d0
  ELSE
@@ -1953,6 +1662,7 @@ FixVolWordMV:
 	rts
 
 FixVolWordMVH:
+	add.l	d1,d0
 	lea	OffsWordMVH(pc),a0
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
@@ -1961,49 +1671,12 @@ FixVolWordMVH:
 	rts
 
 FixVolWordMVT:
+	add.l	d1,d0
 	move.l	ahiac_MultTableS(a2),a0
 	lsr.l	#TABLESHIFT-(8+2),d0
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
 	lea	OffsWordMVT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolWordSl:
-	moveq	#1,d2
-	cmp.l	#$10000,d0
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d0,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#0,d0
-	move.b	(a0,d2.w),d0
-	lea	OffsWordSl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolWordSr:
-	moveq	#1,d2
-	cmp.l	#$10000,d1
-	beq.b	.ok
-	move.l	#$10000,d2
-	divu.w	d1,d2
-.ok
-	cmp.w	#256,d2
-	bhi.w	FixVolSilence
-	lea	logtable(pc),a0
-	moveq	#0,d1
-	move.b	(a0,d2.w),d1
-	lea	OffsWordSr(pc),a0
 	and.w	#AHIST_BW,d3
 	beq.b	.fw
 	add.w	#OffsetBackward,a0
@@ -2106,12 +1779,9 @@ FixVolWordSVPT:
 *
 * AddSilence	0	None	=0	-
 *
-* AddByteM	278	None	2^x	-
 * AddByteMV	403	None	±8 bit	-
 * AddByteMVH		None	±15 bit	-
 * AddByteMVT	250	²	5 bit ²	-
-* AddByteSl	361	None	2^x	No (Left)
-* AddByteSr	340	None	2^x	No (Right)
 * AddByteSVl	455	None	±8 bit	No (Left)
 * AddByteSVr	474	None	±8 bit	No (Right)
 * AddByteSVP	704	None	±8 bit	Yes
@@ -2120,26 +1790,12 @@ FixVolWordSVPT:
 * AddByteSVTr	324	²	5 bit ²	No (Right)
 * AddByteSVPT	384	²	5 bit ²	Yes
 *
-* AddUByteM	296	None	2^x	-
-* AddUByteMV	421	None	±8 bit	-
 * AddUByteMVH		None	±16 bit	-
-* AddUByteMVT	250	²	5 bit ²	-
-* AddUByteSl	366	None	2^x	No (Left)
-* AddUByteSr	371	None	2^x	No (Right)
-* AddUByteSVl	486	None	±8 bit	No (Left)
-* AddUByteSVr	490	None	±8 bit	No (Right)
-* AddUByteSVP	738	None	±8 bit	Yes
 * AddUByteSVPH		None	±16 bit	Yes
-* AddUByteSVTl	327	²	5 bit ²	No (Left)
-* AddUByteSVTr	324	²	5 bit ²	No (Right)
-* AddUByteSVPT	384	²	5 bit ²	Yes
 *
-* AddWordM	243	None	2^x	-
 * AddWordMV	438	None	±15 bit	-
 * AddWordMVH		None	±16 bit	Yes
 * AddWordMVT	374	²	5 bit ²	-
-* AddWordSl	327	None	2^x	No (Left)
-* AddWordSr	318	None	2^x	No (Right)
 * AddWordSVl	523	None	±15 bit	No (Left)
 * AddWordSVr	523	None	±15 bit	No (Right)
 * AddWordSVP	837	None	±15 bit	Yes
@@ -2187,12 +1843,9 @@ FixVolWordSVPT:
 OffsetTable:
 OffsSilence:	dc.w	AddSilence-*
 
-OffsByteM:	dc.w	AddByteM-*
 OffsByteMV:	dc.w	AddByteMV-*
 OffsByteMVH:	dc.w	AddByteMVH-*
 OffsByteMVT:	dc.w	AddByteMVT-*
-OffsByteSl:	dc.w	AddByteSl-*
-OffsByteSr:	dc.w	AddByteSr-*
 OffsByteSVl:	dc.w	AddByteSVl-*
 OffsByteSVr:	dc.w	AddByteSVr-*
 OffsByteSVP:	dc.w	AddByteSVP-*
@@ -2201,26 +1854,12 @@ OffsByteSVTl:	dc.w	AddByteSVTl-*
 OffsByteSVTr:	dc.w	AddByteSVTr-*
 OffsByteSVPT:	dc.w	AddByteSVPT-*
 
-OffsUByteM:	dc.w	AddUByteM-*
-OffsUByteMV:	dc.w	AddUByteMV-*
 OffsUByteMVH:	dc.w	AddUByteMVH-*
-OffsUByteMVT:	dc.w	AddUByteMVT-*
-OffsUByteSl:	dc.w	AddUByteSl-*
-OffsUByteSr:	dc.w	AddUByteSr-*
-OffsUByteSVl:	dc.w	AddUByteSVl-*
-OffsUByteSVr:	dc.w	AddUByteSVr-*
-OffsUByteSVP:	dc.w	AddUByteSVP-*
 OffsUByteSVPH:	dc.w	AddUByteSVPH-*
-OffsUByteSVTl:	dc.w	AddUByteSVTl-*
-OffsUByteSVTr:	dc.w	AddUByteSVTr-*
-OffsUByteSVPT:	dc.w	AddUByteSVPT-*
 
-OffsWordM:	dc.w	AddWordM-*
 OffsWordMV:	dc.w	AddWordMV-*
 OffsWordMVH:	dc.w	AddWordMVH-*
 OffsWordMVT:	dc.w	AddWordMVT-*
-OffsWordSl:	dc.w	AddWordSl-*
-OffsWordSr:	dc.w	AddWordSr-*
 OffsWordSVl:	dc.w	AddWordSVl-*
 OffsWordSVr:	dc.w	AddWordSVr-*
 OffsWordSVP:	dc.w	AddWordSVP-*
@@ -2233,12 +1872,9 @@ OffsWordSVPT:	dc.w	AddWordSVPT-*
 OffsetBackward	EQU	*-OffsetTable
 OffsSilenceB:	dc.w	AddSilenceB-*
 
-OffsByteBM:	dc.w	AddByteBM-*
 OffsByteBMV:	dc.w	AddByteBMV-*
 OffsByteBMVH:	dc.w	AddByteBMVH-*
 OffsByteBMVT:	dc.w	AddByteBMVT-*
-OffsByteBSl:	dc.w	AddByteBSl-*
-OffsByteBSr:	dc.w	AddByteBSr-*
 OffsByteBSVl:	dc.w	AddByteBSVl-*
 OffsByteBSVr:	dc.w	AddByteBSVr-*
 OffsByteBSVP:	dc.w	AddByteBSVP-*
@@ -2247,26 +1883,12 @@ OffsByteBSVTl:	dc.w	AddByteBSVTl-*
 OffsByteBSVTr:	dc.w	AddByteBSVTr-*
 OffsByteBSVPT:	dc.w	AddByteBSVPT-*
 
-OffsUByteBM:	dc.w	AddUByteBM-*
-OffsUByteBMV:	dc.w	AddUByteBMV-*
 OffsUByteBMVH:	dc.w	AddUByteBMVH-*
-OffsUByteBMVT:	dc.w	AddUByteBMVT-*
-OffsUByteBSl:	dc.w	AddUByteBSl-*
-OffsUByteBSr:	dc.w	AddUByteBSr-*
-OffsUByteBSVl:	dc.w	AddUByteBSVl-*
-OffsUByteBSVr:	dc.w	AddUByteBSVr-*
-OffsUByteBSVP:	dc.w	AddUByteBSVP-*
 OffsUByteBSVPH:	dc.w	AddUByteBSVPH-*
-OffsUByteBSVTl:	dc.w	AddUByteBSVTl-*
-OffsUByteBSVTr:	dc.w	AddUByteBSVTr-*
-OffsUByteBSVPT:	dc.w	AddUByteBSVPT-*
 
-OffsWordBM:	dc.w	AddWordBM-*
 OffsWordBMV:	dc.w	AddWordBMV-*
 OffsWordBMVH:	dc.w	AddWordBMVH-*
 OffsWordBMVT:	dc.w	AddWordBMVT-*
-OffsWordBSl:	dc.w	AddWordBSl-*
-OffsWordBSr:	dc.w	AddWordBSr-*
 OffsWordBSVl:	dc.w	AddWordBSVl-*
 OffsWordBSVr:	dc.w	AddWordBSVr-*
 OffsWordBSVP:	dc.w	AddWordBSVP-*
@@ -2317,34 +1939,6 @@ AddSilence:
 	add.l	d0,a4			;New buffer pointer
 	rts
 
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.b	8 - ²log(channels)
-AddByteM:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.l	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
 
 ;------------------------------------------------------------------------------
 	cnop	0,16
@@ -2413,65 +2007,6 @@ AddByteMVT:
 	add.w	d6,d4
 	addx.l	d5,d3
 
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.b	8 - ²log(channels)
-AddByteSl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-.1
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d2.b	8 - ²log(channels)
-AddByteSr:
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+		;skip and add
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+		;skip and add
-	add.w	d6,d4
-	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
 	rts
@@ -2724,454 +2259,6 @@ AddByteSVPT:
 	cnop	0,16
 
 ;in:
-* d1.b	8 - ²log(65536/volume) (2^x, 8<=x<=16)
-AddUByteM:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.w	-256..256
-AddUByteMV:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.l	Pointer in multiplication table
-AddUByteMVT:
-	move.l	d1,a0
-	moveq	#0,d1
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.b	8 - ²log(65536/volume) (2^x, 8<=x<=16)
-AddUByteSl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d2.b	8 - ²log(65536/volume) (2^x, 8<=x<=16)
-AddUByteSr:
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.w	-256..256
-AddUByteSVl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d2.w	-256..256
-AddUByteSVr:
-	move.l	#$ffff,d1
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	addq.l	#2,a4
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	addq.l	#2,a4
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.w	-256..256
-* d2.w	-256..256
-AddUByteSVP:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	move.w	d7,a0
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	a0,d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	move.w	d7,a0
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	a0,d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.l	Pointer in multiplication table
-AddUByteSVTl:
-	move.l	d1,a0
-	moveq	#0,d1
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d2.l	Pointer in multiplication table
-AddUByteSVTr:
-	move.l	d2,a0
-	moveq	#0,d1
-	moveq	#0,d2
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.l	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.l	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
-AddUByteSVPT:
-	move.l	a1,d7			;save a1
-	move.l	d1,a0
-	move.l	d2,a1
-	moveq	#0,d1
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2
- ENDC
-	add.w	d2,(a4)+
-
- IFGE	__CPU-68020
-	move.w	0(a1,d1.w*2),d2
- ELSE
-	move.w	0(a1,d1.w),d2
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2
- ENDC
-	add.w	d2,(a4)+
-
- IFGE	__CPU-68020
-	move.w	0(a1,d1.w*2),d2
- ELSE
-	move.w	0(a1,d1.w),d2
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	move.l	d7,a1			;restore a1
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.b	²log(65536/volume) (2^x, 8<=x<=16)
-AddWordM:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
 * d1.l	-32768..32767/-256..256
 AddWordMV:
 * 16/8 bit signed input (8 for '000 version)
@@ -3266,85 +2353,6 @@ AddWordMVT:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d1.b	²log(65536/volume) (2^x, 8<=x<=16)
-AddWordSl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-.1
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-;in:
-* d2.b	²log(65536/volume) (2^x, 8<=x<=16)
-AddWordSr:
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d1
-	add.l	d1,d1
-	move.w	(a3,d1.l),d7
- ENDC
-	asr.w	d2,d7
-	add.l	d7,(a4)+
-	add.w	d6,d4
-	addx.l	d5,d3
-.1
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d1
-	add.l	d1,d1
-	move.w	(a3,d1.l),d7
- ENDC
-	asr.w	d2,d7
-	add.l	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
@@ -4034,32 +3042,6 @@ AddSilenceB:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBM:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.l	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
 AddByteBMV:
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -4120,61 +3102,6 @@ AddByteBMVT:
 	sub.w	d6,d4
 	subx.l	d5,d3
 
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddByteBSl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-.1
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddByteBSr:
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+		;skip and add
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+		;skip and add
-	sub.w	d6,d4
-	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
 	rts
@@ -4412,428 +3339,6 @@ AddByteBSVPT:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddUByteBM:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBMV:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBMVT:
-	move.l	d1,a0
-	moveq	#0,d1
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSr:
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	lsl.w	d2,d7
-	add.l	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSVl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSVr:
-	move.l	#$ffff,d1
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	addq.l	#2,a4
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	addq.l	#2,a4
-	sub.b	#$80,d7
-	ext.w	d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSVP:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	move.w	d7,a0
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	a0,d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d7
-	sub.b	#$80,d7
-	ext.w	d7
-	move.w	d7,a0
-	muls.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	a0,d7
-	muls.w	d2,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSVTl:
-	move.l	d1,a0
-	moveq	#0,d1
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSVTr:
-	move.l	d2,a0
-	moveq	#0,d1
-	moveq	#0,d2
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.l	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2		;unsigned multiplication -> signed result
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;unsigned multiplication -> signed result
-	moveq	#0,d1
- ENDC
-	add.l	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddUByteBSVPT:
-	move.l	a1,d7			;save a1
-	move.l	d1,a0
-	move.l	d2,a1
-	moveq	#0,d1
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2
- ENDC
-	add.w	d2,(a4)+
-
- IFGE	__CPU-68020
-	move.w	0(a1,d1.w*2),d2
- ELSE
-	move.w	0(a1,d1.w),d2
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
-	move.b	(a3,d3.l),d1
- IFGE	__CPU-68020
-	move.w	0(a0,d1.w*2),d2
- ELSE
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2
- ENDC
-	add.w	d2,(a4)+
-
- IFGE	__CPU-68020
-	move.w	0(a1,d1.w*2),d2
- ELSE
-	move.w	0(a1,d1.w),d2
-	moveq	#0,d1
- ENDC
-	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	move.l	d7,a1			;restore a1
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddWordBM:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
 AddWordBMV:
 * 16/8 bit signed input (8 for '000 version)
 	moveq	#15,d2
@@ -4925,81 +3430,6 @@ AddWordBMVT:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddWordBSl:
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-.1
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-	addq.l	#2,a4			;skip right channel
-	dbf	d0,.nextsample
-.exit
-	rts
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddWordBSr:
-	moveq	#0,d7
-	lsr.w	#1,d0
-	bcs.b	.1
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d1
-	add.l	d1,d1
-	move.w	(a3,d1.l),d7
- ENDC
-	asr.w	d2,d7
-	add.l	d7,(a4)+
-	sub.w	d6,d4
-	subx.l	d5,d3
-.1
- IFGE	__CPU-68020
-	move.w	(a3,d3.l*2),d7
- ELSE
-	move.l	d3,d1
-	add.l	d1,d1
-	move.w	(a3,d1.l),d7
- ENDC
-	asr.w	d2,d7
-	add.l	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
@@ -5620,10 +4050,6 @@ AddWordBSVPH:
 
 ;------------------------------------------------------------------------------
 AlignEnd:
-
-logtable:
-	blk.b	258,0
-
 
  IFNE	DEBUG
 sample:
