@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.3  1997/01/04 20:19:56  lcs
+* Changed the AHI_DEBUG levels
+*
 * Revision 1.2  1996/12/21 23:06:35  lcs
 * Replaced all EQ with ==
 *
@@ -617,7 +620,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("=>0x%ld\n",rc);
+    KPrintF("=>%ld\n",rc);
   }
   return rc;
 }
@@ -639,7 +642,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
   BOOL rc=TRUE; // TRUE == _everything_ went well
   struct TagItem idtag[2] = { AHIA_AudioID, 0, TAG_DONE };
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("AHI_GetAudioAttrsA(0x%08lx, 0x%08lx, 0x%08lx)",id,actrl,tags);
   }
@@ -774,7 +777,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
   else // unable to lock database
     rc=FALSE;
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("=>%s\n", rc ? "TRUE" : "FALSE" );
   }
@@ -846,7 +849,7 @@ __asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
   ULONG channel,freq,vol,pan,sound,offset,length;
   ULONG loopfreq,loopvol,looppan,loopsound,loopoffset,looplength;
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_ALL)
   {
     KPrintF("AHI_PlayA(0x%08lx, 0x%08lx)\n",audioctrl,tags);
   }

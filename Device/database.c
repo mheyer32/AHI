@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.3  1997/01/04 20:19:56  lcs
+* Changed the AHI_DEBUG levels
+*
 * Revision 1.2  1996/12/21 23:06:35  lcs
 * Replaced all EQ with ==
 *
@@ -125,7 +128,7 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
   struct AHI_AudioMode *node;
   ULONG  nextid=AHI_INVALID_ID;
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("AHI_NextAudioID(0x%08lx)",id);
   }
@@ -147,7 +150,7 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
     UnlockDatabase(audiodb);
   }
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("=>0x%08lx\n",nextid);
   }
@@ -168,7 +171,7 @@ __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
   struct TagItem *tstate=DBtags,*tp,*tag;
   ULONG rc=FALSE;
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("AHI_AddAudioMode(0x%08lx)",DBtags);
   }
@@ -239,7 +242,7 @@ __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
     UnlockDatabase(audiodb);
   }
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("=>%ld\n",rc);
   }
@@ -257,7 +260,7 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
   struct AHI_AudioDatabase *audiodb;
   ULONG rc=FALSE;
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("AHI_RemoveAudioMode(0x%08lx)",id);
   }
@@ -300,7 +303,7 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
     UnlockDatabase(audiodb);
   }
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("=>%ld\n",rc);
   }
@@ -318,7 +321,7 @@ __asm ULONG LoadModeFile( register __a0 UBYTE *name )
   struct FileInfoBlock  *fib;
   BPTR  lock,thisdir;
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("AHI_LoadModeFile(%s)",name);
   }
@@ -363,7 +366,7 @@ __asm ULONG LoadModeFile( register __a0 UBYTE *name )
     FreeDosObject(DOS_FIB,fib);
   }
 
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
     KPrintF("=>%ld\n",rc);
   }

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.3  1997/01/04 20:19:56  lcs
+* Changed the AHI_DEBUG levels
+*
 * Revision 1.2  1996/12/21 23:08:47  lcs
 * Replaced all EQ with ==
 *
@@ -564,7 +567,6 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
         break;
 
       case IDCMP_NEWSIZE:
-        
         if(!(LayOutReq(req,req->TextAttr)))
           if(!(LayOutReq(req,&Topaz80)))
           {
@@ -691,7 +693,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_AudioRequestA(0x%08lx,0x%08lx)",req_in,tags);
+    KPrintF("AHI_AudioRequestA(0x%08lx, 0x%08lx)",req_in,tags);
   }
 
   if(!req)

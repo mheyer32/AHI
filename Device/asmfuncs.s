@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.4  1997/01/04 20:19:56  lcs
+* Changed the AHI_DEBUG levels
+*
 * Revision 1.3  1997/01/04 13:26:41  lcs
 * Doc for CMD_WRITE updated
 *
@@ -598,7 +601,7 @@ stuffChar:
 *
 
 _SetVol:
-	cmp.b	#AHI_DEBUG_HIGH,ahib_DebugLevel(a6)
+	cmp.b	#AHI_DEBUG_ALL,ahib_DebugLevel(a6)
 	blo	SetVol_nodebug
 	and.l	#$ffff,d0
 	PRINTF	2,"AHI_SetVol(%ld, 0x%08lx, 0x%08lx, 0x%08lx, 0x%08lx)",d0,d1,d2,a2,d3
@@ -765,7 +768,7 @@ SetVol_nodebug
 *
 
 _SetFreq:
-	cmp.b	#AHI_DEBUG_HIGH,ahib_DebugLevel(a6)
+	cmp.b	#AHI_DEBUG_ALL,ahib_DebugLevel(a6)
 	blo	SetFreq_nodebug
 	and.l	#$ffff,d0
 	PRINTF	2,"AHI_SetFreq(%ld, %ld, 0x%08lx, 0x%08lx)",d0,d1,a2,d2
@@ -909,7 +912,7 @@ SetFreq_nodebug
 *
 
 _SetSound:
-	cmp.b	#AHI_DEBUG_HIGH,ahib_DebugLevel(a6)
+	cmp.b	#AHI_DEBUG_ALL,ahib_DebugLevel(a6)
 	blo	SetSound_nodebug
 	and.l	#$ffff,d0
 	and.l	#$ffff,d1
@@ -1098,7 +1101,7 @@ SetSound_nodebug
 *           affected by the DSP effects) by using the AHIEDM_DRY constant.
 *           The default is all channels wet. If ahiedm_Channels does not
 *           equal the current number of channels allocated, the result of
-*           this call is undefined. (V3)
+*           this call is undefined (crash warning!). (V3)
 *
 *       AHIET_DSPECHO - Effect is a struct AHIEffDSPEcho.
 *           ahiede_Delay is the delay in samples (and thus depends on the
@@ -1117,12 +1120,28 @@ SetSound_nodebug
 *           the other channel. 0 means no cross echo, 1.0 means full
 *           cross echo.
 *
-*           AHI will try to use faster algoritms if the following rules
-*           are met:
-*            *  ahiede_Feedback == 0, ahiede_Cross == 0 and ahiede_Mix is an
-*               even power of two activates a fast delay routine.
-*            *  ahiede_Mix == 1.0, ahiede_Cross == 0 and ahiede_Feedback is an
-*               even power of two activates a fast echo routine.
+*           If the user has enabled "Fast Echo", AHI may take several short-
+*           cuts to increase the performance. This could include rounding the
+*           parameters to a power of two, or even to the extremes. Without
+*           "Fast Echo", this effect will suck some major CPU cycles on most
+*           sound hardware. (V3)
+*
+*       AHIET_CHANNELINFO - Effect is a struct AHIEffChannelInfo, where
+*           ahieci_Func is pointing to a hook that will be called with the
+*           following parameters:
+*               A0 - (struct Hook *)
+*               A2 - (struct AHIAudioCtrl *)
+*               A1 - (struct AHIEffChannelInfo *)
+*           ahieci_Channels must equal the current number of channels used.
+*           ahieci_Offset is an array of ULONGs, which will be filled by
+*           AHI before the hook is called (the offset is specifed in sample
+*           frames). The array must have at least ahieci_Channels elements.
+*
+*           This "effect" can be used to find out how far each channel has
+*           played. You must probably keep track of the other parameters
+*           yourself (like which sound is playing, it's volume, balance and
+*           frequency etc) in order have meaningful usage of the information.
+*           (V3)
 *
 *
 *       NOTE! To turn off an effect, call again with ahie_Effect OR:ed
@@ -1133,6 +1152,10 @@ SetSound_nodebug
 *       deallocate the audio hardware. Otherwise memory may be lost.
 *       It is safe to turn off an effect that has never been turned on
 *       in the first place.
+*
+*       Never count on that an effect will be available. For example,
+*       AHIET_OUTPUTBUFFER is impossible to implement with some sound
+*       cards.
 *
 *   RESULT
 *       An error code, defined in <devices/ahi.h>.
@@ -1156,7 +1179,7 @@ SetSound_nodebug
 *
 
 _SetEffect:
-	cmp.b	#AHI_DEBUG_HIGH,ahib_DebugLevel(a6)
+	cmp.b	#AHI_DEBUG_ALL,ahib_DebugLevel(a6)
 	blo	SetEffect_nodebug
 	PRINTF	2,"AHI_SetEffect(x%08lx, 0x%08lx)",a0,a2
 SetEffect_nodebug
@@ -1253,6 +1276,23 @@ SetEffect_nodebug
 .no_dspechoOFF
 
  ENDC * MC020
+
+*
+* CHANNELINFO
+*
+	cmp.l	#AHIET_CHANNELINFO,ahie_Effect(a0)
+	bne	.no_channelinfo
+	move.l	a0,ahiac_EffChannelInfoStruct(a2)
+	bra	.exit
+.no_channelinfo
+
+	cmp.l	#AHIET_CANCEL|AHIET_CHANNELINFO,ahie_Effect(a0)
+	bne	.no_channelinfoOFF
+	clr.l	ahiac_EffChannelInfoStruct(a2)
+	bra	.exit
+.no_channelinfoOFF
+
+
 
 .exit
 	popm	d2-d7/a2-a6
