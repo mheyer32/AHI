@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.1  2001/12/14 11:47:09  martin
+ * Added code for playing a test sample. No GUI button yet, though.
+ *
  * Revision 5.0  2000/11/28 00:13:26  lcs
  * Bumped CVS revision to 5.0.
  *
@@ -624,4 +627,84 @@ struct Node *GetNode(int index, struct List *list) {
     index--;
   }
   return n;
+}
+
+/******************************************************************************
+**** Plays a test sound using the current selected mode and settings **********
+******************************************************************************/
+
+BOOL PlaySound( struct AHIUnitPrefs* prefs )
+{
+  struct AHIAudioCtrl* actrl;
+  BOOL                 rc = FALSE;
+  
+  actrl = AHI_AllocAudio( AHIA_AudioID,  prefs->ahiup_AudioMode,
+                          AHIA_MixFreq,  prefs->ahiup_Frequency,
+                          AHIA_Channels, prefs->ahiup_Channels,
+                          AHIA_Sounds,   1,
+                          TAG_DONE );
+
+  if( actrl != NULL )
+  {
+    BYTE*                sample;
+    int                  length = 48000/440;
+    struct AHISampleInfo sound;
+      
+    sample = AllocVec( length, MEMF_PUBLIC );
+      
+    if( sample != NULL )
+    {
+      int i;
+        
+      for( i = 0; i < length; ++i )
+      {
+        sample[ i ] = 127 * sin( i * 2 * M_PI / length );
+      }
+        
+      sound.ahisi_Type    = AHIST_M8S;
+      sound.ahisi_Address = sample;
+      sound.ahisi_Length  = length;
+        
+      if( AHI_LoadSound( 0, AHIST_SAMPLE, &sound, actrl ) == AHIE_OK )
+      {
+        if( AHI_ControlAudio( actrl, AHIC_Play,          TRUE,
+                                     AHIC_MonitorVolume, prefs->ahiup_MonitorVolume,
+                                     AHIC_InputGain,     prefs->ahiup_InputGain,
+                                     AHIC_OutputVolume,  prefs->ahiup_OutputVolume,
+                                     AHIC_Input,         prefs->ahiup_Input,
+                                     AHIC_Output,        prefs->ahiup_Output,
+                                     TAG_DONE ) == AHIE_OK )
+        {
+          AHI_Play( actrl, AHIP_BeginChannel, 0,
+                           AHIP_Freq,         48000,
+                           AHIP_Vol,          0x10000,
+                           AHIP_Pan,          0x8000,
+                           AHIP_Sound,        0,
+                           AHIP_EndChannel,   NULL,
+                           TAG_DONE );
+
+          Delay( 50 );
+          
+          AHI_Play( actrl, AHIP_BeginChannel, 0,
+                           AHIP_Sound,        AHI_NOSOUND,
+                           AHIP_EndChannel,   NULL,
+                           TAG_DONE );
+
+          // Give the anti-click code a break ...
+          Delay( 1 );
+
+          AHI_ControlAudio( actrl, AHIC_Play, FALSE,
+                                   TAG_DONE );
+        }
+
+        AHI_UnloadSound( 0, actrl );
+      }
+        
+      FreeVec( sample );
+    }
+    
+    AHI_FreeAudio( actrl );
+  }
+
+  return rc;
 }

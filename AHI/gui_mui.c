@@ -17,56 +17,6 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-/* $Id$
- * $Log$
- * Revision 5.0  2000/11/28 00:13:26  lcs
- * Bumped CVS revision to 5.0.
- *
- * Revision 4.12  2000/11/27 22:58:46  lcs
- * Fixed a lame rounding problem with maxcpu and anticlicktime.
- *
- * Revision 4.11  2000/06/05 20:28:37  lcs
- * Fixed configure problems with separate build directories.
- *
- * Revision 4.10  1999/08/29 23:43:54  lcs
- * Added support for ahigp_AntiClickTime.
- *
- * Revision 4.9  1999/04/22 19:41:22  lcs
- * Removed SAS/C smakefile.
- * I had the copyright date screwed up: Changed to 1996-1999 (which is only
- * partly correct, but still better than 1997-1999....)
- *
- * Revision 4.8  1999/03/28 22:30:49  lcs
- * AHI is now GPL/LGPL software.
- * Make target bindist work correctly when using a separate build directory.
- * Small first steps towards a WarpOS PPC version.
- *
- * Revision 4.7  1999/01/09 23:14:12  lcs
- * Switched from SAS/C to gcc
- *
- * Revision 4.6  1997/07/15 00:51:28  lcs
- * Fixed some bugs.
- *
- * Revision 4.5  1997/07/11 14:25:49  lcs
- * Small bug fix: Wrong order of set() calls in guinewmode()
- *
- * Revision 4.4  1997/06/24 21:49:31  lcs
- * Fixed an enforcer hit, and a few more potential ones (problem caused by
- * having a 0-level slider (min 0, max -1...).
- *
- * Revision 4.3  1997/05/06 15:15:46  lcs
- * Can now which pages with the keyboard.
- * Fixed a bug in the mode properties code.
- *
- * Revision 4.2  1997/05/04 22:13:29  lcs
- * Keyboard shortcuts and more.
- *
- * Revision 4.1  1997/05/04 05:30:28  lcs
- * First MUI version.
- *
- *
- */
-
 #include <config.h>
 #include <CompilerSpecific.h>
 
@@ -79,8 +29,11 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
-#include <proto/muimaster.h>
 #include <proto/utility.h>
+
+#define NO_INLINE_STDARG
+#include <proto/muimaster.h>
+#undef NO_INLINE_STDARG
 
 #include <math.h>
 #include <stdio.h>
@@ -117,6 +70,8 @@ enum actionIDs {
   ACTID_INPUT, ACTID_OUTPUT,
   SHOWID_FREQ, SHOWID_CHANNELS, SHOWID_OUTVOL, SHOWID_MONVOL, SHOWID_GAIN,
   SHOWID_INPUT, SHOWID_OUTPUT,
+  
+  ACTID_PLAY,
 
   ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CLIPMV,
   ACTID_CPULIMIT, SHOWID_CPULIMIT,
@@ -804,10 +759,16 @@ void EventLoop(void)
       }
 
       case ACTID_ABOUT:
-        MUI_Request(MUIApp, MUIWindow, 0, (char *) msgTextProgramName,
-            (char*)msgButtonOK, (char*)msgTextCopyright, "\033c",
-            (char*)msgTextProgramName, "1996-1999 Stéphane Barbaray/Martin Blom");
+      {
+        char* args[] = { "\033c", 
+                         (char*)msgTextProgramName,
+                         "1996-1999 Stéphane Barbaray/Martin Blom"
+                       };
+
+        MUI_RequestA(MUIApp, MUIWindow, 0, (char *) msgTextProgramName,
+            (char*)msgButtonOK, (char*)msgTextCopyright, args );
         break;
+      }
 
       case ACTID_SAVE:
         FillUnit();
@@ -879,6 +840,19 @@ void EventLoop(void)
         NewMode(xget(MUIList, MUIA_List_Active));
         GUINewMode();
         break;
+        
+      case ACTID_PLAY:
+      {
+        int              unit_id;
+        struct UnitNode* unit;
+
+        
+        unit_id = xget( MUIUnit, MUIA_Cycle_Active );
+        unit    = (struct UnitNode *) GetNode( unit_id, UnitList );
+        
+        PlaySound( &unit->prefs );
+        break;
+      }
 
       case ACTID_DEBUG:
       case ACTID_SURROUND:
