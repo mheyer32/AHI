@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.5  1997/10/23 01:10:03  lcs
+* Better debug output.
+*
 * Revision 4.4  1997/06/21 18:13:43  lcs
 * ahiam_AudioID and ahiam_MixFreq are now left unchanged if the user
 * cancels the audio mode requester.
@@ -87,11 +90,13 @@
 #include <proto/utility.h>
 
 #ifndef  noprotos
+
 #ifndef _GENPROTO
 #include "requester_protos.h"
 #endif
 
 #include "cfuncs_protos.h"
+#include "debug_protos.h"
 #endif
 
 static void OpenInfoWindow( struct AHIAudioModeRequesterExt * );
@@ -99,7 +104,7 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt * );
 static void UpdateInfoWindow( struct AHIAudioModeRequesterExt * );
 
 
-/******************************************************************************
+/******************************************************************************
 ** Audio mode requester  ******************************************************
 ******************************************************************************/
 
@@ -914,7 +919,7 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_AllocAudioRequestA *****************************************************
 ******************************************************************************/
 
@@ -969,7 +974,7 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_AllocAudioRequestA(0x%08lx)",tags);
+    Debug_AllocAudioRequestA(tags);
   }
 
   if(req=AllocVec(sizeof(struct AHIAudioModeRequesterExt),MEMF_CLEAR))
@@ -998,7 +1003,7 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_AudioRequestA **********************************************************
 ******************************************************************************/
 
@@ -1192,7 +1197,7 @@ __asm ULONG AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, r
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_AudioRequestA(0x%08lx, 0x%08lx)",req_in,tags);
+    Debug_AudioRequestA(req_in,tags);
   }
 
   if(!req)
@@ -1490,7 +1495,7 @@ __asm ULONG AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, r
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_FreeAudioRequest *******************************************************
 ******************************************************************************/
 
@@ -1534,7 +1539,7 @@ __asm void FreeAudioRequest( register __a0 struct AHIAudioModeRequester *req)
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_FreeAudioRequest(0x%08lx)\n",req);
+    Debug_FreeAudioRequest(req);
   }
 
   if(req)
