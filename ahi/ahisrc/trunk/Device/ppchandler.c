@@ -191,7 +191,7 @@ PPCHandler( void )
           };
     
           args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PowerPCContext;
-    
+
           if( AHIGetELFSymbol( "InitWarpUp", &args.PP_Code ) )
           {
             if( RunPPC( &args ) != PPERR_SUCCESS )
@@ -464,7 +464,7 @@ MixBuffer( void*                     mixbuffer,
                  mixbuffer,
                  audioctrl->ahiac_BuffSizeNow );
   }
-kprintf("e");
+//kprintf("e");
 
   audioctrl->ahiac_PowerPCContext->Hook         = audioctrl->ac.ahiac_MixerFunc;
   audioctrl->ahiac_PowerPCContext->Dst          = mixbuffer;
@@ -490,17 +490,17 @@ kprintf("e");
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
       };
 
-kprintf("K");
+//kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
-kprintf("k");
+//kprintf("k");
 #endif
       break;
     }
 
     case MB_WARPUP:
-kprintf("C");
+//kprintf("C");
       CausePPCInterrupt();
-kprintf("c");
+//kprintf("c");
       break;
 
     case MB_NATIVE:
@@ -508,9 +508,9 @@ kprintf("c");
       break;
   }
 
-kprintf("f");
+//kprintf("f");
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
-kprintf("g");
+//kprintf("g");
 }
 
 
