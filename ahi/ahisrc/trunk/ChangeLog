@@ -1,4 +1,17 @@
+2003-09-30  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.45.
+
+	* ahi.device: Test: Don't increase volume of playing requests
+	untill all outstanding requests are finished. Should fix that
+	annoying volume fluctuations?
+
 2003-09-29  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.44.
+
+	* ahi.device: Fixed a memory trashing bug introduced with the
+	dynamic volume update. [Kev Harrison and Michael Malyshev]
 
 	* Released void.audio 5.7.
 
