@@ -1,5 +1,10 @@
 /* $Id$
 * $Log$
+* Revision 4.8  1997/07/27 02:02:14  lcs
+* AHI_LoadSound() always returned 0 if the driver overloaded the
+* function. Now it returns the correct value.
+* AHI_LoadSound()
+*
 * Revision 4.7  1997/07/27 00:15:21  lcs
 * Removed a reference to AHI_KillAudio() in the audiodocs.
 *
@@ -1701,7 +1706,7 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
 
   if((audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING) || (rc != AHIS_UNKNOWN))
   {
-    return 0;
+    return rc;
   }
 
   rc = AHIE_OK;
@@ -1739,8 +1744,7 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
 
           /* AHI_FreeAudio() will deallocate...  */
 
-          if(/* ((audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0) && 
-                  Breaks the AHI-Noteplayer for delitracker! :-( */
+          if( ((audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0) && 
               initUnsignedTable(audioctrl, AHIBase))
           {
             audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
