@@ -25,12 +25,6 @@
 
 #define EMU10KX_CAMD_SEMAPHORE "emu10kx.camd"
 
-/* A set of CAMD-like functions for each card */
-struct EMU10kxCamdFunctions
-{ 
-};
-
-
 /* This is the global, public data structure used to communicate with
  * the CAMD part of emu10kx.audio. Find it, lock it, use it and then
  * release it. */
@@ -51,6 +45,7 @@ struct EMU10kxCamd
 struct OpenMessage
 {
     LONG          PortNum;
+    ULONG         V40Mode;
     struct Hook*  TransmitFunc;
     struct Hook*  ReceiveFunc;
 };

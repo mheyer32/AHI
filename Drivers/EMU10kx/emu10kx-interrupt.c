@@ -98,8 +98,6 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
     {
       unsigned char b;
 
-      KPrintF( "IPR_MIDIRECVBUFEMPTY\n" );
-
       while( emu10k1_mpu_read_data( &dd->card, &b ) >= 0 )
       {
 	if( dd->camd_receivefunc == NULL )
@@ -107,7 +105,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 	  KPrintF( "emu10kx.audio got unexpected IPR_MIDIRECVBUFEMPTY\n" );
 	}
 
-	KPrintF( "Got char %lx\n", (int) b );
+	KPrintF( "\t%lx\n", (int) b );
 	CallHook( dd->camd_receivefunc, (Object*) EMU10kxBase, (ULONG) b );
       }
     }
@@ -115,7 +113,6 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
     if( intreq & IPR_MIDITRANSBUFEMPTY )
     {
       ULONG b;
-      KPrintF( "IPR_MIDITRANSBUFEMPTY\n" );
 
       if( dd->camd_transmitfunc == NULL )
       {
@@ -124,9 +121,21 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
       b = CallHookA( dd->camd_transmitfunc, (Object*) EMU10kxBase, NULL );
 
-      if( b != 0x100 )
+      KPrintF( "%08lx\n", b );
+
+      // Check if d0.w is negative (as the V37 did once?) or if bit 8
+      // is set (as the V40 example does)
+      
+      if( ( b & 0x00008100 ) == 0x0000 )
       {
 	emu10k1_mpu_write_data( &dd->card, b );
+      }
+
+      if( ( !dd->camd_v40 && ( b & 0x00ff0000 ) != 0 ) ||
+	  ( b & 0x00008100 ) != 0 )
+      {
+	KPrintF( "Disabling interrupts\n" );
+	emu10k1_irq_disable( &dd->card, INTE_MIDITXENABLE );	
       }
     }
    

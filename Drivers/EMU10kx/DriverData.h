@@ -119,10 +119,13 @@ struct EMU10kxData
     /*** CAMD support functions **********************************************/
 
     /** CAMD transmitter function wrapped as a Hook */
-    struct Hook*           camd_transmitfunc;
+    struct Hook*        camd_transmitfunc;
 
     /** CAMD receiver function wrapped as a Hook */
-    struct Hook*           camd_receivefunc;
+    struct Hook*        camd_receivefunc;
+
+    /** True if CMAD V40 mode */
+    ULONG               camd_v40;
     
     /*** EMU10kx structures **************************************************/
     
