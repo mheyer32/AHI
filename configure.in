@@ -13,7 +13,7 @@ dnl General
 AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
-: ${CFLAGS='-g -O2 -ffast-math -W -Wall -Wstrict-prototypes'}
+: ${CFLAGS='-g -O2 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
 : ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}
 

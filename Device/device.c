@@ -38,28 +38,38 @@ struct StartupMessage
 };
 
 
-static struct AHIDevUnit *InitUnit(ULONG , struct AHIBase *);
-static void ExpungeUnit(struct AHIDevUnit *, struct AHIBase *);
+static struct
+AHIDevUnit *InitUnit( ULONG , struct AHIBase * );
+
+static void
+ExpungeUnit( struct AHIDevUnit *, struct AHIBase * );
+
+static void
+DevProc( void );
+
 
 static void ASMCALL INTERRUPT
 PlayerFunc ( REG(a0, struct Hook *hook),
              REG(a2, struct AHIAudioCtrl *actrl),
              REG(a1, APTR null) );
+
 static ULONG ASMCALL INTERRUPT
 RecordFunc ( REG(a0, struct Hook *hook),
              REG(a2, struct AHIAudioCtrl *actrl),
              REG(a1, struct AHIRecordMessage *recmsg) );
+
 static void ASMCALL INTERRUPT
 SoundFunc ( REG(a0, struct Hook *hook),
             REG(a2, struct AHIAudioCtrl *actrl),
             REG(a1, struct AHISoundMessage *sndmsg) );
+
 static void ASMCALL INTERRUPT
 ChannelInfoFunc ( REG(a0, struct Hook *hook),
                   REG(a2, struct AHIAudioCtrl *actrl),
                   REG(a1, struct AHIEffChannelInfo *cimsg) );
 
-BPTR ASMCALL DevExpunge ( REG(a6, struct AHIBase *) );
-void ASMCALL DevProcEntry ( void );
+BPTR ASMCALL
+DevExpunge( REG( a6, struct AHIBase* device ) );
 
 
 /***** ahi.device/--background-- *******************************************
@@ -570,7 +580,7 @@ InitUnit ( ULONG unit,
               iounit
             };
 
-            iounit->Process = CreateNewProcTags( NP_Entry,    (ULONG) &DevProcEntry,
+            iounit->Process = CreateNewProcTags( NP_Entry,    (ULONG) &DevProc,
                                                  NP_Name,     (ULONG) DevName,
                                                  NP_Priority, AHI_PRI,
                                                  TAG_DONE );
@@ -878,8 +888,8 @@ FreeHardware ( struct AHIDevUnit *iounit,
 ** DevProc ********************************************************************
 ******************************************************************************/
 
-void ASMCALL
-DevProc ( REG(a6, struct AHIBase *AHIBase) )
+static void
+DevProc( void )
 {
   struct Process *proc;
   struct StartupMessage *sm;
