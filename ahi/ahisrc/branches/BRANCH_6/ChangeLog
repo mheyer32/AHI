@@ -1,5 +1,8 @@
 2005-03-26  Martin Blom  <martin@blom.org>
 
+	* Device/header.c: Added __attribute__((used)) to RomTag. [Davy
+	Wentzler].
+
 	* Released emu10kx.audio 6.1.
 
 	* emu10kx.audio: Added write-only (for now) access to internal

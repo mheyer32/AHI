@@ -91,7 +91,7 @@ static struct TagItem libCreateTags[];
 
 // This structure must reside in the text segment or the read-only data segment!
 // "const" makes it happen.
-static const struct Resident RomTag =
+static const struct Resident RomTag  __attribute__((used)) =
 {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
