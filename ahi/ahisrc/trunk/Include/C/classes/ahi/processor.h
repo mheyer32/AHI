@@ -55,6 +55,21 @@ namespace AHI {
       /* The maximum number of children. */
       _AHIA(_P, MaxChildren,	(_AHIA_Dummy+82)),	/* OM_GET */
 
+      /* The current number of children. */
+      _AHIA(_P, NumChildren,	(_AHIA_Dummy+119)),	/* OM_GET */
+      
+      /* True if each child should have its own Buffer. */
+      _AHIA(_P, UseChildBuffers,(_AHIA_Dummy+120)),	/* OM_GET */
+
+      /* Assuming UseChildBuffers is TRUE, how many old sample frames
+       * should be available? */
+      _AHIA(_P, HistorySamples,	(_AHIA_Dummy+121)),	/* OM_GET */
+      
+      /* A list of NumChildren child buffers (struct MinList*). Use
+       * NextObject() for iteration. Unless accessed by a subclass
+       * when in AHIA_Processor_Busy state, the object must be locked
+       * using the AHIM_Lock method first. */
+      _AHIA(_P, ChildBuffers,	(_AHIA_Dummy+122)),	/* OM_GET */
       
       /* Disable processing (pass-through) when TRUE. */
       _AHIA(_P, Disabled,	(_AHIA_Dummy+22)),	/* OM_NEW,
