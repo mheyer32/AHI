@@ -116,6 +116,22 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
   ULONG size, samplesize;
   struct Echo *es;
 
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+#endif
+  }
+
   /* Set up the delay buffer format */
 
   switch(audioctrl->ac.ahiac_BuffType)
@@ -136,8 +152,8 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
   size = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
 
-  es = AllocVec( sizeof(struct Echo) + size,
-		 MEMF_PUBLIC | MEMF_CLEAR );
+  es = AHIAllocVec( sizeof(struct Echo) + size,
+                    data_flags );
   
   if(es)
   {
@@ -207,7 +223,7 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
       // Should not happen!
       default:
-        FreeVec(es);
+        AHIFreeVec(es);
         return FALSE;
     }
 
@@ -229,7 +245,7 @@ free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl )
 
   // Hide it from mixing routine before freeing it!
   audioctrl->ahiac_EffDSPEchoStruct = NULL;
-  FreeVec(p);
+  AHIFreeVec(p);
 
   audioctrl->ahiac_EchoMasterVolume = 0x10000;
   update_MasterVolume( audioctrl );
