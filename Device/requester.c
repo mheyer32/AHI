@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.15  1997/03/08 18:12:56  lcs
+* The freqgadget wasn't ghosted if the requester was opened
+* with audioid set to AHI_DEFAULT_ID. Now it is
+*
 * Revision 1.14  1997/02/15 14:02:02  lcs
 * All functions that take an audio mode id as input can now use
 * AHI_DEFAULT_ID as well.
@@ -405,7 +409,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
           GTSL_LevelPlace,PLACETEXT_RIGHT,
           GTSL_DispFunc, IndexToFrequency,
           GA_RelVerify,TRUE,
-          GA_Disabled,!sliderlevels,
+          GA_Disabled,!sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID),
           TAG_DONE);
       req->slidergadget=gad;   // Save for HadleReq()...
     }
