@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/05/28 20:35:18  lcs
+* AudioID and MixFreq is not changed if the user cancels the requester
+* anymore.
+*
 * Revision 4.2  1997/04/14 01:50:39  lcs
 * Spellchecked
 *
@@ -726,14 +730,19 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
       }
     }
   }
-  req->Req.ahiam_AudioID = req->tempAudioID;
-  if(req->tempAudioID != AHI_DEFAULT_ID)
+
+  if(rc)
   {
-    req->Req.ahiam_MixFreq = req->tempFrequency;
-  }
-  else
-  {
-    req->Req.ahiam_MixFreq = AHI_DEFAULT_FREQ;
+    req->Req.ahiam_AudioID = req->tempAudioID;
+
+    if(req->tempAudioID != AHI_DEFAULT_ID)
+    {
+      req->Req.ahiam_MixFreq = req->tempFrequency;
+    }
+    else
+    {
+      req->Req.ahiam_MixFreq = AHI_DEFAULT_FREQ;
+    }
   }
   return rc;
 }
