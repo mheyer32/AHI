@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.20  1999/01/12 02:22:15  lcs
+# Began the move to GNU make.
+#
 # Revision 4.19  1998/03/13 10:16:48  lcs
 # More header.a changes...
 #
@@ -39,24 +42,24 @@ TARGET	= AHI:User/Devs/ahi.device
 
 ## Sources
 
-SRCCOMMON = asmfuncs.a audioctrl.c database.c debug.c devcommands.c device.c\
-devsupp.a effectinit.c footer.a header.a modeinfo.c requester.c sound.c
+SRCCOMMON = asmfuncs.s audioctrl.c database.c debug.c devcommands.c device.c\
+devsupp.s effectinit.c footer.s header.s modeinfo.c requester.c sound.c
 
-SRC68K	= dspecho_68k.a mixer_68k.a
+SRC68K	= dspecho_68k.s mixer_68k.s
 
-SRCPPC	= dspecho_ppc.c mixer_ppc.c
+SRCPPC	= dspecho.c mixer.c
 
-SRCGEN	= dspecho_generic.c mixer_generic.c
+SRCGEN	= dspecho.c mixer.c
 
 SOURCES = $(SRCCOMMON) $(SRC68K) $(SRCPPC) $(SRCGEN)
 
 
 ## Prototypes
 
-PROTOS = CSOURCE asmfuncs.a debug.c CSOURCE devsupp.a requester.c device.c\
-audioctrl.c CSOURCE mixer_68k.a mixer_ppc.c mixer_generic.c modeinfo.c\
+PROTOS = CSOURCE asmfuncs.s debug.c CSOURCE devsupp.s requester.c device.c\
+audioctrl.c CSOURCE mixer_68k.s mixer.c modeinfo.c\
 database.c effectinit.c devcommands.c sound.c\
-dspecho_generic.c dspecho_ppc.c CSOURCE dspecho_68k.a
+dspecho.c CSOURCE dspecho_68k.s
 
 
 ## Objects
@@ -67,9 +70,9 @@ asmfuncs.o audioctrl.o effectinit.o sound.o footer.o
 
 OBJ68K	= dspecho_68k.o mixer_68k.o
 
-OBJPPC	= dspecho_ppc.o mixer_ppc.o
+OBJPPC	= dspecho.o mixer.o
 
-OBJGEN	= dspecho_generic.o mixer_generic.o
+OBJGEN	= dspecho.o mixer.o
 
 OBJECTS68k = $(OBJCOMMON) $(OBJ68K)
 OBJECTSPPC = $(OBJCOMMON) $(OBJPPC)
@@ -294,8 +297,8 @@ gst:
 ##
 ###############################################################################
 
-.a.o:
-	$(ASM) $(AFLAGS) $*.a
+.s.o:
+	$(ASM) $(AFLAGS) $*.s
 
 .c.o:
 	$(CCOMP) $(CFLAGS) $*.c
@@ -312,14 +315,14 @@ $(OBJECTS):	gst
 
 # Asm dependencies
 
-asmfuncs.o:	asmfuncs.a ahi_def.i
-devsupp.o:	devsupp.a
-dspecho_68k.o:	dspecho_68k.a ahi_def.i dsp.i
-footer.o:	footer.a
-header.o:	header.a ahi_def.i ahi.device_rev.i
-#	$(ASM) $(AFLAGS) header.a
+asmfuncs.o:	asmfuncs.s ahi_def.i
+devsupp.o:	devsupp.s
+dspecho_68k.o:	dspecho_68k.s ahi_def.i dsp.i
+footer.o:	footer.s
+header.o:	header.s ahi_def.i ahi.device_rev.i
+#	$(ASM) $(AFLAGS) header.s
 
-mixer_68k.o:	mixer_68k.a ahi_def.i dsp.i
+mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
 	
 
 
@@ -367,17 +370,17 @@ includes:
 ###############################################################################
 
 autodocs:
-	join asmfuncs.a \#?.c AS T:AHI-AD.tmp
+	join asmfuncs.s \#?.c AS T:AHI-AD.tmp
 
 #	robodoc >NIL: T:AHI-AD.tmp ahi.doc GUIDE SORT GENXREF T:ahi.xref
-#	robodoc >NIL: AHI:Developer/drivers/paula/paula_audio.a ahi_sub.doc GUIDE SORT GENXREF T:ahi_sub.xref
+#	robodoc >NIL: AHI:Developer/drivers/paula/paula_audio.s ahi_sub.doc GUIDE SORT GENXREF T:ahi_sub.xref
 
 	robodoc T:AHI-AD.tmp ahi.doc TOC SORT #XREF T:ahi_sub.xref
 	robodoc T:AHI-AD.tmp ahi.guide GUIDE SORT #XREF T:ahi_sub.xref
 	robodoc T:AHI-AD.tmp ahi.html HTML SORT ;XREF T:ahi_sub.xref
-	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.doc TOC SORT #XREF T:ahi.xref
-	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.guide GUIDE SORT #XREF T:ahi.xref
-	robodoc AHI:Developer/drivers/paula/paula_audio.a ahi_sub.html HTML SORT #XREF T:ahi.xref
+	robodoc AHI:Developer/drivers/paula/paula_audio.s ahi_sub.doc TOC SORT #XREF T:ahi.xref
+	robodoc AHI:Developer/drivers/paula/paula_audio.s ahi_sub.guide GUIDE SORT #XREF T:ahi.xref
+	robodoc AHI:Developer/drivers/paula/paula_audio.s ahi_sub.html HTML SORT #XREF T:ahi.xref
 	--move ahi.doc ahi.guide ahi.html ahi_sub.doc ahi_sub.guide ahi_sub.html AHI:Developer/Docs/ QUIET
 	--delete T:ahi.xref T:ahi_sub.xref T:AHI-AD.tmp QUIET
 
@@ -415,7 +418,7 @@ catalogs:
 
 #DEPENDENCIES
 
-asmfuncs.o: asmfuncs.a ahi_def.h ahi_device.h dsp.h
+asmfuncs.o: asmfuncs.s ahi_def.h ahi_device.h dsp.h
 
 audioctrl.o: audioctrl.c ahi_def.h ahi_device.h dsp.h\
 	 audioctrl_protos.h mixer_protos.h asmfuncs_protos.h debug_protos.h
@@ -431,14 +434,14 @@ devcommands.o: devcommands.c ahi_def.h ahi_device.h dsp.h\
 device.o: device.c ahi_def.h ahi_device.h dsp.h localize.h\
 	 device_protos.h devcommands_protos.h
 
-devsupp.o: devsupp.a
+devsupp.o: devsupp.s
 
 effectinit.o: effectinit.c ahi_def.h ahi_device.h dsp.h\
 	 effectinit_protos.h asmfuncs_protos.h mixer_protos.h
 
-footer.o: footer.a
+footer.o: footer.s
 
-#header.o: header.a
+#header.o: header.s
 
 modeinfo.o: modeinfo.c ahi_def.h ahi_device.h dsp.h localize.h\
 	 modeinfo_protos.h audioctrl_protos.h debug_protos.h
@@ -449,16 +452,16 @@ requester.o: requester.c ahi_def.h ahi_device.h dsp.h localize.h\
 sound.o: sound.c ahi_def.h ahi_device.h dsp.h sound_protos.h\
 	 debug_protos.h effectinit_protos.h
 
-dspecho_68k.o: dspecho_68k.a ahi_def.h ahi_device.h dsp.h
+dspecho_68k.o: dspecho_68k.s ahi_def.h ahi_device.h dsp.h
 
-mixer_68k.o: mixer_68k.a ahi_def.h ahi_device.h dsp.h
+mixer_68k.o: mixer_68k.s ahi_def.h ahi_device.h dsp.h
 
-dspecho_ppc.o: dspecho_ppc.c
+dspecho.o: dspecho.c
 
-mixer_ppc.o: mixer_ppc.c
+mixer.o: mixer.c
 
-dspecho_generic.o: dspecho_generic.c ahi_def.h ahi_device.h dsp.h
+dspecho.o: dspecho.c ahi_def.h ahi_device.h dsp.h
 
-mixer_generic.o: mixer_generic.c ahi_def.h ahi_device.h dsp.h\
+mixer.o: mixer.c ahi_def.h ahi_device.h dsp.h\
 	 mixer_generic_protos.h asmfuncs_protos.h
 

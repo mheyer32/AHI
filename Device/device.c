@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.14  1999/01/12 02:22:04  lcs
+* Began the move to GNU make.
+*
 * Revision 4.13  1998/03/13 10:16:48  lcs
 * Now uses signals in PlayRequest(), instead of busy-waiting or Delay().
 *
@@ -21,9 +24,8 @@
 //#define DEBUG
 //#define DEBUG_R
 
+#include <config.h>
 #include <CompilerSpecific.h>
-#include "ahi_def.h"
-#include "localize.h"
 
 #include <exec/alerts.h>
 #include <exec/errors.h>
@@ -40,6 +42,10 @@
 #include <proto/iffparse.h>
 
 #include <stddef.h>
+
+#include "ahi_def.h"
+#include "localize.h"
+#include "version.h"
 
 #ifndef  noprotos
 
@@ -75,15 +81,143 @@ BPTR ASMCALL DevExpunge ( REG(a6, struct AHIBase *) );
 void ASMCALL DevProcEntry ( void );
 
 
+/***** ahi.device/--background-- *******************************************
+*
+*   PURPOSE
+*
+*       The 'ahi.device' was first created because the lack of standards
+*       when it comes to sound cards on the Amiga. Another reason was to
+*       make it easier to write multi-channel music programs.
+*
+*       This device is by no means the final and perfect solution. But
+*       hopefully, it can evolve into something useful until AT brings you
+*       The Real Thing (TM).
+*
+*   OVERVIEW
+*
+*       Please see the document "AHI Developer's Guide" for more
+*       information.
+*
+*
+*       * Driver based
+*
+*       Each supported sound card is controlled by a library-based audio
+*       driver. For a 'dumb' sound card, a new driver could be written in
+*       a few hours. For a 'smart' sound card, it is possible to utilize an
+*       on-board DSP, for example, to maximize performance and sound quality.
+*       For sound cards with own DSP but little or no memory, it is possible
+*       to use the main CPU to mix channels and do the post-processing
+*       with the DSP. Drivers are available for most popular sound cards,
+*       as well as an 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
+*       driver.
+*  
+*       * Fast, powerful mixing routines (yeah, right... haha)
+*  
+*       The device's mixing routines mix 8- or 16-bit signed samples, both
+*       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
+*       (with stereo panning if desired) data, using any number of channels
+*       (as long as 'any' means less than 128).  Tables can be used speed
+*       the mixing up (especially when using 8-bit samples).  The samples can
+*       have any length (including odd) and can have any number of loops.
+*       There are also so-called HiFi mixing routines that can be used, that
+*       use linear interpolation and gives 32 bit output.
+*       
+*       * Support for non-realtime mixing
+*  
+*       By providing a timing feature, it is possible to create high-
+*       quality output even if the processing power is lacking, by saving
+*       the output to disk, for example as an IFF AIFF or 8SXV file.
+*  
+*       * Audio database
+*  
+*       Uses ID codes, much like Screenmode IDs, to select the many
+*       parameters that can be set. The functions to access the audio
+*       database are not too different from those in 'graphics.library'.
+*       The device also features a requester to get an ID code from the
+*       user.
+*  
+*       * Both high- and low-level protocol
+*  
+*       By acting both like a device and a library, AHI gives the programmer
+*       a choice between full control and simplicity. The device API allows
+*       several programs to use the audio hardware at the same time, and
+*       the AUDIO: dos-device driver makes playing and recording sound very
+*       simple for both the programmer and user.
+*  
+*       * Future Compatible
+*  
+*       When AmigaOS gets device-independent audio worth it's name, it should
+*       not be too difficult to write a driver for AHI, allowing applications
+*       using 'ahi.device' to automatically use the new OS interface. At
+*       least I hope it wont.
+*
+*
+****************************************************************************
+*
+*/
+
+
+/******************************************************************************
+** Globals ********************************************************************
+******************************************************************************/
+
+const char DevName[]  = AHINAME;
+const char IDString[] = "ahi.device " VERS "\r\n";
+const char VersTag[]  = "$VER: ahi.device " VERS " "
+                        "©1994-1999 Martin Blom. "
+#ifdef mc68060
+                        "68060"
+#else
+# ifdef mc68040
+                        "68040"
+# else
+#  ifdef mc68030
+                        "68030"
+#  else
+#   ifdef mc68020
+                        "68020"
+#   else
+#    ifdef mc68000
+                        "68000"
+#    endif /* mc68000 */
+#   endif /* mc68020 */
+#  endif /* mc68030 */
+# endif /* mc68040 */
+#endif /* mc68060 */
+
+#ifdef VERSIONPOWERUP
+                        "/PowerUp"
+#endif
+#ifdef VERSIONWARPUP
+                        "/WarpUp"
+#endif
+                        " version.\r\n";
+
+
+struct AHIBase            *AHIBase        = NULL;
+struct DosLibrary         *DOSBase        = NULL;
+struct Library            *GadToolsBase   = NULL;
+struct GfxBase            *GfxBase        = NULL;
+struct Library            *IFFParseBase   = NULL;
+struct IntuitionBase      *IntuitionBase  = NULL;
+struct Library            *LocaleBase     = NULL;
+struct Library            *TimerBase      = NULL;
+struct Library            *UtilityBase    = NULL;
+
+static struct timerequest *TimerIO        = NULL;
+static struct timeval     *timeval        = NULL;
+
+ULONG			                 DriverVersion  = 2;
+ULONG			                 Version        = VERSION;
+ULONG			                 Revision       = REVISION;
+
+
 /******************************************************************************
 ** OpenLibs *******************************************************************
 ******************************************************************************/
 
 // This function is called by the device startup code when the device is
 // first loaded into memory.
-
-extern struct timerequest *TimerIO;
-extern struct timeval     *timeval;
 
 BOOL ASMCALL
 OpenLibs ( REG(a6, struct ExecBase *SysBase) )

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.20  1999/01/12 02:22:00  lcs
+* Began the move to GNU make.
+*
 * Revision 4.19  1998/08/01 02:14:41  lcs
 * Changed DEVS:ahi to DEVS:AHI
 *
@@ -120,12 +123,21 @@ RecalcBuff ( Fixed freq, struct AHIPrivAudioCtrl *audioctrl )
 
 #define DEFPLAYERFREQ (50<<16)
 
-ULONG DummyHook()
+static ULONG
+DummyHook()
 {
   return 0;
 }
 
-struct Hook DefPlayerHook = {{0, 0}, DummyHook, 0, 0};
+
+static struct Hook DefPlayerHook =
+{
+  {0, 0},
+  DummyHook,
+  0,
+  0
+};
+
 
 static struct TagItem boolmap[] =
 {
