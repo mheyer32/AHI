@@ -219,8 +219,7 @@ _ClassInit(struct ClassLibrary*  library,
 		sizeof (struct AHIClassData), 0);
   }
   
-  if (AHIClassBase->common.cl.cl_Class == NULL)
-  {
+  if (AHIClassBase->common.cl.cl_Class == NULL) {
     Req("Unable to create " _AHI_CLASS_NAME " Class.");
     goto error;
   }

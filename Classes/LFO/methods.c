@@ -241,8 +241,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  switch (msg->opg_AttrID)
-  {
+  switch (msg->opg_AttrID) {
     case AHIA_Title:
       *msg->opg_Storage = (ULONG) "AHI LFO";
       break;

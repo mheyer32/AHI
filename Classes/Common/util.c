@@ -15,7 +15,7 @@
 void
 ReqA( const char*           text,
       APTR                  args ) {
-  struct EasyStruct es =  {
+  struct EasyStruct es = {
     sizeof (struct EasyStruct),
     0,
     (STRPTR) ClassName,
