@@ -37,8 +37,6 @@
  * dest	Pointer to Destination (will be updated)
  */
 
-#ifndef __amithlon__
-
 struct sample
 {
     WORD left;
@@ -191,5 +189,3 @@ RecS32S( ULONG  size,
   *offset += ( offs >> 32 ) * sizeof( struct sample* );
   *dest   = to;
 }
-
-#endif

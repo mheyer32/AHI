@@ -603,12 +603,8 @@ OpenLibs ( void )
   OpenahiCatalog(NULL, NULL);
 
 #if defined( __amithlon__ )
-  Req( "This is an *alpha* release of AHI/x86.\n"
-       "I really made it just to show off ... You\n"
-       "should use the m68k version for now.\n"
-       "\n"
-       "Totally unoptimized! It's big and slow.\n"
-       "You *have* to use \"AddAudioModes REFRESH\".\n"
+  Req( "This is a *beta* release of AHI/x86,\n"
+       "using the generic 'C' mixing routines.\n"
        "\n"
        "Detailed bug reports and patches are welcome.\n"
 	 "/Martin Blom <martin@blom.org>\n" );
