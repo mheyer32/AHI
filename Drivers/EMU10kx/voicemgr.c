@@ -29,6 +29,7 @@
  **********************************************************************
  */
 
+#include "linuxsupport.h"
 #include "voicemgr.h"
 #include "8010.h"
 
@@ -55,18 +56,22 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 	}
 
 	/* Fill in virtual memory table */
-	for (pagecount = 0; pagecount < pages; pagecount++) {
-		if ((mem->addr[pagecount] = pci_alloc_consistent(card->pci_dev, PAGE_SIZE, &mem->dma_handle[pagecount]))
-			== NULL) {
-			mem->pages = pagecount;
-			DPF(1, "couldn't allocate dma memory\n");
-			return -1;
-		}
 
-		DPD(2, "Virtual Addx: %p\n", mem->addr[pagecount]);
+	if ((mem->addr = pci_alloc_consistent(card->pci_dev, pages * PAGE_SIZE, &mem->dma_handle))
+	    == NULL) {
+		mem->pages = 0;
+		DPF(1, "couldn't allocate dma memory\n");
+		return -1;
+	}
+
+	for (pagecount = 0; pagecount < pages; pagecount++) {
+		DPD(2, "Virtual Addx: %p\n", mem->addr + pagecount * PAGE_SIZE);
 
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {
-			busaddx = mem->dma_handle[pagecount] + i * EMUPAGESIZE;
+			busaddx = (u32) pci_virt_to_bus( card->pci_dev,
+							 mem->addr
+							 + pagecount * PAGE_SIZE )
+			  + i * EMUPAGESIZE;
 
 			DPD(3, "Bus Addx: %#lx\n", busaddx);
 
@@ -94,11 +99,11 @@ void emu10k1_voice_free_buffer(struct emu10k1_card *card, struct voice_mem *mem)
 	if (mem->emupageindex < 0)
 		return;
 
-	for (pagecount = 0; pagecount < mem->pages; pagecount++) {
-		pci_free_consistent(card->pci_dev, PAGE_SIZE,
-					mem->addr[pagecount],
-					mem->dma_handle[pagecount]);
+	pci_free_consistent(card->pci_dev, mem->pages * PAGE_SIZE,
+			    mem->addr,
+			    mem->dma_handle);
 
+	for (pagecount = 0; pagecount < mem->pages; pagecount++) {
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {
 			pageindex = mem->emupageindex + pagecount * PAGE_SIZE / EMUPAGESIZE + i;
 			((u32 *) card->virtualpagetable.addr)[pageindex] =

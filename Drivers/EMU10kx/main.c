@@ -1,21 +1,85 @@
-
-#include <exec/memory.h>
-#include <amithlon/powerpci.h>
-#include <pci/powerpci_pci.h>
-#include <proto/exec.h>
-#include <proto/dos.h>
-#include <proto/powerpci.h>
-#undef REG    // Be gone!
-#undef SAVEDS // Go away!
-
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-
-#include <CompilerSpecific.h>
-
-#include "DriverData.h"
-#include "version.h"
+ /*
+ **********************************************************************
+ *     main.c - Creative EMU10K1 audio driver
+ *     Copyright 1999, 2000 Creative Labs, Inc.
+ *
+ **********************************************************************
+ *
+ *     Date                 Author          Summary of changes
+ *     ----                 ------          ------------------
+ *     October 20, 1999     Bertrand Lee    base code release
+ *     November 2, 1999     Alan Cox        cleaned up stuff
+ *
+ **********************************************************************
+ *
+ *     This program is free software; you can redistribute it and/or
+ *     modify it under the terms of the GNU General Public License as
+ *     published by the Free Software Foundation; either version 2 of
+ *     the License, or (at your option) any later version.
+ *
+ *     This program is distributed in the hope that it will be useful,
+ *     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *     GNU General Public License for more details.
+ *
+ *     You should have received a copy of the GNU General Public
+ *     License along with this program; if not, write to the Free
+ *     Software Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139,
+ *     USA.
+ *
+ **********************************************************************
+ *
+ *      Supported devices:
+ *      /dev/dsp:        Standard /dev/dsp device, OSS-compatible
+ *      /dev/dsp1:       Routes to rear speakers only	 
+ *      /dev/mixer:      Standard /dev/mixer device, OSS-compatible
+ *      /dev/midi:       Raw MIDI UART device, mostly OSS-compatible
+ *	/dev/sequencer:  Sequencer Interface (requires sound.o)
+ *
+ *      Revision history:
+ *      0.1 beta Initial release
+ *      0.2 Lowered initial mixer vol. Improved on stuttering wave playback. Added MIDI UART support.
+ *      0.3 Fixed mixer routing bug, added APS, joystick support.
+ *      0.4 Added rear-channel, SPDIF support.
+ *	0.5 Source cleanup, SMP fixes, multiopen support, 64 bit arch fixes,
+ *	    moved bh's to tasklets, moved to the new PCI driver initialization style.
+ *	0.6 Make use of pci_alloc_consistent, improve compatibility layer for 2.2 kernels,
+ *	    code reorganization and cleanup.
+ *	0.7 Support for the Emu-APS. Bug fixes for voice cache setup, mmaped sound + poll().
+ *          Support for setting external TRAM size.
+ *      0.8 Make use of the kernel ac97 interface. Support for a dsp patch manager.
+ *      0.9 Re-enables rear speakers volume controls
+ *     0.10 Initializes rear speaker volume.
+ *	    Dynamic patch storage allocation.
+ *	    New private ioctls to change control gpr values.
+ *	    Enable volume control interrupts.
+ *	    By default enable dsp routes to digital out. 
+ *     0.11 Fixed fx / 4 problem.
+ *     0.12 Implemented mmaped for recording.
+ *	    Fixed bug: not unreserving mmaped buffer pages.
+ *	    IRQ handler cleanup.
+ *     0.13 Fixed problem with dsp1
+ *          Simplified dsp patch writing (inside the driver)
+ *	    Fixed several bugs found by the Stanford tools
+ *     0.14 New control gpr to oss mixer mapping feature (Chris Purnell)
+ *          Added AC3 Passthrough Support (Juha Yrjola)
+ *          Added Support for 5.1 cards (digital out and the third analog out)
+ *     0.15 Added Sequencer Support (Daniel Mack)
+ *          Support for multichannel pcm playback (Eduard Hasenleithner)
+ *     0.16 Mixer improvements, added old treble/bass support (Daniel Bertrand)
+ *          Small code format cleanup.
+ *          Deadlock bug fix for emu10k1_volxxx_irqhandler().
+ *     0.17 Fix for mixer SOUND_MIXER_INFO ioctl.
+ *	    Fix for HIGHMEM machines (emu10k1 can only do 31 bit bus master) 
+ *	    midi poll initial implementation.
+ *	    Small mixer fixes/cleanups.
+ *	    Improved support for 5.1 cards.
+ *     0.18 Fix for possible leak in pci_alloc_consistent()
+ *          Cleaned up poll() functions (audio and midi). Don't start input.
+ *	    Restrict DMA pages used to 512Mib range.
+ *	    New AC97_BOOST mixer ioctl.
+ *
+ *********************************************************************/
 
 #include "linuxsupport.h"
 
@@ -24,93 +88,6 @@
 #include "hwaccess.h"
 #include "voicemgr.h"
 
-const char  LibName[]     = "emu10kx.audio";
-const char  LibIdString[] = "emu10kx.audio " VERS "\r\n";
-const UWORD LibVersion    = VERSION;
-const UWORD LibRevision   = REVISION;
-
-
-
-struct Library *ppcibase = NULL;
-
-struct DriverData*
-AllocDriverData( ULONG card_num );
-
-void
-FreeDriverData( struct DriverData* driver_data );
-
-void __chkabort(void) {}
-
-static BOOL
-OpenLibs( void )
-{ 
-  ppcibase = OpenLibrary( "powerpci.library", 1 );
-
-  if( ppcibase == NULL )
-  {
-    printf( "Unable to open 'powerpci.library' version 1.\n" );
-    return FALSE;
-  }
-
-  return TRUE;
-}
-
-
-static void
-CloseLibs( void )
-{
-  CloseLibrary( ppcibase );
-  ppcibase = NULL;
-}
-
-
-static ASM INTERRUPT ULONG
-EMU10kx_interrupt( REG( a1, struct DriverData* dd ) )
-{
-  ULONG intreq;
-  BOOL  handled = FALSE;
-  
-  while( (intreq = *(ULONG*) (dd->card.iobase + IPR) ) != 0 )
-  {
-    if( intreq & IPR_INTERVALTIMER )
-    {
-      // ...
-    }
-    
-    if( intreq & IPR_FXDSP )
-    {
-      // ...
-    }
-
-    // Clear interrupt pending bit(s)
-    *(ULONG*) (dd->card.iobase + IPR) = intreq;
-    
-    handled = TRUE;
-  }
-
-  return handled;
-}
-
-
-
-
-static u32 samplerate_to_linearpitch(u32 samplingrate)
-{
-  samplingrate = (samplingrate << 8) / 375;
-  return (samplingrate >> 1) + (samplingrate & 1);
-}
-
-
-
-
-
-
-
-
-
-
-
-
 static void voice_init(struct emu10k1_card *card)
 {
 	int i;
@@ -118,14 +95,6 @@ static void voice_init(struct emu10k1_card *card)
 	for (i = 0; i < NUM_G; i++)
 		card->voicetable[i] = VOICE_USAGE_FREE;
 }
-#ifdef lcs
-static void timer_init(struct emu10k1_card *card)
-{
-	INIT_LIST_HEAD(&card->timers);
-	card->timer_delay = TIMER_STOPPED;
-	card->timer_lock = SPIN_LOCK_UNLOCKED;
-}
-#endif
 
 static void addxmgr_init(struct emu10k1_card *card)
 {
@@ -644,14 +613,13 @@ static int hw_init(struct emu10k1_card *card)
 	return ret;
 }
 
-static int emu10k1_init(struct emu10k1_card *card)
+int emu10k1_init(struct emu10k1_card *card)
 {
 	/* Init Card */
 	if (hw_init(card) < 0)
 		return -1;
 
 	voice_init(card);
-//	timer_init(card);
 	addxmgr_init(card);
 
 	DPD(2, "  hw control register -> %#x\n", emu10k1_readfn0(card, HCFG));
@@ -659,7 +627,7 @@ static int emu10k1_init(struct emu10k1_card *card)
 	return 0;
 }
 
-static void emu10k1_cleanup(struct emu10k1_card *card)
+void emu10k1_cleanup(struct emu10k1_card *card)
 {
   int ch;
 
@@ -716,227 +684,8 @@ static void emu10k1_cleanup(struct emu10k1_card *card)
 }
 
 
+#if 0    
 
-
-
-
-
-
-
-
-struct DriverData*
-AllocDriverData( ULONG card_num )
-{
-  struct DriverData*  dd;
-  UWORD            command_word;
-  int              ret;
-
-  dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
-
-  if( dd == NULL )
-  {
-    printf( "Unable to allocate driver structure.\n " );
-  }
-  else
-  {
-    dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->interrupt.is_Node.ln_Pri  = 0;
-    dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->interrupt.is_Code         = (void(*)(void)) EMU10kx_interrupt;
-    dd->interrupt.is_Data         = (APTR) dd;
-    
-    dd->card.pci_dev = 0;
-
-    do
-    {
-      dd->card.pci_dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-						   PCI_DEVICE_ID_CREATIVE_EMU10K1,
-						   dd->card.pci_dev );
-    } while( dd->card.pci_dev != 0 && card_num-- != 0 );
-
-    if( dd->card.pci_dev == NULL )
-    {
-      printf( "Unable to find EMU10k subsystem.\n" );
-      goto error;
-    }
-
-//  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
-//  {
-//    printf( "Unable to set DMA mask for card\n." );
-//    goto error;
-//  }
-
-    if( pci_request( dd->card.pci_dev, (STRPTR) LibName, NULL ) )
-    {
-      printf( "Unable to claim I/O resources.\n" );
-      goto error;
-    }
-
-    if( pci_enable( dd->card.pci_dev ) )
-    {
-      printf( "Unable to enable card.\n" );
-      goto error;
-    }
-
-    command_word = pci_read_conf_word( dd->card.pci_dev, PCI_COMMAND );
-    command_word |= PCI_CMD_IO_MASK | PCI_CMD_MEMORY_MASK | PCI_CMD_MASTER_MASK;
-    pci_write_conf_word( dd->card.pci_dev, PCI_COMMAND, command_word );
-
-    // FIXME: How about latency/pcibios_set_master()??
-    
-    dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 );
-    dd->card.length  = ( (ULONG) pci_get_base_end( dd->card.pci_dev, 0 ) -
-			 (ULONG) dd->card.iobase ) + 1;
-
-    dd->card.irq     = pci_ask_irq( dd->card.pci_dev ) >> 8;
-    
-    dd->card.chiprev = pci_read_conf_byte( dd->card.pci_dev, PCI_REVISION_ID );
-    dd->card.model   = pci_read_conf_word( dd->card.pci_dev, PCI_SUBSYSTEM_ID );
-    dd->card.isaps   = ( pci_read_conf_long( dd->card.pci_dev,
-					     PCI_SUBSYSTEM_VENDOR_ID )
-			 == EMU_APS_SUBID );
-
-    pci_add_irq( dd->card.pci_dev, &dd->interrupt );
-    dd->interrupt_added = TRUE;
-
-#if 0
-    ret = emu10k1_audio_init(card);
-    if(ret < 0) {
-      printf( "emu10k1: cannot initialize audio devices\n");
-      goto error;
-    }
-
-    ret = emu10k1_mixer_init(card);
-    if(ret < 0) {
-      printf( "emu10k1: cannot initialize AC97 codec\n");
-      goto error;
-    }
-
-    ret = emu10k1_midi_init(card);
-    if (ret < 0) {
-      printf( "emu10k1: cannot register midi device\n");
-      goto error;
-    }
-#endif
-
-    emu10k1_writeac97( &dd->card, AC97_RESET, 0L);
-	
-    Delay( 1 );
-
-    if (emu10k1_readac97( &dd->card, AC97_RESET ) & 0x8000) {
-      printk( "ac97_codec: ac97 codec not present\n");
-    }
-    else
-    {
-      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0000 );
-      emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x000a );
-      emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
-      emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x000a );
-      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x000a );
-      emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0a0a );
-    }
-	
-    if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
-    {
-      printf( "emu10k1: SBLive! 5.1 &dd->card detected\n"); 
-      sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
-      emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
-    }
-    
-    
-    ret = emu10k1_init(&dd->card);
-    if (ret < 0) {
-      printf( "emu10k1: cannot initialize device\n");
-      goto error;
-    }
-
-//    if (dd->card.isaps)
-//      emu10k1_ecard_init(card);
-
-    return dd;
-
-error:
-    FreeDriverData( dd );
-  }
-
-  return NULL;
-}
-
-
-void
-FreeDriverData( struct DriverData* dd )
-{
-  if( dd != NULL )
-  {
-    if( dd->card.pci_dev != NULL )
-    {
-      emu10k1_cleanup( &dd->card );
-//      emu10k1_midi_cleanup(dd->card);
-//      emu10k1_mixer_cleanup(dd->card);
-//      emu10k1_audio_cleanup(dd->card);
-      
-      pci_disable( dd->card.pci_dev );
-      pci_release( dd->card.pci_dev );
-
-      if( dd->interrupt_added )
-      {
-	pci_rem_irq( dd->card.pci_dev, &dd->interrupt );
-      }
-    }
-
-    FreeVec( dd );
-  }
-}
-
-
-int
-main( int argc, char* argv[] )
-{
-  FILE*       file = NULL;
-  struct stat st;
-  int         sample_rate;
-  
-  if( argc != 3 )
-  {
-    printf( "Usage: emu10kx.audio <16 bit stereo sound file> <sample rate>\n" );
-    return 10;
-  }
-
-  sample_rate = atoi( argv[ 2 ] );
-  
-  file = fopen( argv[ 1 ], "rb" );
-
-  if( file == NULL )
-  {
-    printf( "Unable to open sample file.\n" );
-    return 20;
-  }
-
-  stat( argv[ 1 ], &st );
-
-  if( OpenLibs() )
-  {
-    struct DriverData* dd = AllocDriverData( 0 );
-    
-    if( dd == NULL )
-    {
-      printf( "No SBLive! card?\n" );
-    }
-    else
-    {
-      printf( "pci_dev: %08x; iobase: %08x; iolen: %d; irq: %d; "
-	      "chip_rev: %d; model: %04x\n",
-	      (ULONG) dd->card.pci_dev,
-	      (ULONG) dd->card.iobase,
-	      dd->card.length,
-	      dd->card.irq,
-	      dd->card.chiprev,
-	      dd->card.model );
 
       printf( "Starting sound.\n" );
 
@@ -1071,12 +820,4 @@ main( int argc, char* argv[] )
 	  emu10k1_voice_free_buffer( &dd->card, &voice.mem );
 	}
       }
-      
-      FreeDriverData( dd );
-    }
-  }
-
-  CloseLibs();
-
-  return 0;
-}
+#endif

@@ -61,7 +61,7 @@ FALSE		.EQU	0
 
 	CHUNK_START	AUDM
 1:	
-	.long		AHIDB_AudioID,	0x001e0001
+	.long		AHIDB_AudioID,	0x001e0002
 	.long		AHIDB_Volume,	TRUE
 	.long		AHIDB_Panning,	TRUE
 	.long		AHIDB_Stereo,	TRUE
@@ -75,7 +75,7 @@ FALSE		.EQU	0
 		
 	CHUNK_START	AUDM
 1:	
-	.long		AHIDB_AudioID,	0x001e0001
+	.long		AHIDB_AudioID,	0x001e0003
 	.long		AHIDB_Volume,	TRUE
 	.long		AHIDB_Panning,	FALSE
 	.long		AHIDB_Stereo,	FALSE
@@ -89,7 +89,7 @@ FALSE		.EQU	0
 
 	CHUNK_START	AUDM
 1:	
-	.long		AHIDB_AudioID,	0x001e0001
+	.long		AHIDB_AudioID,	0x001e0004
 	.long		AHIDB_Volume,	TRUE
 	.long		AHIDB_Panning,	TRUE
 	.long		AHIDB_Stereo,	TRUE

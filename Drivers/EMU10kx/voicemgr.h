@@ -66,8 +66,8 @@ struct voice_param
 
 struct voice_mem {
 	int emupageindex;
-	void *addr[BUFMAXPAGES];
-	dma_addr_t dma_handle[BUFMAXPAGES];
+	void *addr;
+	dma_addr_t dma_handle;
 	u32 pages;
 };
 
