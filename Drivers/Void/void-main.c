@@ -372,12 +372,9 @@ _AHIsub_HardwareControl( ULONG                   attribute,
 ** The slave process **********************************************************
 ******************************************************************************/
 
-#undef SysBase
-
 void
 SlaveEntry( void )
 {
-  struct ExecBase*        SysBase = *SysBasePtr;
   struct AHIAudioCtrlDrv* AudioCtrl;
   struct DriverBase*      AHIsubBase;
   struct VoidBase*        VoidBase;

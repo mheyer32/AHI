@@ -9,8 +9,6 @@ extern const char  LibIDString[];
 extern const UWORD LibVersion;
 extern const UWORD LibRevision;
 
-extern struct ExecBase* const* SysBasePtr;
-
 void
 ReqA( const char*        text,
       APTR               args,
