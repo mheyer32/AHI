@@ -25,9 +25,9 @@
 
 #ifdef __AMIGAOS4__
 #include <proto/expansion.h>
+#define __NOLIBBASE__
 #include <proto/ahi_sub.h>
 #include <proto/utility.h>
-
 #else
 #include <libraries/openpci.h>
 #include <proto/openpci.h>
