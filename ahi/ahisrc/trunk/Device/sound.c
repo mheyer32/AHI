@@ -128,12 +128,6 @@ SetVol ( UWORD                    channel,
     Debug_SetVol(channel, volume, pan, audioctrl, flags);
   }
 
-  if(AHIBase->ahib_Flags & AHIBF_NOSURROUND)
-  {
-    volume = abs(volume);
-    pan    = abs(pan);
-  }
-
   AHIsubBase = audioctrl->ahiac_SubLib;
 
   rc = AHIsub_SetVol(channel, volume, pan, &audioctrl->ac, flags);
