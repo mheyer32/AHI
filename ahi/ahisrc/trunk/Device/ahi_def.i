@@ -78,6 +78,7 @@ HAVE_CLIPPING	EQU	1
 	LONG	ahiac_PPCArgument;
 	APTR	ahiac_PPCMixBuffer;
 	APTR	ahiac_PPCMixInterrupt;
+	APTR	ahiac_PPCWarpUpContext;
 	APTR	ahiac_M68KPort;
 	APTR	ahiac_PPCStartupMsg;
 	APTR	ahiac_PPCTask;

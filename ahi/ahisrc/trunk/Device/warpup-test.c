@@ -6,6 +6,7 @@
 #include <proto/powerpc.h>
 
 #include "elfloader.h"
+#include "ppcheader.h"
 
 int TimerBase;
 int MixGeneric;
@@ -18,6 +19,8 @@ int
 main( void )
 {
   PowerPCBase = OpenLibrary( "powerpc.library", 15 );
+
+  printf( "PowerPCBase: 0x%08lx\n", (ULONG) PowerPCBase );
 
   if( PowerPCBase != NULL )
   {
@@ -41,7 +44,9 @@ main( void )
       if( init != NULL && cleanup != NULL )
       {
         LONG status;
-        
+
+        struct WarpUpContext* wc = NULL;
+
         struct PPCArgs init_pps = 
         {
           init,
@@ -50,7 +55,7 @@ main( void )
           NULL,
           0,
           { 
-            (ULONG) PowerPCBase, 0xDEADC0DE, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0
           },
           {
@@ -66,7 +71,7 @@ main( void )
           NULL,
           0,
           { 
-            (ULONG) PowerPCBase, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0,
             0, 0, 0, 0, 0, 0, 0
           },
           {
@@ -74,20 +79,27 @@ main( void )
           }
         };
 
-        void* xlock = NULL;
-        
-        status = RunPPC( &init_pps );
-        xlock  = (void*) init_pps.PP_Regs[ 0 ];
-        
-        printf( "status: %ld; xlock: 0x%08lx\n", status, (ULONG) xlock);
+        wc = AllocVec32( sizeof( struct WarpUpContext ), 
+                         MEMF_CLEAR | MEMF_CHIP );
 
+        wc->PowerPCBase = PowerPCBase;
+
+        init_pps.PP_Regs[ 0 ] = wc;
+        status = RunPPC( &init_pps );
+
+        printf( "status: %ld; xlock: 0x%08lx\n", status, (ULONG) wc->XLock);
+
+        wc->Active      = TRUE;
+        CausePPCInterrupt();
+        wc->Active      = FALSE;
         CausePPCInterrupt();
 
-        cleanup_pps.PP_Regs[ 1 ] = (ULONG) xlock;
-
+        cleanup_pps.PP_Regs[ 0 ] = wc;
         status = RunPPC( &cleanup_pps );
         
         printf( "status: %ld\n", status );
+        
+        FreeVec32( wc );
       }
 
       ELFUnLoadObject( PPCObject );

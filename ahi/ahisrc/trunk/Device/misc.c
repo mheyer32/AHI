@@ -136,17 +136,17 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
 
       new_requirements = requirements & ~MEMF_PPCMASK;
 
-      if( requirements & MEMF_WRITETHROUGHPPC )
-        new_requirements |= MEMF_WRITETHROUGH;
+      if( requirements & ( MEMF_WRITETHROUGHPPC | MEMF_WRITETHROUGHM68K ) )
+      {
+        Req( "Internal error: Illegal memory attribute in AHIAllocVec()." );
+      }
 
-      if( requirements & MEMF_NOCACHEPPC )
-        new_requirements |= MEMF_CACHEOFF;
-      
-      if( requirements & MEMF_NOCACHESYNCPPC )
-        new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED );
-
-      if( requirements & MEMF_NOCACHESYNCM68K )
+      if( requirements & 
+          ( MEMF_NOCACHEPPC | MEMF_NOCACHEM68K |
+            MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K ) )
+      {
         new_requirements |= MEMF_CHIP;            // Sucks!
+      }
 
       return AllocVec32( byteSize, new_requirements );
     }
