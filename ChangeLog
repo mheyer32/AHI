@@ -1,3 +1,24 @@
+2003-09-29  Martin Blom  <martin@blom.org>
+
+	* Released void.audio 5.7.
+
+	* Released filesave.audio 5.4.
+
+	* Released emu10kx.audio to 5.9.a
+
+	* The introduction of --addvectors made a bug in the driver's init
+	code visible. Fixed. [Marcin Kurek]
+
+	* The MorphOS versions of the different modules now use
+	RTF_EXTENDED and rt_Revision.
+
+2003-09-28  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio to 5.8.
+
+	* emu10kx.audio: Added a public semaphore with hooks to control
+	the AC97 mixer.
+
 2003-09-22  Martin Blom  <martin@blom.org>
 
 	* Applied initial AmigaOS4 patches from Davy Wentzler.
