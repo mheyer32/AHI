@@ -8,9 +8,24 @@
 #include <exec/execbase.h>
 #include <proto/exec.h>
 
+#ifndef VERSION68K
+# include <powerup/ppclib/object.h>
+# include <powerup/ppclib/interface.h>
+# include <proto/ppc.h>
+#endif
+
 #include "ahi_def.h"
 #include "version.h"
 #include "device.h"
+#include "localize.h"
+#include "misc.h"
+
+static BOOL
+OpenLibs ( void );
+
+static void
+CloseLibs ( void );
+
 
 /******************************************************************************
 ** Device entry ***************************************************************
@@ -244,3 +259,173 @@ static const APTR InitTable[4] =
   0,
   (APTR) initRoutine
 };
+
+
+static struct timerequest *TimerIO        = NULL;
+static struct timeval     *timeval        = NULL;
+
+/******************************************************************************
+** OpenLibs *******************************************************************
+******************************************************************************/
+
+// This function is called by the device startup code when the device is
+// first loaded into memory.
+
+static BOOL
+OpenLibs ( void )
+{
+  /* Intuition Library */
+
+  IntuitionBase = (struct IntuitionBase *) OpenLibrary( "intuition.library", 37 );
+
+  if( IntuitionBase == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_Intuition);
+    return FALSE;
+  }
+
+  /* DOS Library */
+
+  DOSBase = (struct DosLibrary *) OpenLibrary( "dos.library", 37 );
+
+  if( DOSBase == NULL)
+  {
+    Req( "Unable to open dos.library." );
+    return FALSE;
+  }
+
+  /* Graphics Library */
+
+  GfxBase = (struct GfxBase *) OpenLibrary( "graphics.library", 37 );
+
+  if( GfxBase == NULL)
+  {
+    Req( "Unable to open graphics.library." );
+    return FALSE;
+  }
+
+  /* GadTools Library */
+
+  GadToolsBase = OpenLibrary( "gadtools.library", 37 );
+
+  if( GadToolsBase == NULL)
+  {
+    Req( "Unable to open gadtools.library." );
+    return FALSE;
+  }
+
+  /* IFFParse Library */
+
+  IFFParseBase = OpenLibrary( "iffparse.library", 37 );
+
+  if( IFFParseBase == NULL)
+  {
+    Req( "Unable to open iffparse.library." );
+    return FALSE;
+  }
+
+  /* Locale Library */
+
+  LocaleBase = (struct LocaleBase*) OpenLibrary( "locale.library", 38 );
+
+  /* Timer Device */
+
+  TimerIO = (struct timerequest *) AllocVec( sizeof(struct timerequest),
+                                             MEMF_PUBLIC | MEMF_CLEAR );
+
+  if( TimerIO == NULL)
+  {
+    Req( "Out of memory." );
+    return FALSE;
+  }
+
+  timeval = (struct timeval *) AllocVec( sizeof(struct timeval),
+                                         MEMF_PUBLIC | MEMF_CLEAR);
+
+  if( timeval == NULL)
+  {
+    Req( "Out of memory." );
+    return FALSE;
+  }
+
+  if( OpenDevice( "timer.device",
+                  UNIT_MICROHZ,
+                  (struct IORequest *)
+                  TimerIO,
+                  0) != 0 )
+  {
+    Req( "Unable to open timer.device." );
+    return FALSE;
+  }
+
+  TimerBase = (struct Device *) TimerIO->tr_node.io_Device;
+
+  /* Utility Library */
+
+  UtilityBase = (struct UtilityBase *) OpenLibrary( "utility.library", 37 );
+
+  if( UtilityBase == NULL)
+  {
+    Req( "Unable to open utility.library." );
+    return FALSE;
+  }
+
+
+#ifndef VERSION68K
+  /* PPC library */
+
+  PPCLibBase = OpenLibrary( "ppc.library", 46 );
+
+  if( PPCLibBase != NULL )
+  {
+    /* No big deal if things fail. In that case, the 68K version
+       will be used instead. */
+
+    /* Load our code to PPC..  */
+
+    AHIPPCObject = PPCLoadObject( "DEVS:ahi.elf" );
+
+    if( AHIPPCObject == NULL )
+    {
+      /* This, however, is a problem. */
+
+      Req( "Unable to load PPC module." );
+      return FALSE;
+    }
+  }
+#endif 
+
+  OpenahiCatalog(NULL, NULL);
+
+  return TRUE;
+}
+
+
+/******************************************************************************
+** CloseLibs *******************************************************************
+******************************************************************************/
+
+// This function is called by DevExpunge() when the device is about to be
+// flushed
+
+static void
+CloseLibs ( void )
+{
+  CloseahiCatalog();
+
+#ifndef VERSION68K
+  if(AHIPPCObject != NULL ) PPCUnLoadObject( AHIPPCObject );
+  CloseLibrary( PPCLibBase );
+#endif
+  CloseLibrary( (struct Library *) UtilityBase );
+  if(TimerIO) CloseDevice( (struct IORequest *) TimerIO );
+  FreeVec( timeval );
+  FreeVec( TimerIO );
+  CloseLibrary( (struct Library *) LocaleBase );
+  CloseLibrary( (struct Library *) IntuitionBase );
+  CloseLibrary( IFFParseBase );
+  CloseLibrary( GadToolsBase );
+  CloseLibrary( (struct Library *) GfxBase );
+  CloseLibrary( (struct Library *) DOSBase );
+
+}

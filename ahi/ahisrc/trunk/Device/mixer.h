@@ -66,7 +66,6 @@ CalcSamples ( Fixed64 Add,
               Fixed64 LastOffset,
               Fixed64 Offset );
 
-
 #else /* VERSION68K */
 
 

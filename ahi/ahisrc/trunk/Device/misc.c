@@ -5,8 +5,16 @@
 
 #include <exec/lists.h>
 #include <exec/nodes.h>
+#include <powerup/ppclib/memory.h>
+#include <powerup/ppclib/interface.h>
+#include <powerup/ppclib/object.h>
+#include <intuition/intuition.h>
+#include <proto/exec.h>
+#include <proto/intuition.h>
+#include <proto/ppc.h>
 
 #include "ahi_def.h"
+#include "header.h"
 
 
 /******************************************************************************
@@ -56,3 +64,59 @@ Fixed2Shift( Fixed f )
   return i;
 }
 
+/******************************************************************************
+** Req ************************************************************************
+******************************************************************************/
+
+void
+Req( const char* text )
+{
+  struct EasyStruct es = 
+  {
+    sizeof (struct EasyStruct),
+    0,
+    (STRPTR) DevName,
+    (STRPTR) text,
+    "OK"
+  };
+
+  EasyRequest( NULL, &es, NULL );
+}
+
+/******************************************************************************
+** AHIAllocVec ****************************************************************
+******************************************************************************/
+
+APTR
+AHIAllocVec( ULONG byteSize, ULONG requirements )
+{
+#ifndef VERSION68K
+  if( PPCLibBase != NULL )
+  {
+    return PPCAllocVec( byteSize, requirements );
+  }
+  else
+#endif
+  {
+    return AllocVec( byteSize, requirements & ~MEMF_PPCMASK );
+  }
+}
+
+/******************************************************************************
+** AHIFreeVec *****************************************************************
+******************************************************************************/
+
+void
+AHIFreeVec( APTR memoryBlock )
+{
+#ifndef VERSION68K
+  if( PPCLibBase != NULL )
+  {
+    PPCFreeVec( memoryBlock );
+  }
+  else
+#endif
+  {
+    FreeVec( memoryBlock );
+  }
+}

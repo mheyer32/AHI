@@ -4,21 +4,18 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
+#include <powerup/ppclib/memory.h>
 
 #if defined( VERSIONPOWERUP )
-//#include <exec/types.h>
-//#include <exec/nodes.h>
-//#include <exec/lists.h>
-//#include <exec/memory.h>
 #include <utility/tagitem.h>
 #include <powerup/ppclib/interface.h>
-//#include <powerup/ppclib/message.h>
-
-
 #include <powerup/gcclib/powerup_protos.h>
 #else
 # include <proto/exec.h>
 # include <proto/utility.h>
+# include <powerup/ppclib/interface.h>
+# include <powerup/ppclib/object.h>
+# include <proto/ppc.h>
 # include <clib/ahi_protos.h>
 # include <pragmas/ahi_pragmas.h>
 # include <proto/ahi_sub.h>
@@ -27,7 +24,13 @@
 #include "ahi_def.h"
 #include "dsp.h"
 #include "mixer.h"
+#include "misc.h"
 
+
+Vad är kvar? 
+Ändra selectaddroutine så den hämtar från pekarna.
+Fixa kommunikationen.
+Sen bör det vara klart! Skitenkelt.
 
 static void
 DoMasterVolume ( void *buffer,
@@ -47,29 +50,16 @@ CallAddRoutine ( LONG samples,
                  struct AHIPrivAudioCtrl *audioctrl );
 
 
-static void AddSilence ( ADDARGS );
-static void AddSilenceB ( ADDARGS );
-
-static void AddByteMVH ( ADDARGS );
-static void AddByteSVPH ( ADDARGS );
-static void AddBytesMVH ( ADDARGS );
-static void AddBytesSVPH ( ADDARGS );
-static void AddWordMVH ( ADDARGS );
-static void AddWordSVPH ( ADDARGS );
-static void AddWordsMVH ( ADDARGS );
-static void AddWordsSVPH ( ADDARGS );
-
-static void AddByteMVHB ( ADDARGS );
-static void AddByteSVPHB ( ADDARGS );
-static void AddBytesMVHB ( ADDARGS );
-static void AddBytesSVPHB ( ADDARGS );
-static void AddWordMVHB ( ADDARGS );
-static void AddWordSVPHB ( ADDARGS );
-static void AddWordsMVHB ( ADDARGS );
-static void AddWordsSVPHB ( ADDARGS );
-
-
 #if defined( VERSIONPOWERUP )
+
+#define CallHookPkt AHICallHookPkt
+
+ULONG
+AHICallHookPkt( struct Hook *hook, APTR object, APTR paramPacket )
+{
+  return NULL;
+}
+
 
 static const UBYTE type2bytes[]=
 {
@@ -86,14 +76,54 @@ static const UBYTE type2bytes[]=
   8     // AHIST_S32S (10)
 };
 
-ULONG
+static ULONG
 AHI_SampleFrameSize( ULONG sampletype )
 {
   return type2bytes[sampletype];
 }
 
+#endif /* defined( VERSIONPOWERUP ) */
 
-#endif
+void AddSilence ( ADDARGS );
+void AddSilenceB ( ADDARGS );
+
+void AddByteMVH ( ADDARGS );
+void AddByteSVPH ( ADDARGS );
+void AddBytesMVH ( ADDARGS );
+void AddBytesSVPH ( ADDARGS );
+void AddWordMVH ( ADDARGS );
+void AddWordSVPH ( ADDARGS );
+void AddWordsMVH ( ADDARGS );
+void AddWordsSVPH ( ADDARGS );
+
+void AddByteMVHB ( ADDARGS );
+void AddByteSVPHB ( ADDARGS );
+void AddBytesMVHB ( ADDARGS );
+void AddBytesSVPHB ( ADDARGS );
+void AddWordMVHB ( ADDARGS );
+void AddWordSVPHB ( ADDARGS );
+void AddWordsMVHB ( ADDARGS );
+void AddWordsSVPHB ( ADDARGS );
+
+ADDFUNC* AddSilencePtr    = NULL;
+ADDFUNC* AddSilenceBPtr   = NULL;
+ADDFUNC* AddByteMVHPtr    = NULL;
+ADDFUNC* AddByteSVPHPtr   = NULL;
+ADDFUNC* AddBytesMVHPtr   = NULL;
+ADDFUNC* AddBytesSVPHPtr  = NULL;
+ADDFUNC* AddWordMVHPtr    = NULL;
+ADDFUNC* AddWordSVPHPtr   = NULL;
+ADDFUNC* AddWordsMVHPtr   = NULL;
+ADDFUNC* AddWordsSVPHPtr  = NULL;
+ADDFUNC* AddByteMVHBPtr   = NULL;
+ADDFUNC* AddByteSVPHBPtr  = NULL;
+ADDFUNC* AddBytesMVHBPtr  = NULL;
+ADDFUNC* AddBytesSVPHBPtr = NULL;
+ADDFUNC* AddWordMVHBPtr   = NULL;
+ADDFUNC* AddWordSVPHBPtr  = NULL;
+ADDFUNC* AddWordsMVHBPtr  = NULL;
+ADDFUNC* AddWordsSVPHBPtr = NULL;
+
 
 /******************************************************************************
 ** InitMixroutine *************************************************************
@@ -101,6 +131,8 @@ AHI_SampleFrameSize( ULONG sampletype )
 
 // This function is used to initialize the mixer routine (called from 
 // AHI_AllocAudio()).
+
+#if !defined( VERSIONPOWERUP )
 
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
@@ -113,9 +145,9 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
   // This structure could be accessed from from interrupts!
 
-  audioctrl->ahiac_ChannelDatas = AllocVec(
+  audioctrl->ahiac_ChannelDatas = AHIAllocVec(
       audioctrl->ac.ahiac_Channels * sizeof(struct AHIChannelData),
-      MEMF_PUBLIC|MEMF_CLEAR);
+      MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
 
   // Now link the list and fill in the channel number for each structure.
@@ -146,15 +178,13 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
     // Clear the last link;
     cd->cd_Succ = NULL;
 
-
-
     // Allocate and initialize the AHISoundData structures
 
     // This structure could be accessed from from interrupts!
 
-    audioctrl->ahiac_SoundDatas = AllocVec(
+    audioctrl->ahiac_SoundDatas = AHIAllocVec(
         audioctrl->ac.ahiac_Sounds * sizeof(struct AHISoundData),
-        MEMF_PUBLIC|MEMF_CLEAR);
+        MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
 
     if(audioctrl->ahiac_SoundDatas != NULL)
@@ -171,8 +201,8 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       audioctrl->ahiac_AntiClickSize = audioctrl->ac.ahiac_AntiClickSamples *
           AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
 
-      audioctrl->ahiac_AntiClickBuffer = AllocVec(
-        audioctrl->ahiac_AntiClickSize, MEMF_PUBLIC);
+      audioctrl->ahiac_AntiClickBuffer = AHIAllocVec(
+        audioctrl->ahiac_AntiClickSize, MEMF_PUBLIC );
 
 /* If it fails, we just loose the anticlick feature. Big deal.
 
@@ -181,10 +211,125 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
       }
 */
+      if( AHIPPCObject != NULL )
+      {
+        struct PPCObjectInfo oi;
+        int r = ~0;
 
-      // Sucess!
+        memset( &oi, 0, sizeof oi);
+
+        /* Now set up the function pointers */
+
+        oi.Address = NULL;
+        oi.Type    = PPCELFINFOTYPE_SYMBOL;
+        oi.SubType = STT_SECTION;
+        oi.Binding = STB_GLOBAL;
+        oi.Size    = 0;
+
+        oi.Name = "AddSilence";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddSilencePtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddSilenceB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddSilenceBPtr = (ADDFUNC*) oi.Address;
+
+
+        oi.Name = "AddByteMVH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddByteMVHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddByteSVPH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddByteSVPHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddBytesMVH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddBytesMVHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddBytesSVPH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddBytesSVPHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordMVH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordMVHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordSVPH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordSVPHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordsMVH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordsMVHPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordsSVPH";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordsSVPHPtr = (ADDFUNC*) oi.Address;
+
+
+        oi.Name = "AddByteMVHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddByteMVHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddByteSVPHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddByteSVPHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddBytesMVHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddBytesMVHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddBytesSVPHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddBytesSVPHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordMVHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordMVHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordSVPHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordSVPHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordsMVHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordsMVHBPtr = (ADDFUNC*) oi.Address;
+
+        oi.Name = "AddWordsSVPHB";
+        r &= PPCGetObjectAttrsTags( AHIPPCObject, &oi, TAG_DONE );
+        AddWordsSVPHBPtr = (ADDFUNC*) oi.Address;
+
+        // Sucess?
       
-      rc = TRUE;
+        rc = r != 0 ? TRUE : FALSE;
+      }
+      else
+      {
+        AddSilencePtr    = AddSilence;
+        AddSilenceBPtr   = AddSilenceB;
+        AddByteMVHPtr    = AddByteMVH;
+        AddByteSVPHPtr   = AddByteSVPH;
+        AddBytesMVHPtr   = AddBytesMVH;
+        AddBytesSVPHPtr  = AddBytesSVPH;
+        AddWordMVHPtr    = AddWordMVH;
+        AddWordSVPHPtr   = AddWordSVPH;
+        AddWordsMVHPtr   = AddWordsMVH;
+        AddWordsSVPHPtr  = AddWordsSVPH;
+        AddByteMVHBPtr   = AddByteMVHB;
+        AddByteSVPHBPtr  = AddByteSVPHB;
+        AddBytesMVHBPtr  = AddBytesMVHB;
+        AddBytesSVPHBPtr = AddBytesSVPHB;
+        AddWordMVHBPtr   = AddWordMVHB;
+        AddWordSVPHBPtr  = AddWordSVPHB;
+        AddWordsMVHBPtr  = AddWordsMVHB;
+        AddWordsSVPHBPtr = AddWordsSVPHB;
+
+        // Sucess!
+      
+        rc = TRUE;
+      }
+
     }
   }
 
@@ -424,6 +569,8 @@ SelectAddRoutine ( Fixed     VolumeLeft,
   }
 }
 
+#endif /* !defined( VERSIONPOWERUP ) */
+
 
 /******************************************************************************
 ** Mix ************************************************************************
@@ -442,7 +589,7 @@ MixGeneric ( REG(a0, struct Hook *Hook),
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 #else
 void
-MixGeneric ( struct Hook *Hook, 
+MixPowerUp ( struct Hook *Hook, 
              void *dst, 
              struct AHIPrivAudioCtrl *audioctrl )
 #endif
@@ -894,7 +1041,7 @@ CalcSamples ( Fixed64 Add,
 
 /*****************************************************************************/
 
-static void
+void
 AddSilence ( ADDARGS )
 {
   double offset, add;
@@ -904,7 +1051,7 @@ AddSilence ( ADDARGS )
   *Dst    = (char *) *Dst + Samples * AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
 }
 
-static void
+void
 AddSilenceB ( ADDARGS )
 {
   double offset, add;
@@ -943,7 +1090,7 @@ into two loops in order to eliminate the FirstOffsetI test in the second loop.
 
 #define offsetf ( (long) ( (unsigned long) ( *Offset & 0xffffffffULL ) >> 17) )
 
-static void
+void
 AddByteMVH ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -981,7 +1128,7 @@ AddByteMVH ( ADDARGS )
 }
 
 
-static void
+void
 AddByteSVPH ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1018,7 +1165,7 @@ AddByteSVPH ( ADDARGS )
 }
 
 
-static void
+void
 AddBytesMVH ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1061,7 +1208,7 @@ AddBytesMVH ( ADDARGS )
 }
 
 
-static void
+void
 AddBytesSVPH ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1105,7 +1252,7 @@ AddBytesSVPH ( ADDARGS )
 }
 
 
-static void
+void
 AddWordMVH ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1141,7 +1288,7 @@ AddWordMVH ( ADDARGS )
 }
 
 
-static void
+void
 AddWordSVPH ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1178,7 +1325,7 @@ AddWordSVPH ( ADDARGS )
 }
 
 
-static void
+void
 AddWordsMVH ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1221,7 +1368,7 @@ AddWordsMVH ( ADDARGS )
 }
 
 
-static void
+void
 AddWordsSVPH ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1272,7 +1419,7 @@ AddWordsSVPH ( ADDARGS )
 
 #define offsetf ( (long) ( 32768 - ( (unsigned long) ( *Offset & 0xffffffffULL ) >> 17 ) ) )
 
-static void
+void
 AddByteMVHB ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1308,7 +1455,7 @@ AddByteMVHB ( ADDARGS )
 }
 
 
-static void
+void
 AddByteSVPHB ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1346,7 +1493,7 @@ AddByteSVPHB ( ADDARGS )
 }
 
 
-static void
+void
 AddBytesMVHB ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1389,7 +1536,7 @@ AddBytesMVHB ( ADDARGS )
 }
 
 
-static void
+void
 AddBytesSVPHB ( ADDARGS )
 {
   BYTE   *src = Src;
@@ -1433,7 +1580,7 @@ AddBytesSVPHB ( ADDARGS )
 }
 
 
-static void
+void
 AddWordMVHB ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1469,7 +1616,7 @@ AddWordMVHB ( ADDARGS )
 }
 
 
-static void
+void
 AddWordSVPHB ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1506,7 +1653,7 @@ AddWordSVPHB ( ADDARGS )
 }
 
 
-static void
+void
 AddWordsMVHB ( ADDARGS )
 {
   WORD   *src = Src;
@@ -1549,7 +1696,7 @@ AddWordsMVHB ( ADDARGS )
 }
 
 
-static void
+void
 AddWordsSVPHB ( ADDARGS )
 {
   WORD   *src = Src;

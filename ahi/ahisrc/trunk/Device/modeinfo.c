@@ -19,6 +19,7 @@
 #include "audioctrl.h"
 #include "database.h"
 #include "debug.h"
+#include "header.h"
 
 
 // Boolean comparison macros
