@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.ct 4.5 (30.12.01)
+## version $VER: ahiprefs.ct 4.6 (4.8.2004)
 ## language magyar
 ## codeset 0
 ;
@@ -110,7 +110,7 @@ Zene egység
 ; *** Properties box ***
 ;
 msgProperties
-Mód ID\nFelvétel\nSzerzõ\nCopyright\nMeghajtóprogram\nVerzió
+Mód ID\nFelvétel\nSzerzõ\nCopyright\nMeghajtóprogram\nVerzió\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull

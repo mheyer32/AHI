@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.5 (16.6.97) por Samuel Aguilera <slyguy92@arrakis.es>
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004) por Samuel Aguilera <slyguy92@arrakis.es>
 ## language español
 ## codeset 0
 ;
@@ -110,7 +110,7 @@ Unidad Musical
 ; *** Properties box ***
 ;
 msgProperties
-ID de Modo\nGrabación\nAutor\nCopyright\nControlador\nVersión
+ID de Modo\nGrabación\nAutor\nCopyright\nControlador\nVersión\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull

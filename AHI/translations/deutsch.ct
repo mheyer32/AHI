@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.5 (13.5.97)
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
 ## language deutsch
 ## codeset 0
 ;
@@ -110,7 +110,7 @@ Musikeinheit
 ; *** Properties box ***
 ;
 msgProperties
-Modus ID\nAufnahme\nAutor\nCopyright\nTreiber\nVersion
+Modus ID\nAufnahme\nAutor\nCopyright\nTreiber\nVersion\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull

@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.4 (12.4.97)
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
 ## language nederlands
 ## codeset 0
 ;
@@ -110,7 +110,7 @@ Muziek unit
 ; *** Properties box ***
 ;
 msgProperties
-Mode ID\nOpname\nMaker\nCopyright\nDriver\nVersie
+Mode ID\nOpname\nMaker\nCopyright\nDriver\nVersie\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull

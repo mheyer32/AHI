@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.0 (29.04.03)
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
 ## language català
 ## codeset 0
 ;
@@ -115,7 +115,8 @@ Grabació\n\
 Autor\n\
 Copyright\n\
 Controlador\n\
-Versió
+Versió\n\
+Annotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull
