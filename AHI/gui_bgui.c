@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.8  1999/01/09 23:14:08  lcs
+ * Switched from SAS/C to gcc
+ *
  * Revision 4.7  1997/05/11 16:16:45  lcs
  * Removed leftover rtgbase variable
  *
@@ -20,6 +23,11 @@
  *
  */
 
+#define NO_INLINE_STDARG
+
+#include <config.h>
+#include <CompilerSpecific.h>
+
 #include <libraries/asl.h>
 #include <libraries/bgui.h>
 #include <libraries/bgui_macros.h>
@@ -30,17 +38,10 @@
 #include <math.h>
 #include <string.h>
 
-extern void kprintf(char *, ...);
-
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
-
-#include "ahi_protos.h"
-#include "support_protos.h"
-
-#ifndef _GENPROTO
-#include "gui_protos.h"
-#endif
+#include "support.h"
+#include "gui.h"
 
 static void GUINewSettings(void);
 static void GUINewUnit(void);
@@ -91,8 +92,8 @@ struct TR_Project *Project = NULL;
 static BOOL PopUpMenus = TRUE;         // Turn cycle gadgets into popup menus?
 
 static const struct TagItem  pagemap[] = {
-  MX_Active, PAGE_Active,
-  TAG_END
+  { MX_Active, PAGE_Active },
+  { TAG_END, NULL }
 };
 
 static ULONG cpumap[] = { SLIDER_Level,  INDIC_Level, TAG_END };
@@ -158,21 +159,21 @@ static char * ClipMVLabels[] = {
 static void UpdateStrings(void) {
   char ** strings[] =
   {
-    &msgMenuProject,
-    &msgItemOpen,
-    &msgItemSaveAs,
-    &msgItemAbout,
-    &msgItemQuit,
-    &msgMenuEdit,
-    &msgItemDefaults,
-    &msgItemLastSaved,
-    &msgItemRestore,
-    &msgMenuSettings,
-    &msgItemCreateIcons,
-    &msgMenuHelp,
-    &msgItemHelp,
-    &msgItemUsersGuide,
-    &msgItemConceptIndex
+    (char**) &msgMenuProject,
+    (char**) &msgItemOpen,
+    (char**) &msgItemSaveAs,
+    (char**) &msgItemAbout,
+    (char**) &msgItemQuit,
+    (char**) &msgMenuEdit,
+    (char**) &msgItemDefaults,
+    (char**) &msgItemLastSaved,
+    (char**) &msgItemRestore,
+    (char**) &msgMenuSettings,
+    (char**) &msgItemCreateIcons,
+    (char**) &msgMenuHelp,
+    (char**) &msgItemHelp,
+    (char**) &msgItemUsersGuide,
+    (char**) &msgItemConceptIndex
   };
 
   struct NewMenu   *menuptr;
@@ -217,7 +218,7 @@ static void UpdateSliderLevel(int src, int dst, LONG *index, char * (*func)(void
   if(GetAttr( SLIDER_Level, Window_Objs[src], (ULONG *) index)) {
     SetGadgetAttrs((struct Gadget *) Window_Objs[dst],
         window, NULL,
-        INFO_TextFormat, (*(func))(), 
+        INFO_TextFormat, (ULONG) (*(func))(), 
         TAG_DONE );
   }
 }
@@ -308,13 +309,13 @@ static void GUINewMode(void) {
   infoargs[5] = getVersion();
 
   SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_MODE], window, NULL,
-      INFO_TextFormat, "0x%08lx\n"
+      INFO_TextFormat, (ULONG) "0x%08lx\n"
                        "%s\n"
                        "%s\n"
                        "%s\n"
                        "Devs:AHI/%s.audio\n"
                        "%s",
-      INFO_Args,       &infoargs,
+      INFO_Args,       (ULONG) &infoargs,
       TAG_DONE );
 
   Max = max(state.Frequencies -1, 0);
@@ -377,33 +378,34 @@ static void GUINewMode(void) {
     // Update indicators..
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_FREQ], window, NULL,
-        INFO_TextFormat, getFreq(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getFreq(), TAG_DONE );
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_CHANNELS], window, NULL,
-        INFO_TextFormat, getChannels(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getChannels(), TAG_DONE );
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_OUTVOL], window, NULL,
-        INFO_TextFormat, getOutVol(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getOutVol(), TAG_DONE );
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_MONVOL], window, NULL,
-        INFO_TextFormat, getMonVol(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getMonVol(), TAG_DONE );
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_GAIN], window, NULL,
-        INFO_TextFormat, getGain(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getGain(), TAG_DONE );
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_INPUT], window, NULL,
-        INFO_TextFormat, getInput(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getInput(), TAG_DONE );
 
     SetGadgetAttrs((struct Gadget *) Window_Objs[SHOWID_OUTPUT], window, NULL,
-        INFO_TextFormat, getOutput(), TAG_DONE );
+        INFO_TextFormat, (ULONG) getOutput(), TAG_DONE );
 
 }
 
 /***** Gadget hook ***********************************************************/
 
-static __saveds __asm ULONG GadgetHookFunc( register __a0 struct Hook	 *hook,
-			   register __a2 Object          *obj,
-			   register __a1 struct opUpdate *opu ) {
+static ULONG HOOKCALL
+GadgetHookFunc( REG( a0, struct Hook *hook ),
+                REG( a2, Object *obj ),
+                REG( a1, struct opUpdate *opu ) ) {
 
   if(obj == Window_Objs[ ACTID_FREQ] ) {
     UpdateSliderLevel(ACTID_FREQ, SHOWID_FREQ,
@@ -444,13 +446,21 @@ static __saveds __asm ULONG GadgetHookFunc( register __a0 struct Hook	 *hook,
 	return 1;
 }
 
-static struct Hook GadgetHook = { NULL,NULL,(HOOKFUNC) GadgetHookFunc,NULL,NULL };
+static struct Hook GadgetHook =
+{ 
+  { NULL,NULL },
+  (HOOKFUNC) GadgetHookFunc,
+  NULL,
+  NULL
+};
 
-__saveds __asm static void IDCMPhookFunc( register __a0 struct Hook *hook,
-    register __a2 Object *obj, register __a1 struct IntuiMessage *msg )
+static void HOOKCALL
+IDCMPhookFunc( REG( a0, struct Hook *hook ),
+               REG( a2, Object *obj ),
+               REG( a1, struct IntuiMessage *msg) )
 {
   switch(msg->Code) {
-  
+
     case 0x42:
     {
       /*
@@ -577,8 +587,14 @@ __saveds __asm static void IDCMPhookFunc( register __a0 struct Hook *hook,
   }
 }
 
-static struct Hook IDCMPhook = { NULL, NULL, ( HOOKFUNC )IDCMPhookFunc, NULL, NULL };
 
+static struct Hook IDCMPhook =
+{
+  { NULL, NULL },
+  (HOOKFUNC) IDCMPhookFunc,
+  NULL,
+  NULL
+};
 
 
 /******************************************************************************
@@ -619,7 +635,7 @@ BOOL BuildGUI(char *screenname) {
 
   BGUIBase = (void *)OpenLibrary("bgui.library", 41);
   if(BGUIBase == NULL) {
-    Printf((char *) msgTextNoOpen, "bgui.library", 41);
+    Printf((char *) msgTextNoOpen, (ULONG) "bgui.library", 41);
     Printf("\n");
     return FALSE;
   }
@@ -1096,7 +1112,7 @@ void EventLoop(void) {
             Req( (char *) msgButtonOK,
                 (char *) msgTextCopyright,
                 ISEQ_C,  msgTextProgramName,
-                "1997 Martin Blom" );
+                "1997-1999 Martin Blom" );
             break;
 
           case ACTID_SAVE:

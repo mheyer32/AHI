@@ -1,36 +1,38 @@
 /* $Id$
  * $Log$
- * Revision 1.1  1998/12/20 12:09:27  lcs
- * Initial revision
+ * Revision 1.2  1999/01/09 23:14:10  lcs
+ * Switched from SAS/C to gcc
+ *
+ * Revision 1.1.1.1  1998/12/20 12:09:27  lcs
+ * Import of AHI sources 1998-12-20
  *
  */
+
+#define NO_INLINE_STDARG
+
+#include <config.h>
+#include <CompilerSpecific.h>
 
 #include <intuition/icclass.h>
 #include <libraries/asl.h>
 #include <libraries/gadtools.h>
+#include <gadgets/slider.h>
+#include <gadgets/layout.h>
+#include <classact_macros.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/gadtools.h>
 #include <proto/intuition.h>
-#include <math.h>
-#include <string.h>
-#include <gadgets/slider.h>
-
 #include <proto/slider.h>
-
-#include <classact_macros.h>
-
-extern APTR __asm SPrintfA(register __a3 STRPTR, register __a0 STRPTR, register __a1 LONG*);
+#include <math.h>
+#include <stdio.h>
+#include <string.h>
 
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
+#include "support.h"
+#include "gui.h"
 
-#include "ahi_protos.h"
-#include "support_protos.h"
-
-#ifndef _GENPROTO
-#include "gui_protos.h"
-#endif
 
 static void GUINewSettings(void);
 static void GUINewUnit(void);
@@ -132,20 +134,14 @@ static struct NewMenu NewMenus[] = {
 };
 
 struct TagItem MapTab2Page[] = {
-  CLICKTAB_Current, PAGE_Current,
-  TAG_DONE
+  { CLICKTAB_Current, PAGE_Current },
+  { TAG_DONE, NULL }
 };
 
 
-/***** Local function to handle varargs sprintfs *****************************/
-
-static APTR SPrintf(STRPTR dst, STRPTR src, LONG arg1, ...) {
-  return SPrintfA(dst, src, &arg1);
-}
-
 /***** Local function to set gadget attributes *******************************/
 
-static void MySetGadgetAttrsA(Object *gadget, struct TagItem *tags) {
+static void MySetGadgetAttrsA(Object *gadget, struct TagItem *tags) {
 
   if(SetPageGadgetAttrsA((struct Gadget *) gadget, Window_Objs[ACTID_PAGE],
                          Window, NULL, tags)) {
@@ -153,7 +149,7 @@ static void MySetGadgetAttrsA(Object *gadget, struct TagItem *tags) {
   }
 }
 
-static void MySetGadgetAttrs(Object *gadget, ULONG tag1, ...) {
+static void MySetGadgetAttrs(Object *gadget, ULONG tag1, ...) {
 
   MySetGadgetAttrsA(gadget, (struct TagItem *) &tag1);
 }
@@ -163,21 +159,21 @@ static void MySetGadgetAttrs(Object *gadget, ULONG tag1, ...) {
 static void UpdateStrings(void) {
   char ** strings[] =
   {
-    &msgMenuProject,
-    &msgItemOpen,
-    &msgItemSaveAs,
-    &msgItemAbout,
-    &msgItemQuit,
-    &msgMenuEdit,
-    &msgItemDefaults,
-    &msgItemLastSaved,
-    &msgItemRestore,
-    &msgMenuSettings,
-    &msgItemCreateIcons,
-    &msgMenuHelp,
-    &msgItemHelp,
-    &msgItemUsersGuide,
-    &msgItemConceptIndex
+    (char**) &msgMenuProject,
+    (char**) &msgItemOpen,
+    (char**) &msgItemSaveAs,
+    (char**) &msgItemAbout,
+    (char**) &msgItemQuit,
+    (char**) &msgMenuEdit,
+    (char**) &msgItemDefaults,
+    (char**) &msgItemLastSaved,
+    (char**) &msgItemRestore,
+    (char**) &msgMenuSettings,
+    (char**) &msgItemCreateIcons,
+    (char**) &msgMenuHelp,
+    (char**) &msgItemHelp,
+    (char**) &msgItemUsersGuide,
+    (char**) &msgItemConceptIndex
   };
 
   struct NewMenu   *menuptr;
@@ -268,7 +264,7 @@ static void FreeBrowserNodes2(struct List *list) {
 
   node = list->lh_Head;
 
-  while (nextnode = node->ln_Succ) {
+  while( ( nextnode = node->ln_Succ ) != NULL ) {
     FreeListBrowserNode(node);
     node = nextnode;
   }
@@ -282,19 +278,20 @@ static struct List *BrowserNodes2(char **labels1, char **labels2) {
 
   list = AllocVec(sizeof(struct List), MEMF_PUBLIC|MEMF_CLEAR);
 
-  if(list != NULL) {
+  if(list != NULL) {
     struct Node *node;
 
     NewList(list);
 
     while (*labels1 && *labels2)
     {
-      if (node = AllocListBrowserNode(2,
+      node = AllocListBrowserNode(2,
               LBNA_Column, 0,
                 LBNCA_Text, *labels1,
               LBNA_Column, 1,
                 LBNCA_Text, *labels2,
-              TAG_DONE))
+              TAG_DONE );
+      if (node != NULL )
       {
         AddTail(list, node);
       }
@@ -319,7 +316,7 @@ static struct List *BrowserNodes2(char **labels1, char **labels2) {
 static void GUINewSettings(void) {
   struct List *tmp;
 
-  tmp = ChooserLabelsA(Units);
+  tmp = ChooserLabelsA( (STRPTR *) Units);
 
   MySetGadgetAttrs(Window_Objs[ACTID_UNIT],
     CHOOSER_Labels, tmp,
@@ -356,7 +353,7 @@ static void GUINewUnit(void) {
 
   if(modelist) FreeBrowserNodes(modelist);
 
-  modelist = BrowserNodesA(Modes);
+  modelist = BrowserNodesA( (STRPTR *) Modes);
 
   MySetGadgetAttrs(Window_Objs[ACTID_MODE],
     LISTBROWSER_Labels, modelist,
@@ -379,12 +376,12 @@ static char drivertext[128];
 static void GUINewMode(void) {
   int Max, Sel;
 
-  SPrintf(modetext,"0x%08lx", getAudioMode());
+  sprintf(modetext,"0x%08lx", getAudioMode());
   infoargs[0] = modetext;
   infoargs[1] = getRecord();
   infoargs[2] = getAuthor();
   infoargs[3] = getCopyright();
-  SPrintf(drivertext, "Devs:AHI/%s.audio", (LONG) getDriver());
+  sprintf(drivertext, "Devs:AHI/%s.audio", getDriver());
   infoargs[4] = drivertext;
   infoargs[5] = getVersion();
 
@@ -485,9 +482,10 @@ static void GUINewMode(void) {
 
 /***** Gadget hook ***********************************************************/
 
-static __saveds __asm ULONG GadgetHookFunc( register __a0 struct Hook	 *hook,
-			   register __a2 Object          *obj,
-			   register __a1 struct opUpdate *opu ) {
+static ULONG HOOKCALL 
+GadgetHookFunc( REG( a0, struct Hook *hook ),
+			          REG( a2, Object *obj ),
+			          REG( a1, struct opUpdate *opu ) ) {
 
   if(obj == Window_Objs[ ACTID_FREQ] ) {
     UpdateSliderLevel(ACTID_FREQ, SHOWID_FREQ,
@@ -528,10 +526,18 @@ static __saveds __asm ULONG GadgetHookFunc( register __a0 struct Hook	 *hook,
 	return 1;
 }
 
-static struct Hook GadgetHook = { NULL,NULL,(HOOKFUNC) GadgetHookFunc,NULL,NULL };
+static struct Hook GadgetHook = 
+{
+  { NULL, NULL },
+  (HOOKFUNC) GadgetHookFunc,
+  NULL,
+  NULL
+};
 
-static __saveds __asm void IDCMPhookFunc( register __a0 struct Hook *hook,
-    register __a2 Object *obj, register __a1 struct IntuiMessage *msg )
+static void HOOKCALL IDCMPhookFunc(
+  REG( a0, struct Hook *hook ),
+  REG( a2, Object *obj ),
+  REG( a1, struct IntuiMessage *msg ) )
 {
   switch(msg->Code) {
   
@@ -675,7 +681,13 @@ static __saveds __asm void IDCMPhookFunc( register __a0 struct Hook *hook,
   }
 }
 
-static struct Hook IDCMPhook = { NULL, NULL, ( HOOKFUNC )IDCMPhookFunc, NULL, NULL };
+static struct Hook IDCMPhook =
+{
+  { NULL, NULL },
+  ( HOOKFUNC ) IDCMPhookFunc,
+  NULL,
+  NULL
+};
 
 
 /******************************************************************************
@@ -722,8 +734,8 @@ BOOL BuildGUI(char *screenname) {
   }
 
   /* Dynamic */
-  unitlist      = ChooserLabelsA(Units);
-  modelist      = BrowserNodesA(Modes);
+  unitlist      = ChooserLabelsA( (STRPTR *) Units);
+  modelist      = BrowserNodesA( (STRPTR *) Modes);
   infolist      = BrowserNodes2(infotexts, infoargs);
 
   /* Static */
@@ -1290,7 +1302,7 @@ void EventLoop(void) {
                 Req( (char *) msgButtonOK,
                     (char *) msgTextCopyright,
                     "",(char *) msgTextProgramName,
-                    "1997-1998 Martin Blom" );
+                    "1997-1999 Martin Blom" );
                 break;
 
               case ACTID_SAVE:
