@@ -7,6 +7,8 @@
 
 #include "hwaccess.h"
 
+#define RECORD_BUFFER_SAMPLES 4096
+
 struct EMU10kx
 {
     struct Interrupt    interrupt;
