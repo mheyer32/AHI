@@ -1,7 +1,7 @@
 * $Id$
 * $Log$
-* Revision 1.12  1997/03/24 12:41:51  lcs
-* Echo rewritten
+* Revision 1.13  1997/03/24 18:03:10  lcs
+* First steps for AHIST_INPUT
 *
 * Revision 1.11  1997/03/22 18:58:07  lcs
 * --background-- updated + some work on dspecho
@@ -56,9 +56,9 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 
 	XDEF	initcode
 
-	XDEF	initSignedTable
+	XDEF	_initSignedTable
 	XDEF	calcSignedTable
-	XDEF	initUnsignedTable
+	XDEF	_initUnsignedTable
 	XDEF	calcUnsignedTable
 	XDEF	SelectAddRoutine
 	XDEF	_Mix
@@ -94,8 +94,8 @@ J:
 	move.l	#$10000,ahiac_MasterVolume(a2)
 	move.l	#channeldatas,ahiac_ChannelDatas(a2)
 	move.l	#soundfunc,ahiac_SoundFunc(a2)
-	bsr	initSignedTable
-	bsr	initUnsignedTable
+	bsr	_initSignedTable
+	bsr	_initUnsignedTable
 
 	move.l	ahiac_ChannelDatas(a2),a5
 
@@ -329,7 +329,7 @@ initcode:
 * a5	ptr to AHIBase
 ;out:
 * d0	TRUE on success
-initSignedTable:
+_initSignedTable:
 	pushm	d1-a6
 	
 	move.l	ahiac_Flags(a2),d0
@@ -415,7 +415,7 @@ calcSignedTable:
 * a5	ptr to AHIBase
 ;out:
 * d0	TRUE on success
-initUnsignedTable:
+_initUnsignedTable:
 	pushm	d1-a6
 	move.l	ahiac_Flags(a2),d0
 
@@ -533,7 +533,7 @@ SelectAddRoutine:
 	move.l	d2,d3
 	move.l	ahiac_Flags(a2),d4
 
-	and.l	#~AHIST_BW,d2
+	and.l	#~(AHIST_BW|AHIST_INPUT),d2
 
 ;FIXIT  -- Unsigned samples are obosolete, and should be removed!
 	cmp.l	#AHIST_M8U,d2
@@ -815,6 +815,9 @@ functionstable:
 * of 8.
 *
 
+printit:
+	PRINTF	2,"AHIST_INPUT on channel %ld",cd_ChannelNo(a5)
+	rts
 ;in:
 * a0	Hook
 * a1	Mixing buffer (size is 8 byte aligned)
@@ -844,6 +847,13 @@ _Mix:
 .contchannel
 	tst.w	cd_EOS(a5)
 	beq	.notEOS
+
+	move.l	cd_Type(a5),d1
+	and.l	#AHIST_INPUT,d1
+	beq	.notinput
+	bsr	printit
+	bra	.noSoundFunc
+.notinput
 
 * Call Sound Hook
 	move.l	ahiac_SoundFunc(a2),d1
@@ -1512,7 +1522,6 @@ OffsWordsSVTr:	dc.w	AddWordsSVTr-*
 OffsWordsSVPT:	dc.w	AddWordsSVPT-*
 OffsWordsMVH:	dc.w	AddWordsMVH-*
 OffsWordsSVPH:	dc.w	AddWordsSVPH-*
-
 
 OffsetBackward	EQU	*-OffsetTable
 
