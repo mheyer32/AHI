@@ -20,8 +20,10 @@
 #include <config.h>
 
 #include <libraries/ahi_sub.h>
+#include <libraries/openpci.h>
 
 #include <proto/exec.h>
+#include <proto/openpci.h>
 #include <proto/utility.h>
 
 #include "library.h"
@@ -43,7 +45,7 @@ EMU10kxInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
   ULONG intreq;
   BOOL  handled = FALSE;
 
-  while( ( intreq = *(ULONG*) ( dd->card.iobase + IPR ) ) != 0 )
+  while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
   {
     if( intreq & IPR_INTERVALTIMER )
     {
@@ -92,7 +94,7 @@ EMU10kxInterrupt( struct AHIAudioCtrlDrv* AudioCtrl )
     }
 
     /* Clear interrupt pending bit(s) */
-    *(ULONG*) (dd->card.iobase + IPR) = intreq;
+    pci_outl( SWAPLONG( intreq ), dd->card.iobase + IPR );
 
     handled = TRUE;
   }

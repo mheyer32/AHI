@@ -54,14 +54,7 @@ struct EMU10kxData
 
     struct DriverData   driverdata;
 
-
     /*** PCI/EMU10kx initialization progress *********************************/
-
-    /** TRUE if I/O and interrupt resources claimed */
-    BOOL                pci_requested;
-
-    /** TRUE if PCI device is enabled */
-    BOOL                pci_enabled;
 
     /** TRUE if bus mastering is activated */
     BOOL                pci_master_enabled;

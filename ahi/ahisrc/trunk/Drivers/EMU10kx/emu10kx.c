@@ -30,29 +30,21 @@ driver! Anything that is based on this driver has to be GPL:ed.
 
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
-#include <exec/exec.h>
 #include <devices/ahi.h>
+#include <exec/exec.h>
 #include <libraries/ahi_sub.h>
-
-#define AMITHLON_AMITHLONSPEC_H // Go away!
-
-#include <amithlon/powerpci.h>
-#include <pci/powerpci_pci.h>
-//#include <libraries/openpci.h>
+#include <libraries/openpci.h>
 
 #include <clib/alib_protos.h>
 #include <proto/ahi_sub.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
-#include <proto/powerpci.h>
-//#include <proto/openpci.h>
+#include <proto/openpci.h>
 #include <proto/utility.h>
 
-#include "library.h"
-
 #include "8010.h"
+#include "library.h"
 #include "emu10kx-misc.h"
 #include "emu10kx-interrupt.h"
 
@@ -93,6 +85,7 @@ static const STRPTR Inputs[ INPUTS ] =
   "Mixer (mono)"
 };
 
+/* Not static since it's used in emu10kx-misc.c too */
 const UWORD InputBits[ INPUTS ] =
 {
   AC97_RECMUX_STEREO_MIX,
@@ -134,6 +127,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
   UWORD               command_word;
   int                 ret;
   int                 i;
+  struct pci_dev*     dev;
 
   card_num = ( GetTagData( AHIDB_AudioID, 0, taglist) & 0x0000f000 ) >> 12;
 
@@ -168,20 +162,22 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     dd->record_interrupt.is_Code         = (void(*)(void)) &recordinterrupt;
     dd->record_interrupt.is_Data         = (APTR) AudioCtrl;
 
-    dd->card.pci_dev = 0;
+    dev = 0;
 
     do
     {
-      dd->card.pci_dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-					  PCI_DEVICE_ID_CREATIVE_EMU10K1,
-					  dd->card.pci_dev );
-    } while( dd->card.pci_dev != 0 && card_num-- != 0 );
+      dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
+			     PCI_DEVICE_ID_CREATIVE_EMU10K1,
+			     dev );
+    } while( dev != 0 && card_num-- != 0 );
 
-    if( dd->card.pci_dev == NULL )
+    if( dev == NULL )
     {
       Req( "Unable to find EMU10k subsystem.\n" );
       return AHISF_ERROR;
     }
+
+    dd->card.pci_dev = dev;
 
 //  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
 //  {
@@ -189,50 +185,26 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 //    goto error;
 //  }
 
-    if( pci_request( dd->card.pci_dev, (STRPTR) LibName, NULL ) )
-    {
-      Req( "Unable to claim I/O resources.\n" );
-      return AHISF_ERROR;
-    }
+    command_word = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
+    command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
+    pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
 
-    dd->pci_requested = TRUE;
-
-    if( pci_enable( dd->card.pci_dev ) )
-    {
-      Req( "Unable to enable card.\n" );
-      return AHISF_ERROR;
-    }
-
-    dd->pci_enabled = TRUE;
-
-    command_word = pci_read_conf_word( dd->card.pci_dev, PCI_COMMAND );
-    command_word |= PCI_CMD_IO_MASK | PCI_CMD_MEMORY_MASK | PCI_CMD_MASTER_MASK;
-    pci_write_conf_word( dd->card.pci_dev, PCI_COMMAND, command_word );
+    dd->pci_master_enabled = TRUE;
 
     // FIXME: How about latency/pcibios_set_master()??
 
-    dd->pci_master_enabled = TRUE;
-    dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 ); 
-    dd->card.length  = ( (ULONG) pci_get_base_end( dd->card.pci_dev, 0 ) -
-			 (ULONG) dd->card.iobase ) + 1;
-
-    dd->card.irq     = pci_ask_irq( dd->card.pci_dev ) >> 8;
-
-    dd->card.chiprev = pci_read_conf_byte( dd->card.pci_dev, PCI_REVISION_ID );
-    dd->card.model   = pci_read_conf_word( dd->card.pci_dev, PCI_SUBSYSTEM_ID );
-    dd->card.isaps   = ( pci_read_conf_long( dd->card.pci_dev,
-					     PCI_SUBSYSTEM_VENDOR_ID )
+    dd->card.iobase  = dev->base_address[ 0 ];
+    dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
+    dd->card.irq     = dev->irq;
+    dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
+    dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
+    dd->card.isaps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
+					       dd->card.pci_dev )
 			 == EMU_APS_SUBID );
 
-    pci_add_irq( dd->card.pci_dev, &dd->interrupt );
-    dd->interrupt_added = TRUE;
+    pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
 
-//    Req( "I/O status: Base: 0x%08lx; Length:%08lx\n",
-//	     dd->card.iobase, dd->card.length );
-//    Req( "IRQ status: Bus: %ld; Amiga: %ld\n",
-//	     dd->card.irq, pci_ask_irq( dd->card.pci_dev ) & 0xff );
-//    Req( "Model: %04lx; Chip: 0x%02lx\n",
-//	     dd->card.model, dd->card.chiprev );
+    dd->interrupt_added = TRUE;
 
     /* Initialize chip */
 
@@ -338,24 +310,14 @@ _AHIsub_FreeAudio( struct AHIAudioCtrlDrv* AudioCtrl,
       {
 	UWORD cmd;
 
-	cmd = pci_read_conf_word( dd->card.pci_dev, PCI_COMMAND );
-	cmd &= ~( PCI_CMD_IO_MASK | PCI_CMD_MEMORY_MASK | PCI_CMD_MASTER_MASK );
-	pci_write_conf_word( dd->card.pci_dev, PCI_COMMAND, cmd );
-      }
-
-      if( dd->pci_enabled )
-      {
-	pci_disable( dd->card.pci_dev );
-      }
-
-      if( dd->pci_requested )
-      {
-	pci_release( dd->card.pci_dev );
+	cmd = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
+	cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
+	pci_write_config_word( PCI_COMMAND, cmd, dd->card.pci_dev );
       }
 
       if( dd->interrupt_added )
       {
-	pci_rem_irq( dd->card.pci_dev, &dd->interrupt );
+	pci_rem_intserver( &dd->interrupt, dd->card.pci_dev );
       }
     }
 

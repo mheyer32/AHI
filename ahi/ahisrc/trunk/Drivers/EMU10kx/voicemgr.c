@@ -29,6 +29,8 @@
  **********************************************************************
  */
 
+#include <proto/openpci.h>
+
 #include "linuxsupport.h"
 #include "voicemgr.h"
 #include "8010.h"
@@ -68,9 +70,8 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 		DPD(2, "Virtual Addx: %p\n", mem->addr + pagecount * PAGE_SIZE);
 
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {
-			busaddx = (u32) pci_virt_to_bus( card->pci_dev,
-							 mem->addr
-							 + pagecount * PAGE_SIZE )
+			busaddx = (u32) pci_logic_to_physic_addr( 
+			  mem->addr + pagecount * PAGE_SIZE, card->pci_dev )
 			  + i * EMUPAGESIZE;
 
 			DPD(3, "Bus Addx: %#lx\n", busaddx);
