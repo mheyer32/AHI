@@ -1519,6 +1519,11 @@ RemPlayers ( struct List *list,
       {
         // Move the attached one to the list
         Remove((struct Node *) ioreq->ahir_Link);
+
+	// FIXME: 2002-10-13: I have a bug report that claims
+	// GetExtras(ioreq->ahir_Link) returns NULL here. How did that
+	// happen??
+	
         GetExtras(ioreq->ahir_Link)->Channel = GetExtras(ioreq)->Channel;
         Enqueue(list, (struct Node *) ioreq->ahir_Link);
         // We have to go through the whole procedure again, in case
