@@ -170,13 +170,13 @@ ReqA( const char*        text,
 
 #include <aros/asmcall.h>
 
-AROS_UFH2( static void,
+AROS_UFH2( void,
 	   rawputchar_m68k,
 	   AROS_UFHA( UBYTE,            c,       D0 ),
-	   AROS_UFHA( struct ExecBase*, SysBase, A3 ) )
+	   AROS_UFHA( struct ExecBase*, sysbase, A3 ) )
 {
   AROS_USERFUNC_INIT
-  RawPutChar( c );
+  __RawPutChar_WB( sysbase, c );
   AROS_USERFUNC_EXIT  
 }
 
