@@ -24,6 +24,7 @@
 #include <exec/interrupts.h>
 #include <devices/ahi.h>
 
+#include "emu10kx-ac97.h"
 #include "emu10kx-camd.h"
 #include "hwaccess.h"
 #include "voicemgr.h"
@@ -57,6 +58,9 @@ struct EMU10kxBase
 
     /** The public CAMD interface */
     struct EMU10kxCamd     camd;
+
+    /** The public AC97 interface */
+    struct EMU10kxAC97     ac97;
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
