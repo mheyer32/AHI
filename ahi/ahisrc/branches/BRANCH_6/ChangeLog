@@ -1,3 +1,8 @@
+2004-09-08  Martin Blom  <martin@blom.org>
+
+	* Docs/ahiusr.texinfo: Added description of the default anti-click
+	time. [Luca 'Hexaae' Long]
+
 2004-08-13  Martin Blom  <martin@blom.org>
 
 	* Added an updated german ahiprefs translation. [Stefan
