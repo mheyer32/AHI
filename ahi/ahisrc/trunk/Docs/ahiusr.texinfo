@@ -15,6 +15,11 @@
 
 @c $Id$
 @c $Log$
+@c Revision 4.6  1997/08/03 22:48:26  lcs
+@c Added Concierto to list of supported sound cards.
+@c Added Christian Buchner to the Acknowledgments section.
+@c Changed Teemu Suikki's email address.
+@c
 @c Revision 4.5  1997/07/27 19:04:10  lcs
 @c Added description of the AHIpaulaSwapChannels env. variable.
 @c
@@ -699,8 +704,9 @@ uncompressed @dfn{IFF-AIFC}, 16 bit stereo at 44.1 kHz.
 @cindex Sound card drivers
 @cindex Aura
 @cindex Clarity
-@c @cindex Concierto
+@cindex Concierto
 @cindex Delfina DSP
+@cindex Delfina Lite
 @cindex DraCo Motion
 @cindex Melody MPEG
 @cindex Paula
@@ -717,10 +723,10 @@ time of writing, the following sound cards are supported:
 Aura (sampling only)
 @item
 Clarity (sampling only)
-@c @item
-@c Concierto
 @item
-Delfina DSP
+Concierto
+@item
+Delfina DSP and Delfina Lite
 @item
 DraCo Motion
 @item
@@ -1102,11 +1108,15 @@ For making it possible to write the first driver for a sound card, the
 @dfn{Wavetools} card. I'm sure @sc{Ahi} would not have been accepted as
 quick as it was without this driver. Funny that it didn't even work@enddots{}
 
+@item Christian Buchner
+For the calibrated 14 bit routines for Paula.
+
 @item SAS Institute, Inc. and Steve Krueger
 For the compiler and all the updates.
 
 @item Jyrki Petsalo and Teemu Suikki
 For the Delfina driver, and for supporting @sc{Ahi} in the early days.
+And of course, for the sound card!
 
 @item Pauli Porkka
 For active support and promotion of @sc{Ahi} from the beginning.
@@ -1170,7 +1180,7 @@ The first version of the Toccata driver.
 The first version of the preferences program. Too bad things didn't
 work out as planned.
 
-@item Teemu Suikki @email{zuikkis@@zuikkis.pp.sci.fi}
+@item Teemu Suikki @email{tsuikki@@lut.fi}
 The Delfina driver.
 
 @item Thomas Wenzel @email{wenzel@@unixserv.rz.fh-hannover.de}
