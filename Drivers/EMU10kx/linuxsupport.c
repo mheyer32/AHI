@@ -70,7 +70,7 @@ pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle )
   void* res;
 
 //  res = pci_alloc_dmamem( pci_dev, size );
-  res = (void*) AllocPages( size, MEMF_PUBLIC );
+  res = (void*) AllocPages( size, MEMF_PUBLIC | MEMF_CLEAR );
   *dma_handle = (dma_addr_t) pci_logic_to_physic_addr( res, pci_dev );
   return res;
 }
