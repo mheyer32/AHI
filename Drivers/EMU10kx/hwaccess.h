@@ -32,7 +32,7 @@
 #ifndef _HWACCESS_H
 #define _HWACCESS_H
 
-#ifndef __amiga__
+#if !defined(__amiga__) && !defined(__AROS__)
 #include <linux/fs.h>
 #include <linux/sound.h>
 #include <linux/soundcard.h>
