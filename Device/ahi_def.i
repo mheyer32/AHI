@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.3  1997/10/11 15:58:13  lcs
+* Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
+*
 * Revision 4.2  1997/06/02 18:15:02  lcs
 * Added optional clipping when using master volume > 100%.
 *
@@ -135,6 +138,8 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	UBYTE	ahiac_MaxCPU
 	UWORD	ahiac_Channels2
 	STRUCT	ahiac_Timer,Timer_SIZEOF
+	UWORD	ahiac_UsedCPU
+	UWORD	ahiac_Pad
 	STRUCT	ahiac_DriverName,41+1		* sizeof("DEVS:ahi/                          .audio")
 	LABEL	AHIPrivAudioCtrl_SIZEOF
 
