@@ -421,7 +421,7 @@ static const char ELFid[4] = {
 };
 
 void*
-AHILoadObject( const char* objname )
+ELFLoadObject( const char* objname )
 {
   struct ElfObject *elfobj = NULL;
 
@@ -492,7 +492,7 @@ AHILoadObject( const char* objname )
 
 
 void
-AHIUnLoadObject( void* obj )
+ELFUnLoadObject( void* obj )
 {
   struct ElfObject* elfobj = (struct ElfObject*) obj;
 

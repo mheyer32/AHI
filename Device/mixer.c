@@ -30,12 +30,15 @@
 # include <exec/memory.h>
 # include <exec/execbase.h>
 # include <powerup/ppclib/memory.h>
-# include <proto/exec.h>
-# include <proto/utility.h>
 # include <powerup/ppclib/tasks.h>
 # include <powerup/ppclib/interface.h>
 # include <powerup/ppclib/object.h>
+# include <powerpc/powerpc.h>
+
+# include <proto/exec.h>
+# include <proto/utility.h>
 # include <proto/ppc.h> 
+# include <proto/powerpc.h> 
 # include <clib/ahi_protos.h>
 # include <pragmas/ahi_pragmas.h>
 # include <proto/ahi_sub.h>
@@ -259,6 +262,17 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
   //CacheClearU();
 
+  if( PowerPCBase != NULL )
+  {
+    /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
+       flush the cache before mixing starts. :( */
+
+    SetCache68K( CACHE_DCACHEFLUSH,
+                 audioctrl->ahiac_PPCMixBuffer,
+                 audioctrl->ahiac_BuffSizeNow );
+  }
+
+
 #ifdef USE_PPC_PROCESS
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
@@ -282,7 +296,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 
 #endif
 
-  // The PPC mix buffer is not m68k-cachable; just read from it.
+  // The PPC mix buffer is not m68k-cachable (or cleared); just read from it.
 
   memcpy( dst, audioctrl->ahiac_PPCMixBuffer, audioctrl->ahiac_BuffSizeNow );
 
@@ -333,7 +347,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
     audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
         audioctrl->ac.ahiac_BuffSize,
         MEMF_PUBLIC | MEMF_NOCACHEM68K );
-//        MEMF_PUBLIC | MEMF_NOCACHEM68K | MEMF_NOCACHEPPC );
 
     audioctrl->ahiac_PPCMixInterrupt = AllocVec(
         sizeof( struct Interrupt ),

@@ -28,10 +28,10 @@
 
 
 void*
-AHILoadObject( const char* objname );
+ELFLoadObject( const char* objname );
 
 void
-AHIUnLoadObject( void* obj );
+ELFUnLoadObject( void* obj );
 
 
 #endif /* _ELFLOADER_H_ */

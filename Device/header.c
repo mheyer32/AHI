@@ -404,28 +404,20 @@ OpenLibs ( void )
 
   if( PowerPCBase != NULL )
   {
-    PowerPCBase = OpenLibrary( "power.library", 14 );
+    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
   }
   else
   {
     PPCLibBase = OpenLibrary( "ppc.library", 46 );
   }
 
-  if( PPCLibBase != NULL )
+  if( PPCLibBase != NULL || PowerPCBase != NULL )
   {
     /* Load our code to PPC..  */
 
-    PPCObject = PPCLoadObject( "DEVS:ahi.elf" );
+    PPCObject = AHILoadObject( "DEVS:ahi.elf" );
   }
   
-  if( PowerPCBase != NULL )
-  {
-    /* Load our code to PPC.. */
-    
-    Req( "WarpOS ELF loader not yet implemented" );
-    return FALSE;
-  }
-
 #endif 
 
   OpenahiCatalog(NULL, NULL);
@@ -447,23 +439,12 @@ CloseLibs ( void )
   CloseahiCatalog();
 
 #ifndef VERSION68K
-  if( PPCLibBase != NULL )
+  if( PPCObject != NULL )
   {
-    if( PPCObject != NULL )
-    {
-      PPCUnLoadObject( PPCObject );
-    }
-    CloseLibrary( PPCLibBase );
+    AHIUnLoadObject( PPCObject );
   }
 
-  if( PowerPCBase != NULL )
-  {
-    if( PPCObject != NULL )
-    {
-      Req( "WarpOS ELF unloader not yet implemented" );
-    }
-    CloseLibrary( PowerPCBase );
-  }
+  CloseLibrary( PowerPCBase );
 #endif
 
   CloseLibrary( (struct Library *) UtilityBase );
