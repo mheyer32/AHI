@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.2  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -282,18 +285,18 @@ SetFreq ( REG(d0, UWORD channel),
 
   AHIsub_Disable(&audioctrl->ac);
 
-  cd->cd_NextAddI = add >> 16;
-  cd->cd_NextAddF = add & 0xffff;
+  cd->cd_NextAdd.I = add >> 16;
+  cd->cd_NextAdd.F = (add & 0xffff) << 16;
 
   if(flags & AHISF_IMM)
   {
-    cd->cd_AddI   = cd->cd_NextAddI;
-    cd->cd_AddF   = cd->cd_NextAddF;
+    cd->cd_Add.I   = cd->cd_NextAdd.I;
+    cd->cd_Add.F   = cd->cd_NextAdd.F;
     cd->cd_FreqOK = cd->cd_NextFreqOK;
 
-    cd->cd_Samples = CalcSamples(cd->cd_AddI, cd->cd_AddF, cd->cd_Type,
-                                 cd->cd_LastOffsetI, cd->cd_LastOffsetF,
-                                 cd->cd_OffsetI, cd->cd_OffsetF);
+    cd->cd_Samples = CalcSamples(cd->cd_Add.I, cd->cd_Add.F, cd->cd_Type,
+                                 cd->cd_LastOffset.I, cd->cd_LastOffset.F,
+                                 cd->cd_Offset.I, cd->cd_Offset.F);
   }
 
   AHIsub_Enable(&audioctrl->ac);
@@ -398,12 +401,12 @@ SetSound ( REG(d0, UWORD channel),
 
   if(sound == AHI_NOSOUND)
   {
-    cd->cd_NextSoundOK = FALSE;
+    cd->cd_NextSoundOK    = FALSE;
 
     if(flags & AHISF_IMM)
     {
-      cd->cd_SoundOK = FALSE;
-      cd->cd_EOS     = TRUE;  /* Signal End-Of-Sample */
+      cd->cd_EOS          = TRUE;  /* Signal End-Of-Sample */
+      cd->cd_SoundOK      = FALSE;
     }
   }
   else if(sd->sd_Type != AHIST_NOTYPE) /* This is a user error, shouldn't happen! */
@@ -419,43 +422,44 @@ SetSound ( REG(d0, UWORD channel),
 
     cd->cd_NextDataStart = sd->sd_Addr;
     cd->cd_NextType      = sd->sd_Type;
-    cd->cd_NextOffsetI   = offset;
+    cd->cd_NextOffset.I  = offset;
 
     cd->cd_NextSoundOK   = TRUE;
 
     if(length < 0)
     {
       cd->cd_NextType |= AHIST_BW;
-      cd->cd_NextLastOffsetI = offset + length + 1;
-      cd->cd_NextLastOffsetF = 0;
-      cd->cd_NextOffsetF     = 0xffff;
+      cd->cd_NextLastOffset.I = offset + length + 1;
+      cd->cd_NextLastOffset.F = 0;
+      cd->cd_NextOffset.F     = 0xffffffff;
     }
     else
     {
-      cd->cd_NextLastOffsetI = offset + length - 1;
-      cd->cd_NextLastOffsetF = 0xffff;
-      cd->cd_NextOffsetF     = 0;
+      cd->cd_NextLastOffset.I = offset + length - 1;
+      cd->cd_NextLastOffset.F = 0xffffffff;
+      cd->cd_NextOffset.F     = 0;
     }
 
     if(flags & AHISF_IMM)
     {
-      cd->cd_OffsetI      = cd->cd_NextOffsetI;
-      cd->cd_FirstOffsetI = cd->cd_NextOffsetI; /* for linear interpol. */
-      cd->cd_OffsetF      = cd->cd_NextOffsetF;
-      cd->cd_LastOffsetI  = cd->cd_NextLastOffsetI;
-      cd->cd_LastOffsetF  = cd->cd_NextLastOffsetF;
-      cd->cd_DataStart    = cd->cd_NextDataStart;
-      cd->cd_Type         = cd->cd_NextType;
-      cd->cd_SoundOK      = cd->cd_NextSoundOK;
+      cd->cd_Offset.I      = cd->cd_NextOffset.I;
+      cd->cd_FirstOffsetI  = cd->cd_NextOffset.I; /* for linear interpol. */
+      cd->cd_Offset.F      = cd->cd_NextOffset.F;
+      cd->cd_LastOffset.I  = cd->cd_NextLastOffset.I;
+      cd->cd_LastOffset.F  = cd->cd_NextLastOffset.F;
+      cd->cd_DataStart     = cd->cd_NextDataStart;
+      cd->cd_Type          = cd->cd_NextType;
+      cd->cd_SoundOK       = cd->cd_NextSoundOK;
 
       SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
                        &cd->cd_ScaleLeft, &cd->cd_ScaleRight, &cd->cd_AddRoutine);
 
-      cd->cd_Samples = CalcSamples(cd->cd_AddI, cd->cd_AddF, cd->cd_Type,
-                                   cd->cd_LastOffsetI, cd->cd_LastOffsetF,
-                                   cd->cd_OffsetI, cd->cd_OffsetF);
+      cd->cd_Samples = CalcSamples(cd->cd_Add.I, cd->cd_Add.F, cd->cd_Type,
+                                   cd->cd_LastOffset.I, cd->cd_LastOffset.F,
+                                   cd->cd_Offset.I, cd->cd_Offset.F);
 
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
+
     }
 
     SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,

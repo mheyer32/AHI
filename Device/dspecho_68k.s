@@ -1,5 +1,8 @@
 ;/* $Id$
 * $Log$
+* Revision 4.8  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.7  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -50,6 +53,7 @@ void ASMCALL do_DSPEchoStereo16NCFMFast ( REGS ) {}
 
 
 	include	exec/types.i
+	include	exec/macros.i
 
 	include	ahi_def.i
 	include dsp.i

@@ -1,5 +1,8 @@
 ;/* $Id$
 * $Log$
+* Revision 4.12  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.11  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -33,16 +36,14 @@ LONG ASMCALL Fixed2Shift ( REG(d0, Fixed val) ) {}
 
 void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
 
-#if 0
-void ASMCALL Add64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-LONG ASMCALL Cmp64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-void ASMCALL Divs64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-void ASMCALL Divu64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-void ASMCALL Muls64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-void ASMCALL Mulu64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-void ASMCALL Neg64p( REG(a0, longlong *ValueAPtr) ) {}
-void ASMCALL Sub64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) ) {}
-#endif
+void ASMCALL Add64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
+LONG ASMCALL Cmp64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
+// void ASMCALL Divs64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
+// void ASMCALL Divu64p( REG(a0, ULONGLONG *ValueAPtr), REG(a1, ULONGLONG *ValueBPtr) ) {}
+// void ASMCALL Muls64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
+// void ASMCALL Mulu64p( REG(a0, ULONGLONG *ValueAPtr), REG(a1, ULONGLONG *ValueBPtr) ) {}
+void ASMCALL Neg64p( REG(a0, LONGLONG *ValueAPtr) ) {}
+void ASMCALL Sub64p( REG(a0, LONGLONG *ValueAPtr), REG(a1, LONGLONG *ValueBPtr) ) {}
 
 ;/*     Comment terminated at the end of the file!
 
@@ -74,20 +75,14 @@ void ASMCALL Sub64p( REG(a0, longlong *ValueAPtr), REG(a1, longlong *ValueBPtr) 
 
 	XDEF	_Mix
 
-	* Define 64 bit math routines if 020+
-
- IF 0
- IFGE	__CPU-68020
 	XDEF	_Add64p
 	XDEF	_Cmp64p
-	XDEF	_Divs64p
-	XDEF	_Divu64p
-	XDEF	_Muls64p
-	XDEF	_Mulu64p
+;	XDEF	_Divs64p
+;	XDEF	_Divu64p
+;	XDEF	_Muls64p
+;	XDEF	_Mulu64p
 	XDEF	_Neg64p
 	XDEF	_Sub64p
- ENDC
- ENDC * IF 0
 
 ** Sprintf ********************************************************************
 
@@ -310,27 +305,23 @@ _Mix:
 
 ** Math functions *************************************************************
 
- IF 0
-
-pow2_32:
-	dc.x	2<<32
 
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	LONGLONG *ValueAPtr
+* a1	LONGLONG *ValueBPtr
 ;out
 ;	longlong *ValueAPtr updated
 _Add64p:
-	addq.l	#8,a0
-	addq.l	#8,a1
+	addq.l	#LL_SIZEOF,a0
+	addq.l	#LL_SIZEOF,a1
 	move.w	#0,ccr			;clear x
 	addx.l	-(a1),-(a0)
 	addx.l	-(a1),-(a0)
 	rts
 
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	LONGLONG *ValueAPtr
+* a1	LONGLONG *ValueBPtr
 ;out
 * d0	A<B: -1, A=B: 0, A>B: 1
 _Cmp64p:
@@ -354,75 +345,46 @@ _Cmp64p:
 	rts
 
 
+ IF	0
+
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	LONGLONG *ValueAPtr
+* a1	LONGLONG *ValueBPtr
 ;out
-;	longlong *ValueAPtr updated
+;	LONGLONG *ValueAPtr updated
 _Divs64p:
-	fmov.x	fp2,-(sp)
-	movem.l	(a0),d0/d1
-	movem.l	(a1),d2/d3
-	fmov.x	pow2_32,fp2
-
-	fmov.l	d0,fp0
-	fmul	fp2,fp0
-	fadd.l	d1,fp0
-
-	fmov.l	d2,fp1
-	fmul	fp2,fp1
-	fadd.l	d3,fp1
-
-	fdiv	fp1,fp0
-
-Great. Now how do I convert fp0 to a 64 bit integer??? Sigh.
-
-	divs.l	d2:d3,d0:d1
-	movem.l	d0/d1,(a0)
-	fmov.x	(sp)+,fp2
 	rts
 
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	ULONGLONG *ValueAPtr
+* a1	ULONGLONG *ValueBPtr
 ;out
-;	longlong *ValueAPtr updated
+;	ULONGLONG *ValueAPtr updated
 _Divu64p:
-	movem.l	(a0),d0/d1
-	movem.l	(a1),d2/d3
-	divul.l	d2:d3,d0:d1
-	movem.l	d0/d1,(a0)
 	rts
 
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	LONGLONG *ValueAPtr
+* a1	LONGLONG *ValueBPtr
 ;out
-;	longlong *ValueAPtr updated
+;	LONGLONG *ValueAPtr updated
 _Muls64p:
-	movem.l	(a0),d0/d1
-	movem.l	(a1),d2/d3
-	mulsl.l	d2:d3,d0:d1
-	movem.l	d0/d1,(a0)
 	rts
 
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	ULONGLONG *ValueAPtr
+* a1	ULONGLONG *ValueBPtr
 ;out
-;	longlong *ValueAPtr updated
+;	ULONGLONG *ValueAPtr updated
 _Mulu64p:
-	movem.l	(a0),d0/d1
-	movem.l	(a1),d2/d3
-	mulul.l	d2:d3,d0:d1
-	movem.l	d0/d1,(a0)
-	rts
 	rts
 
+ ENDC * IF 0
+
 ;in:
-* a0	longlong *ValueAPtr
+* a0	LONGLONG *ValueAPtr
 ;out
-;	longlong *ValueAPtr updated
+;	LONGLONG *ValueAPtr updated
 _Neg64p:
 	not.l	(a0)+
 	not.l	(a0)+
@@ -436,18 +398,17 @@ _Neg64p:
 .1
 
 ;in:
-* a0	longlong *ValueAPtr
-* a1	longlong *ValueBPtr
+* a0	LONGLONG *ValueAPtr
+* a1	LONGLONG *ValueBPtr
 ;out
 ;	longlong *ValueAPtr updated
 _Sub64p:
-	addq.l	#8,a0
-	addq.l	#8,a1
+	addq.l	#LL_SIZEOF,a0
+	addq.l	#LL_SIZEOF,a1
 	move.w	#0,ccr			;clear x
 	subx.l	-(a1),-(a0)
 	subx.l	-(a1),-(a0)
 	rts
- ENDC * IF 0
 
 
 ;	C comment terminating here... */

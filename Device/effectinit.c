@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.8  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.7  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -106,16 +109,33 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
                  REG(a2, struct AHIPrivAudioCtrl *audioctrl),
                  REG(a5, struct AHIBase *AHIBase) )
 {
-  ULONG length, samplesize;
+  ULONG size, samplesize;
   struct Echo *es;
 
   free_DSPEcho(audioctrl, AHIBase);
 
-  samplesize = AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
 
-  length = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
+  /* Set up the delay buffer format */
 
-  es = AllocVec(sizeof(struct Echo) + length, MEMF_PUBLIC|MEMF_CLEAR);
+  switch(audioctrl->ac.ahiac_BuffType)
+  {
+    case AHIST_M16S:
+    case AHIST_M32S:
+      samplesize = 2;
+      break;
+
+    case AHIST_S16S:
+    case AHIST_S32S:
+      samplesize = 4;
+      break;
+
+    default:
+      return FALSE; // Panic
+  }
+
+  size = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
+
+  es = AllocVec(sizeof(struct Echo) + size, MEMF_PUBLIC|MEMF_CLEAR);
   
   if(es)
   {
@@ -124,9 +144,9 @@ update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
     es->ahiecho_Offset       = 0;
     es->ahiecho_SrcPtr       = es->ahiecho_Buffer;
     es->ahiecho_DstPtr       = es->ahiecho_Buffer + (samplesize * echo->ahiede_Delay);
-    es->ahiecho_EndPtr       = es->ahiecho_Buffer + length;
+    es->ahiecho_EndPtr       = es->ahiecho_Buffer + size;
     es->ahiecho_BufferLength = echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples;
-    es->ahiecho_BufferSize   = length;
+    es->ahiecho_BufferSize   = size;
 
     switch(audioctrl->ac.ahiac_BuffType)
     {

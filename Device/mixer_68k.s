@@ -1,5 +1,8 @@
 ;/* $Id$
 * $Log$
+* Revision 4.14  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.13  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -34,11 +37,11 @@ void ASMCALL calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(
 BOOL ASMCALL initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
 void ASMCALL calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a5, struct AHIBase *AHIBase) ) {}
 
-void ASMCALL SelectAddRoutine ( REG(d0, Fixed VolumeLeft), REG(d1, Fixed VolumeRight), REG(d2, ULONG SampleType), REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a0, ULONG *ScaleLeft), REG(a1, ULONG *ScaleRight), REG(a3, void **AddRoutine) ) {}
+void ASMCALL SelectAddRoutine ( REG(d0, Fixed VolumeLeft), REG(d1, Fixed VolumeRight), REG(d2, ULONG SampleType), REG(a2, struct AHIPrivAudioCtrl *audioctrl), REG(a0, LONG *ScaleLeft), REG(a1, LONG *ScaleRight), REG(a3, void **AddRoutine) ) {}
 
 
 void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) ) {}
-ULONG ASMCALL CalcSamples ( REG(d0, ULONG AddI), REG(d1, UWORD AddF ), REG(d2, ULONG Type), REG(d3, ULONG LastOffsetI), REG(d4, UWORD LastOffsetF), REG(d5, ULONG OffsetI), REG(d6, UWORD OffsetF) ) {}
+LONG ASMCALL CalcSamples ( REG(d0, LONG AddI), REG(d1, ULONG AddF ), REG(d2, ULONG Type), REG(d3, LONG LastOffsetI), REG(d4, ULONG LastOffsetF), REG(d5, LONG OffsetI), REG(d6, ULONG OffsetF) ) {}
 
 ;/*     Comment terminated at the end of the file!
 
@@ -338,8 +341,8 @@ _calcUnsignedTable:
 * d0	VolumeLeft (Fixed)
 * d1	VolumeRight (Fixed)
 * d2	SampleType
-* a0	ULONG *ScaleLeft
-* a1	ULONG *ScaleRight
+* a0	LONG *ScaleLeft
+* a1	LONG *ScaleRight
 * a2	AudioCtrl
 * a3	void *AddRoutine
 
@@ -721,7 +724,7 @@ _Mix68k:
 	clr.w	cd_EOS(a5)		;clear EOS flag
 .notEOS
 
-	movem.l	(a5),d1/d3/d4/d5/d6/a3	;Flags,OffsI,OffsF,AddI,AddF,DataStart
+	movem.l	(a5),d1/d3/d4/d5/d6/a3	;Flags,Offset,Add,DataStart
 	cmp.w	#TRUE<<8 | TRUE,d1	;FreqOK and SoundOK must both be TRUE
 	bne	.channel_done		;No sound or freq not set yet.
 
@@ -746,12 +749,12 @@ _Mix68k:
 	beq	.notinput2
 
 	move.l	cd_NextFlags(a5),cd_Flags(a5)
-	movem.l	cd_NextAddI(a5),d0-d7/a0/a3/a6	; AddI,AddF,DataStart,LastOffsetI,LastOffsetF,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
-	movem.l	d0-d7/a0/a3/a6,cd_AddI(a5)
+	movem.l	cd_NextAdd(a5),d0-d7/a0/a3/a6	; Add,DataStart,LastOffset,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
+	movem.l	d0-d7/a0/a3/a6,cd_Add(a5)
 
 	move.l	ahiac_InputLength(a2),cd_Samples(a5)
-	clr.l	cd_OffsetI(a5)
-	clr.w	cd_OffsetF(a5)
+	clr.l	cd_Offset+F64_I(a5)
+	clr.l	cd_Offset+F64_F(a5)
 	clr.l	cd_FirstOffsetI(a5)
 	move.l	ahiac_InputBuffer1(a2),cd_DataStart(a5)
 
@@ -763,11 +766,11 @@ _Mix68k:
 ; d3:d4 always points OUTSIDE the sample after this call. Ie, if we read a
 ; sample at offset d3 now, it does not belong to the sample just played.
 ; This is true for both backward and forward mixing.
-; Oh, btw... OffsetF is unsigned, so -0.5 is expressed as -1:$8000.
+; Oh, btw... OffsetF is unsigned, so -0.5 is expressed as -1:$80000000.
 
 ; What we do now is to calculate how much futher we have advanced.
-	sub.w	cd_LastOffsetF(a5),d4
-	move.l	cd_LastOffsetI(a5),d0
+	sub.l	cd_LastOffset+F64_F(a5),d4
+	move.l	cd_LastOffset+F64_I(a5),d0
 	subx.l	d0,d3
 
 ; d3:d4 should now be added to the NEXT OffsetI (and OffsetF which is 0 when
@@ -781,15 +784,15 @@ _Mix68k:
 	and.l	#AHIST_BW,d1			;filter the BW bit
 	beq.b	.same_type
 	neg.l	d3
-	neg.w	d4
+	neg.l	d4
 .same_type
 
 ; Ok, now we add.
-	add.w	cd_NextOffsetF(a5),d4
-	move.l	cd_NextOffsetI(a5),d0
+	add.l	cd_NextOffset+F64_F(a5),d4
+	move.l	cd_NextOffset+F64_I(a5),d0
 	addx.l	d0,d3
-	move.l	d3,cd_OffsetI(a5)
-	move.w	d4,cd_OffsetF(a5)
+	move.l	d3,cd_Offset+F64_I(a5)
+	move.l	d4,cd_Offset+F64_F(a5)
 	move.l	d3,cd_FirstOffsetI(a5)
 
 ; But what if the next sample is so short that we just passed it!?
@@ -804,12 +807,12 @@ _Mix68k:
 
 ; Now, let's copy the rest of the cd_Next#? stuff...
 	move.l	cd_NextFlags(a5),cd_Flags(a5)
-	movem.l	cd_NextAddI(a5),d0-d7/a0/a3/a6	; AddI,AddF,DataStart,LastOffsetI,LastOffsetF,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
-	movem.l	d0-d7/a0/a3/a6,cd_AddI(a5)
+	movem.l	cd_NextAdd(a5),d0-d7/a0/a3/a6	; Add,DataStart,LastOffset,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
+	movem.l	d0-d7/a0/a3/a6,cd_Add(a5)
 
-					;AddI/AddF,LastOffsetI/LastOffsetF ok
+					;Add,LastOffset ok
 	move.l	a6,d2			;Type
-	movem.l	cd_OffsetI(a5),d5/d6	;cd_OffsetI/cd_OffsetF
+	movem.l	cd_Offset(a5),d5/d6	;cd_Offset+F64_I/cd_Offset+F64_F
 	bsr	_CalcSamples
 	move.l	d0,cd_Samples(a5)
 
@@ -821,12 +824,12 @@ _Mix68k:
 	sub.l	d0,cd_Samples(a5)
 	movem.l	cd_ScaleLeft(a5),d1/d2/a0
 	jsr	(a0)
-	movem.l	d3/d4,cd_OffsetI(a5)		;update Offset
+	movem.l	d3/d4,cd_Offset(a5)	;update Offset
 
 .channel_done
 	move.l	cd_Succ(a5),d0		;next channel in list
 	move.l	d0,a5
-	bne.w	.nextchannel
+	bne	.nextchannel
 	tst.b	ahiac_WetOrDry(a2)
 	bne.b	.exit			;Both wet and dry finished
 	addq.b	#1,ahiac_WetOrDry(a2)	;Mark dry
@@ -884,7 +887,7 @@ _Mix68k:
 	lea	ahieci_Offset(a1),a3
 	move.l	ahiac_ChannelDatas(a2),a4
 .ci_loop
-	move.l	cd_OffsetI(a4),(a3)+
+	move.l	cd_Offset+F64_I(a4),(a3)+
 	add.w	#AHIChannelData_SIZEOF,a4
 	dbf	d0,.ci_loop
 	move.l	h_Entry(a0),a3
@@ -981,16 +984,21 @@ DoMasterVolume
 
 ;in:
 * d0	AddI
-* d1.w	AddF
+* d1	AddF
 * d2	Type
 * d3	LastOffsetI
-* d4.w	LastOffsetF
+* d4	LastOffsetF
 * d5	OffsetI
-* d6.w	OffsetF
+* d6	OffsetF
 ;ut:
 * d0	Samples
 _CalcSamples:
 * Calc how many loops the addroutines should run (Times=Length/Rate)
+
+; Quick fix when changed fraction to 32 bits...
+	swap.w	d1
+	swap.w	d4
+	swap.w	d6
 
 ;	and.l	#AHIST_BW|AHIST_INPUT,d2
 ;	beq	.forwards
@@ -1510,9 +1518,9 @@ FixVolWordsSVPH:
 ;in:
 * d0.l	Samples (scratch)
 * d3	Offset Integer
-* d4.w	Offset Fraction (upper word cleared!)
+* d4	Offset Fraction (upper word cleared!)
 * d5	Add Integer (s)
-* d6.w	Add Fraction (s) (upper word cleared!)
+* d6	Add Fraction (s) (upper word cleared!)
 * d7	Scratch
 * a0	Scratch
 * a2	AHIAudioCtrl (only used by AddSilence routines)
@@ -1630,7 +1638,7 @@ OffsWordsSVPHB:	dc.w	AddWordsSVPHB-*
 ; To make the backward-mixing routines, do this:
 ; 1) Copy all mixing routines.
 ; 2) Replace all occurences of ':' with 'B:' (all labels)
-; 3) Replace all occurences of 'add.w	d6,d4' with 'sub.w	d6,d4'
+; 3) Replace all occurences of 'add.l	d6,d4' with 'sub.l	d6,d4'
 ; 4) Replace all occurences of 'addx.l	d5,d3' with 'subx.l	d5,d3'
 ; 5) AddSilence uses different source registers for add/addx.
 ; 6) The HiFi routines are different.
@@ -1645,6 +1653,10 @@ OffsWordsSVPHB:	dc.w	AddWordsSVPHB-*
 * d1.l	-65536..65536
 AddByteMVH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1678,6 +1690,8 @@ AddByteMVH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -1686,6 +1700,10 @@ AddByteMVH:
 * d2.l	-65536..65536
 AddByteSVPH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1723,6 +1741,8 @@ AddByteSVPH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -1731,6 +1751,10 @@ AddByteSVPH:
 * d2.l	-65536..65536
 AddBytesMVH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1790,6 +1814,8 @@ AddBytesMVH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -1798,6 +1824,10 @@ AddBytesMVH:
 * d2.l	-65536..65536
 AddBytesSVPH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	swap.w	d4
+	clr.w	d6
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1857,6 +1887,8 @@ AddBytesSVPH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -1864,6 +1896,10 @@ AddBytesSVPH:
 * d1.l	-65536..65536
 AddWordMVH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1894,6 +1930,8 @@ AddWordMVH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -1902,6 +1940,10 @@ AddWordMVH:
 * d2.l	-65536..65536
 AddWordSVPH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1936,6 +1978,8 @@ AddWordSVPH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -1944,6 +1988,10 @@ AddWordSVPH:
 * d2.l	-65536..65536
 AddWordsMVH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -1997,6 +2045,8 @@ AddWordsMVH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -2005,6 +2055,10 @@ AddWordsMVH:
 * d2.l	-65536..65536
 AddWordsSVPH:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2058,6 +2112,8 @@ AddWordsSVPH:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -2066,6 +2122,10 @@ AddWordsSVPH:
 
 AddByteMVHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2101,11 +2161,17 @@ AddByteMVHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 AddByteSVPHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2145,11 +2211,17 @@ AddByteSVPHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 AddBytesMVHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2211,11 +2283,17 @@ AddBytesMVHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 AddBytesSVPHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2277,11 +2355,17 @@ AddBytesSVPHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 AddWordMVHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2314,11 +2398,17 @@ AddWordMVHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 AddWordSVPHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2355,12 +2445,18 @@ AddWordSVPHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 
 AddWordsMVHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2416,11 +2512,17 @@ AddWordsMVHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
 AddWordsSVPHB:
  IFGE	__CPU-68020
+	clr.w	d4		; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
 	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
@@ -2476,6 +2578,8 @@ AddWordsSVPHB:
 	dbf	d0,.nextsample
 .exit
 	neg.w	d4
+	swap.w	d4		; 32 bit fraction
+	swap.w	d6
  ENDC
 	rts
 
@@ -2483,6 +2587,10 @@ AddWordsSVPHB:
 	cnop	0,16
 
 AddSilence:
+	clr.w	d4			; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
  IFGE	__CPU-68020
   IFLT	__CPU-68060
 	move.l	d5,d1			;AddI<65535
@@ -2526,12 +2634,18 @@ AddSilence:
 .nohifi
 	lsl.l	#1,d0
 	add.l	d0,a4			;New buffer pointer
+	swap.w	d4			; 32 bit fraction
+	swap.w	d6
 	rts
 
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
 AddSilenceB:
+	clr.w	d4			; 16 bit fraction
+	clr.w	d6
+	swap.w	d4
+	swap.w	d6
  IFGE	__CPU-68020
   IFLT	__CPU-68060
 	move.l	d5,d1			;AddI<65535
@@ -2575,6 +2689,8 @@ AddSilenceB:
 .nohifi
 	lsl.l	#1,d0
 	add.l	d0,a4			;New buffer pointer
+	swap.w	d4			; 32 bit fraction
+	swap.w	d6
 	rts
 
 ;******************************************************************************
@@ -2592,14 +2708,14 @@ AddByteMV:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d7
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -2628,7 +2744,7 @@ AddByteMVT:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d1
@@ -2641,7 +2757,7 @@ AddByteMVT:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -2663,7 +2779,7 @@ AddByteSVl:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -2671,7 +2787,7 @@ AddByteSVl:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -2695,7 +2811,7 @@ AddByteSVr:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d7
@@ -2703,7 +2819,7 @@ AddByteSVr:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -2729,7 +2845,7 @@ AddByteSVP:
 	move.w	a0,d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d7
@@ -2740,7 +2856,7 @@ AddByteSVP:
 	move.w	a0,d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -2769,7 +2885,7 @@ AddByteSVTl:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -2783,7 +2899,7 @@ AddByteSVTl:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -2814,7 +2930,7 @@ AddByteSVTr:
  ENDC
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d1
@@ -2828,7 +2944,7 @@ AddByteSVTr:
  ENDC
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -2867,7 +2983,7 @@ AddByteSVPT:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d1
@@ -2887,7 +3003,7 @@ AddByteSVPT:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -2915,7 +3031,7 @@ AddBytesMV:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d7
@@ -2926,7 +3042,7 @@ AddBytesMV:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -2955,7 +3071,7 @@ AddBytesMVT:
 	move.b	1(a3,d3.l*2),d1
 	add.w	0(a1,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d1
@@ -2963,7 +3079,7 @@ AddBytesMVT:
 	move.b	1(a3,d3.l*2),d1
 	add.w	0(a1,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -2988,7 +3104,7 @@ AddBytesSVl:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -2996,7 +3112,7 @@ AddBytesSVl:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -3022,7 +3138,7 @@ AddBytesSVr:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	1(a3,d3.l*2),d7
@@ -3030,7 +3146,7 @@ AddBytesSVr:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3058,7 +3174,7 @@ AddBytesSVP:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d7
@@ -3069,7 +3185,7 @@ AddBytesSVP:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3093,14 +3209,14 @@ AddBytesSVTl:
 	move.b	0(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
 	move.b	0(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -3126,14 +3242,14 @@ AddBytesSVTr:
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	1(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3163,7 +3279,7 @@ AddBytesSVPT:
 	move.b	1(a3,d3.l*2),d1
 	move.w	0(a1,d1.w*4),d2
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d1
@@ -3172,7 +3288,7 @@ AddBytesSVPT:
 	move.b	1(a3,d3.l*2),d1
 	move.w	0(a1,d1.w*4),d2
 	add.w	d2,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3206,7 +3322,7 @@ AddWordMV:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -3221,7 +3337,7 @@ AddWordMV:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3247,7 +3363,7 @@ AddWordMVT:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -3259,7 +3375,7 @@ AddWordMVT:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3290,7 +3406,7 @@ AddWordSVl:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -3306,7 +3422,7 @@ AddWordSVl:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -3340,7 +3456,7 @@ AddWordSVr:
  ENDC
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -3356,7 +3472,7 @@ AddWordSVr:
  ENDC
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3401,7 +3517,7 @@ AddWordSVP:
 	muls.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -3430,7 +3546,7 @@ AddWordSVP:
 	muls.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3456,7 +3572,7 @@ AddWordSVTl:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -3469,7 +3585,7 @@ AddWordSVTl:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 
@@ -3498,7 +3614,7 @@ AddWordSVTr:
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -3511,7 +3627,7 @@ AddWordSVTr:
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3547,7 +3663,7 @@ AddWordSVPT:
 	asr.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -3568,7 +3684,7 @@ AddWordSVPT:
 	asr.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -3600,7 +3716,7 @@ AddWordsMV:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.w	0(a3,d3.l*4),d7
@@ -3613,7 +3729,7 @@ AddWordsMV:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3639,7 +3755,7 @@ AddWordsMVT:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.w	(a3,d3.l*4),d7
@@ -3648,7 +3764,7 @@ AddWordsMVT:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -3674,7 +3790,7 @@ AddWordsSVl:
 	muls.w	d1,d7
 	asr.l	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -3682,7 +3798,7 @@ AddWordsSVl:
 	muls.w	d1,d7
 	asr.l	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -3710,7 +3826,7 @@ AddWordsSVr:
 	asr.l	d1,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.w	2(a3,d3.l*4),d7
@@ -3718,7 +3834,7 @@ AddWordsSVr:
 	asr.l	d1,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3750,7 +3866,7 @@ AddWordsSVP:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.w	0(a3,d3.l*4),d7
@@ -3764,7 +3880,7 @@ AddWordsSVP:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3786,14 +3902,14 @@ AddWordsSVTl:
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 
@@ -3818,14 +3934,14 @@ AddWordsSVTr:
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -3852,7 +3968,7 @@ AddWordsSVPT:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 .1
 	move.w	(a3,d3.l*4),d7
@@ -3861,7 +3977,7 @@ AddWordsSVPT:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	add.w	d6,d4
+	add.l	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -3887,14 +4003,14 @@ AddByteMVB:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d7
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -3923,7 +4039,7 @@ AddByteMVTB:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d1
@@ -3936,7 +4052,7 @@ AddByteMVTB:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -3958,7 +4074,7 @@ AddByteSVlB:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -3966,7 +4082,7 @@ AddByteSVlB:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -3990,7 +4106,7 @@ AddByteSVrB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d7
@@ -3998,7 +4114,7 @@ AddByteSVrB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4024,7 +4140,7 @@ AddByteSVPB:
 	move.w	a0,d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d7
@@ -4035,7 +4151,7 @@ AddByteSVPB:
 	move.w	a0,d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4064,7 +4180,7 @@ AddByteSVTlB:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -4078,7 +4194,7 @@ AddByteSVTlB:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -4109,7 +4225,7 @@ AddByteSVTrB:
  ENDC
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d1
@@ -4123,7 +4239,7 @@ AddByteSVTrB:
  ENDC
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4162,7 +4278,7 @@ AddByteSVPTB:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	(a3,d3.l),d1
@@ -4182,7 +4298,7 @@ AddByteSVPTB:
 	moveq	#0,d1
  ENDC
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4210,7 +4326,7 @@ AddBytesMVB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d7
@@ -4221,7 +4337,7 @@ AddBytesMVB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4250,7 +4366,7 @@ AddBytesMVTB:
 	move.b	1(a3,d3.l*2),d1
 	add.w	0(a1,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d1
@@ -4258,7 +4374,7 @@ AddBytesMVTB:
 	move.b	1(a3,d3.l*2),d1
 	add.w	0(a1,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -4283,7 +4399,7 @@ AddBytesSVlB:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -4291,7 +4407,7 @@ AddBytesSVlB:
 	ext.w	d7
 	muls.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -4317,7 +4433,7 @@ AddBytesSVrB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	1(a3,d3.l*2),d7
@@ -4325,7 +4441,7 @@ AddBytesSVrB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4353,7 +4469,7 @@ AddBytesSVPB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d7
@@ -4364,7 +4480,7 @@ AddBytesSVPB:
 	ext.w	d7
 	muls.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4388,14 +4504,14 @@ AddBytesSVTlB:
 	move.b	0(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
 	move.b	0(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -4421,14 +4537,14 @@ AddBytesSVTrB:
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	1(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	addq.l	#2,a4
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4458,7 +4574,7 @@ AddBytesSVPTB:
 	move.b	1(a3,d3.l*2),d1
 	move.w	0(a1,d1.w*4),d2
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.b	0(a3,d3.l*2),d1
@@ -4467,7 +4583,7 @@ AddBytesSVPTB:
 	move.b	1(a3,d3.l*2),d1
 	move.w	0(a1,d1.w*4),d2
 	add.w	d2,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4501,7 +4617,7 @@ AddWordMVB:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -4516,7 +4632,7 @@ AddWordMVB:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4542,7 +4658,7 @@ AddWordMVTB:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -4554,7 +4670,7 @@ AddWordMVTB:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4585,7 +4701,7 @@ AddWordSVlB:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -4601,7 +4717,7 @@ AddWordSVlB:
 	muls.w	d1,d7
  ENDC
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -4635,7 +4751,7 @@ AddWordSVrB:
  ENDC
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -4651,7 +4767,7 @@ AddWordSVrB:
  ENDC
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4696,7 +4812,7 @@ AddWordSVPB:
 	muls.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -4725,7 +4841,7 @@ AddWordSVPB:
 	muls.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4751,7 +4867,7 @@ AddWordSVTlB:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -4764,7 +4880,7 @@ AddWordSVTlB:
  ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 
@@ -4794,7 +4910,7 @@ AddWordSVTrB:
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -4807,7 +4923,7 @@ AddWordSVTrB:
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4843,7 +4959,7 @@ AddWordSVPTB:
 	asr.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
@@ -4864,7 +4980,7 @@ AddWordSVPTB:
 	asr.w	d2,d7
 	add.w	d7,(a4)+
  ENDC
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -4896,7 +5012,7 @@ AddWordsMVB:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.w	0(a3,d3.l*4),d7
@@ -4909,7 +5025,7 @@ AddWordsMVB:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -4935,7 +5051,7 @@ AddWordsMVTB:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.w	(a3,d3.l*4),d7
@@ -4944,7 +5060,7 @@ AddWordsMVTB:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -4970,7 +5086,7 @@ AddWordsSVlB:
 	muls.w	d1,d7
 	asr.l	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
@@ -4978,7 +5094,7 @@ AddWordsSVlB:
 	muls.w	d1,d7
 	asr.l	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 	dbf	d0,.nextsample
@@ -5006,7 +5122,7 @@ AddWordsSVrB:
 	asr.l	d1,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.w	2(a3,d3.l*4),d7
@@ -5014,7 +5130,7 @@ AddWordsSVrB:
 	asr.l	d1,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -5046,7 +5162,7 @@ AddWordsSVPB:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.w	0(a3,d3.l*4),d7
@@ -5060,7 +5176,7 @@ AddWordsSVPB:
 	asr.l	#8,d7
 	asr.l	#7,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
@@ -5082,14 +5198,14 @@ AddWordsSVTlB:
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 
@@ -5114,14 +5230,14 @@ AddWordsSVTrB:
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
@@ -5148,7 +5264,7 @@ AddWordsSVPTB:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 .1
 	move.w	(a3,d3.l*4),d7
@@ -5157,7 +5273,7 @@ AddWordsSVPTB:
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
-	sub.w	d6,d4
+	sub.l	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample

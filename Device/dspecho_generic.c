@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.2  1998/01/12 20:07:28  lcs
 * Generic echo code.
 *
@@ -16,16 +19,16 @@
 
 
 static void
-EchoMono32 ( LONG loops,
-             struct Echo *es,
-             void **buffer,
-             void **srcptr,
-             void **dstptr)
+EchoMono32 ( LONG          loops,
+             struct Echo  *es,
+             void        **buffer,
+             void        **srcptr,
+             void        **dstptr)
 {
   LONG *buf;
   WORD *src, *dst;
   LONG sample, delaysample;
-  
+
   buf = *buffer;
   src = *srcptr;
   dst = *dstptr;
@@ -51,15 +54,15 @@ EchoMono32 ( LONG loops,
 }
 
 static void
-EchoStereo32 ( LONG loops,
-               struct Echo *es,
-               void **buffer,
-               void **srcptr,
-               void **dstptr)
+EchoStereo32 ( LONG          loops,
+               struct Echo  *es,
+               void        **buffer,
+               void        **srcptr,
+               void        **dstptr)
 {
   LONG *buf;
   WORD *src, *dst;
-  LONG sampleL, sampleR, delaysampleL, delaysampleR;
+  LONG sample, sampleL, sampleR, delaysampleL, delaysampleR;
   
   buf = *buffer;
   src = *srcptr;
@@ -77,19 +80,21 @@ EchoStereo32 ( LONG loops,
 
     *buf++ = es->ahiecho_MixN * sampleR + es->ahiecho_MixD * delaysampleR;
 
-    sampleL = es->ahiecho_FeedbackDS * (delaysampleL + 1) +
-              es->ahiecho_FeedbackDO * (delaysampleR + 1) +
-              es->ahiecho_FeedbackNS * sampleL +
-              es->ahiecho_FeedbackNO * sampleR;
-    
-    *dst++ = sampleL >> 16;
+    sample = es->ahiecho_FeedbackDS * (delaysampleL + 1) +
+             es->ahiecho_FeedbackDO * (delaysampleR + 1) +
+             es->ahiecho_FeedbackNS * sampleL +
+             es->ahiecho_FeedbackNO * sampleR;
 
-    sampleR = es->ahiecho_FeedbackDO * (delaysampleL + 1) +
-              es->ahiecho_FeedbackDS * (delaysampleR + 1) +
-              es->ahiecho_FeedbackNO * sampleL +
-              es->ahiecho_FeedbackNS * sampleR;
+    *dst++ = sample >> 16;
 
-    *dst++ = sampleR >> 16;
+    sample = es->ahiecho_FeedbackDO * (delaysampleL + 1) +
+             es->ahiecho_FeedbackDS * (delaysampleR + 1) +
+             es->ahiecho_FeedbackNO * sampleL +
+             es->ahiecho_FeedbackNS * sampleR;
+
+    *dst++ = sample >> 16;
+
+    loops--;
   }
 
   *buffer = buf;
@@ -152,14 +157,9 @@ do_DSPEcho ( struct Echo *es,
     samples -= loops;
     offset  += loops;
 
-    while(loops > 0)
-    {
-      /* Call echo function */
+    /* Call echo function */
 
-      echofunc(loops, es, &buf, &srcptr, &dstptr);
-
-      loops--;
-    }
+    echofunc(loops, es, &buf, &srcptr, &dstptr);
 
   } // while(samples > 0)
 

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1998/01/13 20:24:04  lcs
+* Generic c version of the mixer finished.
+*
 * Revision 4.2  1998/01/12 20:07:28  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -24,17 +27,19 @@
 #include "mixer_generic_protos.h"
 #endif
 
+#include "asmfuncs_protos.h"
+
 #endif
 
-#define ADDARGS ULONG   Samples,\
-                Fixed   ScaleLeft,\
-                Fixed   ScaleRight,\
-                double *Offset,\
-                double  Add,\
-                struct  AHIPrivAudioCtrl *audioctrl,\
-                void   *Src,\
-                void  **Dst,\
-                struct  AHIChannelData *cd
+#define ADDARGS LONG      Samples,\
+                Fixed     ScaleLeft,\
+                Fixed     ScaleRight,\
+                Fixed64  *Offset,\
+                Fixed64   Add,\
+                struct    AHIPrivAudioCtrl *audioctrl,\
+                void     *Src,\
+                void    **Dst,\
+                struct    AHIChannelData *cd
 
 
 static void
@@ -49,7 +54,7 @@ static void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
 
-typedef void (*ADDFUNC)(ADDARGS);
+typedef void (ADDFUNC)(ADDARGS);
 
 static void AddSilence ( ADDARGS );
 static void AddSilenceB ( ADDARGS );
@@ -241,20 +246,28 @@ calcUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl,
 // ScaleRight and AddRoutine.
 
 void
-SelectAddRoutine ( Fixed VolumeLeft,
-                   Fixed VolumeRight,
-                   ULONG SampleType,
-                   struct AHIPrivAudioCtrl *audioctrl,
-                   ULONG *ScaleLeft,
-                   ULONG *ScaleRight,
-                   void **AddRoutine )
+SelectAddRoutine ( Fixed     VolumeLeft,
+                   Fixed     VolumeRight,
+                   ULONG     SampleType,
+                   struct    AHIPrivAudioCtrl *audioctrl,
+                   LONG     *ScaleLeft,
+                   LONG     *ScaleRight,
+                   ADDFUNC **AddRoutine )
 
 {
   // This version only cares about the sample format and does not use any
   // optimized add-routines.
 
 
-  // First, check the output format...
+  // Scale the volume
+
+  VolumeLeft  = VolumeLeft  * (audioctrl->ahiac_MasterVolume >> 8) / 
+                              (audioctrl->ahiac_Channels2 << 8);
+
+  VolumeRight = VolumeRight * (audioctrl->ahiac_MasterVolume >> 8) / 
+                              (audioctrl->ahiac_Channels2 << 8);
+
+  // Now, check the output format...
 
   switch(audioctrl->ac.ahiac_BuffType)
   {
@@ -270,9 +283,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft + VolumeRight;
           *ScaleRight = 0;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddByteMVHB;
+            *AddRoutine = AddByteMVHB;
           else
-            *AddRoutine = (void *) AddByteMVH;
+            *AddRoutine = AddByteMVH;
           break;
 
         case AHIST_S8S:
@@ -280,9 +293,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddBytesMVHB;
+            *AddRoutine = AddBytesMVHB;
           else
-            *AddRoutine = (void *) AddBytesMVH;
+            *AddRoutine = AddBytesMVH;
           break;
 
         case AHIST_M16S:
@@ -290,9 +303,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft + VolumeRight;
           *ScaleRight = 0;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddWordMVHB;
+            *AddRoutine = AddWordMVHB;
           else
-            *AddRoutine = (void *) AddWordMVH;
+            *AddRoutine = AddWordMVH;
           break;
 
         case AHIST_S16S:
@@ -300,9 +313,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddWordsMVHB;
+            *AddRoutine = AddWordsMVHB;
           else
-            *AddRoutine = (void *) AddWordsMVH;
+            *AddRoutine = AddWordsMVH;
           break;
 
         default:
@@ -324,9 +337,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddByteSVPHB;
+            *AddRoutine = AddByteSVPHB;
           else
-            *AddRoutine = (void *) AddByteSVPH;
+            *AddRoutine = AddByteSVPH;
           break;
 
         case AHIST_S8S:
@@ -334,9 +347,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddBytesSVPHB;
+            *AddRoutine = AddBytesSVPHB;
           else
-            *AddRoutine = (void *) AddBytesSVPH;
+            *AddRoutine = AddBytesSVPH;
           break;
 
         case AHIST_M16S:
@@ -344,9 +357,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddWordSVPHB;
+            *AddRoutine = AddWordSVPHB;
           else
-            *AddRoutine = (void *) AddWordSVPH;
+            *AddRoutine = AddWordSVPH;
           break;
 
         case AHIST_S16S:
@@ -354,9 +367,9 @@ SelectAddRoutine ( Fixed VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = (void *) AddWordsSVPHB;
+            *AddRoutine = AddWordsSVPHB;
           else
-            *AddRoutine = (void *) AddWordsSVPH;
+            *AddRoutine = AddWordsSVPH;
           break;
 
         default:
@@ -374,12 +387,12 @@ SelectAddRoutine ( Fixed VolumeLeft,
       break;
   }
 
-  if(*ScaleLeft == 0 && *ScaleRight == 0)
+  if(*AddRoutine != NULL && *ScaleLeft == 0 && *ScaleRight == 0)
   {
-    if( (*AddRoutine != NULL) && (SampleType & AHIST_BW) )
-      *AddRoutine = (void *) AddSilenceB;
+    if(SampleType & AHIST_BW)
+      *AddRoutine = AddSilenceB;
     else
-      *AddRoutine = (void *) AddSilence;
+      *AddRoutine = AddSilence;
   }
 }
 
@@ -401,13 +414,11 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 {
   struct AHIChannelData	*cd;
   void                  *dstptr;
-  ULONG                  samplesleft;
-  double                 Add, LastOffset, Offset, NextOffset;
+  LONG                   samplesleft;
 
   /* Clear the buffer */
 
-  memset(dst, audioctrl->ahiac_BuffSizeNow, 0);
-
+  memset(dst, 0, audioctrl->ahiac_BuffSizeNow);
 
   /* Mix the samples */
 
@@ -436,14 +447,7 @@ MixGeneric ( REG(a0, struct Hook *Hook),
           }
         }
 
-        // This should really be long longs instead...
-
-        Add        = cd->cd_AddI        * 65536.0 + cd->cd_AddF;
-        LastOffset = cd->cd_LastOffsetI * 65536.0 + cd->cd_LastOffsetF;
-        Offset     = cd->cd_OffsetI     * 65536.0 + cd->cd_OffsetF;
-        NextOffset = cd->cd_NextOffsetI * 65536.0 + cd->cd_NextOffsetF;
-
-        if(cd->cd_FreqOK && cd->cd_SoundOK && cd->cd_ChannelNo == 0) se här!
+        if(cd->cd_FreqOK && cd->cd_SoundOK)
         {
 
           if(cd->cd_AddRoutine == NULL)
@@ -457,9 +461,9 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
             /* Call AddRoutine (cd->cd_Samples) */
 
-            ((ADDFUNC) cd->cd_AddRoutine)(
+            ((ADDFUNC *) cd->cd_AddRoutine)(
                 cd->cd_Samples, cd->cd_ScaleLeft, cd->cd_ScaleRight,
-                &Offset, Add, audioctrl, cd->cd_DataStart, &dstptr, cd);
+                &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, &dstptr, cd);
 
             /* Linear interpol. stuff */
 
@@ -476,17 +480,17 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
             /*
             ** Offset always points OUTSIDE the sample after this
-            ** call.  Ie, if we read a sample at offset (Offset /
-            ** 65536) now, it does not belong to the sample just
-            ** played.  This is true for both backward and forward
-            ** mixing.
+            ** call.  Ie, if we read a sample at offset (Offset.I)
+            ** now, it does not belong to the sample just played.
+            ** This is true for both backward and forward mixing.
             */
 
 
             /* What we do now is to calculate how much futher we have
                advanced. */
 
-               Offset -= LastOffset;
+              // cd->cd_Offset -= cd->cd_LastOffset;
+              Sub64p((LONGLONG *) &cd->cd_Offset, (LONGLONG *) &cd->cd_LastOffset);
 
             /*
             ** Offset should now be added to the NEXT Offset. Offset
@@ -499,22 +503,15 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
             if( (cd->cd_Type ^ cd->cd_NextType) & AHIST_BW )
             {
-              /* Ok, we subtract. */
 
-              NextOffset -= Offset;
-            }
-            else
-            {
-              /* Ok, we add. */
-
-              NextOffset += Offset;
+              // cd->cd_Offset = -cd->cd_Offset;
+              Neg64p((LONGLONG *) &cd->cd_Offset);
             }
 
-            /* And convert double to I+F */
+            // cd->cd_Offset += cd->cd_NextOffset;
+            Add64p((LONGLONG *) &cd->cd_Offset, (LONGLONG *) &cd->cd_NextOffset);
 
-            cd->cd_OffsetI      = NextOffset / 65536.0;
-            cd->cd_OffsetF      = fmod(NextOffset, 65536.0);
-            cd->cd_FirstOffsetI = cd->cd_OffsetI;
+            cd->cd_FirstOffsetI = cd->cd_Offset.I;
 
             /*
             ** But what if the next sample is so short that we just
@@ -531,27 +528,27 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
             /* Now, let's copy the rest of the cd_Next#? stuff... */
 
-            cd->cd_FreqOK       = cd->cd_NextFreqOK;
-            cd->cd_SoundOK      = cd->cd_NextSoundOK;
-            cd->cd_AddI         = cd->cd_NextAddI;
-            cd->cd_AddF         = cd->cd_NextAddF;
-            cd->cd_DataStart    = cd->cd_NextDataStart;
-            cd->cd_LastOffsetI  = cd->cd_NextLastOffsetI;
-            cd->cd_LastOffsetF  = cd->cd_NextLastOffsetF;
-            cd->cd_ScaleLeft    = cd->cd_NextScaleLeft;
-            cd->cd_ScaleRight   = cd->cd_NextScaleRight;
-            cd->cd_AddRoutine   = cd->cd_NextAddRoutine;
-            cd->cd_VolumeLeft   = cd->cd_NextVolumeLeft;
-            cd->cd_VolumeRight  = cd->cd_NextVolumeRight;
-            cd->cd_Type         = cd->cd_NextType;
+            cd->cd_FreqOK        = cd->cd_NextFreqOK;
+            cd->cd_SoundOK       = cd->cd_NextSoundOK;
+            cd->cd_Add.I         = cd->cd_NextAdd.I;
+            cd->cd_Add.F         = cd->cd_NextAdd.F;
+            cd->cd_DataStart     = cd->cd_NextDataStart;
+            cd->cd_LastOffset.I  = cd->cd_NextLastOffset.I;
+            cd->cd_LastOffset.F  = cd->cd_NextLastOffset.F;
+            cd->cd_ScaleLeft     = cd->cd_NextScaleLeft;
+            cd->cd_ScaleRight    = cd->cd_NextScaleRight;
+            cd->cd_AddRoutine    = cd->cd_NextAddRoutine;
+            cd->cd_VolumeLeft    = cd->cd_NextVolumeLeft;
+            cd->cd_VolumeRight   = cd->cd_NextVolumeRight;
+            cd->cd_Type          = cd->cd_NextType;
 
-            cd->cd_Samples = CalcSamples ( cd->cd_AddI,
-                                           cd->cd_AddF,
+            cd->cd_Samples = CalcSamples ( cd->cd_Add.I,
+                                           cd->cd_Add.F,
                                            cd->cd_Type,
-                                           cd->cd_LastOffsetI,
-                                           cd->cd_LastOffsetF,
-                                           cd->cd_OffsetI,
-                                           cd->cd_OffsetF );
+                                           cd->cd_LastOffset.I,
+                                           cd->cd_LastOffset.F,
+                                           cd->cd_Offset.I,
+                                           cd->cd_Offset.F );
 
             cd->cd_EOS = TRUE;      // signal End-Of-Sample
             continue;               // .contchannel (same channel, new sound)
@@ -564,9 +561,9 @@ MixGeneric ( REG(a0, struct Hook *Hook),
           
             /*** Call AddRoutine (samplesleft) ***/
 
-            ((ADDFUNC) cd->cd_AddRoutine)(
+            ((ADDFUNC *) cd->cd_AddRoutine)(
                 samplesleft, cd->cd_ScaleLeft, cd->cd_ScaleRight,
-                &Offset, Add, audioctrl, cd->cd_DataStart, &dstptr, cd);
+                &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, &dstptr, cd);
           }
         } // FreqOK && SoundOK
 
@@ -581,20 +578,19 @@ MixGeneric ( REG(a0, struct Hook *Hook),
       audioctrl->ahiac_WetOrDry = AHIEDM_DRY;
 
       /*** AHIET_DSPECHO ***/
-#if 0
       if(audioctrl->ahiac_EffDSPEchoStruct != NULL)
       {
         audioctrl->ahiac_EffDSPEchoStruct->ahiecho_Code(
             audioctrl->ahiac_EffDSPEchoStruct, dst, audioctrl);
       }
-#endif
+
       cd = audioctrl->ahiac_DryList;
 
       if(audioctrl->ac.ahiac_Flags & AHIACF_POSTPROC)
       {
         /*** AHIET_MASTERVOLUME ***/
 
-//        DoMasterVolume(dst, audioctrl);
+        DoMasterVolume(dst, audioctrl);
 
         /*
         ** When AHIACB_POSTPROC is set, the dry data shall be placed
@@ -616,15 +612,15 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
   /*** AHIET_MASTERVOLUME ***/
 
-//  DoMasterVolume(dst, audioctrl);
+  DoMasterVolume(dst, audioctrl);
 
   /*** AHIET_OUTPUTBUFFER ***/
 
-//  DoOutputBuffer(dst, audioctrl);
+  DoOutputBuffer(dst, audioctrl);
 
   /*** AHIET_CHANNELINFO ***/
 
-//  DoChannelInfo(audioctrl);
+  DoChannelInfo(audioctrl);
 
   return;
 }
@@ -667,10 +663,10 @@ DoMasterVolume ( void *buffer,
     cnt--;
     
     sample = (*dst >> 12) * vol;
-    
-    if(sample > 0x07ffffff)
+
+    if(sample > (LONG) 0x07ffffff)
       sample = 0x07ffffff;
-    else if(sample < 0xf8000000)
+    else if(sample < (LONG) 0xf8000000)
       sample = 0xf8000000;
 
     *dst++ = sample << 4;
@@ -715,7 +711,7 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl )
 
     for(i = ci->ahieci_Channels; i > 0; i--)
     {
-      *offsets++ = cd->cd_OffsetI;
+      *offsets++ = cd->cd_Offset.I;
       cd++;
     }
     
@@ -728,24 +724,24 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl )
 ** CalcSamples ****************************************************************
 ******************************************************************************/
 
-ULONG
-CalcSamples ( ULONG AddI,
-              UWORD AddF,
+LONG
+CalcSamples ( LONG  AddI,
+              ULONG AddF,
               ULONG Type,
-              ULONG LastOffsetI,
-              UWORD LastOffsetF,
-              ULONG OffsetI,
-              UWORD OffsetF )
+              LONG  LastOffsetI,
+              ULONG LastOffsetF,
+              LONG  OffsetI,
+              ULONG OffsetF )
 
 {
-  // We need 48 bits resolution (32 bit integer + 16 bit fraction); double
+  // We need >=48 bits resolution (32 bit integer + >=16 bit fraction); double
   // should be enough. SAS/C doesn't seem to handle >32 bit integers :(
 
   double Add, LastOffset, Offset, len;
 
-  Add        = AddI        * 65536.0 + AddF;
-  LastOffset = LastOffsetI * 65536.0 + LastOffsetF;
-  Offset     = OffsetI     * 65536.0 + OffsetF;
+  Add        = AddI        * 65536.0 + (AddF        >> 16);
+  LastOffset = LastOffsetI * 65536.0 + (LastOffsetF >> 16);
+  Offset     = OffsetI     * 65536.0 + (OffsetF     >> 16);
 
   if(Type & AHIST_BW)
   {
@@ -759,7 +755,7 @@ CalcSamples ( ULONG AddI,
   // Compare with zero should be ok even if Add is double...
   if(len < 0 || Add == 0) return 0; // Error!
 
-  return (ULONG) (len / Add);
+  return (LONG) (len / Add) + 1;
 
 }
 
@@ -769,46 +765,77 @@ CalcSamples ( ULONG AddI,
 ******************************************************************************/
 
 /*
-** ULONG   Samples
-** Fixed   ScaleLeft
-** Fixed   ScaleRight (Not used in all routines)
-** double *Offset
-** double  Add
-** struct  AHIPrivAudioCtrl *audioctrl
-** void   *Src
-** void  **Dst
-** struct  AHIChannelData *cd
+** LONG      Samples
+** Fixed     ScaleLeft
+** Fixed     ScaleRight (Not used in all routines)
+** Fixed64  *Offset
+** Fixed64   Add
+** struct    AHIPrivAudioCtrl *audioctrl
+** void     *Src
+** void    **Dst
+** struct    AHIChannelData *cd
 */
+
+/*****************************************************************************/
 
 static void
 AddSilence ( ADDARGS )
 {
-  *Offset += Samples * Add;
+  double offset, add;
+
+  offset = Offset->I * 65536.0 + (Offset->F >> 16);
+  add    = Add.I     * 65536.0 + (Add.F     >> 16);
+
+  offset += Samples * add;
+
+  Offset->I = offset / 65536.0;
+  Offset->F = fmod(offset, 65536.0);
+
   *Dst    = (char *) *Dst + Samples * AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
 }
 
 static void
 AddSilenceB ( ADDARGS )
 {
-  *Offset -= Samples * Add;
+  double offset, add;
+
+  offset = Offset->I * 65536.0 + (Offset->F >> 16);
+  add    = Add.I     * 65536.0 + (Add.F     >> 16);
+
+  offset -= Samples * add;
+
+  Offset->I = offset / 65536.0;
+  Offset->F = fmod(offset, 65536.0);
+
   *Dst    = (char *) *Dst + Samples * AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
 }
 
 
+/*****************************************************************************/
+
 /*
-** Some comments... the index to the source samples are calculated using
-** doubles. It would probably be faster to use long long for that. Then
-** the index can be extracted more easily. Maybe the FPU could be used
-** in the actual mixing process instead, by having a float mixing buffer
-** and volume (ScaleLeft & ScaleRight).
-**
-** The fraction offset is divided by two in order to make sure that
-** the calculation of linearsample fits a LONG (0 =< offsetf <= 32767).
-**
-** The routines could be faster, of course. One idea is to split the
-** for loop into two loops in order to eliminate the FirstOffsetI
-** test in the second loop.
-*/
+
+Some comments...  The index to the source samples are calculated using software
+64 bit additions.  It would probably be faster to use long long for that, but
+not much.  Howevere, there are places when multiplications and division are
+required (see above), where the 64 bit integers have to be converted to
+doubles.  Maybe the FPU could also be used in the actual mixing process, by
+having a float mixing buffer, volume (ScaleLeft & ScaleRight), and index
+fraction (?).
+
+The fraction offset is divided by two in order to make sure that the
+calculation of linearsample fits a LONG (0 =< offsetf <= 32767).
+
+The routines could be faster, of course.  One idea is to split the for loop
+into two loops in order to eliminate the FirstOffsetI test in the second loop.
+
+*/ 
+
+/*****************************************************************************/
+
+/* Forward mixing code */
+
+#define offsetf ( (LONG) (Offset->F >> 17) )
 
 static void
 AddByteMVH ( ADDARGS )
@@ -817,37 +844,30 @@ AddByteMVH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ] << 8;
+      lastsample = src[ Offset->I - 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    currentsample = src[ Offset->I ] << 8;
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -859,38 +879,31 @@ AddByteSVPH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ] << 8;
+      lastsample = src[ Offset->I - 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    currentsample = src[ Offset->I ] << 8;
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
     *dst++ += ScaleRight * lastsample;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -902,43 +915,36 @@ AddBytesMVH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 - 2 ] << 8;
-      lastsampleR = src[ offseti + 1 - 2 ] << 8;
+      lastsampleL = src[ Offset->I * 2 + 0 - 2 ] << 8;
+      lastsampleR = src[ Offset->I * 2 + 1 - 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti + 0 ] << 8;
-    currentsampleR = src[ offseti + 1 ] << 8;
+    currentsampleL = src[ Offset->I * 2 + 0 ] << 8;
+    currentsampleR = src[ Offset->I * 2 + 1 ] << 8;
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -950,30 +956,24 @@ AddBytesSVPH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 - 2 ] << 8;
-      lastsampleR = src[ offseti + 1 - 2 ] << 8;
+      lastsampleL = src[ Offset->I * 2 + 0 - 2 ] << 8;
+      lastsampleR = src[ Offset->I * 2 + 1 - 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti + 0 ] << 8;
-    currentsampleR = src[ offseti + 1 ] << 8;
+    currentsampleL = src[ Offset->I * 2 + 0 ] << 8;
+    currentsampleR = src[ Offset->I * 2 + 1 ] << 8;
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
@@ -981,13 +981,12 @@ AddBytesSVPH ( ADDARGS )
     *dst++ += ScaleLeft * lastsampleL;
     *dst++ += ScaleRight * lastsampleR;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -999,37 +998,30 @@ AddWordMVH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ];
+      lastsample = src[ Offset->I - 1 ];
     }
 
-    currentsample = src[ offseti ];
+    currentsample = src[ Offset->I ];
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1041,38 +1033,31 @@ AddWordSVPH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti - 1 ];
+      lastsample = src[ Offset->I - 1 ];
     }
 
-    currentsample = src[ offseti ];
+    currentsample = src[ Offset->I ];
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
     *dst++ += ScaleRight * lastsample;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1084,43 +1069,36 @@ AddWordsMVH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 - 2 ];
-      lastsampleR = src[ offseti + 1 - 2 ];
+      lastsampleL = src[ Offset->I * 2 + 0 - 2 ];
+      lastsampleR = src[ Offset->I * 2 + 1 - 2 ];
     }
 
-    currentsampleL = src[ offseti + 0 ];
-    currentsampleR = src[ offseti + 1 ];
+    currentsampleL = src[ Offset->I * 2 + 0 ];
+    currentsampleR = src[ Offset->I * 2 + 1 ];
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1132,30 +1110,24 @@ AddWordsSVPH ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = (long) fmod(offset * 65536.0, 65536.0) >> 1;
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 - 2 ];
-      lastsampleR = src[ offseti + 1 - 2 ];
+      lastsampleL = src[ Offset->I * 2 + 0 - 2 ];
+      lastsampleR = src[ Offset->I * 2 + 1 - 2 ];
     }
 
-    currentsampleL = src[ offseti + 0 ];
-    currentsampleR = src[ offseti + 1 ];
+    currentsampleL = src[ Offset->I * 2 + 0 ];
+    currentsampleR = src[ Offset->I * 2 + 1 ];
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
@@ -1163,16 +1135,22 @@ AddWordsSVPH ( ADDARGS )
     *dst++ += ScaleLeft * lastsampleL;
     *dst++ += ScaleRight * lastsampleR;
 
-    offset += add;
+    Add64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
+#undef offsetf
+
+/*****************************************************************************/
+
+/* Backward mixing code */
+
+#define offsetf ( (LONG) (32768 - (Offset->F >> 17)) )
 
 static void
 AddByteMVHB ( ADDARGS )
@@ -1181,37 +1159,30 @@ AddByteMVHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ] << 8;
+      lastsample = src[ Offset->I + 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    currentsample = src[ Offset->I ] << 8;
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1223,38 +1194,31 @@ AddByteSVPHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ] << 8;
+      lastsample = src[ Offset->I + 1 ] << 8;
     }
 
-    currentsample = src[ offseti ] << 8;
+    currentsample = src[ Offset->I ] << 8;
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
     *dst++ += ScaleRight * lastsample;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 
 }
@@ -1267,43 +1231,36 @@ AddBytesMVHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 + 2 ] << 8;
-      lastsampleR = src[ offseti + 1 + 2 ] << 8;
+      lastsampleL = src[ Offset->I * 2 + 0 + 2 ] << 8;
+      lastsampleR = src[ Offset->I * 2 + 1 + 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti + 0 ] << 8;
-    currentsampleR = src[ offseti + 1 ] << 8;
+    currentsampleL = src[ Offset->I * 2 + 0 ] << 8;
+    currentsampleR = src[ Offset->I * 2 + 1 ] << 8;
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1315,30 +1272,24 @@ AddBytesSVPHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 + 2 ] << 8;
-      lastsampleR = src[ offseti + 1 + 2 ] << 8;
+      lastsampleL = src[ Offset->I * 2 + 0 + 2 ] << 8;
+      lastsampleR = src[ Offset->I * 2 + 1 + 2 ] << 8;
     }
 
-    currentsampleL = src[ offseti + 0 ] << 8;
-    currentsampleR = src[ offseti + 1 ] << 8;
+    currentsampleL = src[ Offset->I * 2 + 0 ] << 8;
+    currentsampleR = src[ Offset->I * 2 + 1 ] << 8;
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
@@ -1346,13 +1297,12 @@ AddBytesSVPHB ( ADDARGS )
     *dst++ += ScaleLeft * lastsampleL;
     *dst++ += ScaleRight * lastsampleR;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1364,37 +1314,30 @@ AddWordMVHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ];
+      lastsample = src[ Offset->I + 1 ];
     }
 
-    currentsample = src[ offseti ];
+    currentsample = src[ Offset->I ];
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1406,38 +1349,31 @@ AddWordSVPHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsample, currentsample;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
     else
     {
-      lastsample = src[ offseti + 1 ];
+      lastsample = src[ Offset->I + 1 ];
     }
 
-    currentsample = src[ offseti ];
+    currentsample = src[ Offset->I ];
 
     lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsample;
     *dst++ += ScaleRight * lastsample;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsample;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1449,43 +1385,36 @@ AddWordsMVHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 + 2 ];
-      lastsampleR = src[ offseti + 1 + 2 ];
+      lastsampleL = src[ Offset->I * 2 + 0 + 2 ];
+      lastsampleR = src[ Offset->I * 2 + 1 + 2 ];
     }
 
-    currentsampleL = src[ offseti + 0 ];
-    currentsampleR = src[ offseti + 1 ];
+    currentsampleL = src[ Offset->I * 2 + 0 ];
+    currentsampleR = src[ Offset->I * 2 + 1 ];
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
 
     *dst++ += ScaleLeft * lastsampleL + ScaleRight * lastsampleR;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
 
@@ -1497,30 +1426,24 @@ AddWordsSVPHB ( ADDARGS )
   LONG   *dst = *Dst;
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
-  double  offset = *Offset / 65536.0, add = Add / 65536.0;
-  long    offseti;
-  long    offsetf;
 
   currentsampleL = cd->cd_TempLastSampleL;
   currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
-    offseti = (long) offset << 1;
-    offsetf = 32768 - ((long) fmod(offset * 65536.0, 65536.0) >> 1);
-
-    if( offseti == cd->cd_FirstOffsetI) {
+    if( Offset->I == cd->cd_FirstOffsetI) {
       lastsampleL = cd->cd_LastSampleL;
       lastsampleR = cd->cd_LastSampleR;
     }
     else
     {
-      lastsampleL = src[ offseti + 0 + 2 ];
-      lastsampleR = src[ offseti + 1 + 2 ];
+      lastsampleL = src[ Offset->I * 2 + 0 + 2 ];
+      lastsampleR = src[ Offset->I * 2 + 1 + 2 ];
     }
 
-    currentsampleL = src[ offseti + 0 ];
-    currentsampleR = src[ offseti + 1 ];
+    currentsampleL = src[ Offset->I * 2 + 0 ];
+    currentsampleR = src[ Offset->I * 2 + 1 ];
 
     lastsampleL += (((currentsampleL - lastsampleL) * offsetf ) >> 15);
     lastsampleR += (((currentsampleR - lastsampleR) * offsetf ) >> 15);
@@ -1528,12 +1451,16 @@ AddWordsSVPHB ( ADDARGS )
     *dst++ += ScaleLeft * lastsampleL;
     *dst++ += ScaleRight * lastsampleR;
 
-    offset -= add;
+    Sub64p((LONGLONG *) Offset, (LONGLONG *) &Add);
   }
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
 
-  *Offset = offset * 65536.0;
   *Dst    = dst;
 }
+
+
+#undef offsetf
+
+/*****************************************************************************/
