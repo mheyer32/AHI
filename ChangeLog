@@ -1,5 +1,7 @@
 2004-10-27  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.51.
+
 	* Device/devsupp.c: I obviously have a nasty habit of not testing
 	the code I write. "for (i = 0; i < size; ++size)"?! Yeah,
 	right. And you know what's REALLY scary? It's been like that since
@@ -39,7 +41,7 @@
 
 2004-08-05  Martin Blom  <martin@blom.org>
 
-	* Released audio 5.18.
+	* Released emu10kx.audio 5.18.
 
 	* emu10kx.audio: Remade the routing once again. Tried to make the
 	routing code work on Audigy. Testing required.
