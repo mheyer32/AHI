@@ -16,9 +16,6 @@ struct CommonBase {
     BPTR                seglist;
 };
 
-struct CommonData {
-};
-
 struct AHIClassBase;
 struct AHIClassData;
 
