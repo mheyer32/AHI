@@ -1,3 +1,11 @@
+2003-07-13  Martin Blom  <martin@blom.org>
+
+	* Added SFD files contributed by Steffen Haeuser to the developer
+	archives.
+
+	* Include/C/clib/ahi_(|sub_)protos.h: Added extern "C" if C++
+	detected. [Steffen Haeuser]
+
 2003-07-07  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.6.
