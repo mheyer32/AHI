@@ -1,5 +1,11 @@
 2005-01-08  Martin Blom  <martin@blom.org>
 
+	* AHI preferences: Moved the selection of scale modes to the
+	global, advanced prerference page. Changed the default to "Full".
+
+	* ahi.device: Now used global scale mode settings. Changed the
+	default to AHI_SCALE_FIXED_0_DB.
+
 	* ahi.device: Tweaked the default "dizzy" tags for BestAudioID()
 	to award the user's preferred audio mode. [Fab]
 
