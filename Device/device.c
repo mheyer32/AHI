@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/05/03 19:59:56  lcs
+* Fixed a race condition (happened with small CMD_WRITE's).
+*
 * Revision 4.3  1997/04/22 01:35:21  lcs
 * This is release 4! Finally.
 *
@@ -906,6 +909,11 @@ __asm void DevProc(register __a6 struct AHIBase *AHIBase)
       if(signals & SIGBREAKF_CTRL_F)
         break;
 
+      if(signals & (1L << iounit->SampleSignal))
+      {
+        RethinkPlayers(iounit,AHIBase);
+      }
+
       if(signals & (1L << signalbit))
       {
         struct AHIRequest *ioreq;
@@ -927,11 +935,6 @@ __asm void DevProc(register __a6 struct AHIBase *AHIBase)
       {
         iounit->ValidRecord = TRUE;
         FeedReaders(iounit,AHIBase);
-      }
-
-      if(signals & (1L << iounit->SampleSignal))
-      {
-        RethinkPlayers(iounit,AHIBase);
       }
     }
   }
@@ -1030,6 +1033,7 @@ static __asm __interrupt void SoundFunc(
 #endif
   }
   voice->PlayingRequest = voice->QueuedRequest;
+  voice->Flags |= VF_STARTED;
 #ifdef DEBUG
   KPrintF("New player: 0x%08lx\n", voice->PlayingRequest);
 #endif

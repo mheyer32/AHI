@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.5  1997/05/03 19:59:56  lcs
+* Fixed a race condition (happened with small CMD_WRITE's).
+*
 * Revision 4.4  1997/04/14 01:50:39  lcs
 * Spellchecked
 *
@@ -1394,8 +1397,11 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
   KPrintF("Starting it\n");
 #endif
 
+  Disable();
   iounit->Voices[channel].PlayingRequest = NULL;
   iounit->Voices[channel].QueuedRequest = ioreq;
+  iounit->Voices[channel].Flags &= ~VF_STARTED;
+
   AHI_Play(iounit->AudioCtrl,
       AHIP_BeginChannel,  channel,
       AHIP_Freq,          ioreq->ahir_Frequency,
@@ -1406,6 +1412,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
       AHIP_Length,        ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual,
       AHIP_EndChannel,    NULL,
       TAG_DONE);
+  Enable();
 
   // This is a workaround for a race condition.
   // The problem can occur if a delayed request follows immediately after
@@ -1414,7 +1421,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
   // marked as finished, and the application will wait forever on the
   // IO Request. Quite ugly, no?
 
-  while(iounit->Voices[channel].PlayingRequest == NULL);
+  while((iounit->Voices[channel].Flags & VF_STARTED) == 0);
 #ifdef DEBUG
   KPrintF("Exiting PlayRequest()\n");
 #endif
