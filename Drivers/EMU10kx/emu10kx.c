@@ -649,7 +649,7 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
     emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0000 );
     emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT,     InputBits[ 0 ] );
     
-    emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0404 );
+    emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0808 );
     emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x0002 );
 
     emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0202 );
