@@ -23,10 +23,13 @@
 #include <proto/powerpci.h>
 
 #include "library.h"
-#include "DriverData.h"
 
 /* Global and not in EMU10kxBase, since it's used by linuxsupport.c */
 struct Library* ppcibase;
+struct Library* DOSBase;
+
+/* Global and not in EMU10kxBase, since it's used everywhere ... */
+struct ExecBase* SysBase;
 
 /******************************************************************************
 ** Custom driver init *********************************************************

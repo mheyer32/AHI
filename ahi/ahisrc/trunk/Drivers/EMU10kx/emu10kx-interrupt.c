@@ -24,7 +24,7 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 
-#include "DriverData.h"
+#include "library.h"
 #include "8010.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))

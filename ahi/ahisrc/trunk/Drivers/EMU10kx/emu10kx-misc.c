@@ -19,7 +19,7 @@
 
 #include <config.h>
 
-#include "DriverData.h"
+#include "library.h"
 
 extern const UWORD InputBits[];
 
