@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.3  1997/06/24 21:49:49  lcs
+ * Increased version number to match the catalogs (4.5).
+ *
  * Revision 4.2  1997/04/07 01:36:51  lcs
  * Localized it, bug fixes
  *
@@ -32,6 +35,7 @@ static void FillUnitName(struct UnitNode *);
 
 struct AHIGlobalPrefs   globalprefs;
 
+struct Library           *LocaleBase= NULL;
 struct Library           *AHIBase   = NULL;
 static struct MsgPort    *AHImp     = NULL;
 static struct AHIRequest *AHIio     = NULL;
@@ -116,6 +120,10 @@ static struct DiskObject projIcon = {
 ******************************************************************************/
 
 BOOL Initialize(void) {
+  LocaleBase = OpenLibrary("locale.library", 38);
+
+  OpenahiprefsCatalog();
+
   if(AHImp=CreateMsgPort()) {
     if(AHIio = (struct AHIRequest *)CreateIORequest(
         AHImp,sizeof(struct AHIRequest))) {
@@ -144,6 +152,11 @@ void CleanUp(void) {
   DeleteMsgPort(AHImp);
 
   AHIBase = NULL; AHImp = NULL; AHIio = NULL; AHIDevice = -1;
+
+  CloseahiprefsCatalog();
+
+  CloseLibrary(LocaleBase);
+  LocaleBase = NULL;
 }
 
 

@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.7  1997/06/24 21:49:49  lcs
+ * Increased version number to match the catalogs (4.5).
+ *
  * Revision 4.6  1997/05/09 14:02:17  lcs
  * Program version 4.4
  *
@@ -39,7 +42,7 @@
 
 #define DBSTEP      0.5
 
-const char *Version[] = {"$VER: AHI preferences 4.4 "__AMIGADATE__"\r\n"};
+const char *Version[] = {"$VER: AHI preferences 4.5 "__AMIGADATE__"\r\n"};
 
 struct List      *UnitList   = NULL;
 struct List      *ModeList   = NULL;
@@ -116,7 +119,7 @@ int main(int argc, char **argv) {
   else {
     struct WBStartup *WBenchMsg = (struct WBStartup *)argv;
     struct WBArg *wbarg;
-    LONG olddir = -1;
+    LONG olddir;
     struct DiskObject *dobj;
     char **toolarray;
     char *s;
