@@ -91,7 +91,7 @@ struct AHIAudioModeRequester
 
 	UWORD	ahiam_ObsoleteUserData[2];
 	UWORD	ahiam_Pad;
-	APTR	ahiam_UserData;			/* You can store your own data here (V5) */
+	APTR	ahiam_UserData;			/* You can store your own data here (V6) */
 	/* Lots of private data follows! */
 };
 
@@ -165,7 +165,7 @@ struct AHIEffChannelInfo
 #define AHIA_MaxPlayerFreq	(AHI_TagBase+9)		/* Maximum Frequency for player Hook */
 #define AHIA_RecordFunc		(AHI_TagBase+10)	/* Sample recording Hook */
 #define AHIA_UserData		(AHI_TagBase+11)	/* What to put in ahiac_UserData */
-#define AHIA_AntiClickSamples	(AHI_TagBase+13)	/* # of samples to smooth (V5)	*/
+#define AHIA_AntiClickSamples	(AHI_TagBase+13)	/* # of samples to smooth (V6)	*/
 
   /* AHI_PlayA tags (V4) */
 #define AHIP_BeginChannel	(AHI_TagBase+40)	/* All command tags should be... */
@@ -261,7 +261,7 @@ struct AHIEffChannelInfo
 #define AHIR_IntuiMsgFunc	(AHI_TagBase+204)	/* Function to handle IntuiMessages */
 #define AHIR_SleepWindow	(AHI_TagBase+205)	/* Block input in AHIR_Window? */
 #define AHIR_ObsoleteUserData	(AHI_TagBase+206)	/* V4 UserData */
-#define AHIR_UserData		(AHI_TagBase+207)	/* What to put in ahiam_UserData (V5) */
+#define AHIR_UserData		(AHI_TagBase+207)	/* What to put in ahiam_UserData (V6) */
 	/* Text display */
 #define AHIR_TextAttr		(AHI_TagBase+220)	/* Text font to use for gadget text */
 #define AHIR_Locale		(AHI_TagBase+221)	/* Locale to use for text */
@@ -301,7 +301,7 @@ struct AHIEffChannelInfo
 #define AHISF_IMM		(1UL<<0)	/* Trigger action immediately	*/
 #define AHISF_NODELAY		(1UL<<1)	/* Don't wait for zero-crossing */
 
-#define AHISF_NONE		(0UL)		/* No flags (V5)		*/
+#define AHISF_NONE		(0UL)		/* No flags (V6)		*/
 
 #define AHISB_IMM		(0UL)
 #define AHISB_NODELAY		(1UL)
@@ -391,7 +391,7 @@ struct AHIGlobalPrefs
 	Fixed	ahigp_MaxCPU;
 	BOOL	ahigp_ClipMasterVolume;
 	UWORD	ahigp_Pad;
-	Fixed	ahigp_AntiClickTime;			/* In seconds (V5) */
+	Fixed	ahigp_AntiClickTime;			/* In seconds (V6) */
 };
 
  /* Debug levels */
