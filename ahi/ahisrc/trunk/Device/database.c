@@ -603,6 +603,7 @@ LoadModeFile( UBYTE*          name,
 #else
               // Try to load. Just continue if failing.
               AddModeFile(fib->fib_FileName);
+	      rc = TRUE;
 #endif
             }
           }
