@@ -1,5 +1,7 @@
 2001-11-26  Martin Blom  <martin@blom.org>
 
+	* ahi.device:  Added a couple of validation checks for mode files.
+
 	* Released AddAudioModes 5.2.
 
 	* AddAudioModes: The REFRESH flag now removes the audio mode
