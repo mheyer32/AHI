@@ -1,0 +1,19 @@
+==include <exec/types.h>
+==include <exec/execbase.h>
+==include <devices/ahi.h>
+==include <dos/dos.h>
+==base _AHIBase
+==libname ahi_internal_lib.device
+==bias 0
+==public
+struct Library* DevInit(struct Library* library,
+			BPTR seglist,
+			struct ExecBase* SysBase) (d0,a0,a6)
+ULONG DevOpen(struct AHIRequest* ioreq,
+	      ULONG unit,
+	      ULONG flags) (a1,d0,d1)
+BPTR DevClose(struct AHIRequest* ioreq) (a1)
+BPTR DevExpunge() ()
+ULONG DevNull() ()
+VOID DevBeginIO(struct AHIRequest* ioreq) (a1)
+ULONG DevAbortIO(struct AHIRequest* ioreq) (a1)
