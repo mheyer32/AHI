@@ -569,7 +569,6 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, const struct TextAt
       ng.ng_GadgetText = GetString(msgReqFrequency, req->Catalog);
       ng.ng_GadgetID=FREQSLIDER;
       ng.ng_Flags=PLACETEXT_LEFT;
-      KPrintF("FREQTEXT2='%s'\n",FREQTEXT2);
       gad=CreateGadget(SLIDER_KIND,gad,&ng,
           GTSL_Min,0,
           GTSL_Max,sliderlevels-1,
