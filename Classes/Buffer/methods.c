@@ -313,3 +313,50 @@ MethodSampleFrameSize(Class* class, Object* object,
 
   return cnt;
 }
+
+
+/******************************************************************************
+** MethodLoad *****************************************************************
+******************************************************************************/
+
+BOOL
+MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg) {
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+
+#warning TODO: Implement AHIM_Buffer_Load
+  
+  return FALSE;
+}
+
+
+/******************************************************************************
+** MethodClone ****************************************************************
+******************************************************************************/
+
+Object*
+MethodClone(Class* class, Object* object, Msg msg) {
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  Object*  r;
+  
+  SetIoErr(0); // Make sure OM_NEW calls SetIoErr().
+
+  r = NewObject(AHIClassBase->common.cl.cl_Class, NULL,
+		AHIA_Buffer_SampleType,      AHIClassData->sample_type,
+		AHIA_Buffer_SampleFreqInt,   AHIClassData->sample_freq_int,
+		AHIA_Buffer_SampleFreqFract, AHIClassData->sample_freq_fract,
+		AHIA_Buffer_Capacity,        AHIClassData->capacity,
+		AHIA_Buffer_Length,          AHIClassData->length,
+		AHIA_Buffer_TimestampHigh,   AHIClassData->timestamp_hi,
+		AHIA_Buffer_TimestampLow,    AHIClassData->timestamp_lo,
+		AHIA_Buffer_AgeHigh,         AHIClassData->age_hi,
+		AHIA_Buffer_AgeLow,          AHIClassData->age_lo,
+		TAG_DONE);
+
+  if (r == NULL) {
+    SetSuperAttrs(class, object, AHIA_Error, IoErr(), TAG_DONE);
+  }
+
+  return r;
+}
