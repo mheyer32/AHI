@@ -467,6 +467,9 @@ LONG __asm __saveds intAHIsub_GetAttr(
     case AHIDB_Realtime:
         return TRUE;
     case AHIDB_MaxPlaySamples:
+      // FIXME: PLAYBUFFERSIZE should actually be converted to samples here.
+      // However, it's no disaster, since AHIDB_MaxPlaySamples will just be
+      // overy pessimistic.
       return Default+PLAYBUFFERSIZE;
     case AHIDB_MaxRecordSamples:
       return RECBUFFERSIZE>>2;
