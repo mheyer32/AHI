@@ -61,16 +61,21 @@ of the architecture was pretty boring). </para>
 100 MHz 486 could execute around 80 MIPS and 6.5 MFLOPS<footnote>
 	<para>MFLOPS according to the flops.c MFLOPS(4) benchmark,
 consisting of 42.9% adds, 2.2% subs and 54.9% muls.</para>
-      </footnote>
-. For comparison, the Amiga 500's 68000 and Amiga 1200's 68020
-processors were rated at about 1 and 5 MIPS, respectively, and had no
-floating point hardware at all.</para>
+      </footnote>. For comparison, the Amiga 500's 68000 and Amiga
+1200's 68020 processors were rated at about 1 and 5 MIPS, respectively,
+and had no floating point hardware at all.</para>
 
     <para>Today, in 2004, one could say that the situation is quite
 different. A 600 MHz PowerPC G3 processor delivers around 300 MFLOPS
-using the same benchmark, a 2.0 GHz Pentium4 delivers 650 MFLOPS, a 1.8
-GHz PowerPC G5 processor 1500 MFLOPS and a 2.0 GHz Athlon64 processor
-1550 MFLOPS.</para>
+using the same benchmark. Comparing three 2.0 GHz processors, a Pentium
+4, a PowerPC G5 and an Athlon64 delivers 1640 MFLOPS, 1660 MFLOPS and
+1950 MFLOPS, respectivly<footnote>
+	<para>Obviously, these numbers depend greatly on the particular
+code being executed and even more on the compiler. The same
+code compiled using gcc instead of icc, for example, delivers less
+than 700 MFLOPS on the 2.0 GHz P4.</para>
+      </footnote>.
+</para>
 
     <para>So what are we going to do with all this new-found
 performance? I'd say, lets spend it on audio processing!</para>
@@ -105,8 +110,8 @@ possible to connect modules to eachother and have them control
 parameters of other modules. For example, there is a Low-Frequency
 Oscillator that is driven by a master clock derived from the audio
 sample clock. This LFO can control aribitary parameters of other
-modules, such as the gain module or frequency resampler module to create
-tremolo or vibrary effects. Once connected, everything happens
+modules, such as the gain module or frequency resampler module, to
+create tremolo or vibrary effects. Once connected, everything happens
 automatically.</para>
 
       <para>All modules can have a GUI panel where the parameters can be
@@ -121,13 +126,14 @@ so desired.</para>
 
       <para>&ahi6; added support for bit depths larger than 16, but some
 calculations were still 16 bit. &ahi7; uses 32 bit floating point for
-all sample calculations, yielding unlimited dynamic range and 25 bit
-(more than 150 dB) audio resolution.</para>
+all sample calculations, yielding <quote>unlimited</quote> dynamic range
+and more than 150 dB (±1.0 fp equals 25 bits) signal to noise
+ratio.</para>
 
       <para>Using floating point in all of the audio processing pipeline
 simplifies things tremendously. &ahi4; had 80 different mixing
 routines. In &ahi6;, I tried to reduce the number but still ended up
-with almost 60 once 32 bit samples and multichannel support was added
+with almost 60 once 32 bit samples and multichannel support were added
 (add the 32 m68k assembly implementations and you end up with even more
 than in &ahi4;). &ahi7; will have <emphasis>three</emphasis>, not
 counting special-case optimization.</para>
@@ -160,21 +166,62 @@ other applications.</para>
 
       <para>The audio processing pipeline can handle almost any sound
 format, both in the time domain and in the frequency domain. There are
-sound formats defined for first and second order Ambisonics, a general
-encoder and a decoder that can handle common Ambisonics speaker
+also sound formats defined for first and second order Ambisonics, a
+general encoder and a decoder that can handle common Ambisonics speaker
 positions.</para>
 
       <para>While not planned at this time, it would be possible to add
 modules for automatic doppler and reverberation calculations. (One could
-argue that this task is better handled by OpenAL than &ahi;.)</para>
+argue, though, that this task is better handled by OpenAL than
+&ahi;.)</para>
     </section>
 
+    <section>
+      <title>Unified API</title>
+
+      <para>&ahi6; and earlier versions of &ahi; had two different
+API's, one low-level function based API and one based on Exec devices,
+built on top of the first one. The device API is a less complex API, but
+allowed applications to share the same hardware.</para>
+
+      <para>In &ahi7;, the code that handles resource sharing has been
+moved down one step, allowing all programs to share the same hardware.
+Additionally, the <quote>unit</quote> concept has been further expanded
+and is now available to any application, no matter what API it choses to
+use.</para>
+
+      <para>Any audio ID (that is, sound card) is now a unit, and the
+device API can directly use any audio ID using the ID as unit
+number. Custom units can be defined by the user, just as he or she could
+do before, and units can be connected to other units, either directly or
+over the network. It's also possibe to insert signal processing plug-ins
+between units.</para>
+    </section>
+
+    <section>
+      <title>Extended hardware acceleration</title>
+
+      <para>From the beginning, &ahi; was designed to be
+hardware-accelerated. Unfortunately, this never happened<footnote>
+<para>Not entirely true. <filename>paula.audio</filename> had a DMA
+mode, which used the original Amiga audio hardware to play the
+individual channels, and <filename>delfina.audio</filename> could apply
+echo using the on-board DSP.</para>
+	</footnote>. Therefore, hardware acceleration is not going to be
+a top priority this time. That being said, &ahi7;
+<emphasis>does</emphasis> allow the drivers to replace any module in the
+processing chain with its own module, thus enabling either partial or
+full hardware acceleration. &ahi7; can also take direct advantage of
+drivers that can resample and mix several audio streams in hardware.
+</para>
+    </section>
+    
     <section>
       <title>Backward compatible</title>
 
       <para>Needless to say, &ahi7; is fully backward compatible, both
 when it comes to applications and drivers. It's even possible to use
-&ahi7; drivers with &ahi4; using a wrapper driver.</para>
+&ahi7; drivers with &ahi4; using a special wrapper driver.</para>
     </section>
   </chapter>
 
@@ -182,5 +229,38 @@ when it comes to applications and drivers. It's even possible to use
     <title>System overview</title>
 
     <para>...</para>
+
+    <section>
+      <title>A word about thread saftly</title>
+
+      <para>Generally speaking, &ahi; is thread-safe and functions and
+methods can be called at any time from any process or even software
+interrupts. However, calling &ahi; functions from hardware interrupts
+<emphasis>is no longer supported</emphasis>, except for those function
+calls that existed in &ahi6; (and only if no new &ahi; features are
+used). This should not really be a problem for anyone.</para>
+
+      <para>Some ahi; BOOPSI attributes return an array of values from
+OM_GET. In this case, you have to lock the object before quering for the
+attribute in question. When you have inspected the array and perhaps
+copied it to some place safe, you are free to unlock the object. All
+&ahi; objects implement the <methodname>AHIM_Lock</methodname> and
+<methodname>AHIM_Unlock</methodname> methods that must be used for this
+purpose.</para>
+
+      <para>Otherwise, all &ahi7; BOOPSI methods lock and unlock the
+object as part of the method call &mdash; with two exceptions. When
+&ahi7; is active and plays or records something, two methods, called
+<methodname>AHIM_Processor_Prepare</methodname> and
+<methodname>AHIM_Processor_Process</methodname> are invoked by the
+system once for every audio buffer processed. These two methods should
+<emphasis>not</emphasis> lock the object (for performance
+reasons). Instead, &ahi7; makes sure that all objects are already locked
+before calling these methods.</para>
+
+      <para>Normally, one single lock per application is used, except
+when &ahi; is in so-called interrupt safe mode, when a system-wide
+<quote>lock</quote> is used instead.</para>
+    </section>
   </chapter>
 </book>
