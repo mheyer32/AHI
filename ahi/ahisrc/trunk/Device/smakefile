@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.10  1997/02/03 16:22:45  lcs
+# *** empty log message ***
+#
 # Revision 1.9  1997/02/02 22:38:25  lcs
 # *** empty log message ***
 #
@@ -34,9 +37,10 @@ OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
 TARGET	= AHI:User/Devs/ahi.device
 
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
-device.c devsupp.a dspecho.a footer.a header.a requester.c
+device.c devsupp.a dspecho.a footer.a header.a requester.c\
+AHI.cd C_c_AHI.sd C_h_AHI.sd
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h AHI.cd smakefile
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile
 
 OBJECTS	= addroutines.o asmfuncs.o cfuncs.o database.o devcommands.o\
 device.o devsupp.o dspecho.o footer.o localize.o requester.o header.o 
@@ -95,7 +99,7 @@ localize.c:	AHI.cd C_c_AHI.sd
 	FlexCat AHI.cd localize.c=C_c_AHI.sd 
 
 localize.h:	AHI.cd C_c_AHI.sd
-	FlexCat AHI.cd localize.h=C_h.sd
+	FlexCat AHI.cd localize.h=C_h_AHI.sd
 
 addroutines.o:	addroutines.a ahi_def.i
 asmfuncs.o:	asmfuncs.a ahi_def.i
@@ -195,6 +199,7 @@ catalogs:
 ###############################################################################
 
 newcatalogs:
+	FlexCat AHI.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
 	FlexCat AHI.cd Svenska.ct NEWCTFILE Svenska.ct
 
 ##
