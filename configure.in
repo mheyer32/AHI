@@ -1,39 +1,20 @@
-dnl $Id$
+# Process this file with autoconf to produce a configure script.
+# $Id$
+AC_REVISION( $Revision$ )dnl
+AC_INIT(AHI, 7.0, martin@blom.org )
+AC_CONFIG_SRCDIR([acconfig.h])
+AC_CONFIG_HEADER([config.h])
 
-
-dnl Process this file with autoconf to produce a configure script.
-
-AC_REVISION( $Revision$ )
-dnl
-AC_INIT( TODO )
-
-
-dnl General
+# General
 
 AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
-AC_CONFIG_HEADER( config.h )
 
 AC_MSG_CHECKING(CPU to build for)
 AC_ARG_WITH(cpu,
 [  --with-cpu              The CPU to optimize for],
 CPU=${withval}, unset CPU)
 AC_MSG_RESULT(${CPU})
-
-AC_MSG_CHECKING(OS include directory)
-AC_ARG_WITH(os-includedir,
-[  --with-os-includedir    Path to AmigaOS include directory [/gg/os-include]],
-os_includedir=${withval},
-os_includedir=/gg/os-include)
-AC_MSG_RESULT(${os_includedir} )
-
-AC_MSG_CHECKING(if WarpUp support code should be enabled)
-AC_ARG_ENABLE(warpup,
-[  --enable-warpup         Enable WarpUp support],
-AC_DEFINE(ENABLE_WARPUP))
-ENABLE_WARPUP=${enable_warpup}
-AC_SUBST(ENABLE_WARPUP)
-AC_MSG_RESULT(${enable_warpup})
 
 case $host in
  i?86be-pc-amithlon)
@@ -86,7 +67,7 @@ esac
 top_builddir=$(pwd)
 
 : ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${optflags}"}
-: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc -I${os_includedir}"}
+: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc"}
 : ${LDFLAGS="${linkerflags}"}
 : ${ASFLAGS="${asflags}"}
 : ${ARFLAGS="-ru"}
@@ -106,8 +87,7 @@ AC_SUBST(CFLAG_RESIDENT)
 AC_SUBST(LDFLAG_RESIDENT)
 AC_SUBST(DISTDIR)
 
-dnl Checks for programs.
-
+# Checks for programs.
 AC_CHECK_TOOL( CC, gcc, : ) 
 AC_CHECK_TOOL( AS, as, : ) 
 AC_CHECK_TOOL( AR, ar, : )
@@ -142,8 +122,7 @@ if test -z "$ROBODOC"; then
  AC_MSG_WARN( robodoc missing. )
 fi
 
-dnl Checks for libraries.
-
+# Checks for libraries.
 AC_SEARCH_LIBS( NewList, amiga,,    AC_MSG_WARN( "libamiga is missing." ) )
 AC_CHECK_LIB( mui,   MUI_NewObject,,AC_MSG_WARN(  "Who cares?" ) )
 AC_SEARCH_LIBS( floor, m,,	    AC_MSG_ERROR( "libm is missing." ) )
@@ -155,40 +134,45 @@ case $host in
  ;;
 esac
 
-dnl Checks for header files.
-
-AC_CHECK_HEADERS( proto/oss.h, HAVE_OSS=1, AC_MSG_WARN( "proto/oss.h is missing." ))
-AC_CHECK_HEADERS( libraries/openpci.h, HAVE_OPENPCI=1, AC_MSG_WARN( "libraries/openpci.h is missing." ))
+# Checks for header files.
+AC_HEADER_STDC
+AC_CHECK_HEADERS([errno.h limits.h stddef.h stdlib.h string.h unistd.h])
+AC_CHECK_HEADERS([proto/oss.h], HAVE_OSS=1, AC_MSG_WARN( "proto/oss.h is missing." ))
+AC_CHECK_HEADERS([libraries/openpci.h], HAVE_OPENPCI=1, AC_MSG_WARN( "libraries/openpci.h is missing." ))
 
 AC_SUBST(HAVE_OSS)
 AC_SUBST(HAVE_OPENPCI)
 
-dnl Checks for typedefs, structures, and compiler characteristics.
-
+# Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
 AC_C_INLINE
 AC_C_BIGENDIAN
+AC_TYPE_MODE_T
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
 
-dnl Checks for library functions.
+# Checks for library functions.
+AC_CHECK_FUNCS([floor memset pow])
 
-
-AC_OUTPUT(Makefile
-          AHI/Makefile
-          AHI-Handler/Makefile
-          AddAudioModes/Makefile
-          Device/Makefile
-          Docs/Makefile
-          Drivers/Makefile
-          Drivers/AROS/Makefile
-          Drivers/Common/Makefile.common
-          Drivers/Device/Makefile
-          Drivers/EMU10kx/Makefile
-          Drivers/Filesave/Makefile
-          Drivers/Void/Makefile
-	  Examples/Makefile
-	  Examples/Device/PlayTest/Makefile
-	  Examples/Extras/CloneAudioModes/Makefile
-	  Examples/Low-level/PlaySineEverywhere/Makefile
-	  Examples/Low-level/ScanAudioModes/Makefile
-          Include/Makefile,
-          echo timestamp > stamp-h)
+AC_CONFIG_FILES([AHI/Makefile
+                 AHI-Handler/Makefile
+                 AddAudioModes/Makefile
+                 Classes/Makefile
+                 Device/Makefile
+                 Docs/Makefile
+                 Drivers/Makefile
+                 Drivers/AROS/Makefile
+                 Drivers/Common/Makefile.common
+                 Drivers/Device/Makefile
+                 Drivers/EMU10kx/Makefile
+                 Drivers/Filesave/Makefile
+                 Drivers/Void/Makefile
+                 Examples/Makefile
+                 Examples/Device/PlayTest/Makefile
+                 Examples/Extras/CloneAudioModes/Makefile
+                 Examples/Low-level/PlaySineEverywhere/Makefile
+                 Examples/Low-level/ScanAudioModes/Makefile
+                 Include/Makefile
+                 Makefile],
+		 echo timestamp > stamp-h)
+AC_OUTPUT

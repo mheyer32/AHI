@@ -48,10 +48,6 @@
 #include "mixer.h"
 #include "sound.h"
 
-#if defined( ENABLE_WARPUP )
-# include "warpup.h"
-#endif
-
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
@@ -60,48 +56,14 @@
 ******************************************************************************/
 
 void
-CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
-               void* arg )
-{
-  switch( MixBackend )
-  {
-    case MB_NATIVE:
-      CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
-                   audioctrl,
-                   arg );
-      break;
-
-#if defined( ENABLE_WARPUP )
-    case MB_WARPUP:
-      WarpUpCallSoundHook( audioctrl, arg );
-      break;
-#endif
-  }
-}
-
-
-void
 MixerFunc( struct Hook*             hook,
            struct AHIPrivAudioCtrl* audioctrl,
            void*                    dst )
 {
-  switch( MixBackend )
-  {
-    case MB_NATIVE:
-      Mix( hook, audioctrl, dst );
-      DoMasterVolume( dst, audioctrl );
-      DoOutputBuffer( dst, audioctrl );
-      DoChannelInfo( audioctrl );
-      break;
-      
-#if defined( ENABLE_WARPUP )
-    case MB_WARPUP:
-      WarpUpCallMixer( audioctrl, dst );
-      DoOutputBuffer( dst, audioctrl );
-      DoChannelInfo( audioctrl );
-      break;
-#endif
-  }
+  Mix( hook, audioctrl, dst );
+  DoMasterVolume( dst, audioctrl );
+  DoOutputBuffer( dst, audioctrl );
+  DoChannelInfo( audioctrl );
 }
 
 
@@ -120,32 +82,16 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
   // Allocate and initialize the AHIChannelData structures
   // This structure could be accessed from from interrupts!
 
-  ULONG data_flags = MEMF_ANY;
-  
-  switch( MixBackend )
-  {
-    case MB_NATIVE:
-      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
-      break;
-      
-#if defined( ENABLE_WARPUP )
-    case MB_WARPUP:
-      // Non-cached from both the PPC and m68k side
-      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
-      break;
-#endif
-  }
-
-  audioctrl->ahiac_ChannelDatas = AHIAllocVec(
+  audioctrl->ahiac_ChannelDatas = AllocVec(
       audioctrl->ac.ahiac_Channels * sizeof( struct AHIChannelData ),
-      data_flags );
+      MEMF_PUBLIC | MEMF_CLEAR );
 
   // Allocate and initialize the AHISoundData structures
   // This structure could be accessed from from interrupts!
 
-  audioctrl->ahiac_SoundDatas = AHIAllocVec(
+  audioctrl->ahiac_SoundDatas = AllocVec(
       audioctrl->ac.ahiac_Sounds * sizeof( struct AHISoundData ),
-      data_flags );
+      MEMF_PUBLIC | MEMF_CLEAR );
 
   // Now link the list and fill in the channel number for each structure.
 
@@ -187,19 +133,7 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
     }
   }
 
-
-  switch( MixBackend )
-  {
-    case MB_NATIVE:
-      rc = TRUE;
-      break;
-      
-#if defined( ENABLE_WARPUP )
-    case MB_WARPUP:
-      rc = WarpUpInit( audioctrl );
-      break;
-#endif
-  }
+  rc = TRUE;
 
   return rc;
 }
@@ -215,22 +149,10 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
-  switch( MixBackend )
-  {
-    case MB_NATIVE:
-      break;
-      
-#if defined( ENABLE_WARPUP )
-    case MB_WARPUP:
-      WarpUpCleanUp( audioctrl );
-      break;
-#endif
-  }
-
-  AHIFreeVec( audioctrl->ahiac_SoundDatas );
+  FreeVec( audioctrl->ahiac_SoundDatas );
   audioctrl->ahiac_SoundDatas = NULL;
 
-  AHIFreeVec( audioctrl->ahiac_ChannelDatas );
+  FreeVec( audioctrl->ahiac_ChannelDatas );
   audioctrl->ahiac_ChannelDatas = NULL;
 }
 
@@ -642,7 +564,9 @@ Mix( struct Hook*             unused_Hook,
           cd->cd_EOS = FALSE;
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
-            CallSoundHook( audioctrl, &cd->cd_ChannelNo );
+	    CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
+			 audioctrl,
+			 &cd->cd_ChannelNo );
           }
         }
 
