@@ -1,59 +1,33 @@
 /*
  * $Id$
  * $Log$
+ * Revision 1.2  1997/06/29 03:04:02  lcs
+ * RawPlayback() seems to work now!
+ *
  * Revision 1.1  1997/06/25 19:45:09  lcs
  * Initial revision
- *
- *
  */
 
 #include <devices/ahi.h>
 #include <dos/dos.h>
 #include <dos/dostags.h>
 #include <exec/exec.h>
-#include <libraries/toccata.h>
 
 #include <proto/ahi.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
+#include <proto/utility.h>
 #include <clib/toccata_protos.h>
 #include <pragmas/toccata_pragmas.h>
 
 #include <string.h>
 
-struct toccataprefs {
-  UBYTE ID[8];
-  LONG  InputVolume;
-  LONG  OutputVolume;
-  LONG  LoopbackVolume;
-  ULONG Input;
-  BOOL  MicGain;
-  ULONG Mode;
-  ULONG Frequency;
-};
+#include "toccata.h"
 
 #define ENVPREFS    "ENV:toccata-emul.prefs"
 #define ENVARCPREFS "ENVARC:toccata-emul.prefs"
-#define IDCODE    "TOCEMUL"
+#define IDCODE      "TOCEMUL"
 
-/* Force 32 bit results */
-
-#define BOOL LONG
-
-/* Arguments in registers */
-
-#define ASM     __asm
-#define REG(x)  register __ ## x
-
-/* Externals */
-
-extern long __far _LibVersion;
-extern long __far _LibRevision;
-extern char __far _LibID[];
-extern char __far _LibName[];
-extern struct HardInfo hardinfo;
-
-ASM void SlaveTaskEntry(void);
 
 /* Globals */
 
@@ -64,21 +38,40 @@ struct DosLibrary     *DOSBase     = NULL;
 
 struct Process        *SlaveProcess = NULL;
 
-ULONG MonoMode       = 0x0002000B ^ 0xC0DECAFE;
-ULONG StereoMode     = 0x00020007 ^ 0xDEADBEEF;
-
 struct toccataprefs tprefs = {
   IDCODE,
+
+  /* Toccata registers */
+  -24, -24,
+  -24, -24,
+  0, 0,
+  0, 0,
   0,
-  0,
-  0,
-  TINPUT_Line,
-  FALSE,
   TMODE_LINEAR_8,
   11025,
+  TINPUT_Line,
+  FALSE,
+  PATDEF_CAPTUREIOPRI,
+  PATDEF_CAPTUREBUFFERPRI,
+  PATDEF_CAPTUREBLOCKSIZE,
+  PATDEF_MAXCAPTUREBLOCKS,
+  PATDEF_PLAYBACKIOPRI,
+  PATDEF_PLAYBACKBUFFERPRI,
+  PATDEF_PLAYBACKBLOCKSIZE,
+  PATDEF_PLAYBACKSTARTBLOCKS,
+  PATDEF_PLAYBACKBLOCKS,
+
+  /* AHI prefs */
+  0x0002000B,
+  0x00020007,
+  0, 0, 0, 0, 0
 };
 
 ULONG error = TIOERR_UNKNOWN;
+
+
+
+
 
 
 /*
@@ -89,7 +82,7 @@ int ASM __UserLibInit (REG(a6) struct Library *libbase)
 {
   ToccataBase = (struct ToccataBase *) libbase;
 
-  ToccataBase->tb_BoardAddress = NULL;
+  ToccataBase->tb_BoardAddress = (APTR) 0xBADC0DED;
 
   if(!(DOSBase = (struct DosLibrary *)OpenLibrary("dos.library",37)))
   {
@@ -103,20 +96,7 @@ int ASM __UserLibInit (REG(a6) struct Library *libbase)
     return 1;
   }
 
-  Forbid();
-  if(SlaveProcess = CreateNewProcTags(
-      NP_Entry,     SlaveTaskEntry,
-      NP_Name,      _LibName,
-      NP_Priority,  1,
-      TAG_DONE)) {
-    SlaveProcess->pr_Task.tc_UserData = ToccataBase;
-  }
-  Permit();
-
-  if(SlaveProcess == NULL) {
-    return 1;
-  }
-
+  kprintf("(lib initialized)\n");
   return 0;
 }
 
@@ -135,55 +115,135 @@ void ASM __UserLibCleanup (REG(a6) struct Library *libbase)
     CloseLibrary(UtilityBase);
     UtilityBase = NULL;
   }
-  
-  Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_C);
+  kprintf("(lib expunged)\n");
 }
 
 
 /*
- *  HardInfo
+ *  UserLibOpen(): Called from OpenLibrary()
  */
 
-struct HardInfo hardinfo;
+int ASM __UserLibOpen (REG(a6) struct Library *libbase) {
+  if(libbase->lib_OpenCnt == 1) {
+    /* Was 0, became 1 */
+    Forbid();
+    if(SlaveProcess = CreateNewProcTags(
+        NP_Entry,     SlaveTaskEntry,
+        NP_Name,      _LibName,
+        NP_Priority,  1,
+        TAG_DONE)) {
+      SlaveProcess->pr_Task.tc_UserData = ToccataBase;
+    }
+    Permit();
 
-/*
- *  SlaveTask(): The slave process
- */
+    /* Wait until our slave is ready */
+    while(SlaveProcess && !SlaveInitialized) {
+      Delay(1);
+    }
 
-void ASM SlaveTask(void) {
-  struct MsgPort    *AHImp = NULL;
-  struct AHIRequest *AHIio = NULL;
-  BYTE AHIDevice = -1;
-
-  ToccataBase->tb_HardInfo = NULL;
-
-  if(AHImp=CreateMsgPort()) {
-    if(AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest))) {
-      AHIio->ahir_Version = 4;
-      AHIDevice = OpenDevice(AHINAME, AHI_NO_UNIT, (struct IORequest *)AHIio, NULL);
+    if(SlaveProcess && SlaveInitialized) {
+      T_LoadSettings(0);
     }
   }
 
-  if(AHIDevice == 0) {
-    AHIBase = (struct Library *) AHIio->ahir_Std.io_Device;
-
-    hardinfo.hi_Version      = 0;
-    hardinfo.hi_Revision     = 0;
-    hardinfo.hi_Frequencies  = 14;
-    hardinfo.hi_MinFrequency = 5513;
-    hardinfo.hi_MaxFrequency = 48000;
-    hardinfo.hi_Flags    = 0;
-
-    ToccataBase->tb_HardInfo = &hardinfo;
-    Wait(SIGBREAKF_CTRL_C);
+  if(!SlaveInitialized) {
+    return 1;
   }
 
-  SlaveProcess = NULL;
+  kprintf("(lib opened %ld)\n", libbase->lib_OpenCnt);
+  return 0;
+}
 
-  if(!AHIDevice)
-    CloseDevice((struct IORequest *)AHIio);
-  DeleteIORequest((struct IORequest *)AHIio);
-  DeleteMsgPort(AHImp);
+
+/*
+ *  UserLibClose(): Called from CloseLibrary()
+ */
+
+void ASM __UserLibClose (REG(a6) struct Library *libbase) {
+  if(libbase->lib_OpenCnt == 1) {
+    /* Is 1, will become 0 */
+    if(SlaveProcess) {
+      Signal((struct Task *) SlaveProcess, SIGBREAKF_CTRL_C);
+    }
+    while(SlaveProcess) {
+      Delay(1);
+    }
+  }
+  kprintf("(lib closed %ld)\n", libbase->lib_OpenCnt);
+}
+
+/*
+ *  hardinfo & fillhardinfo()
+ */
+
+static struct HardInfo hardinfo;
+
+void fillhardinfo(void) {
+  LONG  freqs    = 1;
+  ULONG minfreq  = 0;
+  ULONG maxfreq  = 0;
+  ULONG id;
+  struct AHIAudioCtrl *actrl = NULL;
+
+  if(audioctrl) {
+    id = AHI_INVALID_ID;
+    actrl = audioctrl;
+  }
+  else {
+    if(tprefs.Mode & TMODEF_STEREO) {
+      id = tprefs.StereoMode;
+    }
+    else {
+      id = tprefs.MonoMode;
+    }
+  }
+
+  AHI_GetAudioAttrs(id, actrl,
+      AHIDB_Frequencies, &freqs,
+      AHIDB_MinMixFreq,  &minfreq,
+      AHIDB_MaxMixFreq,  &maxfreq,
+      TAG_DONE);
+
+  hardinfo.hi_Version      = 1;
+  hardinfo.hi_Revision     = 0;
+  hardinfo.hi_Frequencies  = freqs;
+  hardinfo.hi_MinFrequency = minfreq;
+  hardinfo.hi_MaxFrequency = maxfreq;
+  hardinfo.hi_Flags        = 0;
+
+  ToccataBase->tb_HardInfo = &hardinfo;
+}
+
+
+/*
+ *  sendmessage(): Send a message to the slave and wait for reply
+ */
+
+static ULONG sendmessage(ULONG id, APTR data) {
+  struct MsgPort      *replyport = NULL;
+  struct slavemessage *msg = NULL;
+  ULONG rc = 0;
+
+  kprintf("sendmessage %ld: 0x%08lx\n", id, data);
+
+  if(msg = AllocVec(sizeof(struct slavemessage), MEMF_PUBLIC | MEMF_CLEAR)) {
+    if(replyport = CreateMsgPort()) {
+      msg->Msg.mn_ReplyPort = replyport;
+      msg->Msg.mn_Length    = sizeof(struct slavemessage);
+      msg->ID               = id;
+      msg->Data             = data;
+
+      PutMsg(&SlaveProcess->pr_MsgPort, (struct Message *) msg);
+
+      WaitPort(replyport);
+      GetMsg(replyport);
+      rc = (ULONG) msg->Data;
+      DeleteMsgPort(replyport);
+      FreeVec(msg);
+    }
+  }
+
+  return rc;
 }
 
 
@@ -201,7 +261,7 @@ ASM ULONG t_IoErr(void) {
  */
 
 ASM BOOL t_RawPlayback(REG(a0) struct TagItem *tags) {
-  return FALSE;
+  return (BOOL) sendmessage(MSG_RAWPLAY, tags);
 }
 
 
@@ -226,6 +286,7 @@ static BOOL savesettings(STRPTR name) {
 ASM BOOL t_SaveSettings(REG(d0) ULONG flags) {
   BOOL rc = TRUE;
 
+  kprintf("(SaveSettings (%ld))\n", flags);
   if(flags == 1) {
     rc = savesettings(ENVARCPREFS);
   }
@@ -263,6 +324,7 @@ static BOOL loadsettings(STRPTR name) {
 ASM BOOL t_LoadSettings(REG(d0) ULONG flags) {
   BOOL rc = FALSE;
 
+  kprintf("(LoadSettings (%ld))\n", flags);
   if(flags == 1) {
     rc = loadsettings(ENVARCPREFS);
   }
@@ -271,8 +333,10 @@ ASM BOOL t_LoadSettings(REG(d0) ULONG flags) {
   }
 
   T_SetPartTags(
-      PAT_InputVolumeLeft,  tprefs.InputVolume,
-      PAT_OutputVolumeLeft, tprefs.OutputVolume,
+      PAT_InputVolumeLeft,  tprefs.InputVolumeLeft,
+      PAT_InputVolumeRight, tprefs.InputVolumeLeft,
+      PAT_OutputVolumeLeft, tprefs.OutputVolumeLeft,
+      PAT_OutputVolumeRight,tprefs.OutputVolumeRight,
       PAT_LoopbackVolume,   tprefs.LoopbackVolume,
       PAT_Input,            tprefs.Input,
       PAT_MicGain,          tprefs.MicGain,
@@ -289,6 +353,7 @@ ASM BOOL t_LoadSettings(REG(d0) ULONG flags) {
  */
 
 ASM WORD t_Expand(REG(d0) UBYTE value, REG(d1) ULONG mode) {
+  kprintf("Expand\n");
   return 0;
 }
 
@@ -298,7 +363,7 @@ ASM WORD t_Expand(REG(d0) UBYTE value, REG(d1) ULONG mode) {
  */
 
 ASM BOOL t_StartLevel(REG(a0) struct TagItem *tags) {
-  return FALSE;
+  return (BOOL) sendmessage(MSG_LEVELON, tags);
 }
 
 
@@ -307,7 +372,7 @@ ASM BOOL t_StartLevel(REG(a0) struct TagItem *tags) {
  */
 
 ASM BOOL t_Capture(REG(a0) struct TagItem *tags) {
-  return FALSE;
+  return (BOOL) sendmessage(MSG_RECORD, tags);
 }
 
 
@@ -316,7 +381,7 @@ ASM BOOL t_Capture(REG(a0) struct TagItem *tags) {
  */
 
 ASM BOOL t_Playback(REG(a0) struct TagItem *tags) {
-  return FALSE;
+  return (BOOL) sendmessage(MSG_PLAY, tags);
 }
 
 
@@ -325,7 +390,8 @@ ASM BOOL t_Playback(REG(a0) struct TagItem *tags) {
  */
 
 ASM void t_Pause(REG(d0) ULONG pause) {
-
+  ULONG p = pause;
+  sendmessage(MSG_PAUSE, &p);
 }
 
 
@@ -334,7 +400,8 @@ ASM void t_Pause(REG(d0) ULONG pause) {
  */
 
 ASM void t_Stop(REG(d0) ULONG flags) {
-
+  ULONG f = flags;
+  sendmessage(MSG_STOP, &f);
 }
 
 
@@ -343,7 +410,7 @@ ASM void t_Stop(REG(d0) ULONG flags) {
  */
 
 ASM void t_StopLevel(void) {
-
+  sendmessage(MSG_LEVELOFF, NULL);
 }
 
 
@@ -354,8 +421,32 @@ ASM void t_StopLevel(void) {
 ASM ULONG t_FindFrequency(REG(d0) ULONG frequency) {
   ULONG index = 0;
   ULONG freq  = 0;
+  ULONG id;
+  struct AHIAudioCtrl *actrl = NULL;
 
+  kprintf("(FindFrequency)\n");
+  if(audioctrl) {
+    id = AHI_INVALID_ID;
+    actrl = audioctrl;
+  }
+  else {
+    if(tprefs.Mode & TMODEF_STEREO) {
+      id = tprefs.StereoMode;
+    }
+    else {
+      id = tprefs.MonoMode;
+    
+    }
+  }
   
+  AHI_GetAudioAttrs(id, actrl,
+      AHIDB_IndexArg, frequency,
+      AHIDB_Index,    &index,
+      TAG_DONE);
+  AHI_GetAudioAttrs(id, actrl,
+      AHIDB_FrequencyArg, index,
+      AHIDB_Frequency,    &freq,
+      TAG_DONE);
 
   return freq;
 }
@@ -366,7 +457,50 @@ ASM ULONG t_FindFrequency(REG(d0) ULONG frequency) {
  */
 
 ASM ULONG t_NextFrequency(REG(d0) ULONG frequency) {
-  return 0;
+  LONG  frequencies = 1;
+  ULONG index = 0;
+  ULONG freq = 0;
+  ULONG id;
+  struct AHIAudioCtrl *actrl = NULL;
+
+  kprintf("(NextFrequency)\n");
+  if(audioctrl) {
+    id = AHI_INVALID_ID;
+    actrl = audioctrl;
+  }
+  else {
+    if(tprefs.Mode & TMODEF_STEREO) {
+      id = tprefs.StereoMode;
+    }
+    else {
+      id = tprefs.MonoMode;
+    }
+  }
+  
+  if(frequency < ToccataBase->tb_HardInfo->hi_MinFrequency) {
+    index = 0;  
+  }
+  else {
+    AHI_GetAudioAttrs(id, actrl,
+        AHIDB_IndexArg, frequency,
+        AHIDB_Index,    &index,
+        AHIDB_Frequencies, &frequencies,
+        TAG_DONE);
+
+    if(index < (frequencies - 1 )) {
+      index++;
+    }
+    else {
+      return 0;
+    }
+  }
+
+  AHI_GetAudioAttrs(id, actrl,
+      AHIDB_FrequencyArg, index,
+      AHIDB_Frequency,    &freq,
+      TAG_DONE);
+
+  return freq;
 }
 
 
@@ -375,7 +509,106 @@ ASM ULONG t_NextFrequency(REG(d0) ULONG frequency) {
  */
 
 ASM void t_SetPart(REG(a0) struct TagItem *tags) {
+  struct TagItem *tstate;
+  struct TagItem *tag;
 
+  BOOL newmode   = FALSE;
+  BOOL newhwprop = FALSE;
+
+  tstate = tags;
+
+  while (tag = NextTagItem(&tstate)) {
+    switch (tag->ti_Tag) {
+      case PAT_MixAux1Left:
+        tprefs.MixAux1Left = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_MixAux1Right:
+        tprefs.MixAux1Right = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_MixAux2Left:
+        tprefs.MixAux2Left = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_MixAux2Right:
+        tprefs.MixAux2Right = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_InputVolumeLeft:
+        tprefs.InputVolumeLeft = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_InputVolumeRight:
+        tprefs.InputVolumeRight = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_OutputVolumeLeft:
+        tprefs.OutputVolumeLeft = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_OutputVolumeRight:
+        tprefs.OutputVolumeRight = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_LoopbackVolume:
+        tprefs.LoopbackVolume = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_Mode:
+        tprefs.Mode = tag->ti_Data;
+        newmode = TRUE;
+        break;
+      case PAT_Frequency:
+        tprefs.Frequency = tag->ti_Data;
+        newmode = TRUE;
+        break;
+      case PAT_Input:
+        tprefs.Input = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+      case PAT_MicGain:
+        tprefs.MicGain = tag->ti_Data;
+        newhwprop = TRUE;
+        break;
+
+      /* These are unsupported */
+      case PAT_CaptureIoPri:
+        tprefs.CaptureIoPri = tag->ti_Data;
+        break;
+      case PAT_CaptureBufferPri:
+        tprefs.CaptureBufferPri = tag->ti_Data;
+        break;
+      case PAT_CaptureBlockSize:
+        tprefs.CaptureBlockSize = tag->ti_Data;
+        break;
+      case PAT_MaxCaptureBlocks:
+        tprefs.MaxCaptureBlocks = tag->ti_Data;
+        break;
+      case PAT_PlaybackIoPri:
+        tprefs.PlaybackIoPri = tag->ti_Data;
+        break;
+      case PAT_PlaybackBufferPri:
+        tprefs.PlaybackBufferPri = tag->ti_Data;
+        break;
+      case PAT_PlaybackBlockSize:
+        tprefs.PlaybackBlockSize = tag->ti_Data;
+        break;
+      case PAT_PlaybackStartBlocks:
+        tprefs.PlaybackStartBlocks = tag->ti_Data;
+        break;
+      case PAT_PlaybackBlocks:
+        tprefs.PlaybackBlocks = tag->ti_Data;
+        break;
+    }
+  }
+
+  if(newmode) {
+    sendmessage(MSG_MODE, NULL);
+  }
+  else if(newhwprop) {
+    sendmessage(MSG_HWPROP, NULL);
+  }
 }
 
 
@@ -384,15 +617,93 @@ ASM void t_SetPart(REG(a0) struct TagItem *tags) {
  */
 
 ASM void t_GetPart(REG(a0) struct TagItem *tags) {
+  struct TagItem *tstate;
+  struct TagItem *tag;
 
+  tstate = tags;
+
+  while (tag = NextTagItem(&tstate)) {
+    ULONG *dst;
+    
+    dst = (ULONG *) tag->ti_Data;
+
+    switch (tag->ti_Tag) {
+      case PAT_MixAux1Left:
+        *dst = tprefs.MixAux1Left;
+        break;
+      case PAT_MixAux1Right:
+        *dst = tprefs.MixAux1Right;
+        break;
+      case PAT_MixAux2Left:
+        *dst = tprefs.MixAux2Left;
+        break;
+      case PAT_MixAux2Right:
+        *dst = tprefs.MixAux2Right;
+        break;
+      case PAT_InputVolumeLeft:
+        *dst = tprefs.InputVolumeLeft;
+        break;
+      case PAT_InputVolumeRight:
+        *dst = tprefs.InputVolumeRight;
+        break;
+      case PAT_OutputVolumeLeft:
+        *dst = tprefs.OutputVolumeLeft;
+        break;
+      case PAT_OutputVolumeRight:
+        *dst = tprefs.OutputVolumeRight;
+        break;
+      case PAT_LoopbackVolume:
+        *dst = tprefs.LoopbackVolume;
+        break;
+      case PAT_Mode:
+        *dst = tprefs.Mode;
+        break;
+      case PAT_Frequency:
+        *dst = tprefs.Frequency;
+        break;
+      case PAT_Input:
+        *dst = tprefs.Input;
+        break;
+      case PAT_MicGain:
+        *dst = tprefs.MicGain;
+        break;
+      case PAT_CaptureIoPri:
+        *dst = tprefs.CaptureIoPri;
+        break;
+      case PAT_CaptureBufferPri:
+        *dst = tprefs.CaptureBufferPri;
+        break;
+      case PAT_CaptureBlockSize:
+        *dst = tprefs.CaptureBlockSize;
+        break;
+      case PAT_MaxCaptureBlocks:
+        *dst = tprefs.MaxCaptureBlocks;
+        break;
+      case PAT_PlaybackIoPri:
+        *dst = tprefs.PlaybackIoPri;
+        break;
+      case PAT_PlaybackBufferPri:
+        *dst = tprefs.PlaybackBufferPri;
+        break;
+      case PAT_PlaybackBlockSize:
+        *dst = tprefs.PlaybackBlockSize;
+        break;
+      case PAT_PlaybackStartBlocks:
+        *dst = tprefs.PlaybackStartBlocks;
+        break;
+      case PAT_PlaybackBlocks:
+        *dst = tprefs.PlaybackBlocks;
+        break;
+    }
+  }
 }
-
 
 /*
  *  Open()
  */
 
 ASM struct TocHandle * t_Open(REG(a0) UBYTE *name, REG(a1) struct TagItem *tags) {
+  kprintf("Open\n");
   return NULL;
 }
 
@@ -402,7 +713,7 @@ ASM struct TocHandle * t_Open(REG(a0) UBYTE *name, REG(a1) struct TagItem *tags)
  */
 
 ASM void t_Close(REG(a0) struct TocHandle *handle) {
-
+  kprintf("Close\n");
 }
 
 
@@ -411,6 +722,7 @@ ASM void t_Close(REG(a0) struct TocHandle *handle) {
  */
 
 ASM BOOL t_Play(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags) {
+  kprintf("Play\n");
   return FALSE;
 }
 
@@ -420,6 +732,7 @@ ASM BOOL t_Play(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags) 
  */
 
 ASM BOOL t_Record(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags) {
+  kprintf("Record\n");
   return FALSE;
 }
 
@@ -429,7 +742,7 @@ ASM BOOL t_Record(REG(a0) struct TocHandle *handle, REG(a1) struct TagItem *tags
 
 ASM void t_Convert(REG(a0) APTR src, REG(a1) APTR dest, REG(d0) ULONG samples,
                  REG(d1) ULONG srcmode, REG(d2) ULONG destmode) {
-
+  kprintf("Convert\n");
 }
 
 
@@ -457,6 +770,7 @@ ASM ULONG t_BytesPerSample(REG(d0) ULONG mode) {
     0
   };
 
+  kprintf("(BytesPerSample)\n");
   return table[mode];
 }
 
@@ -471,6 +785,7 @@ ASM ULONG t_BytesPerSample(REG(d0) ULONG mode) {
  */
 
 ASM struct MultiSoundHandle * t_OpenFile(REG(a0) UBYTE *name, REG(d0) ULONG flags) {
+  kprintf("OpenFile\n");
   return NULL;
 }
 
@@ -480,7 +795,7 @@ ASM struct MultiSoundHandle * t_OpenFile(REG(a0) UBYTE *name, REG(d0) ULONG flag
  */
 
 ASM void t_CloseFile(REG(a0) struct MultiSoundHandle *handle) {
-
+  kprintf("CloseFile\n");
 }
 
 
@@ -490,6 +805,7 @@ ASM void t_CloseFile(REG(a0) struct MultiSoundHandle *handle) {
 
 ASM LONG t_ReadFile(REG(a0) struct MultiSoundHandle *handle,
                     REG(a1) UBYTE *dest, REG(d0) ULONG length) {
+  kprintf("ReadFile\n");
   return 0;
 }
 
@@ -505,6 +821,7 @@ ASM LONG t_ReadFile(REG(a0) struct MultiSoundHandle *handle,
  */
 
 ASM ULONG t_WriteSmpte(void) {
+  kprintf("WriteSmpte\n");
   return 0;
 }
 
@@ -514,6 +831,7 @@ ASM ULONG t_WriteSmpte(void) {
  */
 
 ASM ULONG t_StopSmpte(void) {
+  kprintf("StopSmpte\n");
   return 0;
 }
 
@@ -523,6 +841,7 @@ ASM ULONG t_StopSmpte(void) {
  */
 
 ASM ULONG t_Reserved1(void) {
+  kprintf("Reserved1\n");
   return 0;
 }
 
@@ -532,6 +851,7 @@ ASM ULONG t_Reserved1(void) {
  */
 
 ASM ULONG t_Reserved2(void) {
+  kprintf("Reserved2\n");
   return 0;
 }
 
@@ -541,6 +861,7 @@ ASM ULONG t_Reserved2(void) {
  */
 
 ASM ULONG t_Reserved3(void) {
+  kprintf("Reserved3\n");
   return 0;
 }
 
@@ -550,6 +871,7 @@ ASM ULONG t_Reserved3(void) {
  */
 
 ASM ULONG t_Reserved4(void) {
+  kprintf("Reserved4\n");
   return 0;
 }
 
@@ -559,6 +881,7 @@ ASM ULONG t_Reserved4(void) {
  */
 
 ASM void t_Own(void) {
+  kprintf("Own\n");
 }
 
 
@@ -567,6 +890,7 @@ ASM void t_Own(void) {
  */
 
 ASM void t_Disown(void) {
+  kprintf("Disown\n");
 }
 
 
@@ -575,6 +899,7 @@ ASM void t_Disown(void) {
  */
 
 ASM void t_SetReg(void) {
+  kprintf("SetReg\n");
 }
 
 
@@ -583,5 +908,6 @@ ASM void t_SetReg(void) {
  */
 
 ASM ULONG t_GetReg(void) {
+  kprintf("GetReg\n");
   return 0;
 }

@@ -1,17 +1,22 @@
 *
 * $Id$
 * $Log$
+* Revision 1.2  1997/06/29 03:04:02  lcs
+* RawPlayback() seems to work now!
+*
 * Revision 1.1  1997/06/25 19:45:09  lcs
 * Initial revision
 *
 *
 
 	include	exec/tasks.i
+	include	utility/hooks.i
 	include	lvo/exec_lib.i
 	include	macros.i
 
 	XREF	_ToccataBase
 	XREF	_SlaveTask
+	XREF	_RawReply
 
 	XREF	_t_NextFrequency
 	XREF	_t_FindFrequency
@@ -50,6 +55,8 @@
 
 
 
+	XDEF	_GetRawReply
+	XDEF	_HookLoad
 	XDEF	_SlaveTaskEntry
 
 	XDEF	_T_NextFrequency
@@ -87,6 +94,31 @@
 	XDEF	_T_SetReg
 	XDEF	_T_GetReg
 
+_GetRawReply:
+	push	a6
+	move.l	a0,CRRtoccatabase
+	base	exec
+	call	CacheClearU
+	move.l	#CallRawReply,d0
+	pop	a6
+	rts
+
+CallRawReply:
+	push	a6
+	dc.w	$4DF9			; "lea.l xxx.l,a6
+CRRtoccatabase:
+	dc.l	0
+	jsr	_RawReply
+	pop	a6
+	rts
+
+_HookLoad:
+	pushm	a5/a6
+	move.l	h_Data(a0),a6
+	move.l	h_SubEntry(a0),a5
+	jsr	(a5)
+	popm	a5/a6
+	rts
 
 _SlaveTaskEntry:
 	move.l	4.w,a6

@@ -1,14 +1,17 @@
 #
 # $Id$
 # $Log$
+# Revision 1.2  1997/06/29 03:04:02  lcs
+# RawPlayback() seems to work now!
+#
 # Revision 1.1  1997/06/25 19:45:09  lcs
 # Initial revision
 #
 #
 
 DEST	= LIBS:toccata.library
-OBJECTS	= libinit.o toccata.o stubs.o 
-RCSFILES= libinit.c smakefile stubs.a toccata.c
+OBJECTS	= libinit.o toccata.o slaveproc.o stubs.o 
+RCSFILES= libinit.c slaveproc.c smakefile stubs.a toccata.c toccata.h
 
 CFLAGS	= CPU=68030 SAVEDS\
 PARAMS=REGISTER LIBCODE NOSTACKCHECK DEBUG=FULL STRINGMERGE\
@@ -37,7 +40,8 @@ $(DEST):	$(OBJECTS)
 libinit.o:	libinit.c
 	sc $(CFLAGS) DEF ONE_GLOBAL_SECTION $<
 
-toccata.o:	toccata.c
+toccata.o:	toccata.c toccata.h
+slaveproc.o:	slaveproc.c toccata.h
 stubs.o:	stubs.a
 
 ci:
