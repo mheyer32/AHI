@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.3  1997/03/22 18:58:07  lcs
+* --background-- updated + some work on dspecho
+*
 * Revision 1.2  1997/03/20 02:07:02  lcs
 * Weiﬂ nicht?
 *
@@ -20,9 +23,17 @@
 	XDEF	update_DSPEcho
 	XDEF	free_DSPEcho
 
+	XREF	_Fixed2Shift
+
 ***
 *** DSPECHO
 ***
+
+;in:
+* a0	dpsecho struct
+* a2	audioctrl
+* a5	AHIBase
+
 	XDEF	update_DSPEcho
 update_DSPEcho:
 	pushm	d2-d7/a3-a6
@@ -53,20 +64,41 @@ update_DSPEcho:
 	add.l	a0,d3
 	move.l	d3,ahiecho_DstPtr(a1)
 
+
+	lea	do_DSPEchoMono32(pc),a0
+	cmp.l	#AHIST_M32S,d0
+	beq	.save_mono
+	lea	do_DSPEchoStereo32(pc),a0
+	cmp.l	#AHIST_S32S,d0
+	beq	.save
+
+	move.b	ahib_Flags(a5),d0
+	and.b	#AHIBF_FASTECHO,d0
+	bne	.fastecho
+
 	move.l	ahiac_BuffType(a2),d0
 	lea	do_DSPEchoMono16(pc),a0
 	cmp.l	#AHIST_M16S,d0
 	beq	.save_mono
-	lea	do_DSPEchoMono32(pc),a0
-	cmp.l	#AHIST_M32S,d0
-	beq	.save_mono
 	lea	do_DSPEchoStereo16(pc),a0
 	cmp.l	#AHIST_S16S,d0
 	beq	.save
-	lea	do_DSPEchoStereo32(pc),a0
-	cmp.l	#AHIST_S32S,d0
-	beq	.save
 	bra	.exit					;ERROR, unknown buffer!
+.fastecho
+	move.l	ahiac_BuffType(a2),d0
+	lea	do_DSPEchoMono16fast(pc),a0
+	cmp.l	#AHIST_M16S,d0
+	beq	.save_mono
+
+	cmp.l	#AHIST_S16S,d0
+	bne	.exit					;ERROR, unknown buffer!
+; Either full cross echo or none!
+	lea	do_DSPEchoStereo16fast(pc),a0
+;	cmp.l	#$8000,ahiede_Cross(a3)
+;	blo	.save_mono
+;	lea	do_DSPEchoStereo16fastCross(pc),a0
+;	move.l	#$10000,ahiede_Cross(a3)
+;	bra	.save
 .save_mono
 	clr.l	ahiede_Cross(a3)
 .save
@@ -139,6 +171,42 @@ update_DSPEcho:
 	swap.w	d0
 	lsr.l	#1,d0
 	move.w	d0,ahiecho_FeedbackNO(a1)
+
+	move.b	ahib_Flags(a5),d0
+	and.b	#AHIBF_FASTECHO,d0
+	beq	.no_fastecho
+* Now get the shift-left value for each parameter
+	
+	moveq	#0,d0
+	move.w	ahiecho_FeedbackDS(a1),d0
+	bsr	_Fixed2Shift
+	move.w	d0,ahiecho_FeedbackDS(a1)
+
+	moveq	#0,d0
+	move.w	ahiecho_FeedbackDO(a1),d0
+	bsr	_Fixed2Shift
+	move.w	d0,ahiecho_FeedbackDO(a1)
+
+	moveq	#0,d0
+	move.w	ahiecho_FeedbackNS(a1),d0
+	bsr	_Fixed2Shift
+	move.w	d0,ahiecho_FeedbackNS(a1)
+
+	moveq	#0,d0
+	move.w	ahiecho_FeedbackNO(a1),d0
+	bsr	_Fixed2Shift
+	move.w	d0,ahiecho_FeedbackNO(a1)
+
+	moveq	#0,d0
+	move.w	ahiecho_MixN(a1),d0
+	bsr	_Fixed2Shift
+	move.w	d0,ahiecho_MixN(a1)
+
+	moveq	#0,d0
+	move.w	ahiecho_MixD(a1),d0
+	bsr	_Fixed2Shift
+	move.w	d0,ahiecho_MixD(a1)
+.no_fastecho
 
 	move.l	a1,ahiac_EffDSPEchoStruct(a2)
 .exit
@@ -494,9 +562,9 @@ LOCALSIZE	SET	4
 	clr.l	(sp)
 .loopsleft_ok
 	add.l	d7,d6
+	move.l	d6,ahiecho_Offset(a0)
 	subq.l	#1,d7
 	bmi	.exit				;This is an error (should not happen)
-.echoloop
 	ENDM
 
 
@@ -504,7 +572,6 @@ DSPECHO_POST	MACRO
 	dbf	d7,.echoloop
 	bra	.loop
 .exit
-	move.l	d6,ahiecho_Offset(a0)
 	move.l	a3,ahiecho_SrcPtr(a0)
 	move.l	a6,ahiecho_DstPtr(a0)
 
@@ -522,6 +589,7 @@ do_DSPEchoMono16:
 * a3	& d[n-N]         (Advance)
 * a6	& d[n]           (Advance)
 
+.echoloop
 	move.w	(a1),d0				;Get sample x[n]
 	move.w	d0,d1
 	muls.w	ahiecho_MixN(a0),d0
@@ -543,6 +611,36 @@ do_DSPEchoMono16:
 	move.w	d2,(a6)+			;store d2
 	DSPECHO_POST
 
+do_DSPEchoMono16fast:
+	DSPECHO_PRE
+;in:
+* d0-d6	Scratch
+* a1	& x[n]           (Advance)
+* a3	& d[n-N]         (Advance)
+* a6	& d[n]           (Advance)
+
+
+	move.w	ahiecho_MixN(a0),d4
+	move.w	ahiecho_MixD(a0),d5
+	move.w	ahiecho_FeedbackDS(a0),d6
+.echoloop
+	move.w	(a1),d0				;Get sample x[n]
+	move.w	d0,d1
+	asr.w	d4,d0	
+	move.w	(a3)+,d3			;Get delayed sample d[n-N]
+	move.w	d3,d2
+	asr.w	d5,d3
+	add.w	d0,d3
+	move.w	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
+
+	asr.w	d6,d2				;d2=FeedbackDS*d[n-N]
+
+	move.w	ahiecho_FeedbackNS(a0),d0
+	asr.w	d0,d1
+	add.w	d1,d2				;d2=...+FeedbackNS*x[n]
+
+	move.w	d2,(a6)+			;store d2
+	DSPECHO_POST
 
 do_DSPEchoStereo16:
 	DSPECHO_PRE
@@ -552,6 +650,7 @@ do_DSPEchoStereo16:
 * a3	& d[n-N]         (Advance)
 * a6	& d[n]           (Advance)
 
+.echoloop
 	move.w	(a1),d0				;Get left sample x[n]
 	move.w	d0,d1
 	muls.w	ahiecho_MixN(a0),d0
@@ -607,6 +706,51 @@ do_DSPEchoStereo16:
 	move.l	d2,(a6)+			;store d1 and d4
 	DSPECHO_POST
 
+do_DSPEchoStereo16fast:				;No cross echo!
+	DSPECHO_PRE
+;in:
+* d0-d6	Scratch
+* a1	& x[n]           (Advance)
+* a3	& d[n-N]         (Advance)
+* a6	& d[n]           (Advance)
+
+.echoloop
+	move.w	(a1),d0				;Get left sample x[n]
+	move.w	d0,d1
+	move.w	ahiecho_MixN(a0),d6
+	asr.w	d6,d0
+	move.w	(a3)+,d3			;Get left delayed sample d[n-N]
+	move.w	d3,d2
+	move.w	ahiecho_MixD(a0),d6
+	asr.w	d6,d3
+	add.w	d0,d3
+	move.w	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
+
+	move.w	(a1),d0				;Get right sample x[n]
+	move.w	d0,d4
+	move.w	ahiecho_MixN(a0),d6
+	asr.w	d6,d0
+	move.w	(a3)+,d3			;Get right delayed sample d[n-N]
+	move.w	d3,d5
+	move.w	ahiecho_MixD(a0),d6
+	asr.w	d6,d3
+	add.w	d0,d3
+	move.w	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
+
+	move.w	ahiecho_FeedbackDS(a0),d6
+	asr.w	d6,d2				;d2=FeedbackDS*d[n-N] (left)
+	asr.w	d6,d5				;d5=FeedbackDS*d[n-N] (right)
+
+	move.w	ahiecho_FeedbackNS(a0),d6
+	asr.w	d6,d1
+	add.w	d1,d2				;d2=...+FeedbackNS*x[n]
+
+	asr.w	d6,d4
+	add.w	d4,d5				;d5=...+FeedbackNS*x[n]
+
+	move.w	d2,(a6)+			;store d2 (left)
+	move.w	d5,(a6)+			;store d1 (right)
+	DSPECHO_POST
 
 
 do_DSPEchoMono32:
@@ -620,6 +764,7 @@ do_DSPEchoMono32:
 *** The delay buffer is only 16 bit, and only the upper word of the 32 bit
 *** input data is used!
 
+.echoloop
 	move.w	(a1),d0				;Get sample x[n] (high word)
 	move.w	d0,d1
 	muls.w	ahiecho_MixN(a0),d0
@@ -649,6 +794,7 @@ do_DSPEchoStereo32:
 *** The delay buffer is only 16 bit, and only the upper word of the 32 bit
 *** input data is used!
 
+.echoloop
 	move.w	(a1),d0				;Get left sample x[n] (high word)
 	move.w	d0,d1
 	muls.w	ahiecho_MixN(a0),d0
