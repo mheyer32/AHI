@@ -71,6 +71,8 @@ _start( void )
 ** Globals ********************************************************************
 ******************************************************************************/
 
+struct ExecBase* SysBase = NULL;
+
 const char  LibName[]     = DRIVER;
 const char  LibIDString[] = DRIVER " " VERS "\r\n";
 const UWORD LibVersion    = VERSION;
@@ -80,12 +82,6 @@ const UWORD LibRevision   = REVISION;
 ULONG   __abox__=1;
 #endif
 
-#if defined( __AROS__ )
-static struct ExecBase* aros_sysbase;
-struct ExecBase* const* SysBasePtr = &aros_sysbase;
-#else
-struct ExecBase* const* SysBasePtr = (struct ExecBase**) 4;
-#endif
 
 /******************************************************************************
 ** Driver resident structure **************************************************
@@ -178,6 +174,8 @@ _LibInit( struct DriverBase* AHIsubBase,
 	  BPTR               seglist,
 	  struct ExecBase*   sysbase )
 {
+  SysBase = sysbase;
+
   AHIsubBase->library.lib_Node.ln_Type = NT_LIBRARY;
   AHIsubBase->library.lib_Node.ln_Name = (STRPTR) LibName;
   AHIsubBase->library.lib_Flags        = LIBF_SUMUSED | LIBF_CHANGED;
@@ -186,14 +184,9 @@ _LibInit( struct DriverBase* AHIsubBase,
   AHIsubBase->library.lib_IdString     = (STRPTR) LibIDString;
   AHIsubBase->seglist                  = seglist;
 
-  SysBase                   = sysbase;
   AHIsubBase->intuitionbase = OpenLibrary( INTUITIONNAME, 37 );
   AHIsubBase->utilitybase   = OpenLibrary( UTILITYNAME, 37 );
 
-#if defined( __AROS__ )
-  aros_sysbase = sysbase;
-#endif
-  
   if( IntuitionBase == NULL )
   {
     Alert( AN_Unknown|AG_OpenLib|AO_Intuition );
