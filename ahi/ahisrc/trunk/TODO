@@ -34,6 +34,7 @@ Added		Fixed		What?
 980805				AHIC_Monitor, "Monitor always" in prefs.
 990908				Global volume control for device modes.
 991111				Open the filesave requester on the user's screen.
+001213				If AHISF_TIMING is not used, ahiac_BuffSize is not set.
 
 V5 Proposal, improvements and new lowlevel soundcard access
 ===========================================================
