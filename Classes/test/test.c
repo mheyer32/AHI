@@ -67,7 +67,7 @@ int main(void) {
       check_err(b);
       
       if (length > 0) {
-	Fixed gains[] = { 0x8000, -0x20000 };
+	dBFixed gains[] = { 0x60000, 0xc0000 };
 	int i;
 	
 	printf("Length %d bytes.\n", length);

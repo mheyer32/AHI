@@ -12,6 +12,8 @@
 #include "util.h"
 #include "version.h"
 
+#if 0
+
 static inline float
 fixed2float(Fixed x) {
   return x / 65536.0;
@@ -22,6 +24,19 @@ float2fixed(float x) {
   return (Fixed) (x * 65536.0);
 }
 
+#else
+
+static inline float
+dbfixed2float(dBFixed x) {
+  return pow(10, x / 65536.0 / 20.0);
+}
+
+static inline dBFixed
+float2dbfixed(float x) {
+  return (dBFixed) (20 * 65536 * log10(x));
+}
+
+#endif
 
 /******************************************************************************
 ** MethodNew ******************************************************************
@@ -229,7 +244,7 @@ MethodSetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg)
   }
 
   for (c = 0; c <  msg->Channels; ++c) {
-    AHIClassData->gains[c] = fixed2float(msg->Gains[c]);
+    AHIClassData->gains[c] = dbfixed2float(msg->Gains[c]);
   }
 
   return TRUE;
@@ -252,7 +267,7 @@ MethodGetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg)
   }
 
   for (c = 0; c <  msg->Channels; ++c) {
-    msg->Gains[c] = float2fixed(AHIClassData->gains[c]);
+    msg->Gains[c] = float2dbfixed(AHIClassData->gains[c]);
   }
 
   return TRUE;
@@ -275,7 +290,7 @@ MethodSetAllGain(Class* class, Object* object, struct AHIP_GainProcessor_GainAll
   }
 
   for (c = 0; c <  AHIClassData->channels; ++c) {
-    AHIClassData->gains[c] = fixed2float(msg->Gain);
+    AHIClassData->gains[c] = dbfixed2float(msg->Gain);
   }
 
   return TRUE;
