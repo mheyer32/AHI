@@ -1,5 +1,15 @@
 2003-04-22  Martin Blom  <martin@blom.org>
 
+	* Released void.audio 5.2.
+
+	* Released AHI-Handler 5.2.
+
+	* Released ahi.device 5.34.
+
+	* Released AddAudioModes 5.4.
+
+	* Released AHI preferences 5.9.
+
 	* The endian update from 2003-04-17 broke all big endian
 	targets. Fixed.
 
