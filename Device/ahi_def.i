@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.9  1997/03/25 22:27:49  lcs
+* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
+*
 * Revision 1.8  1997/03/24 18:03:10  lcs
 * Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
 *
@@ -80,6 +83,9 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	ULONG	sd_Type
 	APTR	sd_Addr
 	ULONG	sd_Length
+	APTR	sd_InputBuffer0
+	APTR	sd_InputBuffer1
+	APTR	sd_InputBuffer2
 	LABEL	AHISoundData_SIZEOF
 
 	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
@@ -92,8 +98,18 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	ULONG	ahiac_SubAllocRC
 	APTR	ahiac_ChannelDatas
 	APTR	ahiac_SoundDatas
-	ULONG	ahiac_BuffSizeNow		;Now many bytes of the buffer are used?
+	ULONG	ahiac_BuffSizeNow		* Now many bytes of the buffer are used?
 	
+	* For AHIST_INPUT
+	APTR	ahiac_InputBuffer0		* Filling
+	APTR	ahiac_InputBuffer1		* Filled
+	APTR	ahiac_InputBuffer2		* Filled, older
+	ULONG	ahiac_InputLength
+	ULONG	ahiac_InputBlockLength
+	APTR	ahiac_InputRecordPtr
+	ULONG	ahiac_InputRecordCnt
+
+
 	APTR	ahiac_MultTableS
 	APTR	ahiac_MultTableU
 	APTR	ahiac_RecordFunc		* AHIA_RecordFunc

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1997/03/25 22:27:49  lcs
+* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
+*
 * Revision 1.1  1997/03/24 12:41:51  lcs
 * Initial revision
 *
@@ -53,7 +56,7 @@ __asm BOOL update_DSPEcho(
 
   es = AllocVec(length, MEMF_PUBLIC|MEMF_CLEAR);
   
-  if(actrl->ahiac_EffDSPEchoStruct)
+  if(es)
   {
     ULONG mode = 0;
 #define mode_stereo 1

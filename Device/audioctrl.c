@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.17  1997/03/25 22:27:49  lcs
+* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
+*
 * Revision 1.16  1997/03/24 18:03:10  lcs
 * Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
 *
@@ -85,7 +88,6 @@ extern __asm void DummyPostTimer(void);
 ** CreateAudioCtrl & UpdateAudioCtrl ******************************************
 ******************************************************************************/
 
-extern struct Hook DefRecordHook;
 extern struct Hook DefPlayerHook;
 
 static struct TagItem boolmap[] =
@@ -144,8 +146,6 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
     if(audioctrl->ac.ahiac_MixFreq == AHI_DEFAULT_FREQ)
       audioctrl->ac.ahiac_MixFreq=AHIBase->ahib_Frequency;
 
-    if(audioctrl->ahiac_RecordFunc == NULL)
-      audioctrl->ahiac_RecordFunc=&DefRecordHook;
     if(audioctrl->ac.ahiac_PlayerFunc == NULL)
       audioctrl->ac.ahiac_PlayerFunc=&DefPlayerHook;
 
@@ -299,7 +299,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   if(tag=FindTagItem(AHIDB_FullDuplex,tags))
   {
     total++;
-    if(tag->ti_Data != fullduplex)
+    if(tag->ti_Data == fullduplex)
       hits++;
   }
 
@@ -335,6 +335,44 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
     return (Fixed) 0x10000;
 }
 
+
+/******************************************************************************
+** Sampler ********************************************************************
+******************************************************************************/
+
+static __asm __interrupt void Sampler(
+    register __a0 struct Hook *hook,
+    register __a2 struct AHIPrivAudioCtrl *actrl,
+    register __a1 struct AHIRecordMessage *recmsg)
+{
+  if(actrl->ahiac_InputRecordPtr)
+  {
+    CopyMemQuick(recmsg->ahirm_Buffer, actrl->ahiac_InputRecordPtr,
+        actrl->ahiac_InputBlockLength << 2);  // AHIST_S16S
+    actrl->ahiac_InputRecordCnt -= actrl->ahiac_InputBlockLength;
+    
+    if(actrl->ahiac_InputRecordCnt == 0)
+    {
+      APTR temp;
+
+      temp                        = actrl->ahiac_InputBuffer[2];
+      actrl->ahiac_InputBuffer[2] = actrl->ahiac_InputBuffer[1];
+      actrl->ahiac_InputBuffer[1] = actrl->ahiac_InputBuffer[0];
+      actrl->ahiac_InputBuffer[0] = temp;
+
+      actrl->ahiac_InputRecordPtr = temp;
+      actrl->ahiac_InputRecordCnt = actrl->ahiac_InputLength;
+
+//      KPrintF("0x%08lx klar\n", actrl->ahiac_InputBuffer[1]);
+
+    }
+  }
+
+  if(actrl->ahiac_RecordFunc)
+  {
+    CallHookPkt(actrl->ahiac_RecordFunc, actrl, recmsg);
+  }
+}
 
 /******************************************************************************
 ** AHI_AllocAudioA ************************************************************
@@ -491,8 +529,6 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
   if(!audioctrl->ac.ahiac_Channels || !audioctrl->ac.ahiac_Sounds)
     goto error;
 
-  audioctrl->ac.ahiac_SamplerFunc=audioctrl->ahiac_RecordFunc;   // FIXIT!
-
   audioctrl->ahiac_SubAllocRC = AHISF_ERROR;
   audioctrl->ahiac_SubLib=
   AHIsubBase = OpenLibrary(audioctrl->ahiac_DriverName,DriverVersion);
@@ -614,15 +650,13 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
       audioctrl->ac.ahiac_PreTimer  = (BOOL (*)()) PreTimer;
       audioctrl->ac.ahiac_PostTimer = (void (*)()) PostTimer;
     }
-
-/* FIXIT!
-    audioctrl->ac.ahiac_SamplerFunc=AllocVec(sizeof(struct Hook),MEMF_PUBLIC!MEMF_CLEAR);
-    if(!audioctrl->ac.ahiac_SamplerFunc)
-      goto error;
-
-    audioctrl->ac.ahiac_SamplerFunc->h_Entry=Sampler;
-*/
   }
+
+  audioctrl->ac.ahiac_SamplerFunc = AllocVec(sizeof(struct Hook),
+      MEMF_PUBLIC|MEMF_CLEAR);
+  if(!audioctrl->ac.ahiac_SamplerFunc)
+    goto error;
+  audioctrl->ac.ahiac_SamplerFunc->h_Entry = (ULONG (* )()) Sampler;
 
   /* Set default hardware properties, only if AHI_DEFAULT_ID was used!*/
   if(GetTagData(AHIA_AudioID, AHI_DEFAULT_ID, tags) == AHI_DEFAULT_ID)
@@ -716,9 +750,12 @@ __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
       CloseLibrary(AHIsubBase);
     }
 
+    FreeVec(audioctrl->ahiac_InputBuffer[0]);
+    FreeVec(audioctrl->ahiac_InputBuffer[1]);
+    FreeVec(audioctrl->ahiac_InputBuffer[2]);
     FreeVec(audioctrl->ahiac_MultTableS);
     FreeVec(audioctrl->ahiac_MultTableU);
-/* FIXIT! FreeVec(audioctrl->ahiac_SamplerFunc); */
+    FreeVec(audioctrl->ac.ahiac_SamplerFunc);
     FreeVec(audioctrl->ac.ahiac_MixerFunc);
     FreeVec(audioctrl->ahiac_SoundDatas);
     FreeVec(audioctrl->ahiac_ChannelDatas);
@@ -916,7 +953,6 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
       break;
     case AHIA_RecordFunc:
       audioctrl->ahiac_RecordFunc=(struct Hook *) tag->ti_Data;
-      audioctrl->ac.ahiac_SamplerFunc=(struct Hook *) tag->ti_Data;  // FIXIT!
       update=TRUE;
       break;
     case AHIA_PlayerFunc:
@@ -1620,10 +1656,12 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
       {
         case AHIST_M8S:
         case AHIST_M16S:
-#ifdef M68020
+#ifdef _M68020
         case AHIST_S8S:
         case AHIST_S16S:
 #endif
+          /* AHI_FreeAudio() will deallocate...  */
+
           if(initSignedTable(audioctrl, AHIBase))
           {
             audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
@@ -1637,6 +1675,9 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
         /* Obsolete, present for compability only. FIXIT! */
 
         case AHIST_M8U:
+
+          /* AHI_FreeAudio() will deallocate...  */
+
           if(initUnsignedTable(audioctrl, AHIBase))
           {
             audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
@@ -1655,10 +1696,74 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
     }
  
     case AHIST_INPUT:
-      audioctrl->ahiac_SoundDatas[sound].sd_Type   = AHIST_INPUT|AHIST_S16S;
-      audioctrl->ahiac_SoundDatas[sound].sd_Addr   = NULL;
-      audioctrl->ahiac_SoundDatas[sound].sd_Length = 0;
+    {
+      if(audioctrl->ahiac_InputBuffer[0] == NULL)
+      {
+        ULONG playsamples = 0, recordsamples = 0;
+
+        if(AHI_GetAudioAttrs( AHI_INVALID_ID, (struct AHIAudioCtrl *) audioctrl,
+            AHIDB_MaxPlaySamples,   &playsamples,
+            AHIDB_MaxRecordSamples, &recordsamples,
+            TAG_DONE))
+        {
+          audioctrl->ahiac_InputBlockLength = recordsamples;
+          audioctrl->ahiac_InputLength      = recordsamples;
+          while(audioctrl->ahiac_InputLength < playsamples)
+          {
+            audioctrl->ahiac_InputLength += recordsamples;
+          }
+
+          /* AHI_FreeAudio() will deallocate...  */
+
+          audioctrl->ahiac_InputBuffer[0] = AllocVec(
+              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
+              MEMF_PUBLIC|MEMF_CLEAR);
+
+          audioctrl->ahiac_InputBuffer[1] = AllocVec(
+              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
+              MEMF_PUBLIC|MEMF_CLEAR);
+
+          audioctrl->ahiac_InputBuffer[2] = AllocVec(
+              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
+              MEMF_PUBLIC|MEMF_CLEAR);
+/*
+          KPrintF("Buffer0: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[0], audioctrl->ahiac_InputLength);
+          KPrintF("Buffer1: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[1], audioctrl->ahiac_InputLength);
+          KPrintF("Buffer2: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[2], audioctrl->ahiac_InputLength);
+*/
+          if((audioctrl->ahiac_InputBuffer[0] != NULL) &&
+             (audioctrl->ahiac_InputBuffer[1] != NULL) &&
+             (audioctrl->ahiac_InputBuffer[2] != NULL))
+          {
+            audioctrl->ahiac_InputRecordPtr = audioctrl->ahiac_InputBuffer[0];
+            audioctrl->ahiac_InputRecordCnt = audioctrl->ahiac_InputLength;
+
+            audioctrl->ahiac_SoundDatas[sound].sd_Type = AHIST_INPUT|AHIST_S16S;
+            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[0] =
+                audioctrl->ahiac_InputBuffer[0];
+            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[1] =
+                audioctrl->ahiac_InputBuffer[1];
+            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[2] =
+                audioctrl->ahiac_InputBuffer[2];
+
+            /* See also: AHI_SetSound() */
+
+          }
+          else
+          {
+            FreeVec(audioctrl->ahiac_InputBuffer[0]);
+            FreeVec(audioctrl->ahiac_InputBuffer[1]);
+            FreeVec(audioctrl->ahiac_InputBuffer[2]);
+            audioctrl->ahiac_InputBuffer[0] = NULL;
+            audioctrl->ahiac_InputBuffer[1] = NULL;
+            audioctrl->ahiac_InputBuffer[2] = NULL;
+            rc = AHIE_NOMEM;
+          }
+        }
+        else rc = AHIE_UNKNOWN;
+      }
       break;
+    }
 
     default:
       rc = AHIE_BADSOUNDTYPE;
@@ -1667,7 +1772,7 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("=>%ld", rc);
+    KPrintF("=>%ld\n", rc);
   }
   return rc;
 }

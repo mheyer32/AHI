@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.22  1997/03/25 22:27:49  lcs
+* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
+*
 * Revision 1.21  1997/03/24 18:03:10  lcs
 * Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
 *
@@ -442,7 +445,9 @@ SetVol_nodebug
 *       freq - The playback frequency in Hertz. Can also be AHI_MIXFREQ,
 *           is the current mixing frequency (only usable with AHIST_INPUT
 *           sounds), or 0 to temporary stop the sound (it will restart at
-*           the same point when its frequency changed).
+*           the same point when its frequency changed). Setting the frequency
+*           of an AHIST_INPUT sound is not supported, and the result is
+*           undefined.
 *       audioctrl - A pointer to an AHIAudioCtrl structure.
 *       flags - Only one flag is defined
 *           AHISF_IMM - Set this flag if this command should take effect
@@ -510,7 +515,8 @@ SetFreq_nodebug
 
 	cmp.l	#AHI_MIXFREQ,d1
 	bne	.not_mixfreq
-	move.l	ahiac_MixFreq(a2),d1
+	move.l	#$10000,d0
+	bra	.storeperiod
 .not_mixfreq
 	move.l	d1,d0
 
@@ -540,7 +546,7 @@ SetFreq_nodebug
 .setperiod
 	lsl.l	d3,d0
 
-
+.storeperiod
 	move.w	d0,cd_NextAddF(a0)
 	clr.w	d0
 	swap.w	d0
@@ -675,8 +681,26 @@ SetSound_nodebug
 	add.l	d1,a1
 
 	move.l	sd_Type(a1),d0
+
 	cmp.l	#AHIST_NOTYPE,d0
 	beq.w	.exit
+
+	and.l	#AHIST_INPUT,d0
+	beq	.notinput
+	move.l	ahiac_InputBuffer1(a2),sd_Addr(a1)
+	move.l	ahiac_InputLength(a2),sd_Length(a1)
+	moveq	#0,d2
+	moveq	#0,d3
+
+;	move.l	sd_Type(a1),cd_NextType(a0)
+;	move.l	ahiac_InputBuffer1(a2),cd_NextDataStart(a0)
+;	clr.l	cd_NextOffsetI(a0)
+;	clr.w	cd_NextOffsetF(a0)			; unused!
+;	move.l	ahiac_InputLength(a2),cd_NextLastOffsetI(a0)
+;	clr.w	cd_NextLastOffsetF(a0)			; unused!
+;	bra	.sound_ok
+
+.notinput
 	tst.l	d3
 	bne	.10
 	move.l	sd_Length(a1),d3
@@ -697,14 +721,15 @@ SetSound_nodebug
 	move.w	#$ffff,cd_NextOffsetF(a0)
 	addq.l	#1,d2
 	move.l	d2,cd_NextLastOffsetI(a0)
-	bra	.20
+	bra	.sound_ok
 .poslength
 	move.w	#$ffff,cd_NextLastOffsetF(a0)
 	clr.w	cd_NextOffsetF(a0)
 	subq.l	#1,d2
 	move.l	d2,cd_NextLastOffsetI(a0)
-.20
+.sound_ok
 	move.b	#$ff,cd_NextSoundOK(a0)
+
 	btst.l	#AHISB_IMM,d4
 	beq	.notnow
 
