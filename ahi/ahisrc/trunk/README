@@ -33,7 +33,7 @@ Things I'd still like to do
    streaming.
  · Finish the packaging.  This includes installer script, updated
    documentation, proper source archive that includes the drivers and a
-   prober developer archive with header files et cetera.
+   proper developer archive with header files et cetera.
  · I need to update the BGUI and ClassAct preferences programs to support
    the global anti-click settings.  Or even better, ditch them all for a OS
    3.5 version.  We'll see.
