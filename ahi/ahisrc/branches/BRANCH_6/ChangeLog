@@ -1,5 +1,8 @@
 2005-03-26  Martin Blom  <martin@blom.org>
 
+	* configure.in: Temporarily added -msoft-float to OS4 compiler
+	flags.
+
 	* ac97.audio: Bumped version number to 6.0.
 
 	* ac97.audio: Added this AROS driver to the distribution, with
