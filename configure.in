@@ -14,12 +14,18 @@ AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
 : ${CFLAGS='-g -O2 -ffast-math -W -Wall -Wstrict-prototypes'}
+: ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}
 
 : ${DISTDIR='/tmp/ahi'}
 AC_SUBST(DISTDIR)
 
+AC_SUBST(ASFLAGS)
+
 dnl Checks for programs.
+
+AC_CHECK_TOOL( CC, gcc, :) 
+AC_CHECK_TOOL( AS, as, :) 
 
 AC_PROG_INSTALL
 AC_PROG_CC

@@ -1,8 +1,7 @@
 * $Id$
 
-	XDEF	EndCode
+	.globl	EndCode
 
-	section	.text,code
+	.text
 
 EndCode:
-	END

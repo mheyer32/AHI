@@ -6,8 +6,7 @@ sh configure --host=m68k-unknown-amigaos
 
 To configure on a PC running Linux:
 
-CC=m68k-amigaos-gcc ./configure --host=m68k-unknown-amigaos 
---build=i686-pc-linux-gnu
+./configure --host=m68k-amigaos --build=i686-pc-linux-gnu
 
 
 
