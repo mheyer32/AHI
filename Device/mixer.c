@@ -72,26 +72,26 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
 #endif /* !defined( VERSIONPPC ) */
 
-LONG AddSilence ( ADDARGS );
-LONG AddSilenceB ( ADDARGS );
+LONG AddSilence( ADDARGS );
+LONG AddSilenceB( ADDARGS );
 
-LONG AddByteMVH ( ADDARGS );
-LONG AddByteSVPH ( ADDARGS );
-LONG AddBytesMVH ( ADDARGS );
-LONG AddBytesSVPH ( ADDARGS );
-LONG AddWordMVH ( ADDARGS );
-LONG AddWordSVPH ( ADDARGS );
-LONG AddWordsMVH ( ADDARGS );
-LONG AddWordsSVPH ( ADDARGS );
+LONG AddByteMVH( ADDARGS );
+LONG AddByteSVPH( ADDARGS );
+LONG AddBytesMVH( ADDARGS );
+LONG AddBytesSVPH( ADDARGS );
+LONG AddWordMVH( ADDARGS );
+LONG AddWordSVPH( ADDARGS );
+LONG AddWordsMVH( ADDARGS );
+LONG AddWordsSVPH( ADDARGS );
 
-LONG AddByteMVHB ( ADDARGS );
-LONG AddByteSVPHB ( ADDARGS );
-LONG AddBytesMVHB ( ADDARGS );
-LONG AddBytesSVPHB ( ADDARGS );
-LONG AddWordMVHB ( ADDARGS );
-LONG AddWordSVPHB ( ADDARGS );
-LONG AddWordsMVHB ( ADDARGS );
-LONG AddWordsSVPHB ( ADDARGS );
+LONG AddByteMVHB( ADDARGS );
+LONG AddByteSVPHB( ADDARGS );
+LONG AddBytesMVHB( ADDARGS );
+LONG AddBytesSVPHB( ADDARGS );
+LONG AddWordMVHB( ADDARGS );
+LONG AddWordSVPHB( ADDARGS );
+LONG AddWordsMVHB( ADDARGS );
+LONG AddWordsSVPHB( ADDARGS );
 
 ADDFUNC* AddSilencePtr    = NULL;
 ADDFUNC* AddSilenceBPtr   = NULL;
@@ -1242,7 +1242,7 @@ CalcSamples ( Fixed64 Add,
 /*****************************************************************************/
 
 LONG
-AddSilence ( ADDARGS )
+AddSilence( ADDARGS )
 {
   double offset, add;
 
@@ -1256,7 +1256,7 @@ AddSilence ( ADDARGS )
 }
 
 LONG
-AddSilenceB ( ADDARGS )
+AddSilenceB( ADDARGS )
 {
   double offset, add;
 
@@ -1293,7 +1293,7 @@ into two loops in order to eliminate the FirstOffsetI test in the second loop.
 #define offsetf ( (long) ( (unsigned long) ( offset & 0xffffffffULL ) >> 17) )
 
 LONG
-AddByteMVH ( ADDARGS )
+AddByteMVH( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1343,7 +1343,7 @@ AddByteMVH ( ADDARGS )
 
 
 LONG
-AddByteSVPH ( ADDARGS )
+AddByteSVPH( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1394,7 +1394,7 @@ AddByteSVPH ( ADDARGS )
 
 
 LONG
-AddBytesMVH ( ADDARGS )
+AddBytesMVH( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1453,7 +1453,7 @@ AddBytesMVH ( ADDARGS )
 
 
 LONG
-AddBytesSVPH ( ADDARGS )
+AddBytesSVPH( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1511,9 +1511,9 @@ AddBytesSVPH ( ADDARGS )
   return i;
 }
 
-/**************************************************************************/
+
 LONG
-AddWordMVH ( ADDARGS )
+AddWordMVH( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1560,10 +1560,10 @@ AddWordMVH ( ADDARGS )
 
   return i;
 }
-/**************************************************************************/
+
 
 LONG
-AddWordSVPH ( ADDARGS )
+AddWordSVPH( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1613,7 +1613,7 @@ AddWordSVPH ( ADDARGS )
 }
 
 LONG
-AddWordsMVH ( ADDARGS )
+AddWordsMVH( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1672,7 +1672,7 @@ AddWordsMVH ( ADDARGS )
 
 
 LONG
-AddWordsSVPH ( ADDARGS )
+AddWordsSVPH( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1739,7 +1739,7 @@ AddWordsSVPH ( ADDARGS )
 #define offsetf ( (long) ( 32768 - ( (unsigned long) ( offset & 0xffffffffULL ) >> 17 ) ) )
 
 LONG
-AddByteMVHB ( ADDARGS )
+AddByteMVHB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1789,7 +1789,7 @@ AddByteMVHB ( ADDARGS )
 
 
 LONG
-AddByteSVPHB ( ADDARGS )
+AddByteSVPHB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1840,7 +1840,7 @@ AddByteSVPHB ( ADDARGS )
 
 
 LONG
-AddBytesMVHB ( ADDARGS )
+AddBytesMVHB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1899,7 +1899,7 @@ AddBytesMVHB ( ADDARGS )
 
 
 LONG
-AddBytesSVPHB ( ADDARGS )
+AddBytesSVPHB( ADDARGS )
 {
   BYTE    *src    = Src;
   LONG    *dst    = *Dst;
@@ -1959,7 +1959,7 @@ AddBytesSVPHB ( ADDARGS )
 
 
 LONG
-AddWordMVHB ( ADDARGS )
+AddWordMVHB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -2009,7 +2009,7 @@ AddWordMVHB ( ADDARGS )
 
 
 LONG
-AddWordSVPHB ( ADDARGS )
+AddWordSVPHB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -2060,7 +2060,7 @@ AddWordSVPHB ( ADDARGS )
 
 
 LONG
-AddWordsMVHB ( ADDARGS )
+AddWordsMVHB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;
@@ -2119,7 +2119,7 @@ AddWordsMVHB ( ADDARGS )
 
 
 LONG
-AddWordsSVPHB ( ADDARGS )
+AddWordsSVPHB( ADDARGS )
 {
   WORD    *src    = Src;
   LONG    *dst    = *Dst;

@@ -39,7 +39,7 @@ FLEXCAT		= @FLEXCAT@
 ASM		= @ASM@
 
 CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir} -DVERSION$(VER)
-CFLAGS		= @CFLAGS@ -O0 -m$(CPU)
+CFLAGS		= @CFLAGS@ -O3 -m$(CPU)
 ASFLAGS		= @ASFLAGS@ -m$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
@@ -104,7 +104,8 @@ mostlyclean:
 	$(RM) $(TARGETS) *.o *.bak *~ \#*\# core Makefile.dep Makefile.opt
 
 clean:		mostlyclean
-	$(RM) $(LANGTARGETS) version.h version.i *.catalog
+	$(RM) $(CATALOGS) localize.c localize.h version.h version.i \
+	      ahi.device.*
 
 distclean:	clean
 	$(RM) Makefile
