@@ -1,3 +1,8 @@
+2005-03-21  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Applied a fix from Davy for the recording problem
+	on Audigy cards. Thanks!
+
 2005-02-02  Martin Blom  <martin@blom.org>
 
 	* Updated all copyright years to 2005.
