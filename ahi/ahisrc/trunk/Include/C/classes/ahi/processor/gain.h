@@ -32,7 +32,7 @@ namespace AHI {
 /*****************************************************************************/
 
       enum {
-	
+
 	/* The number of discrete channels that can be manipulated */
 	_AHIA(_P, Channels,	(_AHIA_Dummy+38)),	/* OM_GET */
 

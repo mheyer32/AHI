@@ -37,7 +37,7 @@ namespace AHI {
 	_AHIA(_P, Overlap,	(_AHIA_Dummy+65))	/* OM_NEW,
 							   OM_SET,
 							   OM_GET,
-							   OM_UPDATE */
+							   OM_NOTIFY */
 
       };
 
