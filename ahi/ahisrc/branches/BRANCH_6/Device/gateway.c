@@ -510,9 +510,12 @@ m68k_PostTimer( struct AHIPrivAudioCtrl* audioctrl __asm("a2") )
 
 #else
 
+#ifndef __mc68000__
+# pragma pack(2) // Make sure the compiler does not insert pads
+#endif
+
 const struct
 {
-    UWORD nop;                    // Just make sure the addr is 32-bit aligned
     UWORD pushm_d0_d1_a0_a1[2];
     UWORD jsr;
     ULONG addr;
@@ -520,7 +523,6 @@ const struct
     UWORD rts;
 } HookEntryPreserveAllRegs __attribute__ ((aligned (4))) =
 {
-  0x4DD6,
   {0x48E7, 0xC0C0},
   0x4EB9, (ULONG) HookEntry,
   {0x4CDF, 0x0303},
@@ -530,16 +532,14 @@ const struct
 
 const struct
 {
-    UWORD nop;
     UWORD pushm_d1_a0_a1[2];
     UWORD jsr;
     ULONG addr;
     UWORD popm_d1_a0_a1[2];
     UWORD extl_d0;
     UWORD rts;
-} PreTimerPreserveAllRegs =
+} PreTimerPreserveAllRegs __attribute__ ((aligned (4))) =
 {
-  0x4DD6,
   {0x48E7, 0x40C0},
   0x4EB9, (ULONG) &m68k_PreTimer,
   {0x4CDF, 0x0302},
@@ -550,7 +550,6 @@ const struct
 
 const struct
 {
-    UWORD nop;                    // Just make sure the addr is 32-bit aligned
     UWORD pushm_d0_d1_a0_a1[2];
     UWORD jsr;
     ULONG addr;
@@ -558,7 +557,6 @@ const struct
     UWORD rts;
 } PostTimerPreserveAllRegs __attribute__ ((aligned (4))) =
 {
-  0x4DD6,
   {0x48E7, 0xC0C0},
   0x4EB9, (ULONG) &m68k_PostTimer,
   {0x4CDF, 0x0303},
