@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.14  1997/02/20 10:26:13  lcs
+# New Flexcat caused some problems
+#
 # Revision 1.13  1997/02/12 15:32:45  lcs
 # Moved each autodoc header to the file where the function is
 #
@@ -212,8 +215,8 @@ catalogs:
 ###############################################################################
 
 newcatalogs:
-	FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
-	FlexCat ahi.cd Svenska.ct NEWCTFILE Svenska.ct
+	--FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
+	--FlexCat ahi.cd Svenska.ct NEWCTFILE Svenska.ct
 
 ##
 ## Build user documentation
