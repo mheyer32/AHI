@@ -157,8 +157,10 @@ esac
 
 dnl Checks for header files.
 
+AC_CHECK_HEADERS( proto/oss.h, HAVE_OSS=1, AC_MSG_WARN( "proto/oss.h is missing." ))
 AC_CHECK_HEADERS( libraries/openpci.h, HAVE_OPENPCI=1, AC_MSG_WARN( "libraries/openpci.h is missing." ))
 
+AC_SUBST(HAVE_OSS)
 AC_SUBST(HAVE_OPENPCI)
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -177,6 +179,7 @@ AC_OUTPUT(Makefile
           Device/Makefile
           Docs/Makefile
           Drivers/Makefile
+          Drivers/AROS/Makefile
           Drivers/Common/Makefile.common
           Drivers/EMU10kx/Makefile
           Drivers/Filesave/Makefile

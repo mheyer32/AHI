@@ -24,6 +24,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 VPATH		= @srcdir@
 
 HAVE_OPENPCI	= @HAVE_OPENPCI@
+HAVE_OSS	= @HAVE_OSS@
 
 #
 # Targets
@@ -32,6 +33,10 @@ HAVE_OPENPCI	= @HAVE_OPENPCI@
 .PHONY:		all clean distclean maintainer-clean bindist
 
 SUBDIRS		= Filesave #Void
+
+ifneq ($(strip $(HAVE_OSS)),)
+SUBDIRS		+= AROS
+endif
 
 ifneq ($(strip $(HAVE_OPENPCI)),)
 SUBDIRS		+= EMU10kx

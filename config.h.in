@@ -21,6 +21,9 @@
 /* This one modifies the gcc include files */
 #undef __USE_INLINE__
 
+/* Define if you have the oss.library headers.  */
+#undef HAVE_PROTO_OSS_H
+
 /* Define if you have the openpci headers.  */
 #undef HAVE_LIBRARIES_OPENPCI_H
 

@@ -61,6 +61,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
+	$(INSTALL) --directory $(PREFIX)/Help
 	$(INSTALL_DATA) ahiusr.guide $(PREFIX)/Help/ahi.guide
 
 bindist:	$(TARGETS)
