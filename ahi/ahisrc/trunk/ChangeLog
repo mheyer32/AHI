@@ -1,3 +1,7 @@
+2003-04-24  Martin Blom  <martin@blom.org>
+
+	* filesave.audio: Can now be compiled using gcc.
+
 2003-04-23  Martin Blom  <martin@blom.org>
 
 	* Released void.audio 5.3.
