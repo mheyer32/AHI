@@ -40,6 +40,7 @@
 #include "ahi_def.h"
 
 #include "addroutines.h"
+#include "debug.h"
 #include "dsp.h"
 #include "header.h"
 #include "misc.h"
@@ -609,6 +610,7 @@ Mix( struct Hook*             unused_Hook,
                                                          cd->cd_Add,
                                                         &cd->cd_Offset, 
                                                          TRUE );
+
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
           }
@@ -617,16 +619,20 @@ Mix( struct Hook*             unused_Hook,
             processed = 0;
           }
 
-          if( try_samples == cd->cd_AntiClickCount ||
-              processed != samples )
+          if( processed != try_samples ||             // Found zero-crossing
+              try_samples <= cd->cd_AntiClickCount )  // End-of-sound or
+                                                      // max delay reached
           {
-            // We either found a zero-crossing or looked as far as
-            // we were allowed to.
+            // We either found a zero-crossing, looked as far as
+            // we were allowed to or reached the end of sound.
             
-            // Note that the sample end was NOT reached! If it was,
-            // cd_Samples will be zero and the second cd_AddRoutine
-            // call below will have no effect, and the cd_Next#?
-            // variables will be copied instead.
+            // To be perfect, the we should not run this code if the 
+            // end-of-sound was reached. Instead, since cd_Samples is zero
+            // and the second cd_AddRoutine call below will have no effect,
+            // we should just go onand the cd_Next#? variables will be copied
+            // instead. However, that requires two sets of delay variables:
+            // The one we have now and one delayed set of "next" variables.
+            // I might do that another time, but not today...
 
             // Now start the delayed sound.
 
