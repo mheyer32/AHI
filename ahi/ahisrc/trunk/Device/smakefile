@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.1  1997/04/02 22:28:11  lcs
+# Bumped to version 4
+#
 # Revision 1.19  1997/03/27 12:16:27  lcs
 # Norwegian translation added.
 # Amiga E modules added.
@@ -78,7 +81,8 @@ DEBUG	= LIB:debug.lib LIB:amiga.lib
 ###############################################################################
 
 $(TARGET): $(OBJECTS)
-	$(LINKER) $(LFLAGS) TO $(TARGET) FROM $(OBJECTS) LIB LIB:sc.lib $(DEBUG)
+	$(LINKER) $(LFLAGS) TO Devs:ahi.device FROM $(OBJECTS) LIB LIB:sc.lib $(DEBUG)
+	slink FROM Devs:ahi.device to $(TARGET) ND NOICONS
 
 ##
 ## Dependences (doesn't work with asm files anyway!)
@@ -95,7 +99,7 @@ depend:
 ###############################################################################
 
 ahi_rev.i: $(SOURCES)
-	@revup VERSION 3 PROJECTNAME ahi ASM TINY
+	@revup VERSION 4 PROJECTNAME ahi ASM TINY
 
 
 ##
@@ -258,7 +262,7 @@ userdoc:
 ###############################################################################
 
 ci:
-	ci -l $(RCSFILES)
+	ci -l4.1 $(RCSFILES)
 
 ##
 ## Check out all files

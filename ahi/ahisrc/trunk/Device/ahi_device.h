@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:29:53  lcs
+* Bumped to version 4
+*
 * Revision 1.10  1997/03/20 02:07:02  lcs
 * Weiﬂ nicht?
 *

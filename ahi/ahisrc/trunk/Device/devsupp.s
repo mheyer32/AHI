@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:29:53  lcs
+* Bumped to version 4
+*
 * Revision 1.4  1997/03/24 12:41:51  lcs
 * Echo rewritten
 *

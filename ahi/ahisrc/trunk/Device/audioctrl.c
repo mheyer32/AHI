@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:28:11  lcs
+* Bumped to version 4
+*
 * Revision 1.18  1997/03/27 12:16:27  lcs
 * Major bug in the device interface code fixed.
 *
@@ -1061,7 +1064,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *       stored.
 *
 *   INPUTS
-*       ID - An audio mode identifier, AHI_DEFAULT_ID (V3) or AHI_INVALID_ID.
+*       ID - An audio mode identifier, AHI_DEFAULT_ID (V4) or AHI_INVALID_ID.
 *       audioctrl - A pointer to an AHIAudioCtrl structure, only used if
 *           ID equals AHI_INVALID_ID. Set to NULL if not used. If set to
 *           NULL when used, this function returns immediately. Always set
@@ -1207,7 +1210,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *           NOTE: ti_Data is a pointer to an UBYTE array where the name
 *           will be stored. See AHIDB_BufferLen. (V2)
 *
-*       AHIDB_AudioID (ULONG *) - The ID for this mode. (V3)
+*       AHIDB_AudioID (ULONG *) - The ID for this mode. (V4)
 *
 *       If the requested information cannot be found, the variable will be not
 *       be touched.
@@ -1467,7 +1470,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
 *           tags best is returned, i.e. the one that has most of the features
 *           you ask for, and least of the ones you don't want. Without this
 *           second tag list, this function hardly does what its name
-*           suggests. (V3)
+*           suggests. (V4)
 *
 *   RESULT
 *       ID - The best AudioID to use or AHI_INVALID_ID if none of the modes
@@ -1579,9 +1582,9 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
 *               ahisi_Type - Format of samples (only two supported).
 *                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
-*                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V3). 
+*                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V4). 
 *                   AHIST_M16S: Mono, 16 bit signed (WORDs).
-*                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V3).
+*                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V4).
 *               ahisi_Address - Address to the sample array.
 *               ahisi_Length - The size of the array, in samples.
 *               Don't even think of setting ahisi_Address to 0 and
@@ -1850,7 +1853,7 @@ __asm ULONG UnloadSound(register __d0 UWORD sound,
 /****** ahi.device/AHI_PlayA ************************************************
 *
 *   NAME
-*       AHI_PlayA -- Start multiple sounds in one call (V3)
+*       AHI_PlayA -- Start multiple sounds in one call (V4)
 *       AHI_Play -- varargs stub for AHI_PlayA()
 *
 *   SYNOPSIS
@@ -2037,7 +2040,7 @@ __asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
 /****** ahi.device/AHI_SampleFrameSize **************************************
 *
 *   NAME
-*       AHI_SampleFrameSize -- get the size of a sample frame (V3)
+*       AHI_SampleFrameSize -- get the size of a sample frame (V4)
 *
 *   SYNOPSIS
 *       size = AHI_SampleFrameSize( sampletype );

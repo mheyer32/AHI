@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:29:53  lcs
+* Bumped to version 4
+*
 * Revision 1.1  1997/03/24 12:43:09  lcs
 * Initial revision
 *

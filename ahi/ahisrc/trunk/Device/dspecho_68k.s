@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:29:53  lcs
+* Bumped to version 4
+*
 * Revision 1.5  1997/03/26 00:14:32  lcs
 * Echo is finally working!
 *

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:28:11  lcs
+* Bumped to version 4
+*
 * Revision 1.6  1997/03/24 12:41:51  lcs
 * Echo rewritten
 *
@@ -210,7 +213,7 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
 /****i* ahi.device/AHI_AddAudioMode *****************************************
 *
 *   NAME
-*       AHI_AddAudioMode -- add a audio mode to the database (V3)
+*       AHI_AddAudioMode -- add a audio mode to the database (V4)
 *
 *   SYNOPSIS
 *       success = AHI_AddAudioMode( DBtags );
@@ -336,7 +339,7 @@ __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
 /****i* ahi.device/AHI_RemoveAudioMode **************************************
 *
 *   NAME
-*       AHI_RemoveAudioMode -- remove a audio mode to the database (V3)
+*       AHI_RemoveAudioMode -- remove a audio mode to the database (V4)
 *
 *   SYNOPSIS
 *       success = AHI_RemoveAudioMode( ID );
@@ -430,7 +433,7 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
 /****i* ahi.device/AHI_LoadModeFile *****************************************
 *
 *   NAME
-*       AHI_LoadModeFile -- Add all modes in a mode file to the database (V3)
+*       AHI_LoadModeFile -- Add all modes in a mode file to the database (V4)
 *
 *   SYNOPSIS
 *       success = AHI_LoadModeFile( name );
