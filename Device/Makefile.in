@@ -77,7 +77,8 @@ endif
 
 ifeq ($(VER),GEN)
 ifeq ($(host_cpu),m68k)
-OBJECTS		+= dspecho.o mixer.o addroutines_68k.o
+#OBJECTS		+= dspecho.o mixer.o addroutines_68k.o
+OBJECTS		+= dspecho.o mixer.o addroutines.o
 else
 OBJECTS		+= dspecho.o mixer.o addroutines.o
 endif
