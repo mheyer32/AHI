@@ -68,7 +68,7 @@ top_builddir=$(pwd)
 : ${ASFLAGS="${asflags}"}
 : ${ARFLAGS="-ru"}
 
-: ${DISTDIR="/tmp/ahi"}
+: ${DISTDIR="/tmp/${host_alias}-ahi"}
 
 AC_PREFIX_DEFAULT( / )
 

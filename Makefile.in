@@ -14,6 +14,8 @@ srcdir		= @srcdir@
 DISTDIR		= @DISTDIR@
 CATDIR		= ${DISTDIR}/User/Catalogs
 
+host_alias	= @host_alias@
+
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
 LHA		= @LHA@
@@ -26,6 +28,14 @@ LDFLAGS		= @LDFLAGS@
 VPATH		= @srcdir@
 
 
+VERSION		= $(shell cat ${top_srcdir}/version.ver)
+REVISION	= $(shell cat $(top_srcdir)/version.rev)
+
+USRARCHIVE	= $(host_alias)-ahiusr-$(VERSION).$(REVISION).lha
+USRREADME	= $(host_alias)-ahiusr-$(VERSION).$(REVISION).readme
+DEVARCHIVE	= $(host_alias)-ahidev-$(VERSION).$(REVISION).lha
+DEVREADME	= $(host_alias)-ahidev-$(VERSION).$(REVISION).readme
+
 #
 # Targets
 ########################################
@@ -34,24 +44,23 @@ VPATH		= @srcdir@
 
 SUBDIRS		= AHI AHI-Handler AddAudioModes Device Docs Drivers Examples Include
 
-
 all:
 	@cd Include && make gcc-include
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
 clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) ahi6dev.lha ahi6dev.readme ahi6usr.lha ahi6usr.readme
+	$(RM) $(USRARCHIVE) $(USRREADME) $(DEVARCHIVE) $(DEVREADME)
 
 distclean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) ahi6dev.lha ahi6dev.readme ahi6usr.lha ahi6usr.readme \
+	$(RM) $(USRARCHIVE) $(USRREADME) $(DEVARCHIVE) $(DEVREADME) \
 	      config.log config.cache config.status config.h\
 	      stamp-h stamp-h.in Makefile
 
 maintainer-clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) ahi6dev.lha ahi6dev.readme ahi6usr.lha ahi6usr.readme \
+	$(RM) $(USRARCHIVE) $(USRREADME) $(DEVARCHIVE) $(DEVREADME) \
 	      config.log config.cache config.status config.h\
 	      stamp-h stamp-h.in Makefile \
 	      configure config.h.in
@@ -71,14 +80,17 @@ bindist:
 	cd Include && make gcc-include
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
-	-$(RM) ahi6dev.lha ahi6usr.lha
-	pwd=`pwd` && ( cd $(DISTDIR) && $(LHA) -a $${pwd}/ahi6dev.lha \
-	  ahidev* ChangeLog COPYING* Developer )
-	cp $(DISTDIR)/ahidev.readme ahi6dev.readme
+	-$(RM) $(USRARCHIVE) $(DEVARCHIVE)
 
-	pwd=`pwd` && ( cd $(DISTDIR) && $(LHA) -a $${pwd}/ahi6usr.lha \
-	  ahiusr* ChangeLog COPYING* User )
-	cp $(DISTDIR)/ahiusr.readme ahi6usr.readme
+	pwd=`pwd` bn=`basename $(DISTDIR)` && \
+	  ( cd $(DISTDIR)/.. && $(LHA) -a $${pwd}/$(DEVARCHIVE) \
+	  $${bn}/ahidev* $${bn}/ChangeLog $${bn}/COPYING* $${bn}/Developer )
+	cp $(DISTDIR)/ahidev.readme $(DEVREADME)
+
+	pwd=`pwd` bn=`basename $(DISTDIR)` && \
+	  ( cd $(DISTDIR)/.. && $(LHA) -a $${pwd}/$(USRARCHIVE) \
+	  $${bn}/ahiusr* $${bn}/ChangeLog $${bn}/COPYING* $${bn}/User )
+	cp $(DISTDIR)/ahiusr.readme $(USRREADME)
 
 	$(RM) -r $(DISTDIR)
 
