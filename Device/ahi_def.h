@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -45,6 +43,8 @@ extern struct AHIBase           *AHIBase;
 
 /*** Definitions ***/
 
+typedef long long int   Fixed64;
+
 #define AHI_UNITS       4       /* Normal units, excluding AHI_NO_UNIT */
 
 #define AHIBB_NOSURROUND        (0)
@@ -76,6 +76,7 @@ struct AHIBase
   ULONG                    ahib_Output;
   Fixed                    ahib_MaxCPU;
   Fixed                    ahib_AntiClickTime;
+  UWORD                    ahib_ScaleMode;
 };
 
 
@@ -158,6 +159,29 @@ struct AHIChannelData
   LONG    cd_StartPointR;         /* for linear interpolation routines */
   LONG    cd_TempStartPointR;     /* for linear interpolation routines */
 
+  // NOTE!! These must follow directly after cd_TempStartPointR ...
+  LONG    cd_StartPointRL;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointRL;    /* for linear interpolation routines */
+  LONG    cd_StartPointRR;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointRR;    /* for linear interpolation routines */
+  LONG    cd_StartPointSL;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointSL;    /* for linear interpolation routines */
+  LONG    cd_StartPointSR;        /* for linear interpolation routines */
+  LONG    cd_TempStartPointSR;    /* for linear interpolation routines */
+  LONG    cd_StartPointC;         /* for linear interpolation routines */
+  LONG    cd_TempStartPointC;     /* for linear interpolation routines */
+  LONG    cd_StartPointLFE;       /* for linear interpolation routines */
+  LONG    cd_TempStartPointLFE;   /* for linear interpolation routines */
+
+#define CD_L			0
+#define CD_R			2
+#define CD_RL			4
+#define CD_RR			6
+#define CD_SL			8
+#define CD_SR			10
+#define CD_C			12
+#define CD_LFE			14
+    
   struct AHIChannelData *cd_Succ; /* For the wet and dry lists */
   UWORD   cd_ChannelNo;
   UWORD   cd_Pad3;
@@ -204,6 +228,9 @@ struct AHIPrivAudioCtrl
   UWORD                      ahiac_MaxCPU;
   struct PowerPCContext*     ahiac_PowerPCContext;
   char                       ahiac_DriverName[ 256 ];
+  #ifdef __AMIGAOS4__
+  struct AHIsubIFace*        ahiac_IAHIsub;
+  #endif
 };
 
 #ifdef __AMIGAOS4__
