@@ -31,7 +31,6 @@
 
 	section	.text,code
 
-
 ** Sprintf ********************************************************************
 
 ;
@@ -73,7 +72,7 @@ stuffChar:
 * Z	Updated
 _PreTimer:
 	pushm	d1-d2/a0-a1/a6
-	move.l	_TimerBase(pc),a6
+	move.l	_TimerBase,a6
 	lea	ahiac_Timer(a2),a0
 	move.l	EntryTime+EV_LO(a0),d2
 	call	ReadEClock
@@ -90,7 +89,7 @@ _PreTimer:
  ELSE
 	move.l	d1,d0
 	move.l	d2,d1
-	move.l	_UtilityBase(pc),a1
+	move.l	_UtilityBase,a1
 	jsr	_LVOUDivMod32(a1)
 	move.l	d0,d1
  ENDC
@@ -108,7 +107,7 @@ _PreTimer:
 
 _PostTimer:
 	pushm	d0-d1/a0-a1/a6
-	move.l	_TimerBase(pc),a6
+	move.l	_TimerBase,a6
 	lea	ahiac_Timer+ExitTime(a2),a0
 	call	ReadEClock
 	popm	d0-d1/a0-a1/a6
@@ -226,7 +225,6 @@ _UDivMod64:
 ** Stubs **********************************************************************
 
 _Mix:
-
  IFD	VERSION68K
 
 	XREF	_Mix68k
@@ -364,6 +362,7 @@ _Sub64p:
 	XDEF	KPrintF
 	XDEF	kprintf
 	XDEF	KPutFmt
+	XDEF	kprint_macro
 
 kprint_macro:
 	movem.l	d0-d1/a0-a1,-(sp)

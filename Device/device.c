@@ -22,7 +22,6 @@
 
 #include "ahi_def.h"
 #include "localize.h"
-#include "version.h"
 #include "device.h"
 #include "devcommands.h"
 

@@ -12,6 +12,17 @@ DEBUG_DETAIL	SET	2
 	include	libraries/ahi_sub.i
 	include	macros.i
 
+
+*** Processor identification ****
+
+ IFGE	__CPU-68020
+
+HAVE_HIFI	EQU	1
+HAVE_CLIPPING	EQU	1
+
+ ENDC
+
+
 *** Definitions ***
 
 	STRUCTURE LONGLONG_STRUCT,0

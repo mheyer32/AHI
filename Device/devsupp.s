@@ -365,7 +365,7 @@ _MultFixed:
 	move.l	d2,d0
  ELSE
 	XREF	_UDivMod64
-	bsr	_UDivMod64		;d0 = (d1:d2)/d0
+	jsr	_UDivMod64		;d0 = (d1:d2)/d0
  ENDC
 ;	addq.l	#1,d0
 .exit

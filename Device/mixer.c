@@ -158,8 +158,7 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 // This function is called each time the master volume changes.
 
 void
-calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl,
-                        struct AHIBase *AHIBase )
+calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl );
 {
   // Do nothing, no tables are used!
 }
@@ -173,8 +172,7 @@ calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl,
 // samples.
 
 BOOL
-initSignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                  struct AHIBase *AHIBase )
+initSignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 {
   // No tables are used, return success.
   return TRUE;
@@ -188,8 +186,7 @@ initSignedTable ( struct AHIPrivAudioCtrl *audioctrl,
 // This function is called each time the master volume changes
 
 void
-calcSignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                  struct AHIBase *AHIBase )
+calcSignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 {
   // Do nothing, no tables are used!
 }
@@ -204,8 +201,7 @@ calcSignedTable ( struct AHIPrivAudioCtrl *audioctrl,
 // Delitracker II).
 
 BOOL
-initUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                    struct AHIBase *AHIBase )
+initUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 {
   // No tables are used, return success.
   return TRUE;
@@ -219,8 +215,7 @@ initUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl,
 // This function is called each time the master volume changes
 
 void
-calcUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                    struct AHIBase *AHIBase )
+calcUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 {
   // Do nothing, no tables are used!
 }

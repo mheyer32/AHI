@@ -9,6 +9,35 @@ extern void KPrintF(char *fmt,...);
 extern void kprintf(char *fmt,...);
 #define HIT {char *a=0; *a=0;}
 
+/*** Processor identification ****/
+
+#ifdef mc68020
+# define MC68020_PLUS
+#endif
+
+#ifdef mc68030
+# define MC68020_PLUS
+# define MC68030_PLUS
+#endif
+
+#ifdef mc68040
+# define MC68020_PLUS
+# define MC68030_PLUS
+# define MC68040_PLUS
+#endif
+
+#ifdef mc68060
+# define MC68020_PLUS
+# define MC68030_PLUS
+# define MC68040_PLUS
+# define MC68060_PLUS
+#endif
+
+#ifdef MC68020_PLUS
+# define HAVE_HIFI
+# define HAVE_CLIPPING
+#endif
+
 /*** AHI include files ***/
 
 #include <config.h>
