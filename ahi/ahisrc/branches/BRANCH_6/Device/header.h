@@ -88,6 +88,13 @@ extern ADDFUNC*			AddWords71Ptr;
 extern ADDFUNC*			AddLong71Ptr;
 extern ADDFUNC*			AddLongs71Ptr;
 extern ADDFUNC*			Add7171Ptr;
+extern ADDFUNC*			AddByte71BPtr;
+extern ADDFUNC*			AddBytes71BPtr;
+extern ADDFUNC*			AddWord71BPtr;
+extern ADDFUNC*			AddWords71BPtr;
+extern ADDFUNC*			AddLong71BPtr;
+extern ADDFUNC*			AddLongs71BPtr;
+extern ADDFUNC*			Add7171BPtr;
 
 extern ADDFUNC*                 AddLofiByteMonoPtr;
 extern ADDFUNC*                 AddLofiByteStereoPtr;

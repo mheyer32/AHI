@@ -1,5 +1,13 @@
 2004-07-27  Martin Blom  <martin@blom.org>
 
+	* Released emu10kx.audio 5.17.
+
+	* Released ahi.device 5.49.
+
+	* ahi.device: Added backward mixing in 7.1 modes.
+
+	* ahi.device: Fixed a couple of bugs in the 7.1 code.
+
 	* emu10kx.audio: Replaced the EMU10k1 routing completely. Disabled
 	most of the patch manager. Somebody needs to fix it for Audigy
 	cards.

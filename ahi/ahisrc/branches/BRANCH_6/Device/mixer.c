@@ -452,45 +452,73 @@ SelectAddRoutine ( Fixed     VolumeLeft,
         switch(SampleType)
         {
           case AHIST_M8S:
+          case AHIST_BW|AHIST_M8S:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = AddByte71Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = AddByte71BPtr;
+	    else
+	      *AddRoutine = AddByte71Ptr;
             break;
 
           case AHIST_S8S:
+          case AHIST_BW|AHIST_S8S:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = AddBytes71Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = AddBytes71BPtr;
+	    else
+	      *AddRoutine = AddBytes71Ptr;
             break;
 
           case AHIST_M16S:
+          case AHIST_BW|AHIST_M16S:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = AddWord71Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = AddWord71BPtr;
+	    else
+	      *AddRoutine = AddWord71Ptr;
             break;
 
           case AHIST_S16S:
+          case AHIST_BW|AHIST_S16S:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = AddWords71Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = AddWords71BPtr;
+	    else
+	      *AddRoutine = AddWords71Ptr;
             break;
 
           case AHIST_M32S:
+          case AHIST_BW|AHIST_M32S:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = AddLong71Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = AddLong71BPtr;
+	    else
+	      *AddRoutine = AddLong71Ptr;
             break;
 
           case AHIST_S32S:
+          case AHIST_BW|AHIST_S32S:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = AddLongs71Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = AddLongs71BPtr;
+	    else
+	      *AddRoutine = AddLongs71Ptr;
             break;
 
           case AHIST_L7_1:
+          case AHIST_BW|AHIST_L7_1:
             *ScaleLeft  = VolumeLeft;
             *ScaleRight = VolumeRight;
-	    *AddRoutine = Add7171Ptr;
+            if(SampleType & AHIST_BW)
+	      *AddRoutine = Add7171BPtr;
+	    else
+	      *AddRoutine = Add7171Ptr;
             break;
 	    
           default:
@@ -867,7 +895,6 @@ Mix( struct Hook*             unused_Hook,
                                                          cd->cd_Add,
                                                         &cd->cd_Offset,
                                                          FALSE );
-
             cd->cd_Samples -= processed;
             samplesleft    -= processed;
           }
