@@ -1,3 +1,7 @@
+2004-06-05  Martin Blom  <martin@blom.org>
+
+	* Imported new include files (classes etc).
+
 2004-06-04  Martin Blom  <martin@blom.org>
 
 	* Removed BGUI and ClassAct preference support (for now at least,
