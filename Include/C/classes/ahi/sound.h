@@ -39,7 +39,7 @@ namespace AHI {
       _AHIA(_P, LengthLow,	(_AHIA_Dummy+26)),		/* OM_GET */
 
       /* The sample frequency of this sound. */
-      _AHIA(_P, SampleFreq	,(_AHIA_Dummy+27))		/* OM_GET */
+      _AHIA(_P, SampleFreq,	(_AHIA_Dummy+27))		/* OM_GET */
 
     };
     
