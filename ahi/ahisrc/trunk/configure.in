@@ -133,6 +133,7 @@ AC_OUTPUT(Makefile
           Device/Makefile
           Docs/Makefile
           Drivers/EMU10kx/Makefile
+	  Examples/Makefile
 	  Examples/Extras/CloneAudioModes/Makefile
           Include/Makefile,
           echo timestamp > stamp-h)
