@@ -57,7 +57,7 @@
 #define NUM_G           64              /* use all channels */
 #define NUM_FXSENDS     4               /* don't change */
 /* setting this to other than a power of two may break some applications */
-#define MAXBUFSIZE	65536
+#define MAXBUFSIZE	524288 // 65536
 #define MAXPAGES	8192 
 #define BUFMAXPAGES     (MAXBUFSIZE / PAGE_SIZE)
 
@@ -71,7 +71,7 @@ struct memhandle
 	u32 size;
 };
 
-#define DEBUG_LEVEL 6
+#define DEBUG_LEVEL 4
 
 #ifdef EMU10K1_DEBUG
 # define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ , y );} while(0)

@@ -40,7 +40,7 @@ __get_free_page( unsigned int gfp_mask )
 void
 free_page( unsigned long addr )
 {
-  printf( "Freeing page at %08x\n", addr );
+//  printf( "Freeing page at %08x\n", addr );
   FreeMem( (void*) addr, PAGE_SIZE );
 }
 
@@ -58,7 +58,7 @@ pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle )
 void
 pci_free_consistent( void* pci_dev, size_t size, void* addr, dma_addr_t dma_handle )
 {
-  printf( "Freeing pages (%d bytes) at %08x\n", size, addr );
+//  printf( "Freeing pages (%d bytes) at %08x\n", size, addr );
   FreeMem( addr, size );
 //  pci_free_dmamem( pci_dev, addr, size );
 }
