@@ -37,7 +37,7 @@ TARGETS		=
 
 .PHONY:		all clean distclean maintainer-clean bindist
 
-SUBDIRS		= Filesave Void
+SUBDIRS		= EMU10kx Filesave Void
 
 all:		$(TARGETS)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
