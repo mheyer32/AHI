@@ -264,6 +264,9 @@ TermIO ( struct AHIRequest *ioreq,
   {
     // Update master volume if we're terminating a write request
     UpdateMasterVolume( iounit, AHIBase );
+
+    // Convert io_Actual to bytes
+    ioreq->ahir_Std.io_Actual *= AHI_SampleFrameSize(ioreq->ahir_Type);
   }
   
   if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
@@ -680,7 +683,9 @@ ResetCmd ( struct AHIRequest *ioreq,
 *       io_Error        0 for success, or an error code as defined in
 *                       <ahi/devices.h> and <exec/errors.h>.
 *       io_Actual       If io_Error is 0, number of bytes actually
-*                       transferred.
+*                       transferred. Starting with V6, io_Actual is also
+*                       valid if io_Error is not 0 (like if the request
+*                       was aborted).
 *       io_Offset       Updated to be used as input next time.
 *
 *       The other fields, except io_Device, io_Unit and io_Command, are
@@ -713,6 +718,8 @@ ReadCmd ( struct AHIRequest *ioreq,
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
+  ioreq->ahir_Std.io_Actual = 0;
+
   /* Start recording if neccessary */
   if( ! iounit->IsRecording)
   {
@@ -738,8 +745,6 @@ ReadCmd ( struct AHIRequest *ioreq,
     AHI_ControlAudio(iounit->AudioCtrl,
         AHIC_MixFreq_Query, (ULONG) &mixfreq,
         TAG_DONE);
-
-    ioreq->ahir_Std.io_Actual = 0;
 
     /* Initialize ahir_Frequency for the assembler record routines */
     if(ioreq->ahir_Frequency && mixfreq)
@@ -801,7 +806,9 @@ ReadCmd ( struct AHIRequest *ioreq,
 *       io_Error        0 for success, or an error code as defined in
 *                       <ahi/devices.h> and <exec/errors.h>.
 *       io_Actual       If io_Error is 0, number of bytes actually
-*                       played.
+*                       played. Starting with V6, io_Actual is also valid
+*                       if io_Error is not 0 (like if the request was
+*                       aborted).
 *
 *       The other fields, except io_Device, io_Unit and io_Command, are
 *       trashed.
@@ -809,9 +816,9 @@ ReadCmd ( struct AHIRequest *ioreq,
 *   EXAMPLE
 *
 *   NOTES
+*       32 bit samples (ahir_Type) is only available in V6 and later.
 *
 *   BUGS
-*       32 bit samples are not allowed yet.
 *
 *   SEE ALSO
 *       <ahi/devices.h>, <exec/errors.h>
@@ -833,6 +840,8 @@ WriteCmd ( struct AHIRequest *ioreq,
   }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
+
+  ioreq->ahir_Std.io_Actual = 0;
 
   /* Start playback if neccessary */
   if( ! iounit->IsPlaying)
@@ -870,8 +879,6 @@ WriteCmd ( struct AHIRequest *ioreq,
 
   if(iounit->IsPlaying && !error)
   {
-    ioreq->ahir_Std.io_Actual = 0;
-
     // Convert length in bytes to length in samples
 
     ioreq->ahir_Std.io_Length /= AHI_SampleFrameSize(ioreq->ahir_Type);
@@ -1532,8 +1539,7 @@ RemPlayers ( struct List *list,
 
       ioreq->ahir_Std.io_Error = AHIE_OK;
       ioreq->ahir_Std.io_Command = CMD_WRITE;
-      ioreq->ahir_Std.io_Actual = ioreq->ahir_Std.io_Length
-                                * AHI_SampleFrameSize(ioreq->ahir_Type);
+      ioreq->ahir_Std.io_Actual = ioreq->ahir_Std.io_Length;
       TermIO(ioreq, AHIBase);
     }
   }

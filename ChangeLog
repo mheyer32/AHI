@@ -1,5 +1,8 @@
 2003-04-12  Martin Blom  <martin@blom.org>
 
+	* ahi.deivce: io_Actual is now valid even if a CMD_READ or
+	CMD_WRITE request failed or was aborted. [Grzegorz Kraszewski]
+
 	* ahi.doc: Don't mention io_Actual for CMD_STOP/CMD_START.
 
 	* ahi.device: gw_IndexToFrequency in the MorphOS version now uses
