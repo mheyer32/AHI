@@ -124,6 +124,34 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
   switch (msg->opg_AttrID)
   {
+    case AHIA_Title:
+      *msg->opg_Storage = (ULONG) "AHI Audio Buffer Class";
+      break;
+
+    case AHIA_Description:
+      *msg->opg_Storage = (ULONG) "An audio buffer.";
+      break;
+      
+    case AHIA_DescriptionURL:
+      *msg->opg_Storage = (ULONG) "http://www.lysator.liu.se/ahi/";
+      break;
+      
+    case AHIA_Author:
+      *msg->opg_Storage = (ULONG) "Martin Blom";
+      break;
+      
+    case AHIA_Copyright:
+      *msg->opg_Storage = (ULONG) "©2004 Martin Blom";
+      break;
+      
+    case AHIA_Version:
+      *msg->opg_Storage = (ULONG) VERS;
+      break;
+      
+    case AHIA_Annotation:
+      *msg->opg_Storage = 0;
+      break;
+      
     case AHIA_Buffer_SampleType:
       *msg->opg_Storage = AHIClassData->sample_type;
       break;
