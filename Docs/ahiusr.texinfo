@@ -2,19 +2,30 @@
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename ahi.guide
-@settitle @sc{Ahi} User's Guide, version @value{ahiver}
+@settitle @ahi User's Guide, version @value{ahiver}
 @setchapternewpage odd
 @iftex
 @afourpaper
 @end iftex
 @c %***end of header
 
+@c *** Macros  ***
 
-@c $VER: ahiusr.texinfo 4.4 (14.7.97)
-@set ahiver 4.4
+@macro ahi
+@sc{Ahi}
+@end macro
+
+@c *** Variables ***
+
+@set ahiver 4.7
+
+@c *** Version history ***
 
 @c $Id$
 @c $Log$
+@c Revision 4.7  1997/08/10 15:38:57  lcs
+@c Minor changes. added @ahi macro!
+@c
 @c Revision 4.6  1997/08/03 22:48:26  lcs
 @c Added Concierto to list of supported sound cards.
 @c Added Christian Buchner to the Acknowledgments section.
@@ -102,11 +113,11 @@ publication, even if advised of the possibility of such damage.}
 
 @ifinfo
 
-@majorheading @sc{Ahi} User's Guide, version @value{ahiver}
+@majorheading @ahi User's Guide, version @value{ahiver}
 
 Copyright @copyright{} 1994-1997 Martin Blom
 
-The latest release of @sc{Ahi} can always be found at
+The latest release of @ahi can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
 
 @menu
@@ -114,7 +125,7 @@ The latest release of @sc{Ahi} can always be found at
 * Distribution::                What you are allowed to do and not
 * Donations::                   How to show your gratitude
 
-* System description::          The components of @sc{Ahi}
+* System description::          The components of @ahi
 
 * The Author::                  Who designed it?
 * Acknowledgments::             Thanks, guys!
@@ -138,46 +149,48 @@ The latest release of @sc{Ahi} can always be found at
 @chapter Overview
 
 @cindex Overview
-@cindex AHI, Overview
+@cindex AHI, overview
 @cindex Paula, custom chip
 
-The @dfn{Amiga} has always had excellent sound capabilities. In 1986, they were
-awesome. Today, well@enddots{} Perhaps not awesome, but still very good. The OS
-interface, @code{audio.device} has however never been as good as it could have
-been. It is tied hard to the underlying hardware, and doesn't work very well for
-music. This has led to a situation where most audio programs only use
-@code{audio.device} to allocate the audio resource, and then poke around in
-the hardware registers---making it next to impossible to replace the @dfn{Paula}
-chip @footnote{Paula is one of the custom chips, and she is responsible for
-the sound (and more). Unfortunately, this chip has not been updated since the
-very first Amiga was released.}.
+The @dfn{Amiga} has always had excellent sound capabilities.  In 1986, they
+were awesome.  Today, well@enddots{} Perhaps not awesome, but still very
+good.  The OS interface, @code{audio.device} has however never been as good
+as it could have been.  It is tied hard to the underlying hardware, and
+doesn't work very well for music.  This has led to a situation where most
+audio programs only use @code{audio.device} to allocate the audio resource,
+and then poke around in the hardware registers---making it next to
+impossible to replace the @dfn{Paula} chip @footnote{Paula is one of the
+custom chips, and she is responsible for the sound (and more).
+Unfortunately, this chip has not been updated since the very first Amiga
+was released.}.
 
-There have been attempts to write an @code{audio.device} clone that uses a sound
-card instead of Paula, but so far nobody has succeeded. It is definitely possible,
-but the question is if it is worth the trouble---too many of the programs bang
-the hardware.
+There have been attempts to write an @code{audio.device} clone that uses a
+sound card instead of Paula, but so far nobody has succeeded.  It is
+definitely possible, but the question is if it is worth the trouble---too
+many of the programs bang the hardware.
 
-Entering @sc{Ahi} @footnote{The name @sc{Ahi} was chosen because the functions
-in the system had to have a prefix, and the author couldn't come up with anything
-better than @dfn{Audio Hardware Interface}, something that he has regretted ever
-since. The suggested pronunciation is ``atchii'', as in ``God bless!''.}.
-@sc{Ahi} is a new audio subsystem, designed to be flexible, 
-hardware independent, expandable and future safe. It is designed with real-time
-applications in mind. It is designed to play @dfn{modules} @footnote{Originally
-designed in 1986 by Karsten Obarski, modules have become a de facto standard
-for game and demo music. The original format has been improved many times,
-and many new music formats have---more or less---been derived from it,
-including the popular @dfn{S3M} and @dfn{XM} formats.} and sound effects as
-efficient as possible, taking advantage of modern DSP-based sound cards.
+Entering @ahi @footnote{The name @ahi was chosen because the
+functions in the system had to have a prefix, and the author couldn't come
+up with anything better than @dfn{Audio Hardware Interface}, something that
+he has regretted ever since.  The suggested pronunciation is ``atchii'', as
+in ``God bless!''.}.  @ahi is a new audio subsystem, designed to be
+flexible, hardware independent, expandable and future safe.  It is designed
+with real-time applications in mind.  It is designed to play @dfn{modules}
+@footnote{Originally designed in 1986 by Karsten Obarski, modules have
+become a de facto standard for game and demo music.  The original format
+has been improved many times, and many new music formats have---more or
+less---been derived from it, including the popular @dfn{S3M} and @dfn{XM}
+formats.} and sound effects as efficient as possible, taking advantage of
+modern DSP-based sound cards.
 
-Yet @sc{Ahi} allows applications that don't need full control over the
-audio hardware to share the resource, so that many different programs
-can play and record sound at the same time, without conflicts.
+Yet @ahi allows applications that don't need full control over the
+audio hardware to share the resource, so that many different programs can
+play and record sound at the same time, without conflicts.
 
-As a user you will hopefully not see much of @sc{Ahi}, other than the 
-audio mode requesters. They works almost exactly like screen mode requesters.
+As a user you will hopefully not see much of @ahi{}, other than the audio
+mode requesters.  They works almost exactly like screen mode requesters.
 
-@sc{Ahi} was never supposed to be @emph{the} standard for hardware
+@ahi was never supposed to be @emph{the} standard for hardware
 independent audio.  It was meant as a temporary solution until @dfn{Amiga
 Technologies} delivered an official standard.  However, the situation looks
 worse and worse for every day that passes by, and this may be all you will
@@ -201,32 +214,33 @@ ever get.
 
 Copyright @copyright{} 1994-1997 Martin Blom
 
-@sc{Ahi} is available as @dfn{freeware}.  That is, it may be freely
+@ahi is available as @dfn{freeware}.  That is, it may be freely
 distributed in unmodified form with no changes what so ever, but you may
-not charge more than a nominal fee covering distribution costs. However,
+not charge more than a nominal fee covering distribution costs.  However,
 donations are welcome (@pxref{Donations}).
 
 If you use this software in a commercial or shareware software product,
 please consider giving the author (@pxref{The Author})---and preferably
 each one of the contributors (@pxref{Contributors}) too---an original or
-registered version of your work.  Should you want to distribute the @sc{Ahi}
-software with your own product, there is really nothing to consider, is it?
+registered version of your work.  Should you want to distribute the
+@ahi software with your own product, there is really nothing to
+consider, is it?
 
 If you wish to distribute this software with a hardware product, contact
-the author (@pxref{The Author}).  Distribution of @sc{AHI} with hardware
+the author (@pxref{The Author}).  Distribution of @ahi with hardware
 products is @emph{not} free.
 
 @sc{This software is provided by the author and contributors ``as is'' and
 any express or implied warranties, including, but not limited to, the
 implied warranties of merchantability and fitness for a particular purpose
-are disclaimed.  In no event shall the author or contributors be liable
-for any direct, indirect, incidental, special, exemplary, or consequential
-damages (including, but not limited to, procurement of substitute goods
-or services; loss of use, data, or profits; or business interruption)
-however caused and on any theory of liability, whether in contract, strict
+are disclaimed.  In no event shall the author or contributors be liable for
+any direct, indirect, incidental, special, exemplary, or consequential
+damages (including, but not limited to, procurement of substitute goods or
+services; loss of use, data, or profits; or business interruption) however
+caused and on any theory of liability, whether in contract, strict
 liability, or tort (including negligence or otherwise) arising in any way
-out of the use of this software, even if advised of the possibility of
-such damage.}
+out of the use of this software, even if advised of the possibility of such
+damage.}
 
 @c ***********************************************************************
 @c **** Donations ********************************************************
@@ -237,8 +251,9 @@ such damage.}
 @chapter Donations
 
 @cindex Donations
+@cindex Starvation
 
---@sc{Ahi} is available for personal use without any charges.  I strongly
+--@ahi is available for personal use without any charges.  I strongly
 believe in free software, and I use free high-quality software tools daily.
 But I live, like all of us, in a real world.  As a student, my income
 doesn't even suffice for the rent, and much less food, course literature
@@ -286,19 +301,18 @@ Author} for my address).
 FILES/M,QUIET/S,REFRESH/S,REMOVE/S,DBLSCAN/S
 
 @item Purpose
-To build and remove a list of audio modes that @sc{Ahi} can understand.
+To build and remove a list of audio modes that @ahi can understand.
 
 @item Path
 C:ADDAUDIOMODES
 
 @item Specification
-@code{AddAudioModes} is used to build and remove a list of audio modes
-that @sc{Ahi} can understand. The definitions of the audio modes
-are stored in @file{DEVS:Audiomodes} (@pxref{The Mode Descriptors}).
-Normally you don't have to run this program,
-since @code{ahi.device} automatically reads all mode descriptors when it
-is used for the first time. It can, however, be useful in installation
-scripts.
+@code{AddAudioModes} is used to build and remove a list of audio modes that
+@ahi can understand.  The definitions of the audio modes are stored in
+@file{DEVS:Audiomodes} (@pxref{The Mode Descriptors}).  Normally you don't
+have to run this program, since @code{ahi.device} automatically reads all
+mode descriptors when it is used for the first time.  It can, however, be
+useful in installation scripts.
 
 The @samp{FILES} option specifies with descriptor(s) to be added to the
 current mode list.
@@ -313,9 +327,9 @@ The @samp{REMOVE} option, if specified, will flush the current audio mode
 list from memory.
 
 The @samp{DBLSCAN} option does not have anything to do with the audio mode
-list. If specified, it will open and then immediately close a native,
-double-scan screen. On some systems using a graphic card, this will enable
->28 kHz sample frequencies with the native audio. You need an appropriate
+list.  If specified, it will open and then immediately close a native,
+double-scan screen.  On some systems using a graphic card, this will enable
+>28 kHz sample frequencies with the native audio.  You need an appropriate
 monitor driver in @file{DEVS:Monitors} to make it work.
 
 @end table
@@ -328,7 +342,7 @@ monitor driver in @file{DEVS:Monitors} to make it work.
 @comment  node-name,  next,  previous,  up
 @section AHI
 
-@cindex AHI, Preferences program
+@cindex AHI, preferences program
 @cindex Preferences
 @cindex Settings
 
@@ -348,15 +362,15 @@ SYS:Prefs/AHI
 
 @item Specification
 @code{AHI} without any arguments or with the @samp{EDIT} argument opens the
-@sc{Ahi} preferences editor.  The @samp{FROM} argument lets you specify a
+@ahi preferences editor.  The @samp{FROM} argument lets you specify a
 file to open.  This must be a file that was previously saved with the
-@samp{Save As@dots{}} menu item of the @sc{Ahi} preferences editor.  For
-example, if you have saved a special configuration of the @sc{Ahi}
+@samp{Save As@dots{}} menu item of the @ahi preferences editor.  For
+example, if you have saved a special configuration of the @ahi
 preferences editor to a file in the @file{Presets} drawer, you can use the
 @samp{FROM} argument to open that file.  If the @samp{USE} switch is also
 given, the editor will not be opened, but the settings in the @samp{FROM}
 file will be used.  If the @samp{SAVE} switch is given, the editor will not
-open, but the settings in the @samp{FROM} file will be saved. The
+open, but the settings in the @samp{FROM} file will be saved.  The
 @samp{PUBSCREEN} option allows you to specify a public screen on which the
 program will open its window.
 
@@ -366,13 +380,13 @@ Example:
 AHI Prefs/Presets/AHI.Delfina USE
 @end example
 
-loads and uses the specifications saved in the @file{AHI.Delfina} file.
-If the system is rebooted, the last saved specifications will be loaded.
+loads and uses the specifications saved in the @file{AHI.Delfina} file.  If
+the system is rebooted, the last saved specifications will be loaded.
 
 @end table
 
 Note that the preferences program requires either @code{bgui.library}
-version 41 @footnote{@dfn{BGUI} is Copyright © 1996-1997 Ian J. Einman} or
+version 41 @footnote{@dfn{BGUI} is Copyright © 1996-1997 Ian J.  Einman} or
 @dfn{MUI} version 3.8 @footnote{@dfn{MUI} is Copyright © 1992-1997 Stefan
 Stuntz}
 
@@ -414,8 +428,8 @@ select @samp{OK}.
 Shows the credits.
 
 @item Quit
-Exits the editor without performing any changes (the same as the @samp{Cancel}
-gadget).
+Exits the editor without performing any changes (the same as the
+@samp{Cancel} gadget).
 
 @end table
 
@@ -424,7 +438,7 @@ gadget).
 @subsubsection @samp{Edit} Menu
 
 The @samp{Edit} menu options allow you to restore previously used settings
-or the default settings. The options are:
+or the default settings.  The options are:
 
 @table @samp
 
@@ -446,16 +460,16 @@ Returns the editor to the settings displayed when the editor first opened.
 
 The @samp{Settings} menu contains the @samp{Create Icons?} item that allows
 you to save project icons representing your editor settings in the same
-drawer as your files. For example, if you save the specifications to the
-@file{SYS:Prefs/Presets/AHI.pre} file, the icon for the file appears in
-the @samp{Presets} window. Double-click on the icon to activate the file's
+drawer as your files.  For example, if you save the specifications to the
+@file{SYS:Prefs/Presets/AHI.pre} file, the icon for the file appears in the
+@samp{Presets} window.  Double-click on the icon to activate the file's
 settings.
 
 @node Help Menu, , Settings Menu, Menus
 @comment  node-name,  next,  previous,  up
 @subsubsection @samp{Help} Menu
 
-The @samp{Help} menu's items let you view the on-line ``@sc{Ahi} User's
+The @samp{Help} menu's items let you view the on-line ``@ahi User's
 Guide'' using AmigaGuide.
 
 @table @samp
@@ -464,10 +478,10 @@ Guide'' using AmigaGuide.
 Brings up the chapter about the preferences program (this chapter).
 
 @item AHI User's Guide@dots{}
-Brings up the first page of ``@sc{Ahi} User's Guide''.
+Brings up the first page of ``@ahi User's Guide''.
 
 @item Concept Index@dots{}
-Brings up the index of ``@sc{Ahi} User's Guide''.
+Brings up the index of ``@ahi User's Guide''.
 
 @end table
 
@@ -489,6 +503,8 @@ The preferences program's GUI is divided in two pages:
 
 @cindex Mode settings
 @cindex Audio mode settings
+@cindex Settings, audio mode
+@cindex Preferences, audio mode
 
 On this page you select which audio mode to use.  You can select audio mode
 for both low-level programs (@samp{Music unit}) and other programs
@@ -504,11 +520,12 @@ can set three hardware properties of your sound hardware, namely the
 @dfn{output volume}, @dfn{monitor volume} and @dfn{input gain}.  Finally,
 you can select which input and output connectors you wish to use.
 
-The @samp{Music unit} is the defaults for low-level programs.  Such programs
-often have an audio mode requester that lets you chose an audio mode.  If
-you chose @samp{Default audio mode} from this requester, these settings
-will be used.  Note that the number of channels is not selectable here,
-it's up to the application program to decide how many channels to use.
+The @samp{Music unit} is the defaults for low-level programs.  Such
+programs often have an audio mode requester that lets you chose an audio
+mode.  If you chose @samp{Default audio mode} from this requester, these
+settings will be used.  Note that the number of channels is not selectable
+here, it's up to the application program to decide how many channels to
+use.
 
 
 
@@ -517,6 +534,8 @@ it's up to the application program to decide how many channels to use.
 @subsubsection @samp{Advanced settings} Page
 
 @cindex Advanced settings
+@cindex Settings, advanced
+@cindex Preferences, advanced
 
 This page contains some options that should not be used if you don't
 understand them.
@@ -527,23 +546,23 @@ understand them.
 @cindex Debug level
 
 @item Debug level
-Sets the debug level for @sc{Ahi}. If not @samp{None}, @sc{Ahi} will print
+Sets the debug level for @ahi{}.  If not @samp{None}, @ahi will print
 debug information to the serial port.
 
 @cindex Echo, enable/disable/fast
 
 @item Echo
 On slow processors (like anything below a MC68040) echo can take so much
-CPU power that it becomes unusable, and can therefore be disabled. As an
+CPU power that it becomes unusable, and can therefore be disabled.  As an
 alternative, echo can be done @samp{Fast}, which means that the parameters
-will be twisted in order to gain speed. The result may not be what the
+will be twisted in order to gain speed.  The result may not be what the
 composer or programmer wanted, but at least it's echo.
 
 @cindex Surround sound, enable/disable
 
 @item Surround in "Fast" modes
 In modes that use multiplication tables (the so-called ``fast'' modes) all
-surround sounds have to be mixing without using tables. In order to make
+surround sounds have to be mixing without using tables.  In order to make
 mixing as fast as possible, surround sounds can be forced to ordinary ones
 by disabling them.
 
@@ -551,11 +570,11 @@ by disabling them.
 @cindex Clipping, master volume
 
 @item Master volume
-Normally, the ``Master volume'' feature of AHI can make the output
-heavily distorted if set too high. Turning ``clipping'' on can reduce
-the distortion, but will---in the current implementation---use 128 kB of
-extra memory. Note that the so-called ``HiFi'' modes are not affected by
-this switch (@pxref{The Mode Descriptors}).
+Normally, the ``Master volume'' feature of AHI can make the output heavily
+distorted if set too high.  Turning ``clipping'' on can reduce the
+distortion, but will---in the current implementation---use 128 kB of extra
+memory.  Note that the so-called ``HiFi'' modes are not affected by this
+switch (@pxref{The Mode Descriptors}).
 
 @cindex CPU usage limit
 
@@ -583,9 +602,9 @@ increase the limit---but remember that you risk locking up the computer!
 @cindex AUDIO:
 
 The @code{AHI-Handler} is an I/O mechanism that is used to play and record
-sounds. The @code{AHI-Handler} is normally mounted as @code{AUDIO:} at
+sounds.  The @code{AHI-Handler} is normally mounted as @code{AUDIO:} at
 startup time, or later by double-clicking on its icon or by giving the
-following command in a Shell window: @kbd{mount AUDIO: @key{RET}}.
+following command in a Shell window:  @kbd{mount AUDIO:  @key{RET}}.
 
 The DOSDriver entry is:
 
@@ -599,16 +618,16 @@ GlobVec         = -1
 @end example
 
 
-When the device is mounted, you can read from the device to record and 
-write to it to play. Options can be given like this:
+When the device is mounted, you can read from the device to record and
+write to it to play.  Options can be given like this:
 
 @example
 "AUDIO:PRIORITY=1 VOLUME=50"
 @end example
 
-All slashes (@samp{/}) in the name will be translated to spaces. Thus,
-if you use slashes instead of spaces, you don't have to use quotes around
-the name:
+All slashes (@samp{/}) in the name will be translated to spaces.  Thus, if
+you use slashes instead of spaces, you don't have to use quotes around the
+name:
 
 @example
 AUDIO:PRIORITY/1/VOLUME/50
@@ -631,17 +650,16 @@ P=POSITION/K/N,@-PRI=PRIORITY/K/N,@-L=LENGTH/K/N,@-S=SECONDS/K/N,@-
 BUF=BUFFER/K/N,@-UNIT/K/N
 @end example
 
-@samp{BITS} can be one of 8, 16 or 32. @samp{CHANNELS} can be either 1 for
-mono or 2 for stereo. The @samp{FREQUENCY} is in Hertz, @samp{TYPE} is one of 
-@samp{SIGNED}, @samp{AIFF} or @samp{AIFC}.
-@samp{VOLUME} ranges from 0 (silence) to 100 (full volume), and 
-@samp{POSITION} ranges from @minus{}100 (far left) via 0 (center) to 100
-(far right). The @samp{PRIORITY} can be from @minus{}128 to
-127 (unstoppable). @samp{LENGTH} is how many bytes you wish to read or
-write, and @samp{SECONDS} is the same, but in seconds instead of bytes.
-The @samp{BUFFER} size is specified in bytes. Note that two buffers are
-always used, which means that the memory usage will be two times BUFFER.
-@samp{UNIT} selects which @code{ahi.device} unit to use.
+@samp{BITS} can be one of 8, 16 or 32.  @samp{CHANNELS} can be either 1 for
+mono or 2 for stereo.  The @samp{FREQUENCY} is in Hertz, @samp{TYPE} is one
+of @samp{SIGNED}, @samp{AIFF} or @samp{AIFC}.  @samp{VOLUME} ranges from 0
+(silence) to 100 (full volume), and @samp{POSITION} ranges from @minus{}100
+(far left) via 0 (center) to 100 (far right).  The @samp{PRIORITY} can be
+from @minus{}128 to 127 (unstoppable).  @samp{LENGTH} is how many bytes you
+wish to read or write, and @samp{SECONDS} is the same, but in seconds
+instead of bytes.  The @samp{BUFFER} size is specified in bytes.  Note that
+two buffers are always used, which means that the memory usage will be two
+times BUFFER.  @samp{UNIT} selects which @code{ahi.device} unit to use.
 
 The default options for reading are @samp{BITS=8} @samp{CHANNELS=1}
 @samp{FREQUENCY=8000} @samp{TYPE=SIGNED} @samp{LENGTH=very-very-much}
@@ -658,19 +676,18 @@ The default options for reading are @samp{BITS=8} @samp{CHANNELS=1}
 @cindex IFF-AIFC
 
 If @samp{TYPE} is not specified, the default behaviour is to identify the
-data stream as @dfn{IFF-AIFF} or @dfn{IFF-AIFC}. If so, the default values of
-@samp{BITS}, @samp{CHANNELS}, @samp{FREQUENCY} and @samp{LENGTH} will
-taken from the file. You can still override them if you wish.
-If the stream could not be identified, the data format is assumed to
-be @samp{SIGNED}.
+data stream as @dfn{IFF-AIFF} or @dfn{IFF-AIFC}.  If so, the default values
+of @samp{BITS}, @samp{CHANNELS}, @samp{FREQUENCY} and @samp{LENGTH} will
+taken from the file.  You can still override them if you wish.  If the
+stream could not be identified, the data format is assumed to be
+@samp{SIGNED}.
 
 @cindex Distortion, while recording
 
- Both when reading and writing the sample rate will be converted
-on the fly to what the underlying hardware is configured to.
-Normally this is not a big problem when writing, but the quality
-when reading leaves quite a lot to wish for, since no low-pass
-filters are used.
+Both when reading and writing the sample rate will be converted on the fly
+to what the underlying hardware is configured to.  Normally this is not a
+big problem when writing, but the quality when reading leaves quite a lot
+to wish for, since no low-pass filters are used.
 
 Example 1:
 
@@ -714,8 +731,8 @@ uncompressed @dfn{IFF-AIFC}, 16 bit stereo at 44.1 kHz.
 @cindex Toccata
 @cindex Wavetools
 
-@sc{Ahi} uses a set of hardware drivers for each sound card. This means
-that it's easy to add support for new sound cards as they appear. At the
+@ahi uses a set of hardware drivers for each sound card.  This means
+that it's easy to add support for new sound cards as they appear.  At the
 time of writing, the following sound cards are supported:
 
 @itemize @bullet
@@ -753,12 +770,12 @@ Wavetools
 
 @cindex The Drivers
 
-The hardware drivers themself are located in the @file{DEVS:AHI} drawer, and
-are named as @file{<name>.audio}.
-They are actually libraries, in spite of being located under the @file{DEVS:}
-assign, and will be flushed out from memory when not in use and the system
-needs more RAM. Many of the drivers require additional files; see below.
-These extra files are not delivered with @sc{Ahi}.
+The hardware drivers themself are located in the @file{DEVS:AHI} drawer,
+and are named as @file{<name>.audio}.  They are actually libraries, in
+spite of being located under the @file{DEVS:} assign, and will be flushed
+out from memory when not in use and the system needs more RAM.  Many of the
+drivers require additional files; see below.  These extra files are not
+delivered with @ahi{}.
 
 @table @code
 
@@ -772,11 +789,11 @@ Requires @code{delfina.library}.
 
 @item paula.audio
 On startup, the file @file{ENV:CyberSound/SoundDrivers/14Bit_Calibration}
-is read and used for the 14 bit DAC calibration. 
+is read and used for the 14 bit DAC calibration.
 
 The 14 bit modes cannot be used for recording, but the 8 bit modes supports
-both generic parallel port samplers as well as both the Aura and Clarity sound
-cards.
+both generic parallel port samplers as well as both the Aura and Clarity
+sound cards.
 
 @cindex AHIpaulaFilterFreq variable
 
@@ -799,17 +816,17 @@ kHz, which is the limit of the hardware when using 15 kHz screen modes
 (PAL, NTSC, Euro36).  If the current screen mode is a VGA (31 kHz) mode,
 the driver allows frequencies up to 48 kHz.  Normally, the driver checks
 the current screen mode, and decides if the higher mixing frequencies
-should be available or not. By setting this variable, you can control
-that decision. If set to @samp{0}, the frequency will always be limited
-to 28 kHz and if set to @samp{1}, there will never be any limit. Example:
+should be available or not.  By setting this variable, you can control that
+decision.  If set to @samp{0}, the frequency will always be limited to 28
+kHz and if set to @samp{1}, there will never be any limit.  Example:
 
 @example
 SetEnv AHIpaulaSampleLimit 1
 Copy ENV:AHIpaulaSampleLimit ENVARC:
 @end example
 
-This will disable any screen mode checking, and will always allow up to
-48 kHz in the mode requesters.
+This will disable any screen mode checking, and will always allow up to 48
+kHz in the mode requesters.
 
 @example
 Delete ENV:AHIpaulaSampleLimit
@@ -863,9 +880,9 @@ Copy ENV:AHItoccataNoTask ENVARC:
 
 @cindex AHItoccataIrqSize variable
 
-@file{AHItoccataIrqSize} specifies the number of bytes transferred to
-the card each interrupt and defaults to @samp{512}. It must be one of
-@samp{32}, @samp{64}, @samp{128}, @samp{256} or @samp{512}. If you 
+@file{AHItoccataIrqSize} specifies the number of bytes transferred to the
+card each interrupt and defaults to @samp{512}.  It must be one of
+@samp{32}, @samp{64}, @samp{128}, @samp{256} or @samp{512}.  If you
 encounter problems with serial port hardware, you might want to set this
 variable to a lower value than the default.
 
@@ -883,11 +900,13 @@ Requires @code{dad_audio.device}.
 @subsection The Mode Descriptors
 
 @cindex The Mode Descriptors
+@cindex Audio mode database
+@cindex Database, audio modes
 
 The files in @file{DEVS:AudioModes} describes the available audio modes
-that you can chose from in the audio mode requester. All files located
-in this drawer will be scanned the first time @sc{Ahi} is used, and added
-to the internal mode database. 
+that you can chose from in the audio mode requester.  All files located in
+this drawer will be scanned the first time @ahi is used, and added to
+the internal mode database.
 
 @cindex Audio modes, overview
 
@@ -895,9 +914,13 @@ The following modes are available for most drivers:
 
 @table @samp
 
+@cindex Mono (audio mode)
+
 @item Mono
 Mono output, all sounds will be centered, and no surround sound is
 possible.
+
+@cindex Stereo (audio mode)
 
 @item Stereo
 Stereo output, but all sounds are either forces to the extreme left or
@@ -906,11 +929,19 @@ will probably use slightly more CPU power than the ``mono'' mode.  Since
 all sounds are forced to one of the extreme positions, stereo sounds will
 play with either the left or the right part muted.
 
+@cindex Stereo++ (audio mode)
+
 @item Stereo++
 Stereo output with free positioning of all sounds---an instrument can be
 placed anywhere between the two speakers, for example.  Unless the program
 only uses the extremes when positioning a sound, this mode will eat more
 CPU cycles than the ``stereo'' mode.
+
+@cindex Fast Mono (audio mode)
+@cindex Fast Stereo (audio mode)
+@cindex Fast Stereo++ (audio mode)
+@cindex Multiplication tables
+@cindex Tables, multiplication 
 
 @item  Fast mono
 @itemx Fast stereo
@@ -918,20 +949,27 @@ CPU cycles than the ``stereo'' mode.
 ``Fast'' modes take some shortcuts in order to reduce the CPU usage.  For 8
 bit samples, multiplication tables will be used, which speeds up mixing by
 magnitudes and still gives the same quality with the exception of volume
-levels---instead of 256 levels only 32 are available.  For 16 bit samples,
-the shortcuts are a bit more crude:  the volume of each sound will be
-rounded to a power of 2 before it's played.  This means that a 16 bit sound
-will only be played at volume levels of 100%, 50%, 25%, 12.5% etc.  If
-surround sounds are played, the normal (not ``fast'') mixing routines will
-be used.  You can use the preferences program (@pxref{Advanced settings})
-to disable surround sounds for ``fast'' modes.
+levels---instead of 256 levels only 32 are available.  The disadvantage of
+multiplication tables is that they require a fair amount of free RAM.  For
+16 bit samples, the shortcuts are a bit more crude:  the volume of each
+sound will be rounded to a power of 2 before it's played.  This means that
+a 16 bit sound will only be played at volume levels of 100%, 50%, 25%,
+12.5% etc.  If surround sounds are played, the normal (not ``fast'') mixing
+routines will be used.  You can use the preferences program
+(@pxref{Advanced settings}) to disable surround sounds for ``fast'' modes.
+
+@cindex HiFi Mono (audio mode)
+@cindex HiFi Stereo (audio mode)
+@cindex HiFi Stereo++ (audio mode)
+@cindex Linear interpolation
+@cindex Interpolation, linear
 
 @item  HiFi mono
 @itemx HiFi stereo
 @itemx HiFi stereo++
 ``HiFi'' modes use much better mixing algorithms than the other modes,
-using 32 bits internally and linear interpolation. They are also
-@emph{much} slower than the other modes. ``HiFi'' modes turns on master
+using 32 bits internally and linear interpolation.  They are also
+@emph{much} slower than the other modes.  ``HiFi'' modes turn on master
 volume with clipping automatically (@pxref{Advanced settings}).
 
 @end table
@@ -984,34 +1022,33 @@ The author can be reached at the following addresses:
 @cindex The Man
 @cindex Nerd, definition of
 
-Martin Blom was born 1974 in a town in Sweden called Jönköping. He had a happy
-childhood, lots of good friends, and a great family. He did his homework and went
-to church every Sunday.
+Martin Blom was born 1974 in a town in Sweden called Jönköping.  He had a
+happy childhood, lots of good friends, and a great family.  He did his
+homework and went to church every Sunday.
 
 @cindex Jesus Christ
 
-But then, one cold, dark Christmas Eve in the year of our Lord 1986, everything
-went wrong. This was the day when @emph{it} entered his life.
-At once, there were fights among the brothers. They all wanted to use
-@emph{it}. Martin started to avoid playing with kids that
-didn't share his passion for @emph{it}. The school work suffered. Other
-interests suffered. @emph{It} was the Commodore 64 home computer, and it would
+But then, one cold, dark Christmas Eve in the year of our Lord 1986,
+everything went wrong.  This was the day when @emph{it} entered his life.
+At once, there were fights among the brothers.  They all wanted to use
+@emph{it}.  Martin started to avoid playing with kids that didn't share his
+passion for @emph{it}.  The school work suffered.  Other interests
+suffered.  @emph{It} was the Commodore 64 home computer, and it would
 forever change his life.
 
 Today, more than ten years after the tragedy, things are worse than ever.
-He is studying @dfn{Computer Science and Engineering} at
-@dfn{Linköping Institute of Technology}, surrounded every
-day by other computer nerds.
+He is studying @dfn{Computer Science and Engineering} at @dfn{Linköping
+Institute of Technology}, surrounded every day by other computer nerds.
 
 @cindex Modules on a C64
 
-Martin has spent loads of money on computers over the years: Amiga 500, Amiga
-4000/040, Commodore 128D, Commodore 64 (in order of appearance), modem, monitors,
-disks, mice etc. Interesting enough, no sound card. He did, however, build a
-sound card of his own for the Commodore 64, and he likes to mention that now and
-then (you see, this was one of the few hardware projects that actually worked!).
-4 channels, 8 bit samples. He even wrote a module player for the good old 64.
-And it had quadrascopes.
+Martin has spent loads of money on computers over the years:  Amiga 500,
+Amiga 4000/040, Commodore 128D, Commodore 64 (in order of appearance),
+modem, monitors, disks, mice etc.  Interesting enough, no sound card.  He
+did, however, build a sound card of his own for the Commodore 64, and he
+likes to mention that now and then (you see, this was one of the few
+hardware projects that actually worked!).  4 channels, 8 bit samples.  He
+even wrote a module player for the good old 64.  And it had quadrascopes.
 
 
 
@@ -1025,9 +1062,9 @@ And it had quadrascopes.
 
 @cindex The Myth
 
-Some people actually seem to believe that Martin is a good programmer. They couldn't
-be more wrong. He is lazy, has no patience, he is a slow thinker and he doesn't like
-anything he @emph{has} to do.
+Some people actually seem to believe that Martin is a good programmer.
+They couldn't be more wrong.  He is lazy, has no patience, he is a slow
+thinker and he doesn't like anything he @emph{has} to do.
 
 Martin used to say
 
@@ -1045,8 +1082,8 @@ Martin used to say
 @end itemize
 
 
-And guess what? He tried demos. He tried utilities. He tried
-intros. He wrote a door for /X. And he traded warez.
+And guess what?  He tried demos.  He tried utilities.  He tried intros.  He
+wrote a door for /X.  And he traded warez.
 
 
 @c ***********************************************************************
@@ -1060,27 +1097,27 @@ intros. He wrote a door for /X. And he traded warez.
 @cindex The Concept
 @cindex Fame
 
-What do you do if you don't have the patience to write applications,
-if you only write moderate demos, are tired of utilities, hate
-BBS doors, are totally fed up with playing games and have decided
-to get legal and stop pirating software? Simple. Try a new concept!
+What do you do if you don't have the patience to write applications, if you
+only write moderate demos, are tired of utilities, hate BBS doors, are
+totally fed up with playing games and have decided to get legal and stop
+pirating software?  Simple.  Try a new concept!
 
-Take a deep breath. Close your eyes. Think of one thing your computer 
-lacks. Think of one of the things that makes your favorite toy feel
-outdated. Think of something that nobody has (successfully) tried before.
+Take a deep breath.  Close your eyes.  Think of one thing your computer
+lacks.  Think of one of the things that makes your favorite toy feel
+outdated.  Think of something that nobody has (successfully) tried before.
 Then write the software, and release it as Freeware.
 
 In Martins case, that something was hardware independent audio.
 
-Come on, admit it! It's brilliant. It doesn't matter if you are a good
-programmer. It doesn't matter if it takes 3 years to get to a half-finished
-product. It doesn't matter if you give it the most unimaginative name in the
-world---you can even use a TLA @footnote{Three Letter Acronym}. Nobody is
-going to say your software sucks, because nobody can say he has done better
-himself. Nobody is going to complain if you're slow on releasing bug fixes
-and updates, because the software is free. And nobody is going to be angry
-with you if you stop developing the software---because it sucked in the
-first place, remember?
+Come on, admit it!  It's brilliant.  It doesn't matter if you are a good
+programmer.  It doesn't matter if it takes 3 years to get to a
+half-finished product.  It doesn't matter if you give it the most
+unimaginative name in the world---you can even use a TLA @footnote{Three
+Letter Acronym}.  Nobody is going to say your software sucks, because
+nobody can say he has done better himself.  Nobody is going to complain if
+you're slow on releasing bug fixes and updates, because the software is
+free.  And nobody is going to be angry with you if you stop developing the
+software---because it sucked in the first place, remember?
 
 This concept won't make you rich, but are rich people really happier?
 
@@ -1105,8 +1142,9 @@ For the catalog translations.
 
 @item Daniel Arthursson and Johan Nyblom
 For making it possible to write the first driver for a sound card, the
-@dfn{Wavetools} card. I'm sure @sc{Ahi} would not have been accepted as
-quick as it was without this driver. Funny that it didn't even work@enddots{}
+@dfn{Wavetools} card.  I'm sure @ahi would not have been accepted as
+quick as it was without this driver.  Funny that it didn't even
+work@enddots{}
 
 @item Christian Buchner
 For the calibrated 14 bit routines for Paula.
@@ -1115,14 +1153,14 @@ For the calibrated 14 bit routines for Paula.
 For the compiler and all the updates.
 
 @item Jyrki Petsalo and Teemu Suikki
-For the Delfina driver, and for supporting @sc{Ahi} in the early days.
-And of course, for the sound card!
+For the Delfina driver, and for supporting @ahi in the early days.  And
+of course, for the sound card!
 
 @item Pauli Porkka
-For active support and promotion of @sc{Ahi} from the beginning.
+For active support and promotion of @ahi from the beginning.
 
 @item All the rest
-Many, many other have helped me, sent suggestions etc. I owe you a lot.
+Many, many other have helped me, sent suggestions etc.  I owe you a lot.
 
 @end table
 
@@ -1149,7 +1187,7 @@ Ondrej Zima,
 me, myself and I@enddots{}
 
 @menu
-* Contributors::                Who has contributed to the @sc{Ahi} project?
+* Contributors::                Who has contributed to the @ahi project?
 @end menu
 
 
@@ -1163,7 +1201,7 @@ me, myself and I@enddots{}
 
 @cindex Contributors
 
-The following people has contributed to the @sc{Ahi} project with code:
+The following people has contributed to the @ahi project with code:
 
 @table @asis
 
@@ -1177,8 +1215,8 @@ The latest Wavetools driver.
 The first version of the Toccata driver.
 
 @item Rüdiger Sopp
-The first version of the preferences program. Too bad things didn't
-work out as planned.
+The first version of the preferences program.  Too bad things didn't work
+out as planned.
 
 @item Teemu Suikki @email{tsuikki@@lut.fi}
 The Delfina driver.
