@@ -11,12 +11,19 @@ struct DriverBase
     struct Library  library;
     UWORD           pad;
     BPTR            seglist;
+#ifndef DRIVER_NEED_GLOBAL_EXECBASE
     struct Library* execbase;
+#endif
     struct Library* intuitionbase;
     struct Library* utilitybase;
 };
 
+#ifndef DRIVER_NEED_GLOBAL_EXECBASE
 #define SysBase       ((struct ExecBase*)      AHIsubBase->execbase)
+#else
+struct ExecBase* SysBase;
+#endif
+
 #define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)
 #define UtilityBase   ((struct UtilityBase*)   AHIsubBase->utilitybase)
 
