@@ -1,5 +1,7 @@
 2003-04-12  Martin Blom  <martin@blom.org>
 
+	* ahi.doc: Don't mention io_Actual for CMD_STOP/CMD_START.
+
 	* ahi.device: gw_IndexToFrequency in the MorphOS version now uses
 	d0/a1 for arguments instead of the stack. [Patch from Harry
 	Sintonen]
