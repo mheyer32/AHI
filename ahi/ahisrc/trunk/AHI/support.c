@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.3  2002/01/06 16:16:03  martin
+ * Removed some warnings.
+ *
  * Revision 5.2  2001/12/14 12:25:42  martin
  * Fixed test sound channel bug, added a play button.
  *
@@ -153,7 +156,7 @@ static struct DiskObject projIcon = {
   },  
   WBPROJECT,                      /* Icon Type */
   deftoolname,                    /* Default Tool */
-  toolTypes,                      /* Tool Type Array */
+  (STRPTR*) toolTypes,            /* Tool Type Array */
   NO_ICON_POSITION,               /* Current X */
   NO_ICON_POSITION,               /* Current Y */
   NULL,                           /* Drawer Structure */
@@ -288,7 +291,8 @@ struct List *GetUnits(char *name) {
 
               if(global != NULL) {
                 CopyMem(global->sp_Data, &globalprefs, 
-                    min( sizeof(struct AHIGlobalPrefs), global->sp_Size ));
+                    min( sizeof(struct AHIGlobalPrefs),
+			 (size_t) global->sp_Size ));
               }
 
               while(ci) {
@@ -299,7 +303,8 @@ struct List *GetUnits(char *name) {
                 if(u == NULL)
                   break;
                 CopyMem(p, &u->prefs, 
-                    min( sizeof(struct AHIUnitPrefs), ci->ci_Size ));
+                    min( sizeof(struct AHIUnitPrefs),
+			 (size_t) ci->ci_Size ));
 
                 FillUnitName(u);
                 
