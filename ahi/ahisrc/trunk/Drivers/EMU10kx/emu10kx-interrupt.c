@@ -168,7 +168,6 @@ PlaybackInterrupt( struct EMU10kxData* dd )
   if( dd->mix_buffer != NULL && dd->current_buffer != NULL )
   {
     BOOL   skip_mix;
-    BOOL   flush_caches;
     WORD*  src;
     WORD*  dst;
     size_t skip;
@@ -176,7 +175,6 @@ PlaybackInterrupt( struct EMU10kxData* dd )
     int    i;
 
     skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc, (Object*) AudioCtrl, 0 );
-    flush_caches = pci_bus() & ( GrexA1200Bus | GrexA4000Bus );
     
     CallHookA( AudioCtrl->ahiac_PlayerFunc, (Object*) AudioCtrl, NULL );
 
@@ -219,7 +217,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 
     if( dd->current_position == AudioCtrl->ahiac_MaxBuffSamples * 2 )
     {
-      if( flush_caches )
+      if( EMU10kxBase->flush_caches )
       {
 	CacheClearE( dd->current_buffer,
 		     (ULONG) dst - (ULONG) dd->current_buffer,
@@ -229,7 +227,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
       dst = dd->voice.mem.addr;
       dd->current_position = 0;
 
-      if( flush_caches )
+      if( EMU10kxBase->flush_caches )
       {
 	// Adjust for cache-clearing below
 	dd->current_buffer = dst;
@@ -258,7 +256,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
       }
     }
 
-    if( flush_caches )
+    if( EMU10kxBase->flush_caches )
     {
       CacheClearE( dd->current_buffer,
 		   (ULONG) dst - (ULONG) dd->current_buffer,
@@ -296,11 +294,8 @@ RecordInterrupt( struct EMU10kxData* dd )
 
   int   i   = 0;
   WORD* ptr = dd->current_record_buffer;
-  BOOL  flush_caches;
   
-  flush_caches = pci_bus() & ( GrexA1200Bus | GrexA4000Bus );
-  
-  if( flush_caches )
+  if( EMU10kxBase->flush_caches )
   {
     // This is used to invalidate the cache
 
@@ -317,7 +312,7 @@ RecordInterrupt( struct EMU10kxData* dd )
     ++ptr;
   }
 
-  if( flush_caches )
+  if( EMU10kxBase->flush_caches )
   {
     // This is used to make sure the call above doesn't pushes dirty data
     // the next time it's called. God help us if dd->current_record_buffer
