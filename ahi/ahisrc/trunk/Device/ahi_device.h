@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/05/03 19:59:56  lcs
+* Fixed a race condition (happened with small CMD_WRITE's).
+*
 * Revision 4.2  1997/04/07 13:12:35  lcs
 * Increased playerfreq to 100 Hz again
 *
@@ -101,10 +104,17 @@ struct Extras
 	LONG	Count;
 };
 
+/* Voice->Flags definitions */
+
+/* Set by the interrupt when a new sound has been started */
+#define VB_STARTED		0
+#define VF_STARTED		(1<<0)
+
 struct Voice
 {
 	UWORD			 NextSound;
-	UBYTE			 Pad[2];
+	UBYTE			 Flags;
+	UBYTE			 Pad;
 	Fixed			 NextVolume;
 	Fixed			 NextPan;
 	ULONG			 NextFrequency;
