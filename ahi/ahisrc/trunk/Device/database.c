@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/06/28 22:00:37  lcs
+* Roze the database semaphore pri from 0 to 20.
+*
 * Revision 4.2  1997/04/14 01:50:39  lcs
 * AHIST_INPUT still doesn't work...
 *
@@ -102,6 +105,7 @@ __asm __saveds struct AHI_AudioDatabase *LockDatabaseWrite(void)
     {
       NewList((struct List *)&audiodb->ahidb_AudioModes);
       audiodb->ahidb_Semaphore.ss_Link.ln_Name=audiodb->ahidb_Name;
+      audiodb->ahidb_Semaphore.ss_Link.ln_Pri=20;
       strcpy(audiodb->ahidb_Semaphore.ss_Link.ln_Name,ADB_NAME);
       AddSemaphore((struct SignalSemaphore *) audiodb);
       ObtainSemaphore((struct SignalSemaphore *) audiodb);
