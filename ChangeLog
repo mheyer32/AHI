@@ -1,3 +1,15 @@
+2004-07-25  Martin Blom  <martin@blom.org>
+
+	* Released AHI preferences 5.13.
+
+	* Released ahi.device 5.48.
+
+	* AHI preferences: Added selection of volume scaling mode. And
+	there was much rejoicing.
+
+	* ahi.device: Implemented a couple of alternatives to that
+	horrible "safe scaling" thing. [Daniel Westerberg, Hubert Maier]
+
 2004-07-07  Martin Blom  <martin@blom.org>
 
 	* emu10kx.audio: AHIDB_MaxRecordSamples returned twice the number

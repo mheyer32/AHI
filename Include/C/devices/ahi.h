@@ -363,7 +363,7 @@ struct AHIEffChannelInfo
 struct AHIUnitPrefs
 {
 	UBYTE	ahiup_Unit;
-        UBYTE	ahiup_Pad;
+        UBYTE	ahiup_ScaleMode;			/* See below (V6) */
         UWORD	ahiup_Channels;
         ULONG	ahiup_AudioMode;
         ULONG	ahiup_Frequency;
@@ -373,6 +373,13 @@ struct AHIUnitPrefs
         ULONG	ahiup_Input;
         ULONG	ahiup_Output;
 };
+
+ /* Scale modes */
+#define AHI_SCALE_FIXED_SAFE	(0U)			/* x=y*1/max(ch)	*/
+#define AHI_SCALE_DYNAMIC_SAFE	(1U)			/* x=y*1/ch		*/
+#define AHI_SCALE_FIXED_0_DB	(2U)			/* x=y			*/
+#define AHI_SCALE_FIXED_3_DB	(3U)			/* x=y*1/sqrt(2)	*/
+#define AHI_SCALE_FIXED_6_DB	(4U)			/* x=y*1/2		*/
 
 struct AHIGlobalPrefs
 {

@@ -480,8 +480,6 @@ InitUnit ( ULONG unit,
             v++;
           }
 
-	  iounit->ChannelsInUse = 0;
-          
           replyport = CreateMsgPort();
 
           if( replyport != NULL )
@@ -681,6 +679,7 @@ ReadConfig ( struct AHIDevUnit *iounit,
                   iounit->OutputVolume    = unitprefs->ahiup_OutputVolume;
                   iounit->Input           = unitprefs->ahiup_Input;
                   iounit->Output          = unitprefs->ahiup_Output;
+		  iounit->ScaleMode	  = unitprefs->ahiup_ScaleMode;
 
 		  EndianSwap( sizeof (ULONG), &iounit->AudioMode );
 		  EndianSwap( sizeof (ULONG), &iounit->Frequency );
