@@ -124,22 +124,32 @@ ULONG _AHIsub_AllocAudio(
       break;
   }
 
-  if(!(dd->fs_FileReq = AllocAslRequestTags(ASL_FileRequest,
-      ASLFR_InitialFile,  (ULONG) ext,
-      ASLFR_DoSaveMode,   TRUE,
-      ASLFR_RejectIcons,  TRUE,
-      ASLFR_TitleText,    (ULONG) LibName,
-      TAG_DONE)))
   {
-    return AHISF_ERROR;
-  }
+    struct TagItem playtags[] =
+    {
+      { ASLFR_InitialFile,  (ULONG) ext     },
+      { ASLFR_DoSaveMode,   TRUE            },
+      { ASLFR_RejectIcons,  TRUE            },
+      { ASLFR_TitleText,    (ULONG) LibName },
+      { TAG_DONE,           0               }
+    };
+  
+    struct TagItem rectags[] =
+    {
+      { ASLFR_RejectIcons,  TRUE                            },
+      { ASLFR_TitleText,    (ULONG) "Select a sound sample" },
+      { TAG_DONE,           0                               }
+    };
+    
+    if(!(dd->fs_FileReq = AllocAslRequest(ASL_FileRequest, playtags)))
+    {
+      return AHISF_ERROR;
+    }
 
-  if(!(dd->fs_RecFileReq = AllocAslRequestTags(ASL_FileRequest,
-      ASLFR_RejectIcons,  TRUE,
-      ASLFR_TitleText,    (ULONG) "Select a sound sample",
-      TAG_DONE)))
-  {
-    return AHISF_ERROR;
+    if(!(dd->fs_RecFileReq = AllocAslRequest(ASL_FileRequest, rectags)))
+    {
+      return AHISF_ERROR;
+    }
   }
 
   return AHISF_KNOWHIFI|AHISF_KNOWSTEREO|AHISF_CANRECORD|AHISF_MIXING|AHISF_TIMING;
@@ -275,7 +285,7 @@ ULONG _AHIsub_Start(
       }
     }
 
-    if(AslRequestTags(dd->fs_FileReq,TAG_DONE))
+    if(AslRequest(dd->fs_FileReq,NULL))
     {
       struct TagItem proctags[] =
       {
@@ -330,7 +340,7 @@ ULONG _AHIsub_Start(
       return AHIE_NOMEM;
     }
 
-    if(AslRequestTags(dd->fs_RecFileReq,TAG_DONE))
+    if(AslRequest(dd->fs_RecFileReq,NULL))
     {
       struct TagItem proctags[] =
       {
