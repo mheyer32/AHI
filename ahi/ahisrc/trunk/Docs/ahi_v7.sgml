@@ -254,8 +254,9 @@ operation will be used, not the hardware driver programmer.</para>
       <para>Some ahi; BOOPSI attributes return an array of values from
 OM_GET. In this case, you have to lock the object before quering for the
 attribute in question. When you have inspected the array and perhaps
-copied it to some place safe, you are free to unlock the object. All
-&ahi; objects implement the <methodname>AHIM_Lock</methodname> and
+copied it to some place safe, you are free to unlock the object. This
+also applies to strings! All &ahi; objects implement the
+<methodname>AHIM_Lock</methodname> and
 <methodname>AHIM_Unlock</methodname> methods that must be used for this
 purpose.</para>
 
