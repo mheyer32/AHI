@@ -1,5 +1,9 @@
 /* $Id$
  * $Log$
+ * Revision 4.4  1997/06/24 21:49:31  lcs
+ * Fixed an enforcer hit, and a few more potential ones (problem caused by
+ * having a 0-level slider (min 0, max -1...).
+ *
  * Revision 4.3  1997/05/06 15:15:46  lcs
  * Can now which pages with the keyboard.
  * Fixed a bug in the mode properties code.
@@ -458,25 +462,25 @@ BOOL BuildGUI(char *screenname)
       Child, ColGroup(3),
         GroupFrameT(msgOptions),
         Child, MUITFreq = SpecialButton((STRPTR)msgOptFrequency),
-        Child, MUIFreq = SpecialSlider(0,state.Frequencies-1,state.FreqSelected),
+        Child, MUIFreq = SpecialSlider(0,max(state.Frequencies-1,0),state.FreqSelected),
         Child, MUILFreq = SpecialLabel(getFreq()),
         Child, MUITChannels = SpecialButton((STRPTR)msgOptChannels),
         Child, MUIChannels = SpecialSlider(1,state.Channels,state.ChannelsSelected),
         Child, MUILChannels = SpecialLabel(getChannels()),
         Child, MUITOutvol = SpecialButton((STRPTR)msgOptVolume),
-        Child, MUIOutvol = SpecialSlider(0,state.OutVols-1,state.OutVolSelected),
+        Child, MUIOutvol = SpecialSlider(0,max(state.OutVols-1,0),state.OutVolSelected),
         Child, MUILOutvol = SpecialLabel(getOutVol()),
         Child, MUITMonvol = SpecialButton((STRPTR)msgOptMonitor),
-        Child, MUIMonvol = SpecialSlider(0,state.MonVols-1,state.MonVolSelected),
+        Child, MUIMonvol = SpecialSlider(0,max(state.MonVols-1,1),state.MonVolSelected),
         Child, MUILMonvol = SpecialLabel(getMonVol()),
         Child, MUITGain = SpecialButton((STRPTR)msgOptGain),
-        Child, MUIGain = SpecialSlider(0,state.Gains-1,state.GainSelected),
+        Child, MUIGain = SpecialSlider(0,max(state.Gains-1,0),state.GainSelected),
         Child, MUILGain = SpecialLabel(getGain()),
         Child, MUITInput = SpecialButton((STRPTR)msgOptInput),
-        Child, MUIInput = SpecialSlider(0,state.Inputs-1,state.InputSelected),
+        Child, MUIInput = SpecialSlider(0,max(state.Inputs-1,0),state.InputSelected),
         Child, MUILInput = SpecialLabel(getInput()),
         Child, MUITOutput = SpecialButton((STRPTR)msgOptOutput),
-        Child, MUIOutput = SpecialSlider(0,state.Outputs-1,state.OutputSelected),
+        Child, MUIOutput = SpecialSlider(0,max(state.Outputs-1,0),state.OutputSelected),
         Child, MUILOutput = SpecialLabel(getOutput()),
       End,
       Child, HVSpace,
