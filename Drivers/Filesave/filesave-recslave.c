@@ -5,6 +5,7 @@
 #include <datatypes/soundclass.h>
 #include <devices/ahi.h>
 #include <libraries/ahi_sub.h>
+#include <libraries/asl.h>
 
 #include <proto/datatypes.h>
 #include <proto/dos.h>
@@ -52,15 +53,23 @@ void RecSlaveEntry(void)
 
   if(DataTypesBase)
   {
-    if (!(o = NewDTObject (dd->fs_RecFileReq->fr_File,
-        DTA_GroupID,GID_SOUND,
-        TAG_DONE)))
+    struct TagItem newtags[] =
+    {
+      { DTA_GroupID, GID_SOUND },
+      { TAG_DONE,    0         }
+    };
+    
+    struct TagItem attrtags[] =
+    {
+      { SDTA_Sample,       (ULONG) &samples },
+      { SDTA_SampleLength, (ULONG) &length  },
+      { TAG_DONE,          0                }
+    };
+    
+    if (!(o = NewDTObjectA (dd->fs_RecFileReq->fr_File, newtags)))
       goto quit;
 
-    GetDTAttrs(o,
-      SDTA_Sample,      (ULONG) &samples,
-      SDTA_SampleLength,(ULONG) &length,
-      TAG_DONE);
+    GetDTAttrsA(o, attrtags );
   }
   else // datatypes.library not open. Open the selected file as raw 8 bit signed instead.
   {

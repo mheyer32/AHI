@@ -1,6 +1,10 @@
 
 #include <config.h>
 
+#include <dos/dos.h>
+#include <graphics/gfxbase.h>
+#include <libraries/asl.h>
+
 #include "library.h"
 #include "DriverData.h"
 

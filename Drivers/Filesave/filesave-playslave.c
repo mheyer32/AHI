@@ -2,15 +2,20 @@
 #include <config.h>
 
 #include <libraries/ahi_sub.h>
+#include <libraries/asl.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
+
+#include <string.h>
 
 #include "DriverData.h"
 #include "FileFormats.h"
 #include "library.h"
 
 #define dd ((struct FilesaveData*) AudioCtrl->ahiac_DriverData)
+
+#define abs(x) ((x)<0?(-x):(x))
 
 void ulong2extended (ULONG in, extended *ex);
 
@@ -86,7 +91,7 @@ void SlaveEntry(void)
   struct EIGHTSVXheader EIGHTSVXheader = // All NULLs will be filled later.
   { 
     ID_FORM, 0, ID_8SVX,
-    ID_VHDR, sizeof(Voice8Header),
+    ID_VHDR, __htobe_long(sizeof(Voice8Header)),
     {
       0,
       0,
@@ -94,7 +99,7 @@ void SlaveEntry(void)
       0,
       1,
       sCmpNone,
-      0x10000
+      __htobe_long(0x10000)
     },
     ID_BODY, 0
   };
@@ -102,11 +107,11 @@ void SlaveEntry(void)
   struct AIFFheader AIFFheader = // All NULLs will be filled later.
   { 
     ID_FORM, 0, ID_AIFF,
-    ID_COMM, sizeof(CommonChunk),
+    ID_COMM, __htobe_long(sizeof(CommonChunk)),
     {
       0,
       0,
-      16,
+      __htobe_short(16),
       {
         0, { 0, 0 }
       }
@@ -121,19 +126,19 @@ void SlaveEntry(void)
   struct AIFCheader AIFCheader = // All NULLs will be filled later.
   { 
     ID_FORM, 0, ID_AIFC,
-    ID_FVER, sizeof(FormatVersionHeader), 
+    ID_FVER, __htobe_long(sizeof(FormatVersionHeader)),
     {
-      AIFCVersion1
+      __htobe_long(AIFCVersion1)
     },
-    ID_COMM, sizeof(ExtCommonChunk),
+    ID_COMM, __htobe_long(sizeof(ExtCommonChunk)),
     {
       0,
       0,
-      16,
+      __htobe_short(16),
       {
         0, { 0, 0 }
       },
-      NO_COMPRESSION,
+      __htobe_long(NO_COMPRESSION),
       { sizeof("not compressed") - 1,
 	'n','o','t',' ','c','o','m','p','r','e','s','s','e','d' }
     },
@@ -146,10 +151,10 @@ void SlaveEntry(void)
 
   struct STUDIO16FILE S16header = // All NULLs will be filled later.
   {
-    S16FID,
+    __htobe_long(S16FID),
     0,
-    S16FINIT,
-    S16_VOL_0,
+    __htobe_long(S16FINIT),
+    __htobe_short(S16_VOL_0),
     0,
     0,
     0,
@@ -178,16 +183,6 @@ void SlaveEntry(void)
       __htole_short( 16 )
     },
     ID_data, 0
-  };
-
-  struct EasyStruct req =
-  {
-    sizeof (struct EasyStruct),
-    0,
-    (STRPTR) LibName,
-    "Rendering finished.\nTo futher improve the quality of the sample,\n"
-    "you can raise the volume to %ld%% and render again.",
-    "OK",
   };
 
   BPTR lock = 0,cd = 0,file = 0, file2 = 0;
@@ -363,7 +358,7 @@ void SlaveEntry(void)
 
           for(i = 0; i < samples; i++)
           {
-            *dest++ = *source++ >> 16;
+            *dest++ = htobe_short( *source++ >> 16 );
           }
         }
         else
@@ -373,7 +368,7 @@ void SlaveEntry(void)
 
           for(i = 0; i < samples; i++)
           {
-            *dest++ = *source++;
+            *dest++ = htobe_short( *source++ );
           }
         }
         length = samples*2;
@@ -389,7 +384,7 @@ void SlaveEntry(void)
 
             for(i = 0; i < samples; i++)
             {
-              *dest++ = *source++;
+              *dest++ = htobe_short( *source++ );
             }
 
             break;
@@ -403,8 +398,8 @@ void SlaveEntry(void)
 
             for(i = 0; i < samples; i++)
             {
-              *dest1++ = *source++;
-              *dest2++ = *source++;
+              *dest1++ = htobe_short( *source++ );
+              *dest2++ = htobe_short( *source++ );
             }
 
             break;
@@ -417,7 +412,7 @@ void SlaveEntry(void)
 
             for(i = 0; i < samples; i++)
             {
-              *dest++ = *source++ >> 16;
+              *dest++ = htobe_short( *source++ >> 16 );
             }
 
             break;
@@ -431,8 +426,8 @@ void SlaveEntry(void)
 
             for(i = 0; i < samples; i++)
             {
-              *dest1++ = *source++ >> 16;
-              *dest2++ = *source++ >> 16;
+              *dest1++ = htobe_short( *source++ >> 16 );
+              *dest2++ = htobe_short( *source++ >> 16 );
             }
 
             break;
@@ -482,10 +477,10 @@ void SlaveEntry(void)
   switch(dd->fs_Format)
   {
     case FORMAT_8SVX:
-      EIGHTSVXheader.FORMsize = sizeof(EIGHTSVXheader)-8+bytesWritten;
-      EIGHTSVXheader.VHDRchunk.oneShotHiSamples = samplesWritten;
-      EIGHTSVXheader.VHDRchunk.samplesPerSec = AudioCtrl->ahiac_MixFreq;
-      EIGHTSVXheader.BODYsize = bytesWritten;
+      EIGHTSVXheader.FORMsize = htobe_long(sizeof(EIGHTSVXheader)-8+bytesWritten);
+      EIGHTSVXheader.VHDRchunk.oneShotHiSamples = htobe_long(samplesWritten);
+      EIGHTSVXheader.VHDRchunk.samplesPerSec = htobe_short(AudioCtrl->ahiac_MixFreq);
+      EIGHTSVXheader.BODYsize = htobe_long(bytesWritten);
       if(bytesWritten & 1)
         FPutC(file,'\0');   // Pad to even
       Seek(file,0,OFFSET_BEGINNING);
@@ -493,44 +488,44 @@ void SlaveEntry(void)
       break;
 
     case FORMAT_AIFF:
-      AIFFheader.FORMsize = sizeof(AIFFheader)-8+bytesWritten;
-      AIFFheader.COMMchunk.numChannels = (AudioCtrl->ahiac_Flags & AHIACF_STEREO ? 2 : 1);
-      AIFFheader.COMMchunk.numSampleFrames = samplesWritten;
+      AIFFheader.FORMsize = htobe_long(sizeof(AIFFheader)-8+bytesWritten);
+      AIFFheader.COMMchunk.numChannels = htobe_short((AudioCtrl->ahiac_Flags & AHIACF_STEREO ? 2 : 1));
+      AIFFheader.COMMchunk.numSampleFrames = htobe_long(samplesWritten);
       ulong2extended(AudioCtrl->ahiac_MixFreq,&AIFFheader.COMMchunk.sampleRate);
-      AIFFheader.SSNDsize = sizeof(SampledSoundHeader)+bytesWritten;
+      AIFFheader.SSNDsize = htobe_long(sizeof(SampledSoundHeader)+bytesWritten);
       Seek(file,0,OFFSET_BEGINNING);
       Write(file,&AIFFheader,sizeof AIFFheader);
       break;
 
     case FORMAT_AIFC:
-      AIFCheader.FORMsize = sizeof(AIFCheader)-8+bytesWritten;
-      AIFCheader.COMMchunk.numChannels = (AudioCtrl->ahiac_Flags & AHIACF_STEREO ? 2 : 1);
-      AIFCheader.COMMchunk.numSampleFrames = samplesWritten;
+      AIFCheader.FORMsize = htobe_long(sizeof(AIFCheader)-8+bytesWritten);
+      AIFCheader.COMMchunk.numChannels = htobe_short((AudioCtrl->ahiac_Flags & AHIACF_STEREO ? 2 : 1));
+      AIFCheader.COMMchunk.numSampleFrames = htobe_long(samplesWritten);
       ulong2extended(AudioCtrl->ahiac_MixFreq,&AIFCheader.COMMchunk.sampleRate);
-      AIFCheader.SSNDsize = sizeof(SampledSoundHeader)+bytesWritten;
+      AIFCheader.SSNDsize = htobe_long(sizeof(SampledSoundHeader)+bytesWritten);
       Seek(file,0,OFFSET_BEGINNING);
       Write(file,&AIFCheader,sizeof AIFCheader);
       break;
 
     case FORMAT_S16:
-      S16header.S16F_RATE = AudioCtrl->ahiac_MixFreq;
+      S16header.S16F_RATE = htobe_long(AudioCtrl->ahiac_MixFreq);
       S16header.S16F_SAMPLES0 =
-      S16header.S16F_SAMPLES1 = samplesWritten;
-      S16header.S16F_SAMPLES2 = samplesWritten - 1;
+      S16header.S16F_SAMPLES1 = htobe_long(samplesWritten);
+      S16header.S16F_SAMPLES2 = htobe_long(samplesWritten - 1);
       if (file2 == 0)
       {
-        S16header.S16F_PAN = S16_PAN_MID;
+        S16header.S16F_PAN = htobe_long(S16_PAN_MID);
       }
       else
       {
-        S16header.S16F_PAN = S16_PAN_LEFT;
+        S16header.S16F_PAN = htobe_long(S16_PAN_LEFT);
       }
 
       Seek(file, 0, OFFSET_BEGINNING);
       Write(file, &S16header, sizeof S16header);
       if(file2 != 0)
       {
-        S16header.S16F_PAN = S16_PAN_RIGHT;
+        S16header.S16F_PAN = htobe_long(S16_PAN_RIGHT);
         Seek(file2,0,OFFSET_BEGINNING);
         Write(file2, &S16header, sizeof S16header);
       }
@@ -561,7 +556,9 @@ void SlaveEntry(void)
 
   if(maxVolume != 0)
   {
-    EasyRequest(NULL, &req, NULL, 3276800/maxVolume );
+    Req("Rendering finished.\nTo futher improve the quality of the sample,\n"
+	"you can raise the volume to %ld%% and render again.",
+	3276800/maxVolume );
   }
 
 quit:
@@ -613,4 +610,8 @@ void ulong2extended (ULONG in, extended *ex)
     in <<= 1;
   }
   ex->mantissa[0] = in;
+
+  ex->exponent    = htobe_long( ex->exponent );
+  ex->mantissa[0] = htobe_long( ex->mantissa[0] );
+  ex->mantissa[1] = htobe_long( ex->mantissa[1] );
 }

@@ -3,16 +3,39 @@
 
 #include <exec/types.h>
 
-#define NO_PROTOS
-#define NO_SAS_PRAGMAS
-#include <iffp/8svx.h>
-#undef NO_PROTOS
-#undef NO_SAS_PRAGMAS
 
-#include "Studio16file.h"
+/******************************************************************************
+** 8SVX defs ******************************************************************
+******************************************************************************/
 
-/* AIFF, AIFC and 8SVX defs
-   AIFF and AIFC defines was taken from Olaf `Olsen' Barthel's AIFF DataType. */
+/* From Jerry Morrison and Steve Hayes, Electronic Arts */
+
+#define ID_8SVX      MAKE_ID('8', 'S', 'V', 'X')
+#define ID_VHDR      MAKE_ID('V', 'H', 'D', 'R')
+#define ID_BODY      MAKE_ID('B', 'O', 'D', 'Y')
+
+/* sCompression: Choice of compression algorithm applied to the samples. */
+#define sCmpNone       0	/* not compressed */
+#define sCmpFibDelta   1	/* Fibonacci-delta encoding (Appendix C) */
+				/* Could be more kinds in the future. */
+typedef struct {
+    ULONG oneShotHiSamples,	/* # samples in the high octave 1-shot part */
+          repeatHiSamples,	/* # samples in the high octave repeat part */
+          samplesPerHiCycle;	/* # samples/cycle in high octave, else 0 */
+    UWORD samplesPerSec;	/* data sampling rate */
+    UBYTE ctOctave,		/* # of octaves of waveforms */
+          sCompression;		/* data compression technique used */
+    Fixed volume;		/* playback nominal volume from 0 to Unity
+				 * (full volume). Map this value into
+				 * the output hardware's dynamic range.
+				 */
+    } Voice8Header;
+
+/******************************************************************************
+** AIFF and AIFC defs *********************************************************
+******************************************************************************/
+
+/* AIFF and AIFC defines were taken from Olaf `Olsen' Barthel's AIFF DataType. */
 
 	// 80 bit IEEE Standard 754 floating point number
 
@@ -115,7 +138,9 @@ struct EIGHTSVXheader {
 };
 
 
-/* WAV file format */
+/******************************************************************************
+** WAV file format ************************************************************
+******************************************************************************/
 
 #define ID_RIFF MAKE_ID('R','I','F','F')
 #define ID_WAVE MAKE_ID('W','A','V','E')
@@ -147,5 +172,12 @@ struct WAVEheader {
   ULONG                 DATAid;
   ULONG                 DATAsize;
 };
+
+/******************************************************************************
+** S16 defs *******************************************************************
+******************************************************************************/
+
+#include "Studio16file.h"
+
 
 #endif /* AHI_Drivers_Filesave_FileFormats_h */
