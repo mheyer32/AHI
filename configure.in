@@ -128,6 +128,7 @@ dnl Checks for library functions.
 
 AC_OUTPUT(Makefile
           AHI/Makefile
+          AHI-Handler/Makefile
           AddAudioModes/Makefile
           Device/Makefile
           Docs/Makefile
