@@ -83,7 +83,7 @@ htobe_long( unsigned long x )
 ******************************************************************************/
 
 
-#if defined( __AROS__ ) || defined( __MORPHOS__ )
+#if defined( __MORPHOS__ )
 
 /* For f*cks sake!!! Don't use SysBase in memcpy()! */
 
