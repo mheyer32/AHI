@@ -144,7 +144,6 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 
     if( in_use )
     {
-      Req( "Card is in use by %lx\n", dd->audioctrl );
       return AHISF_ERROR;
     }
     
@@ -189,7 +188,11 @@ _AHIsub_FreeAudio( struct AHIAudioCtrlDrv* AudioCtrl,
   if( dd != NULL )
   {
     ObtainSemaphore( &EMU10kxBase->semaphore );
-    dd->audioctrl = NULL;
+    if( dd->audioctrl == AudioCtrl )
+    {
+      // Release it if we own it.
+      dd->audioctrl = NULL;
+    }
     ReleaseSemaphore( &EMU10kxBase->semaphore );
 
     AudioCtrl->ahiac_DriverData = NULL;
