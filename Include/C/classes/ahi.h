@@ -26,6 +26,10 @@
 #include <intuition/classusr.h>
 #endif
 
+#ifndef UTILITY_TAGITEM_H
+#include <utility/tagitem.h>
+#endif
+
 #ifndef CLASSES_AHI_TYPES_H
 #include <classes/ahi_internal.h>
 #endif
@@ -76,7 +80,8 @@ namespace AHI {
 								   OM_GET */
 
     /* Whenever an error occurs, this attribute is updated */
-    _AHIA(_P, Error,		(_AHIA_Dummy+41)),		/* OM_SET,
+    _AHIA(_P, Error,		(_AHIA_Dummy+41)),		/* OM_NEW,
+								   OM_SET,
 								   OM_GET,
 								   OM_NOTIFY */
 
@@ -92,7 +97,7 @@ namespace AHI {
 								   OM_NOTIFY */
 
     /* All parameters for this class */
-    _AHIA(_P, ParameterArray,	(_AHIA_Dummy+79)),		/* OM_GET */
+    _AHIA(_P, ParameterTags,	(_AHIA_Dummy+79)),		/* OM_GET */
 
     /* The number of parametes for this class */
     _AHIA(_P, Parameters,	(_AHIA_Dummy+80)),		/* OM_GET */
@@ -205,20 +210,21 @@ namespace AHI {
       ULONG		Attrib;
       ULONG		Value;
   };
-  
-  /* AHIA_ParameterArray */
-  struct _AHIP(_P, Param) {
-    CONST_STRPTR	Name;
-    CONST_STRPTR	Unit;
-    UBYTE		Type;
-    UBYTE		Format;
-    UWORD		Flags;
-    ULONG		Attrib;
-    LONG		Min;
-    LONG		Max;
-    LONG		Step;
-  };
 
+  /* AHIA_ParameterTags tags */
+  enum {
+    _AHIV(_P, BeginParam,	(TAG_USER+0)),
+
+    _AHIV(_P, ParamName,	(TAG_USER+2)),
+    _AHIV(_P, ParamUnit,	(TAG_USER+3)),
+    _AHIV(_P, ParamType,	(TAG_USER+4)),
+    _AHIV(_P, ParamFormat,	(TAG_USER+5)),
+    _AHIV(_P, ParamMin,		(TAG_USER+6)),
+    _AHIV(_P, ParamMax,		(TAG_USER+7)),
+
+    _AHIV(_P, EndParam,		(TAG_USER+1))
+  };
+  
   enum {
     _AHIV(_P, Param_Type_TEXT,		(0)),
     _AHIV(_P, Param_Type_INTEGER,	(1)),
