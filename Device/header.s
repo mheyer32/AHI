@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.3  1997/05/03 19:59:56  lcs
+* *** empty log message ***
+*
 * Revision 4.2  1997/04/14 01:50:39  lcs
 * Spellchecked
 *
@@ -31,7 +34,7 @@
 	include devices/ahi.i
 	include libraries/ahi_sub.i
 	include ahi_def.i
-	include ahi_rev.i
+	include ahi.device_rev.i
 
 ;	section	text,code
 
@@ -67,11 +70,16 @@ RomTag:
 _DevName:	AHINAME
 _IDString:	VSTRING
 
-	VERSTAG
+	dc.b	"$VER: "
+	VERS
+	dc.b	" ("
+	DATE
+	dc.b	") "
+	dc.b	"©1994-1997 Martin Blom. "
  IFGE	__CPU-68020
-	dc.b	"*** 68020+ version ***",0
+	dc.b	"68020+ version.",0
  ELSE
-	dc.b	"*** 68000 version ***",0
+	dc.b	"68000 version.",0
  ENDC
 
 *******************************************************************************
