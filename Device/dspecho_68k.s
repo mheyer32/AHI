@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.2  1997/04/14 01:50:39  lcs
+* Spellchecked
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -28,7 +31,6 @@
 	XDEF	_do_DSPEchoMono16NCFMFast
 	XDEF	_do_DSPEchoStereo16NCFMFast
 
- IFGE	__CPU-68020
 
 ***
 *** DSPECHO
@@ -254,6 +256,7 @@ DSPECHO_POST	MACRO
 
 
 _do_DSPEchoMono16:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -284,9 +287,11 @@ _do_DSPEchoMono16:
 	move.w	d2,(a6)+			;store d2
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC
 
 
 _do_DSPEchoMono16Fast:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -318,9 +323,11 @@ _do_DSPEchoMono16Fast:
 	dbf	d7,.echoloop
 	pop	d6
 	DSPECHO_POST
+ ENDC
 
 
 _do_DSPEchoStereo16:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -383,9 +390,11 @@ _do_DSPEchoStereo16:
 	move.l	d2,(a6)+			;store d2 and d5
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC
 
 
 _do_DSPEchoStereo16Fast:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -454,9 +463,11 @@ _do_DSPEchoStereo16Fast:
 	dbf	d7,.echoloop
 	pop	d6
 	DSPECHO_POST
+ ENDC
 
 
 _do_DSPEchoMono32:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -489,8 +500,10 @@ _do_DSPEchoMono32:
 	move.w	d2,(a6)+			;store d2
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC
 
 _do_DSPEchoStereo32:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -554,9 +567,9 @@ _do_DSPEchoStereo32:
 	move.l	d2,(a6)+			;store d1 and d4
 	dbf	d7,.echoloop
 	DSPECHO_POST
-
-
  ENDC
+
+
 
 
 
@@ -605,6 +618,7 @@ _do_DSPEchoStereo32:
 
 
 _do_DSPEchoMono16NCFM:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -624,8 +638,10 @@ _do_DSPEchoMono16NCFM:
 	move.w	d1,(a6)+
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC
 
 _do_DSPEchoMono16NCFMFast:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -643,9 +659,11 @@ _do_DSPEchoMono16NCFMFast:
 	move.w	d1,(a6)+
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC
 
 
 _do_DSPEchoStereo16NCFM:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -675,9 +693,11 @@ _do_DSPEchoStereo16NCFM:
 	move.w	d1,(a6)+
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC
 
 
 _do_DSPEchoStereo16NCFMFast:
+ IFGE	__CPU-68020
 	DSPECHO_PRE
 ;in:
 * d0-d5	Scratch
@@ -703,3 +723,4 @@ _do_DSPEchoStereo16NCFMFast:
 	move.w	d1,(a6)+
 	dbf	d7,.echoloop
 	DSPECHO_POST
+ ENDC

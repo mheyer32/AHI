@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/04/14 01:50:39  lcs
+* Spellchecked
+*
 * Revision 4.3  1997/04/09 02:25:23  lcs
 * Added AHIE_HALFDUPLEX
 *
@@ -454,7 +457,7 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 *   FUNCTION
 *       Stops all CMD_WRITE processing. All writes will be queued, and
-*       are not processed until CMD_START. This is useful for syncronizing
+*       are not processed until CMD_START. This is useful for synchronizing
 *       two or more CMD_WRITE's.
 *
 *   IO REQUEST INPUT
@@ -508,7 +511,7 @@ static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *       CMD_FLUSH -- Cancel all I/O requests (V4)
 *
 *   FUNCTION
-*       Aborts ALL current requestes, both active and waiting, even
+*       Aborts ALL current requests, both active and waiting, even
 *       other programs requests!
 *
 *   IO REQUEST INPUT
@@ -588,7 +591,7 @@ static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *       CMD_RESET -- Restore device to a known state (V4)
 *
 *   FUNCTION
-*       Aborts all current requestes, even other programs requests
+*       Aborts all current requests, even other programs requests
 *       (CMD_FLUSH), rereads the configuration file and resets the hardware
 *       to its initial state
 *       
@@ -899,7 +902,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 *   FUNCTION
 *       All CMD_WRITE's that has been sent to the device since CMD_STOP
-*       will be started at once, syncronized.
+*       will be started at once, synchronized.
 *
 *   IO REQUEST INPUT
 *       io_Device       Preset by the call to OpenDevice().

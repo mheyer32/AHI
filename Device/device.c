@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/04/14 01:50:39  lcs
+* Spellchecked
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -407,7 +410,7 @@ __asm ULONG DevOpen(
 *
 *   FUNCTION
 *       This is an exec call that closes the device. Every OpenDevice()
-*       must be mached with a call to CloseDevice().
+*       must be matched with a call to CloseDevice().
 *
 *       The user must ensure that all outstanding IO Requests have been
 *       returned before closing the device.

@@ -1,6 +1,9 @@
 ;/*
 * $Id$
 * $Log$
+* Revision 4.2  1997/04/14 01:50:39  lcs
+* Spellchecked
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -9,9 +12,6 @@
 *
 * Revision 1.3  1997/02/18 22:26:49  lcs
 * Fixed a bug in CMD_READ?
-*
-* Revision 1.2  1997/01/29 23:34:38  lcs
-* *** empty log message ***
 *
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
@@ -415,8 +415,8 @@ _MultFixed:
  ELSE
 ;	move.l	d3,d1
 ;	move.l	d4,d2
-	XREF	UDivMod64
-	bsr	UDivMod64		;d0 = (d1:d2)/d0
+	XREF	_UDivMod64
+	bsr	_UDivMod64		;d0 = (d1:d2)/d0
  ENDC
 ;	addq.l	#1,d0
 .exit
