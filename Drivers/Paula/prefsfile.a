@@ -1,17 +1,5 @@
 *** ScR ***
 
-* $Id$
-* $Log$
-* Revision 4.2.2.1  2004/07/26 17:48:32  martin
-* Enabled panning for all mono modes.
-*
-* Revision 4.2  2001/04/12 14:25:31  lcs
-* Always use calibration tables for 14-bit output.
-*
-* Revision 4.1  1997/12/02 09:35:21  lcs
-* First RCS'ed version.
-*
-
 	incdir	include:
 	include	devices/ahi.i
 	include	libraries/ahi_sub.i

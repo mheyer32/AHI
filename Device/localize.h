@@ -1,18 +1,4 @@
-/* $Id$
-* $Log$
-* Revision 5.3.2.2  2004/11/01 07:24:48  martin
-* Applied a couple of patches from Gunther Nikl.
-*
-* Revision 5.0  2000/11/28 00:15:18  lcs
-* Bumped CVS revision to 5.0.
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.1  1997/02/03 16:22:45  lcs
-* Initial revision
-*
-*/
+
 /****************************************************************
    This file was created automatically by `FlexCat 2.4'
    from "../../ahisrc/Device/ahi.cd".
