@@ -47,6 +47,8 @@ distclean:	clean
 
 maintainer-clean: distclean
 
+install:
+
 bindist:	$(TARGETS)
 	$(INSTALL) --directory $(DRIVERDIR) 
 	for d in Filesave Paula Toccata Void Wavetools; do \

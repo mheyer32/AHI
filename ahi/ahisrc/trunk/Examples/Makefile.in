@@ -50,6 +50,8 @@ distclean:	clean
 
 maintainer-clean: distclean
 
+install:
+
 bindist:	$(TARGETS)
 	$(INSTALL) --directory $(DEVEXDIR) #$(USREXDIR)
 	for d in Device Extras Low-level; do \

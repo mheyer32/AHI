@@ -72,6 +72,8 @@ distclean:	clean
 
 maintainer-clean: distclean
 
+install:
+
 bindist:	$(TARGETS)
 	$(INSTALL) --directory $(DEVINCDIR) $(DEVINCDIR)/gcc \
 	           $(DEVINCDIR)/SAS $(DEVINCDIR)/Storm

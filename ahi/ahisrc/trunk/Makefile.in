@@ -53,6 +53,9 @@ all:
 	@cd Include && make gcc-include
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
+install:
+	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
+
 clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 	$(RM) $(USRARCHIVE) $(USRREADME) $(DEVARCHIVE) $(DEVREADME)
