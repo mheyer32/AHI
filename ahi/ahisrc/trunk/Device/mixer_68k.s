@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.9  1997/07/30 00:04:15  lcs
+* Removed distortion when playing sounds backwards in HiFi mode.
+*
 * Revision 4.8  1997/07/27 18:07:52  lcs
 * Fixed an overflow error in the HiFi-routines.
 *
@@ -2280,6 +2283,7 @@ AddWordsSVPH:
 
 AddByteMVHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2309,15 +2313,17 @@ AddByteMVHB:
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 AddByteSVPHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2351,15 +2357,17 @@ AddByteSVPHB:
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 AddBytesMVHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2415,15 +2423,17 @@ AddBytesMVHB:
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 AddBytesSVPHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2479,15 +2489,17 @@ AddBytesSVPHB:
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 AddWordMVHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2514,15 +2526,17 @@ AddWordMVHB:
 	muls.l	d1,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 AddWordSVPHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2553,16 +2567,18 @@ AddWordSVPHB:
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 
 AddWordsMVHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2612,15 +2628,17 @@ AddWordsMVHB:
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
 AddWordsSVPHB:
  IFGE	__CPU-68020
+	neg.w	d4
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
@@ -2670,10 +2688,11 @@ AddWordsSVPHB:
 	muls.l	d2,d7
 	add.l	d7,(a4)+
 
-	sub.w	d6,d4
+	add.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+	neg.w	d4
  ENDC
 	rts
 
