@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.8  1997/05/04 15:59:30  lcs
+# Separated the documentation from the device code.
+#
 # Revision 4.7  1997/05/03 19:59:56  lcs
 # Catalog fixes, and more
 #
@@ -118,7 +121,7 @@ cpu:
 ##
 ###############################################################################
 
-support: includes autodocs catalogs hyperdoc printeddoc
+support: includes autodocs catalogs
 
 
 ##
@@ -283,29 +286,6 @@ catalogs:
 	copy ahi.(cd|ct) AHI:User/Catalogs/
 	--execute T:catscript
 	delete T:catscript
-
-##
-## Build hypertext documentation
-##
-###############################################################################
-
-hyperdoc:
-	makeinfo --amiga-40 --output AHI:User/Help/ahi.guide ahiusr.texinfo
-#	rep ahi.guide Ahi AHI AHI:User/Help/ahi.guide
-#	delete ahi.guide
-
-	makeinfo --amiga-40 --output AHI:Developer/docs/devguide.guide ahidev.texinfo
-#	rep devguide.guide Ahi AHI AHI:Developer/docs/devguide.guide
-#	delete devguide.guide
-
-
-##
-## Build printed documentation
-##
-###############################################################################
-
-printeddoc:
-	execute MakeManual
 
 
 ##
