@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.8  1997/03/24 18:03:10  lcs
+* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
+*
 * Revision 1.7  1997/03/24 12:41:51  lcs
 * Echo rewritten
 *
@@ -66,14 +69,22 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	Fixed	ahib_MaxCPU
 	LABEL	AHIBase_SIZEOF
 
-	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
-	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
-	BITDEF	AHIAC,POSTPROC,29		;private ahiac_Flags flag
+
 
 	STRUCTURE Timer,0
 	STRUCT	EntryTime,EV_SIZE
 	STRUCT	ExitTime,EV_SIZE
 	LABEL	Timer_SIZEOF
+
+	STRUCTURE AHISoundData,0
+	ULONG	sd_Type
+	APTR	sd_Addr
+	ULONG	sd_Length
+	LABEL	AHISoundData_SIZEOF
+
+	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
+	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
+	BITDEF	AHIAC,POSTPROC,29		;private ahiac_Flags flag
 
 * Private AudioCtrl structure
 	STRUCTURE AHIPrivAudioCtrl,AHIAudioCtrlDrv_SIZEOF
@@ -161,25 +172,5 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	UWORD	cd_Pad
 
 	LABEL	AHIChannelData_SIZEOF
-
-* AHISoundData (private)
-* sd_Addr and sd_Length depend on sd_Type.
-* sd_Addr:
-*  AHIST_SAMPLE (AHIST_M8S or AHIST_M16S): Address to array of samples.
-*  AHIST_DYNAMICSAMPLE (AHIST_M8S or AHIST_M16S): Address to array of samples.
-*  AHIST_INPUT: FIXIT!
-*  AHIST_LOOP: Pointer to LW source sd_Addr followed by struct AHIMultiLoop[].
-* sd_Length:
-*  AHIST_SAMPLE (AHIST_M8S or AHIST_M16S): Length of array (in samples).
-*  AHIST_DYNAMICSAMPLE (AHIST_M8S or AHIST_M16S): Length of array (in samples).
-*  AHIST_INPUT: FIXIT!
-*  AHIST_LOOP: NULL
-
-	STRUCTURE AHISoundData,0
-	ULONG	sd_Type
-	APTR	sd_Addr
-	ULONG	sd_Length
-	LABEL	AHISoundData_SIZEOF
-
 
 	ENDC

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.16  1997/03/24 18:03:10  lcs
+* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
+*
 * Revision 1.15  1997/03/24 12:41:51  lcs
 * Echo rewritten
 *
@@ -69,6 +72,8 @@
 
 extern __asm ULONG RecalcBuff( register __d1 ULONG , register __a2 struct AHIPrivAudioCtrl * );
 extern __asm BOOL InitMixroutine(register __a2 struct AHIPrivAudioCtrl *);
+extern __asm BOOL initSignedTable(register __a2 struct AHIPrivAudioCtrl *, register __a5 struct AHIBase *);
+extern __asm BOOL initUnsignedTable(register __a2 struct AHIPrivAudioCtrl *, register __a5 struct AHIBase *);
 extern __asm void Mix(void);
 extern __asm BOOL PreTimer(void);
 extern __asm void PostTimer(void);
@@ -76,7 +81,7 @@ extern __asm BOOL DummyPreTimer(void);
 extern __asm void DummyPostTimer(void);
 
 
-/******************************************************************************
+/******************************************************************************
 ** CreateAudioCtrl & UpdateAudioCtrl ******************************************
 ******************************************************************************/
 
@@ -195,7 +200,7 @@ __asm  void UpdateAudioCtrl( register __a0 struct AHIPrivAudioCtrl *audioctrl)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** TestAudioID & DizzyTestAudioID *********************************************
 ******************************************************************************/
 
@@ -331,7 +336,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_AllocAudioA ************************************************************
 ******************************************************************************/
 
@@ -646,7 +651,7 @@ error:
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_FreeAudio **************************************************************
 ******************************************************************************/
 
@@ -724,7 +729,7 @@ __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_KillAudio **************************************************************
 ******************************************************************************/
 
@@ -784,7 +789,7 @@ __asm ULONG KillAudio(void)
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_ControlAudioA **********************************************************
 ******************************************************************************/
 
@@ -988,7 +993,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_GetAudioAttrsA *********************************************************
 ******************************************************************************/
 
@@ -1348,7 +1353,7 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_BestAudioIDA ***********************************************************
 ******************************************************************************/
 
@@ -1492,7 +1497,245 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 }
 
 
-/******************************************************************************
+/******************************************************************************
+** AHI_LoadSound **************************************************************
+******************************************************************************/
+
+/****** ahi.device/AHI_LoadSound ********************************************
+*
+*   NAME
+*       AHI_LoadSound -- prepare a sound for playback
+*
+*   SYNOPSIS
+*       error = AHI_LoadSound( sound, type, info, audioctrl );
+*       D0                     D0:16  D1    A0    A2
+*
+*       ULONG AHI_LoadSound( UWORD, ULONG, APTR, struct AHIAudioCtrl * );
+*
+*   FUNCTION
+*       Defines an ID number for the sound and prepares it for playback.
+*
+*   INPUTS
+*       sound - The numeric ID to be used as a reference to this sound.
+*           The ID is a number greater or equal to 0 and less than what you
+*           specified with AHIA_Sounds when you called AHI_AllocAudioA().
+*       type - The type of the sound. Currently four types are supported:
+*           AHIST_SAMPLE - array of 8 or 16 bit samples. Note that the
+*               portion of memory where the sample is stored must NOT be
+*               altered until AHI_UnloadSound() has been called! This is
+*               because some audio drivers may wish to upload the samples
+*               to local RAM. It is ok to read, though.
+*
+*           AHIST_DYNAMICSAMPLE - array of 8 or 16 bit samples, which can be
+*               updated dynamically. Typically used to play data that is
+*               loaded from disk or calculated realtime.
+*               Avoid using this sound type as much as possible; it will
+*               use much more CPU power than AHIST_SAMPLE on a DMA/DSP
+*               sound card.
+*
+*           AHIST_INPUT - The input from your sampler (not fully functional
+*               yet).
+*
+*       info - Depends on type:
+*           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
+*               ahisi_Type - Format of samples (only two supported).
+*                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
+*                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V3). 
+*                   AHIST_M16S: Mono, 16 bit signed (WORDs).
+*                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V3).
+*               ahisi_Address - Address to the sample array.
+*               ahisi_Length - The size of the array, in samples.
+*               Don't even think of setting ahisi_Address to 0 and
+*               ahisi_Length to 0xffffffff as you can do with
+*               AHIST_DYNAMICSAMPLE! Very few DMA/DSP cards has 4 GB onboard
+*               RAM...
+*
+*           AHIST_DYNAMICSAMPLE A pointer to a struct AHISampleInfo, filled
+*               as described above (AHIST_SAMPLE).
+*               If ahisi_Address is 0 and ahisi_Length is 0xffffffff
+*               AHI_SetSound() can take the real address of an 8 bit sample
+*               to be played as offset argument. Unfortunately, this does not
+*               work for 16 bit samples.
+*
+*           AHIST_INPUT - Allways set info to NULL.
+*               Note that AHI_SetFreq() may only be called with AHI_MIXFREQ
+*               for this sample type.
+*
+*       audioctrl - A pointer to an AHIAudioCtrl structure.
+*
+*   RESULT
+*       An error code, defined in <devices/ahi.h>.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       There is no need to place a sample array in Chip memory, but it
+*       MUST NOT be swapped out! Allocate your sample memory with the
+*       MEMF_PUBLIC flag set. 
+*
+*       SoundFunc will be called in the same manner as Paula interrups
+*       occur; when the device has updated its internal variables and can
+*       accept new commands.
+*
+*   BUGS
+*       AHIST_INPUT does not fully work yet.
+*
+*   SEE ALSO
+*       AHI_UnloadSound(), AHI_SetEffect(), AHI_SetFreq(), AHI_SetSound(),
+*       AHI_SetVol(), <devices/ahi.h>
+*
+****************************************************************************
+*
+*/
+
+__asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
+    register __a0 APTR info, register __a2 struct AHIPrivAudioCtrl *audioctrl )
+{
+
+  struct Library *AHIsubBase = audioctrl->ahiac_SubLib;
+  ULONG rc;
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)", sound, audioctrl);
+  }
+
+  rc = AHIsub_LoadSound(sound, type, info, (struct AHIAudioCtrlDrv *) audioctrl);
+
+  if((audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING) || (rc != AHIS_UNKNOWN))
+  {
+    return 0;
+  }
+
+  rc = AHIE_OK;
+
+  switch(type)
+  {
+    case AHIST_DYNAMICSAMPLE:
+    case AHIST_SAMPLE:
+    {
+      struct AHISampleInfo *si = (struct AHISampleInfo *) info;
+      
+      switch(si->ahisi_Type)
+      {
+        case AHIST_M8S:
+        case AHIST_M16S:
+#ifdef M68020
+        case AHIST_S8S:
+        case AHIST_S16S:
+#endif
+          if(initSignedTable(audioctrl, AHIBase))
+          {
+            audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
+            audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
+            audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
+          }
+          else rc = AHIE_NOMEM;
+
+          break;
+
+        /* Obsolete, present for compability only. FIXIT! */
+
+        case AHIST_M8U:
+          if(initUnsignedTable(audioctrl, AHIBase))
+          {
+            audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
+            audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
+            audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
+          }
+          else rc = AHIE_NOMEM;
+
+          break;
+
+        default:
+          rc = AHIE_BADSAMPLETYPE;
+      }
+      
+      break;
+    }
+ 
+    case AHIST_INPUT:
+      audioctrl->ahiac_SoundDatas[sound].sd_Type   = AHIST_INPUT|AHIST_S16S;
+      audioctrl->ahiac_SoundDatas[sound].sd_Addr   = NULL;
+      audioctrl->ahiac_SoundDatas[sound].sd_Length = 0;
+      break;
+
+    default:
+      rc = AHIE_BADSOUNDTYPE;
+      break;
+  }
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("=>%ld", rc);
+  }
+  return rc;
+}
+
+
+/******************************************************************************
+** AHI_UnloadSound ************************************************************
+******************************************************************************/
+
+/****** ahi.device/AHI_UnloadSound *****************************************
+*
+*   NAME
+*       AHI_UnloadSound -- discard a sound
+*
+*   SYNOPSIS
+*       AHI_UnloadSound( sound, audioctrl );
+*                        D0:16  A2
+*
+*       void AHI_UnloadSound( UWORD, struct AHIAudioCtrl * );
+*
+*   FUNCTION
+*       Tells 'ahi.device' that this sound will not be used anymore.
+*
+*   INPUTS
+*       sound - The ID of the sound to unload.
+*       audioctrl - A pointer to an AHIAudioCtrl structure.
+*
+*   RESULT
+*
+*   EXAMPLE
+*
+*   NOTES
+*       This call will not break a Forbid() state.
+*
+*   BUGS
+*
+*   SEE ALSO
+*       AHI_LoadSound()
+*
+****************************************************************************
+*
+*/
+
+__asm ULONG UnloadSound(register __d0 UWORD sound, 
+    register __a2 struct AHIPrivAudioCtrl *audioctrl)
+{
+  struct Library *AHIsubBase = audioctrl->ahiac_SubLib;
+  ULONG rc;
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("AHI_UnloadSound(%ld, 0x%08lx)", sound, audioctrl);
+  }
+
+  rc = AHIsub_UnloadSound(sound, (struct AHIAudioCtrlDrv *) audioctrl);
+
+  if((audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING) || (rc != AHIS_UNKNOWN))
+  {
+    return 0;
+  }
+  
+  audioctrl->ahiac_SoundDatas[sound].sd_Type = AHIST_NOTYPE;
+  
+  return 0;
+}
+
+
+/******************************************************************************
 ** AHI_PlayA ******************************************************************
 ******************************************************************************/
 
@@ -1679,7 +1922,7 @@ __asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
 }
 
 
-/******************************************************************************
+/******************************************************************************
 ** AHI_SampleFrameSize ********************************************************
 ******************************************************************************/
 
