@@ -490,6 +490,9 @@ static struct EmulLibEntry m68k_PostTimer =
 ** Amithlon gateway functions *************************************************
 ******************************************************************************/
 
+// A handy macro for fetching a little endian long integer from memory
+#define GET_LONG(a) ({ long r; __asm__("movl %1,%0":"=r"(r) :"m"(a)); r; })
+
 /* gw_initRoutine ************************************************************/
 
 struct AHIBase*
@@ -509,7 +512,7 @@ gw_DevExpunge( struct _Regs* regs ) __attribute__((regparm(3)));
 BPTR 
 gw_DevExpunge( struct _Regs* regs )
 {
-  struct AHIBase* device = (struct AHIBase*) regs->a6;
+  struct AHIBase* device = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return DevExpunge( device );
 }
@@ -517,16 +520,17 @@ gw_DevExpunge( struct _Regs* regs )
 
 /* gw_DevOpen ****************************************************************/
 
+
 ULONG 
 gw_DevOpen( struct _Regs* regs ) __attribute__((regparm(3)));
 
 ULONG 
 gw_DevOpen( struct _Regs* regs )
 {
-  ULONG              unit    = (ULONG)              regs->d0;
-  ULONG              flags   = (ULONG)              regs->d1;
-  struct AHIRequest* ioreq   = (struct AHIRequest*) regs->a1;
-  struct AHIBase*    AHIBase = (struct AHIBase*)    regs->a6;
+  ULONG              unit    = (ULONG)              GET_LONG( regs->d0 );
+  ULONG              flags   = (ULONG)              GET_LONG( regs->d1 );
+  struct AHIRequest* ioreq   = (struct AHIRequest*) GET_LONG( regs->a1 );
+  struct AHIBase*    AHIBase = (struct AHIBase*)    GET_LONG( regs->a6 );
 
   return DevOpen( unit, flags, ioreq, AHIBase );
 }
@@ -540,8 +544,8 @@ gw_DevClose( struct _Regs* regs ) __attribute__((regparm(3)));
 BPTR
 gw_DevClose( struct _Regs* regs )
 {
-  struct AHIRequest* ioreq   = (struct AHIRequest*)  regs->a1;
-  struct AHIBase*    AHIBase = (struct AHIBase*)     regs->a6;
+  struct AHIRequest* ioreq   = (struct AHIRequest*)  GET_LONG( regs->a1 );
+  struct AHIBase*    AHIBase = (struct AHIBase*)     GET_LONG( regs->a6 );
 
   return DevClose( ioreq, AHIBase );
 }
@@ -555,8 +559,8 @@ gw_DevBeginIO( struct _Regs* regs ) __attribute__((regparm(3)));
 void 
 gw_DevBeginIO( struct _Regs* regs )
 {
-  struct AHIRequest* ioreq   = (struct AHIRequest*) regs->a1;
-  struct AHIBase*    AHIBase = (struct AHIBase*)    regs->a6;
+  struct AHIRequest* ioreq   = (struct AHIRequest*) GET_LONG( regs->a1 );
+  struct AHIBase*    AHIBase = (struct AHIBase*)    GET_LONG( regs->a6 );
 
   DevBeginIO( ioreq, AHIBase );
 }
@@ -570,8 +574,8 @@ gw_DevAbortIO( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_DevAbortIO( struct _Regs* regs )
 {
-  struct AHIRequest* ioreq   = (struct AHIRequest*) regs->a1;
-  struct AHIBase*    AHIBase = (struct AHIBase*)    regs->a6;
+  struct AHIRequest* ioreq   = (struct AHIRequest*) GET_LONG( regs->a1 );
+  struct AHIBase*    AHIBase = (struct AHIBase*)    GET_LONG( regs->a6 );
 
   return DevAbortIO( ioreq, AHIBase );
 }
@@ -585,10 +589,10 @@ gw_AllocAudioA( struct _Regs* regs ) __attribute__((regparm(3)));
 struct AHIAudioCtrl* 
 gw_AllocAudioA( struct _Regs* regs )
 {
-  struct TagItem* tags    = (struct TagItem*) regs->a1;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  struct TagItem* tags    = (struct TagItem*) GET_LONG( regs->a1 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
-  return AllocAudioA( tags, AHIBase );
+  return (struct AHIAudioCtrl*)  AllocAudioA( tags, AHIBase );
 }
 
 
@@ -600,8 +604,8 @@ gw_FreeAudio( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_FreeAudio( struct _Regs* regs )
 {
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return FreeAudio( audioctrl, AHIBase );
 }
@@ -615,7 +619,7 @@ gw_KillAudio( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_KillAudio( struct _Regs* regs )
 {
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return KillAudio( AHIBase );
 }
@@ -629,9 +633,9 @@ gw_ControlAudioA( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_ControlAudioA( struct _Regs* regs )
 {
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct TagItem*          tags      = (struct TagItem*)          regs->a1;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct TagItem*          tags      = (struct TagItem*)          GET_LONG( regs->a1 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return ControlAudioA( audioctrl, tags, AHIBase );
 }
@@ -645,12 +649,12 @@ gw_SetVol( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_SetVol( struct _Regs* regs )
 {
-  UWORD                    channel   = (UWORD)                    regs->d0;
-  Fixed                    volume    = (Fixed)                    regs->d1;
-  sposition                pan       = (sposition)                regs->d2;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  ULONG                    flags     = (ULONG)                    regs->d3;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  UWORD                    channel   = (UWORD)                    GET_LONG( regs->d0 );
+  Fixed                    volume    = (Fixed)                    GET_LONG( regs->d1 );
+  sposition                pan       = (sposition)                GET_LONG( regs->d2 );
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  ULONG                    flags     = (ULONG)                    GET_LONG( regs->d3 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return SetVol( channel, volume, pan, audioctrl, flags, AHIBase );
 }
@@ -664,11 +668,11 @@ gw_SetFreq( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_SetFreq( struct _Regs* regs )
 {
-  UWORD                    channel   = (UWORD)                    regs->d0;
-  ULONG                    freq      = (ULONG)                    regs->d1;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  ULONG                    flags     = (ULONG)                    regs->d2;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  UWORD                    channel   = (UWORD)                    GET_LONG( regs->d0 );
+  ULONG                    freq      = (ULONG)                    GET_LONG( regs->d1 );
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  ULONG                    flags     = (ULONG)                    GET_LONG( regs->d2 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return SetFreq( channel, freq, audioctrl, flags, AHIBase );
 }
@@ -682,13 +686,13 @@ gw_SetSound( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_SetSound( struct _Regs* regs )
 {
-  UWORD                    channel   = (UWORD)                    regs->d0;
-  UWORD                    sound     = (UWORD)                    regs->d1;
-  ULONG                    offset    = (ULONG)                    regs->d2;
-  LONG                     length    = (LONG)                     regs->d3;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  ULONG                    flags     = (ULONG)                    regs->d4;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  UWORD                    channel   = (UWORD)                    GET_LONG( regs->d0 );
+  UWORD                    sound     = (UWORD)                    GET_LONG( regs->d1 );
+  ULONG                    offset    = (ULONG)                    GET_LONG( regs->d2 );
+  LONG                     length    = (LONG)                     GET_LONG( regs->d3 );
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  ULONG                    flags     = (ULONG)                    GET_LONG( regs->d4 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return SetSound( channel, sound, offset, length, audioctrl, flags, AHIBase );
 }
@@ -702,9 +706,9 @@ gw_SetEffect( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_SetEffect( struct _Regs* regs )
 {
-  ULONG*                   effect    = (ULONG*)                   regs->a0;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  ULONG*                   effect    = (ULONG*)                   GET_LONG( regs->a0 );
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return SetEffect( effect, audioctrl, AHIBase );
 }
@@ -718,11 +722,11 @@ gw_LoadSound( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_LoadSound( struct _Regs* regs )
 {
-  UWORD                    sound     = (UWORD)                    regs->d0;
-  ULONG                    type      = (ULONG)                    regs->d1;
-  APTR                     info      = (APTR)                     regs->a0;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  UWORD                    sound     = (UWORD)                    GET_LONG( regs->d0 );
+  ULONG                    type      = (ULONG)                    GET_LONG( regs->d1 );
+  APTR                     info      = (APTR)                     GET_LONG( regs->a0 );
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return LoadSound( sound, type, info, audioctrl, AHIBase );
 }
@@ -736,9 +740,9 @@ gw_UnloadSound( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_UnloadSound( struct _Regs* regs )
 {
-  UWORD                    sound     = (UWORD)                    regs->d0;
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  UWORD                    sound     = (UWORD)                    GET_LONG( regs->d0 );
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return UnloadSound( sound, audioctrl, AHIBase );
 }
@@ -752,9 +756,9 @@ gw_PlayA( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG  
 gw_PlayA( struct _Regs* regs )
 {
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct TagItem*          tags      = (struct TagItem*)          regs->a1;
-  struct AHIBase*          AHIBase   = (struct AHIBase*)          regs->a6;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct TagItem*          tags      = (struct TagItem*)          GET_LONG( regs->a1 );
+  struct AHIBase*          AHIBase   = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return PlayA( audioctrl, tags, AHIBase );
 }
@@ -768,8 +772,8 @@ gw_SampleFrameSize( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_SampleFrameSize( struct _Regs* regs )
 {
-  ULONG           sampletype = (ULONG)           regs->d0;
-  struct AHIBase* AHIBase    = (struct AHIBase*) regs->a6;
+  ULONG           sampletype = (ULONG)           GET_LONG( regs->d0 );
+  struct AHIBase* AHIBase    = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return SampleFrameSize( sampletype, AHIBase );
 }
@@ -783,10 +787,10 @@ gw_GetAudioAttrsA( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG  
 gw_GetAudioAttrsA( struct _Regs* regs )
 {
-  ULONG                    id      = (ULONG)                    regs->d0;
-  struct AHIPrivAudioCtrl* actrl   = (struct AHIPrivAudioCtrl*) regs->a2;
-  struct TagItem*          tags    = (struct TagItem*)          regs->a1;
-  struct AHIBase*          AHIBase = (struct AHIBase*)          regs->a6;
+  ULONG                    id      = (ULONG)                    GET_LONG( regs->d0 );
+  struct AHIPrivAudioCtrl* actrl   = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
+  struct TagItem*          tags    = (struct TagItem*)          GET_LONG( regs->a1 );
+  struct AHIBase*          AHIBase = (struct AHIBase*)          GET_LONG( regs->a6 );
 
   return GetAudioAttrsA( id, actrl, tags, AHIBase );
 }
@@ -800,8 +804,8 @@ gw_BestAudioIDA( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG  
 gw_BestAudioIDA( struct _Regs* regs )
 {
-  struct TagItem* tags    = (struct TagItem*) regs->a1;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  struct TagItem* tags    = (struct TagItem*) GET_LONG( regs->a1 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return BestAudioIDA( tags, AHIBase );
 }
@@ -815,10 +819,10 @@ gw_AllocAudioRequestA( struct _Regs* regs ) __attribute__((regparm(3)));
 struct AHIAudioModeRequester* 
 gw_AllocAudioRequestA( struct _Regs* regs )
 {
-  struct TagItem* tags    = (struct TagItem*) regs->a0;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  struct TagItem* tags    = (struct TagItem*) GET_LONG( regs->a0 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
-  return AllocAudioRequestA( tags, AHIBase );
+  return (struct AHIAudioModeRequester*)  AllocAudioRequestA( tags, AHIBase );
 }
 
 
@@ -830,9 +834,9 @@ gw_AudioRequestA( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG  
 gw_AudioRequestA( struct _Regs* regs )
 {
-  struct AHIAudioModeRequester* req_in  = (struct AHIAudioModeRequester*) regs->a0;
-  struct TagItem*               tags    = (struct TagItem*)               regs->a1;
-  struct AHIBase*               AHIBase = (struct AHIBase*)               regs->a6;
+  struct AHIAudioModeRequester* req_in  = (struct AHIAudioModeRequester*) GET_LONG( regs->a0 );
+  struct TagItem*               tags    = (struct TagItem*)               GET_LONG( regs->a1 );
+  struct AHIBase*               AHIBase = (struct AHIBase*)               GET_LONG( regs->a6 );
 
   return AudioRequestA( req_in, tags, AHIBase );
 }
@@ -846,8 +850,8 @@ gw_FreeAudioRequest( struct _Regs* regs ) __attribute__((regparm(3)));
 void  
 gw_FreeAudioRequest( struct _Regs* regs )
 {
-  struct AHIAudioModeRequester* req     = (struct AHIAudioModeRequester*) regs->a0;
-  struct AHIBase*               AHIBase = (struct AHIBase*)               regs->a6;
+  struct AHIAudioModeRequester* req     = (struct AHIAudioModeRequester*) GET_LONG( regs->a0 );
+  struct AHIBase*               AHIBase = (struct AHIBase*)               GET_LONG( regs->a6 );
 
   FreeAudioRequest( req, AHIBase );
 }
@@ -861,8 +865,8 @@ gw_NextAudioID( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_NextAudioID( struct _Regs* regs )
 {
-  ULONG           id      = (ULONG)           regs->d0;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  ULONG           id      = (ULONG)           GET_LONG( regs->d0 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return NextAudioID( id, AHIBase );
 }
@@ -876,8 +880,8 @@ gw_AddAudioMode( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_AddAudioMode( struct _Regs* regs )
 {
-  struct TagItem* DBtags  = (struct TagItem*) regs->a0;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  struct TagItem* DBtags  = (struct TagItem*) GET_LONG( regs->a0 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return AddAudioMode( DBtags, AHIBase );
 }
@@ -891,8 +895,8 @@ gw_RemoveAudioMode( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_RemoveAudioMode( struct _Regs* regs )
 {
-  ULONG           id      = (ULONG)           regs->d0;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  ULONG           id      = (ULONG)           GET_LONG( regs->d0 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return RemoveAudioMode( id, AHIBase );
 }
@@ -906,8 +910,8 @@ gw_LoadModeFile( struct _Regs* regs ) __attribute__((regparm(3)));
 ULONG 
 gw_LoadModeFile( struct _Regs* regs )
 {
-  UBYTE*          name    = (UBYTE*)          regs->a0;
-  struct AHIBase* AHIBase = (struct AHIBase*) regs->a6;
+  UBYTE*          name    = (UBYTE*)          GET_LONG( regs->a0 );
+  struct AHIBase* AHIBase = (struct AHIBase*) GET_LONG( regs->a6 );
 
   return LoadModeFile( name, AHIBase );
 }
@@ -987,7 +991,7 @@ gw_PostTimer( struct _Regs* regs ) __attribute__((regparm(3)));
 static void
 gw_PostTimer( struct _Regs* regs )
 {
-  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) regs->a2;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) GET_LONG( regs->a2 );
 
   PostTimer( audioctrl );
 }
@@ -1005,7 +1009,7 @@ static struct
   0x4EF9, (ULONG) gw_PostTimer + 1
 };
 
-#else // ifdef __morphos__
+#else // Not MorphOS, not Amithlon
 
 
 /******************************************************************************
@@ -1339,7 +1343,7 @@ m68k_PostTimer( REG(a2, struct AHIPrivAudioCtrl* audioctrl ) )
   PostTimer( audioctrl );
 }
 
-#endif // ifdef __morphos__
+#endif
 
 
 /*** Some special wrappers ***************************************************/
