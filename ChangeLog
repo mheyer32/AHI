@@ -1,3 +1,7 @@
+2004-08-04  Martin Blom  <martin@blom.org>
+
+	* Pass CPU option to linker when building. [Gunther Nikl]
+
 2004-08-02  Martin Blom  <martin@blom.org>
 
 	* Added updated Russion translations by Michael Malyshev. Thanks!
