@@ -1,0 +1,110 @@
+dnl $Id$
+
+
+dnl Process this file with autoconf to produce a configure script.
+
+AC_REVISION( $Revision$ )
+dnl
+AC_INIT( TODO )
+
+
+dnl General
+
+AC_CANONICAL_SYSTEM
+AC_PROG_MAKE_SET
+AC_CONFIG_HEADER( config.h )
+
+AC_MSG_CHECKING(CPU to build for)
+AC_ARG_WITH(CPU,
+[  --with-cpu              The CPU to optimize for],
+CPU=${withval}, unset CPU)
+AC_MSG_RESULT(${CPU})
+
+AC_MSG_CHECKING(OS include directory)
+AC_ARG_WITH(os-includedir,
+[  --with-os-includedir    Path to AmigaOS include directory [/gg/os-include]],
+os_includedir=${withval},
+os_includedir=/gg/os-include)
+AC_MSG_RESULT(${os_includedir} )
+
+AC_MSG_CHECKING(if WarpUp support code should be enabled)
+AC_ARG_ENABLE(warpup,
+[  --enable-warpup         Enable WarpUp support],
+AC_DEFINE(ENABLE_WARPUP))
+ENABLE_WARPUP=${enable_warpup}
+AC_SUBST(ENABLE_WARPUP)
+AC_MSG_RESULT(${enable_warpup})
+
+case $host in
+ m68k-unknown-amigaos)
+  : ${CPU="68020"}
+  linkerflags="-noixemul"
+  optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math"
+  asflags="-m${CPU} --register-prefix-optional --bitwise-or --defsym CPU=${CPU}"
+ ;;
+ powerpc-unknown-morphos)
+  : ${CPU="603"}
+  linkerflags="-noixemul"
+  optflags="-mcpu=${CPU} -O2"
+  asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
+ ;;
+esac
+
+top_builddir=$(pwd)
+
+: ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${optflags}"}
+: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc -I${os_includedir}"}
+: ${LDFLAGS="${linkerflags}"}
+: ${ASFLAGS="${asflags}"}
+: ${ARFLAGS="-ru"}
+
+: ${DISTDIR="/tmp/ahi"}
+
+AC_PREFIX_DEFAULT( / )
+
+AC_SUBST(ASFLAGS)
+AC_SUBST(ARFLAGS)
+AC_SUBST(DISTDIR)
+
+dnl Checks for programs.
+
+AC_CHECK_TOOL( CC, gcc, : ) 
+AC_CHECK_TOOL( AS, as, : ) 
+AC_CHECK_TOOL( AR, ar, : )
+AC_CHECK_TOOL( RANLIB, ranlib, : )
+
+AC_PROG_INSTALL
+#AC_PROG_CC
+AC_PROG_RANLIB
+AC_CHECK_PROG( RM, rm, rm )
+AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
+AC_CHECK_PROG( ASM, PhxAss, PhxAss )
+
+
+dnl Checks for libraries.
+
+AC_CHECK_LIB( amiga, NewList,  , AC_MSG_ERROR( "libamiga is missing." ) )
+AC_CHECK_LIB( m,     floor,    , AC_MSG_ERROR( "libm is missing." ) )
+
+
+dnl Checks for header files.
+
+AC_CHECK_HEADER( CompilerSpecific.h, , AC_MSG_ERROR( "CompilerSpecific.h is missing." )) 
+
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+
+AC_C_CONST
+AC_C_INLINE
+
+
+dnl Checks for library functions.
+
+
+AC_OUTPUT(Makefile
+          AHI/Makefile
+          AddAudioModes/Makefile
+          Device/Makefile
+          Docs/Makefile
+          Include/Makefile,
+          echo timestamp > stamp-h)
