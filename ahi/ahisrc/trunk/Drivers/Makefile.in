@@ -50,7 +50,6 @@ install:
 
 clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) *.bak *~ \#*\# core
 
 distclean:	clean
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done

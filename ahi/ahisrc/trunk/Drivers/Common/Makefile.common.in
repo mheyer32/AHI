@@ -61,7 +61,7 @@ OBJECTS		+= library.o gatestubs.o
 all:		$(DRIVER) $(MODEFILE)
 
 mostlyclean:
-	$(RM) $(DRIVER) $(MODEFILE) *.o *.a *.bak *~ \#*\# core Makefile.dep
+	$(RM) $(DRIVER) $(MODEFILE) *.o *.a Makefile.dep
 
 clean:		mostlyclean
 	$(RM) version.h gatestubs.c gatestubs.h
