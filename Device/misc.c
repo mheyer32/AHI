@@ -25,8 +25,11 @@
 
 #include <stdarg.h>
 
+#include <exec/alerts.h>
+#include <exec/execbase.h>
 #include <exec/lists.h>
 #include <exec/nodes.h>
+#include <exec/semaphores.h>
 #include <intuition/intuition.h>
 
 #include <proto/exec.h>
@@ -129,6 +132,166 @@ SprintfA( char *dst, const char *fmt, ULONG* args )
                    (void(*)(void)) &struffChar, 
                    dst );
 }
+
+/******************************************************************************
+** AHIInitSemaphore ***********************************************************
+******************************************************************************/
+
+void
+AHIInitSemaphore( struct SignalSemaphore* sigSem )
+{
+  InitSemaphore( sigSem );
+}
+
+
+/******************************************************************************
+** AHIInitSemaphore ***********************************************************
+******************************************************************************/
+
+void
+AHIObtainSemaphore( struct SignalSemaphore* sigSem )
+{
+  // TODO: Verify license compatibility (Code mostly stolen from AROS).
+
+  struct Task *me;
+
+  me=SysBase->ThisTask;
+  Disable(); // Not Forbid()!
+  sigSem->ss_QueueCount++;
+  if( sigSem->ss_QueueCount == 0 )
+  {
+    sigSem->ss_Owner = me;
+    sigSem->ss_NestCount++;
+  }
+  else if( sigSem->ss_Owner == me )
+  {
+    sigSem->ss_NestCount++;
+  }
+  else
+  {
+    struct SemaphoreRequest sr;
+    sr.sr_Waiter = me;
+    me->tc_SigRecvd &= ~SIGF_SINGLE;
+    AddTail((struct List *)&sigSem->ss_WaitQueue, (struct Node *)&sr);
+    Wait(SIGF_SINGLE);
+  }
+  Enable();
+}
+
+
+/******************************************************************************
+** AHIInitSemaphore ***********************************************************
+******************************************************************************/
+
+void
+AHIReleaseSemaphore( struct SignalSemaphore* sigSem )
+{
+  // TODO: Verify license compatibility (Code mostly stolen from AROS).
+  
+  Disable(); // Not Forbid()!
+  sigSem->ss_NestCount--;
+  sigSem->ss_QueueCount--;
+  if(sigSem->ss_NestCount == 0)
+  {
+    if( sigSem->ss_QueueCount >= 0
+	&& sigSem->ss_WaitQueue.mlh_Head->mln_Succ != NULL )
+    {
+      struct SemaphoreRequest *sr, *srn;
+      struct SemaphoreMessage *sm;
+
+      sr = (struct SemaphoreRequest *)sigSem->ss_WaitQueue.mlh_Head;
+
+      // Note that shared semaphores are not supported!
+
+      sm = (struct SemaphoreMessage *)sr;
+
+      Remove((struct Node *)sr);
+      sigSem->ss_NestCount++;
+      if(sr->sr_Waiter != NULL)
+      {
+	sigSem->ss_Owner = sr->sr_Waiter;
+	Signal(sr->sr_Waiter, SIGF_SINGLE);
+      }
+      else
+      {
+	sigSem->ss_Owner = (struct Task *)sm->ssm_Semaphore;
+	sm->ssm_Semaphore = sigSem;
+	ReplyMsg((struct Message *)sr);
+      }
+    }
+    else
+    {
+      sigSem->ss_Owner = NULL;
+      sigSem->ss_QueueCount = -1;
+    }
+  }
+  else
+  {
+    Alert( AN_SemCorrupt );
+  }
+
+  Enable();
+}
+
+
+/******************************************************************************
+** AHIInitSemaphore ***********************************************************
+******************************************************************************/
+
+static const UWORD m68k_code[] =
+{
+  0x40C0, // MOVE.W SR,D0
+  0x4E73  // RTE
+};
+
+
+static UWORD
+GetSR(void)
+{
+  return Supervisor( (void*) m68k_code );
+}
+
+LONG
+AHIAttemptSemaphore( struct SignalSemaphore* sigSem )
+{
+  // TODO: Verify license compatibility (Code mostly stolen from AROS).
+
+  struct Task *owner = NULL;
+  struct Task *me;
+
+  if( GetSR() & 0x2000 ) 
+  {
+    me = NULL;
+  }
+  else
+  {
+    me = FindTask(NULL);
+  }
+
+  Disable(); // Not Forbid()!
+
+  sigSem->ss_QueueCount++;
+  if( sigSem->ss_QueueCount == 0 )
+  {
+    sigSem->ss_Owner = me;
+    sigSem->ss_NestCount++;
+  }
+  else if( sigSem->ss_Owner == me )
+  {
+    sigSem->ss_NestCount++;
+  }
+  else
+  {
+    sigSem->ss_QueueCount--;
+  }
+
+  owner = sigSem->ss_Owner;
+
+  Enable();
+
+  return (sigSem->ss_Owner == me ? TRUE : FALSE);
+}
+
 
 /******************************************************************************
 ** AHIAllocVec ****************************************************************
