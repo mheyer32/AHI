@@ -1,0 +1,86 @@
+#  $Id$
+#
+#  Makefile.in for the BOOPSI test programs
+#
+
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+top_srcdir	= @top_srcdir@
+srcdir		= @srcdir@
+
+CC		= @CC@
+
+CPPFLAGS	= @CPPFLAGS@
+CFLAGS		= @CFLAGS@
+LDFLAGS		= @LDFLAGS@
+LIBS		= @LIBS@
+
+VPATH		= @srcdir@
+
+
+#
+# Files
+########################################
+
+OBJECTS		= test.o
+EXECUTABLE	= test
+
+
+#
+# Targets
+########################################
+
+.PHONY:		all clean distclean maintainer-clean install revup bindist
+
+all:		$(EXECUTABLE)
+
+clean:
+	$(RM) $(EXECUTABLE) $(OBJECTS) Makefile.dep
+
+distclean:	clean
+	$(RM) Makefile
+
+maintainer-clean: distclean
+
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in ../../config.status
+	(cd ../.. && ./config.status)
+
+
+
+#
+# Rules
+########################################
+
+$(EXECUTABLE):	$(OBJECTS)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+#
+# Dependencies
+########################################
+
+SOURCES		= $(wildcard $(srcdir)/*.c)
+HEADERS		= $(wildcard $(srcdir)/*.h)
+
+#DEPENDENCIES	= $(SOURCES) $(HEADERS)
+
+.PHONY:	depend
+
+depend:
+	$(RM) Makefile.dep
+	$(MAKE) Makefile.dep
+
+Makefile.dep:	$(DEPENDENCIES)
+	@echo Making $@
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+
+include Makefile.dep

@@ -13,10 +13,10 @@
 
 BOOL
 AHIClassInit(struct AHIClassBase* AHIClassBase) {
-  AHIClassBase->super = (struct ClassLibrary*) OpenLibrary("AHI/" AHI_CLASS, 7);
+  AHIClassBase->super = (struct ClassLibrary*) OpenLibrary("AHI/" AHIC_AHI, 7);
 
   if (AHIClassBase->super == NULL) { 
-    Req("Unable to open super class " AHI_CLASS);
+    Req("Unable to open super class " AHIC_AHI);
     return FALSE;
   }
   

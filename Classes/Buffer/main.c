@@ -13,10 +13,10 @@
 
 BOOL
 AHIClassInit(struct AHIClassBase* AHIClassBase) {
-  AHIClassBase->super = (struct ClassLibrary*) OpenLibrary("AHI/" AHI_CLASS, 7);
+  AHIClassBase->super = (struct ClassLibrary*) OpenLibrary("AHI/" AHIC_AHI, 7);
 
   if (AHIClassBase->super == NULL) { 
-    Req("Unable to open super class " AHI_CLASS);
+    Req("Unable to open super class " AHIC_AHI);
     return FALSE;
   }
   
@@ -89,6 +89,10 @@ AHIClassDispatch(Class*  class,
       }
       break;
 
+    case AHIM_Buffer_SampleFrameSize:
+      result = MethodSampleFrameSize(class, object, (struct AHIP_SampleFrameSize*) msg);
+      break;
+      
     default:
       KPrintF(_AHI_CLASS_NAME " passes method %lx to superclass\n", msg->MethodID);
       result = DoSuperMethodA(class, object, msg);
