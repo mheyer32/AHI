@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.3  1997/04/09 03:00:06  lcs
+ * Fixed globaloptions and "Restore"
+ *
  * Revision 4.2  1997/04/07 01:36:51  lcs
  * Localized it, bug fixes
  *
@@ -27,7 +30,7 @@
 
 #define DBSTEP      0.5
 
-static const char *Version[] = {"$VER: AHI preferences 4.1 "__AMIGADATE__"\r\n"};
+static const char *Version[] = {"$VER: AHI preferences 4.3 "__AMIGADATE__"\r\n"};
 
 struct List      *UnitList   = NULL;
 struct List      *ModeList   = NULL;
@@ -80,7 +83,7 @@ static char versionBuffer[32];
 
 #define TEMPLATE "FROM,EDIT/S,USE/S,SAVE/S,PUBSCREEN/K"
 
-static struct {
+struct {
   STRPTR  from;
   ULONG   edit;
   ULONG   use;
@@ -215,14 +218,15 @@ int main(int argc, char **argv) {
 void NewSettings(char *name) {
   FreeVec(Units);
   FreeList(UnitList);
-  UnitList = GetUnits(name);
-  Units = List2Array((struct List *) UnitList);
 
   globalprefs.ahigp_DebugLevel      = AHI_DEBUG_NONE;
   globalprefs.ahigp_DisableSurround = FALSE;
   globalprefs.ahigp_DisableEcho     = FALSE;
   globalprefs.ahigp_FastEcho        = FALSE;
   globalprefs.ahigp_MaxCPU = (90 << 16) / 100;
+
+  UnitList = GetUnits(name);
+  Units = List2Array((struct List *) UnitList);
 
   NewUnit(0);
 }
