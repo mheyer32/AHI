@@ -1,5 +1,7 @@
 2002-07-06  Martin Blom  <martin@blom.org>
 
+	* AHI: Don't crash if no modes are available. [Don Cox]
+
 	* [ahi.device: 5.25 IR]
 
 	* ahi.device: The sample pointer would drift 1/(2^32) samples for
