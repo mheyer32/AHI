@@ -20,9 +20,6 @@
      MA 02139, USA.
 */
 
-//#define DEBUG
-//#define DEBUG_R
-
 #include <config.h>
 #include <CompilerSpecific.h>
 
@@ -960,9 +957,6 @@ RecordFunc( struct Hook*             hook,
     iounit = (struct AHIDevUnit *) hook->h_Data;
     iounit->RecordBuffer = recmsg->ahirm_Buffer;
     iounit->RecordSize = recmsg->ahirm_Length<<2;
-#ifdef DEBUG_R
-    KPrintF("Buffer Filled again...\n");
-#endif
     Signal((struct Task *) iounit->Master, (1L << iounit->RecordSignal));
   }
   return 0;
@@ -984,50 +978,31 @@ SoundFunc( struct Hook*            hook,
   iounit = (struct AHIDevUnit *) hook->h_Data;
   voice = &iounit->Voices[(WORD)sndmsg->ahism_Channel];
 
-#ifdef DEBUG
-  KPrintF("Playing on channel %ld: 0x%08lx\n", sndmsg->ahism_Channel, voice->PlayingRequest);
-#endif
-
   if(voice->PlayingRequest)
   {
     voice->PlayingRequest->ahir_Std.io_Command = AHICMD_WRITTEN;
-#ifdef DEBUG
-    KPrintF("Marked 0x%08lx as written\n", voice->PlayingRequest);
-#endif
   }
   voice->PlayingRequest = voice->QueuedRequest;
   voice->Flags |= VF_STARTED;
-#ifdef DEBUG
-  KPrintF("New player: 0x%08lx\n", voice->PlayingRequest);
-#endif
   voice->QueuedRequest  = NULL;
 
   switch(voice->NextOffset)
   {
     case FREE:
-#ifdef DEBUG
-      KPrintF("Ch %ld FREE\n",sndmsg->ahism_Channel);
-#endif
       break;
+
     case MUTE:
-#ifdef DEBUG
-      KPrintF("Ch %ld MUTE->FREE\n",sndmsg->ahism_Channel);
-#endif
       /* A AHI_NOSOUND is done, channel is silent */
       voice->NextOffset = FREE;
       break;
+
     case PLAY:
-#ifdef DEBUG
-      KPrintF("Ch %ld PLAY->MUTE\n",sndmsg->ahism_Channel);
-#endif
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,AHISF_NONE);
       voice->NextOffset = MUTE;
       break;
+
     default:
-#ifdef DEBUG
-      KPrintF("Ch %ld 0x%08lx->PLAY\n",sndmsg->ahism_Channel,voice->NextOffset);
-#endif
       /* A normal sound is done, and another is waiting */
       AHI_SetSound(sndmsg->ahism_Channel,
           voice->NextSound,

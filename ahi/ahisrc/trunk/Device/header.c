@@ -167,8 +167,6 @@ initRoutine( struct AHIBase*  device,
              APTR             seglist,
              struct ExecBase* sysbase )
 {
-  KPrintF( "initRoutine( %08lx, %08lx, %08lx )\n", device, seglist, sysbase );
-
   SysBase = sysbase;
   AHIBase = device;
 
@@ -196,8 +194,6 @@ initRoutine( struct AHIBase*  device,
     return NULL;
   }
 
-  KPrintF( "initRoutine returns %08lx\n", AHIBase );
-
   return AHIBase;
 }
 
@@ -207,15 +203,13 @@ DevExpunge( struct AHIBase* device )
 {
   BPTR seglist = 0;
 
-  KPrintF( "DevExpunge( %08lx )\n", device );
-
   if( device->ahib_Library.lib_OpenCnt == 0)
   {
     seglist = device->ahib_SegList;
 
     Remove( (struct Node *) device );
 
-//    CloseLibs();
+    CloseLibs();
 
     FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
              device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
@@ -224,8 +218,6 @@ DevExpunge( struct AHIBase* device )
   {
     device->ahib_Library.lib_Flags |= LIBF_DELEXP;
   }
-
-  KPrintF( "DevExpunge returns %08lx\n", seglist );
 
   return seglist;
 }
@@ -299,8 +291,6 @@ static struct timeval     *timeval        = NULL;
 static BOOL
 OpenLibs ( void )
 {
-  KPrintF( "OpenLibs()\n" );
-
   /* Intuition Library */
 
   IntuitionBase = (struct IntuitionBase *) OpenLibrary( "intuition.library", 37 );
@@ -571,8 +561,6 @@ OpenLibs ( void )
     }
   }
 
-  KPrintF( "OpenLibs returns TRUE\n" );
-
   return TRUE;
 }
 
@@ -587,8 +575,6 @@ OpenLibs ( void )
 static void
 CloseLibs ( void )
 {
-  KPrintF( "CloseLibs()\n" );
-
   CloseahiCatalog();
 
   if( PPCObject != NULL )
@@ -611,7 +597,4 @@ CloseLibs ( void )
   CloseLibrary( GadToolsBase );
   CloseLibrary( (struct Library *) GfxBase );
   CloseLibrary( (struct Library *) DOSBase );
-
-  KPrintF( "CloseLibs returns\n" );
-
 }

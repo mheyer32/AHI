@@ -173,6 +173,7 @@ GetTagName( Tag tag )
     case AHIR_PrivateIDCMP: return "AHIR_PrivateIDCMP";
     case AHIR_IntuiMsgFunc: return "AHIR_IntuiMsgFunc";
     case AHIR_SleepWindow: return "AHIR_SleepWindow";
+    case AHIR_ObsoleteUserData: return "AHIR_ObsoleteUserData";
     case AHIR_UserData: return "AHIR_UserData";
     case AHIR_TextAttr: return "AHIR_TextAttr";
     case AHIR_Locale: return "AHIR_Locale";
@@ -366,6 +367,7 @@ GetDatatype( Tag tag )
     case AHIR_PrivateIDCMP: return dt_Hex;
     case AHIR_IntuiMsgFunc: return dt_Hex;
     case AHIR_SleepWindow: return dt_Boolean;
+    case AHIR_ObsoleteUserData: return dt_Hex;
     case AHIR_UserData: return dt_Hex;
     case AHIR_TextAttr: return dt_Hex;
     case AHIR_Locale: return dt_Hex;

@@ -180,11 +180,18 @@ LONG IndexToFrequency( struct Gadget *gad, WORD level )
 
 static void FillReqStruct(struct AHIAudioModeRequesterExt *req, struct TagItem *tags)
 {
+  ULONG obsolete_userdata;
+
 // Check all known tags
   req->SrcWindow=(struct Window *)GetTagData(AHIR_Window,(ULONG)req->SrcWindow,tags);
   req->PubScreenName=(STRPTR)GetTagData(AHIR_PubScreenName,(ULONG)req->PubScreenName,tags);
   req->Screen=(struct Screen *)GetTagData(AHIR_Screen,(ULONG)req->Screen,tags);
   req->IntuiMsgFunc=(struct Hook *)GetTagData(AHIR_IntuiMsgFunc,(ULONG)req->IntuiMsgFunc,tags);
+
+  obsolete_userdata = GetTagData( AHIR_ObsoleteUserData, 0, tags );
+  req->Req.ahiam_ObsoleteUserData[ 0 ] = obsolete_userdata >> 16;
+  req->Req.ahiam_ObsoleteUserData[ 1 ] = obsolete_userdata & 0xffff;
+
   req->Req.ahiam_UserData=(void *)GetTagData(AHIR_UserData,(ULONG)req->Req.ahiam_UserData,tags);
   req->TextAttr=(struct TextAttr *)GetTagData(AHIR_TextAttr,(ULONG)req->TextAttr,tags);
   req->Locale=(struct Locale *)GetTagData(AHIR_Locale,(ULONG)req->Locale,tags);
