@@ -1,3 +1,7 @@
+2004-07-16  Martin Blom  <martin@blom.org>
+
+	* Implemented ahi-output.class.
+
 2004-07-06  Martin Blom  <martin@blom.org>
 
 	* Implemented ahi-board.class.
