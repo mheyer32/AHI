@@ -10,7 +10,7 @@ top_srcdir	= @top_srcdir@
 common_srcdir	= ${top_srcdir}/Classes/Common
 PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
-CLASSDIR	= ${DISTDIR}/User/Classes
+CLASSDIR	= ${DISTDIR}/User/Classes/AHI
 
 VPATH		+= ${common_srcdir}
 
@@ -69,7 +69,7 @@ maintainer-clean: distclean
 
 install:	all
 	$(INSTALL) --directory $(PREFIX)/Classes/AHI
-	$(INSTALL_PROGRAM) $(AHI_CLASS_NAME) $(PREFIX)/AHI
+	$(INSTALL_PROGRAM) $(AHI_CLASS_NAME) $(PREFIX)/AHI/
 
 bindist:	all
 	$(INSTALL) --directory $(CLASSDIR)

@@ -13,10 +13,13 @@ struct AHIClassBase {
 
 struct AHIClassData {
     struct MinList members;
+    ULONG          num_members;
+    Object*        ic;
     Object*        buffer;
     Object*        parent;
     ULONG          disabled;
     ULONG          busy;
+    ULONG          ready;
 };
 
 #endif /* AHI_Classes_Processor_ahiclass_h */

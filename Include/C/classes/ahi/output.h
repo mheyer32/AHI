@@ -67,9 +67,9 @@ namespace AHI {
     };
 
     enum {
-      _AHIV(_P, Mode_ANY,		(0)),
-      _AHIV(_P, Mode_SHARED,		(1)),
-      _AHIV(_P, Mode_EXCLUSIVE,		(2))
+      _AHIV(_P, AnyMode,		(0)),
+      _AHIV(_P, SharedMode,		(1)),
+      _AHIV(_P, ExclusiveMode,		(2))
     };
     
 /*****************************************************************************/
@@ -117,7 +117,7 @@ namespace AHI {
      * interrupt. */
 
     enum {
-      _AHIB(_P, FillBuffer_SYNC,	(0))
+      _AHIB(_P, SyncedFill,		(0))
     };
 
     struct _AHIP(_P, BufferFilled) {

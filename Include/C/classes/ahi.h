@@ -160,7 +160,7 @@ namespace AHI {
   };
 
   enum {
-    _AHIB(_P, Serialize_RECURSIVE,	(0))
+    _AHIB(_P, SerializeRecursive,	(0))
   };
 
 
@@ -190,7 +190,7 @@ namespace AHI {
   /* AHIM_AddNotify/AHIM_RemNotify */
   struct _AHIP(_P, Notify) {
       ULONG		MethodID;
-      Object*		Object;
+      Object*		Obj;
   };
   
   /* AHIM_GetParamValue */

@@ -133,7 +133,7 @@ typedef Fixed	sposition;
 /* 4 channels, music mode (L, R, RL, RR) */
 #define _AHIST_CH_4		(AHIST_D_DISCRETE|AHIST_C_ENCODE(4))
 
-/* 4 channels, pro-logic mode (L, R, C, RC) */
+/* 4 channels, pro-logic mode (L, R, C, SL/SR) */
 #define _AHIST_CH_4_PROLOGIC	(AHIST_D_DISCRETE|AHIST_C_ENCODE(4)|\
 				 AHIST_CF_SURROUND1)
 
@@ -189,7 +189,7 @@ typedef Fixed	sposition;
 /* Frequency domain: 4 channels, music mode (L, R, RL, RR) */
 #define _AHIST_CH_FT_4		(AHIST_D_FOURIER|AHIST_C_ENCODE(4))
 
-/* Frequency domain: 4 channels, pro-logic mode (L, R, C, RC) */
+/* Frequency domain: 4 channels, pro-logic mode (L, R, C, SL/SR) */
 #define _AHIST_CH_FT_4_PROLOGIC	(AHIST_D_FOURIER|AHIST_C_ENCODE(4)|\
 				 AHIST_CF_SURROUND1)
 
