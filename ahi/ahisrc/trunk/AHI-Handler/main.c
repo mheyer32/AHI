@@ -1,6 +1,9 @@
 /* $Id$
  * $Log$
- * Revision 1.3  1997/01/23 19:55:50  lcs
+ * Revision 1.4  1997/01/24 23:20:47  lcs
+ * Writing seem to work too...
+ *
+ * Revision 1.3  1997/01/23  19:55:50  lcs
  * Added AIFF and AIFC saving.
  *
  * Revision 1.2  1997/01/21  23:56:21  lcs
@@ -12,9 +15,12 @@
  */
 
 /*
-** This code is written using DICE, just for testing, and is based on the
-** DosHan example source code.
-*/
+ * This code is written using DICE, and is based on the DosHan example
+ * source code that came with the compiler. Not all comments are mine,
+ * by the way... 
+ *
+ * Done by Martin Blom 1997. Public Domain.
+ */
 
 
 #include <exec/types.h>
@@ -39,15 +45,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "aifc.h"
+#include "main.h"
 
 
-#define min(a,b) ((a)<=(b)?(a):(b))
-#define DOS_TRUE    -1
-#define DOS_FALSE   0
-#define BTOC(bptr)  ((void *)((long)(bptr) << 2))
-#define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
-
+/*
+ *  Prototypes
+ */
 
 void ulong2extended (ULONG, extended *);
 long AllocAudio(void);
@@ -58,62 +61,29 @@ void returnpacket (struct DosPacket *);
 void Initialize (void);
 void UnInitialize (void);
 
+
+/*
+ *  Some macros
+ */
+
+#define min(a,b) ((a)<=(b)?(a):(b))
+#define DOS_TRUE    -1
+#define DOS_FALSE   0
+#define BTOC(bptr)  ((void *)((long)(bptr) << 2))
+#define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
+
+
+/*
+ *  My debug stuff....
+ */
+
 #define HIT(x) {char *a=NULL; *a=x;}
 void kprintf(char *, ...);
 
-#define RAW          0
-#define AIFF         1
-#define AIFC         2
 
-struct HandlerData {
-  UBYTE             *buffer1;        // Address of read buffer
-  UBYTE             *buffer2;
-  LONG               length;         // Offset to first invalid sample frame
-  LONG               offset;         // Current pointer
-  struct AHIRequest *req;
-  UWORD              bits;
-  UWORD              channels;
-  ULONG              type;
-  ULONG              freq;
-  Fixed              vol;
-  sposition          pos;
-  LONG               totallength;     // Total number of bytes to play/record
-  LONG               buffersize;      // Play/record buffer size
-  UBYTE              format;
-};
-
-struct AIFCHeader {
-  ULONG                 FORMid;
-  ULONG                 FORMsize;
-  ULONG                 AIFCid;
-
-  ULONG                 FVERid;
-  ULONG                 FVERsize;
-  FormatVersionHeader   FVERchunk;
-
-  ULONG                 COMMid;
-  ULONG                 COMMsize;
-  ExtCommonChunk        COMMchunk;
-
-  ULONG                 SSNDid;
-  ULONG                 SSNDsize;
-  SampledSoundHeader    SSNDchunk;
-};
-
-struct AIFFHeader {
-  ULONG                 FORMid;
-  ULONG                 FORMsize;
-  ULONG                 AIFFid;
-
-  ULONG                 COMMid;
-  ULONG                 COMMsize;
-  CommonChunk           COMMchunk;
-
-  ULONG                 SSNDid;
-  ULONG                 SSNDsize;
-  SampledSoundHeader    SSNDchunk;
-};
-
+/*
+ *  Global variables
+ */
 
 struct List        HanList;
 struct DeviceNode *DevNode;
@@ -153,6 +123,7 @@ struct AIFFHeader AIFFHeader = {
   },
   ID_SSND, NULL, {0,0}
 };
+
 
 /*
  *  Note that we use the _main entry point.  Also notice that we do not
@@ -295,24 +266,29 @@ void _main ()
 
           data->buffer1 = AllocVec(data->buffersize, MEMF_PUBLIC);
           data->buffer2 = AllocVec(data->buffersize, MEMF_PUBLIC);
+          data->readreq    = AllocVec(sizeof (struct AHIRequest), MEMF_PUBLIC);
 
-          if((data->buffer1 == NULL) || (data->buffer2 == NULL)) {
-            packet->dp_Res1 = -1;
+          if((data->buffer1 == NULL)
+          || (data->buffer2 == NULL)
+          || (data->readreq    == NULL)) {
+            packet->dp_Res2 = ERROR_NO_FREE_STORE;
             break;
           }
+
+          CopyMem(AHIio, data->readreq, sizeof (struct AHIRequest));
 
           // Fill buffer 2
           // Note that io_Offset is always 0 the first time
 
-          data->req->ahir_Std.io_Command                 = CMD_READ;
-          data->req->ahir_Std.io_Data                    = data->buffer2;
-          data->req->ahir_Std.io_Length                  = data->buffersize;
-          data->req->ahir_Std.io_Offset                  = 0;
-          data->req->ahir_Type                           = data->type;
-          data->req->ahir_Frequency                      = data->freq;
-          data->req->ahir_Volume                         = data->vol;
-          data->req->ahir_Position                       = data->pos;
-          SendIO((struct IORequest *) data->req);
+          data->readreq->ahir_Std.io_Command  = CMD_READ;
+          data->readreq->ahir_Std.io_Data     = data->buffer2;
+          data->readreq->ahir_Std.io_Length   = data->buffersize;
+          data->readreq->ahir_Std.io_Offset   = 0;
+          data->readreq->ahir_Type            = data->type;
+          data->readreq->ahir_Frequency       = data->freq;
+          data->readreq->ahir_Volume          = data->vol;
+          data->readreq->ahir_Position        = data->pos;
+          SendIO((struct IORequest *) data->readreq);
   
           // Force buffer switch filling of the other buffer
 
@@ -372,24 +348,24 @@ void _main ()
             data->buffer1 = data->buffer2;
             data->buffer2 = temp;
 
-            WaitIO((struct IORequest *) data->req);
-            data->length = data->req->ahir_Std.io_Actual;
+            WaitIO((struct IORequest *) data->readreq);
+            data->length = data->readreq->ahir_Std.io_Actual;
             data->offset = 0;
 
-            if(data->req->ahir_Std.io_Error) {
+            if(data->readreq->ahir_Std.io_Error) {
               packet->dp_Res1 = -1;
               length = 0;
               break;
             }
 
-            data->req->ahir_Std.io_Command                 = CMD_READ;
-            data->req->ahir_Std.io_Data                    = data->buffer2;
-            data->req->ahir_Std.io_Length                  = data->buffersize;
-            data->req->ahir_Type                           = data->type;
-            data->req->ahir_Frequency                      = data->freq;
-            data->req->ahir_Volume                         = data->vol;
-            data->req->ahir_Position                       = data->pos;
-            SendIO((struct IORequest *) data->req);
+            data->readreq->ahir_Std.io_Command = CMD_READ;
+            data->readreq->ahir_Std.io_Data    = data->buffer2;
+            data->readreq->ahir_Std.io_Length  = data->buffersize;
+            data->readreq->ahir_Type           = data->type;
+            data->readreq->ahir_Frequency      = data->freq;
+            data->readreq->ahir_Volume         = data->vol;
+            data->readreq->ahir_Position       = data->pos;
+            SendIO((struct IORequest *) data->readreq);
           } /* if */
 
           thislength = min(data->length - data->offset, length);
@@ -408,29 +384,94 @@ void _main ()
       case ACTION_WRITE:        /*  FHArg1,CPTRBuffer,Length    ActLength   */
       {
         struct HandlerData *data  = (struct HandlerData *) packet->dp_Arg1;
-        long bytes = packet->dp_Arg3;
+        UBYTE *src    = (void *) packet->dp_Arg2;
+        long   length, filled;
 
-        packet->dp_Res1 = -1;
 
-        kprintf("ACTION_WRITE: 0x%08lx, %ld\n", packet->dp_Arg2, bytes);
-#if 0
-        if (xn = AllocMem (sizeof (XNode), MEMF_PUBLIC | MEMF_CLEAR)) {
-          if (xn->xn_Buf = AllocMem (bytes, MEMF_PUBLIC)) {
-            movmem ((char *) packet->dp_Arg2, xn->xn_Buf, bytes);
-            xn->xn_Length = bytes;
-            packet->dp_Res1 = bytes;
-            AddTail (&xh->xh_List, &xn->xn_Node);
-            xh->xh_Flags &= ~XHF_EOF;
-          }
-          else {
-            FreeMem (xn, sizeof (XNode));
+        kprintf("ACTION_WRITE: 0x%08lx, %ld\n", packet->dp_Arg2, packet->dp_Arg3);
+
+        length = filled = min(data->totallength, packet->dp_Arg3);
+
+        if(data->buffer1 == NULL) {
+
+          data->buffer1 = AllocVec(data->buffersize, MEMF_PUBLIC);
+          data->buffer2 = AllocVec(data->buffersize, MEMF_PUBLIC);
+
+          if((data->buffer1 == NULL) || (data->buffer2 == NULL)) {
             packet->dp_Res2 = ERROR_NO_FREE_STORE;
+            break;
           }
+
+          data->offset = 0;
+          data->length = (data->buffersize / AHI_SampleFrameSize(data->type))
+                          * AHI_SampleFrameSize(data->type);
+          kprintf("length: %ld\n", data->length);
         }
-        else {
-          packet->dp_Res2 = ERROR_NO_FREE_STORE;
-        }
-#endif
+
+
+        while(length > 0) {
+          LONG thislength;
+        
+          if(data->offset >= data->length) {
+            void *temp;
+
+            temp          = data->buffer1;
+            data->buffer1 = data->buffer2;
+            data->buffer2 = temp;
+
+
+            temp            = data->writereq1;
+            data->writereq1 = data->writereq2;
+            data->writereq2 = temp;
+
+
+            if(data->writereq1) {
+  kprintf("Väntar på 0x%08lx..\n",data->writereq1);
+              WaitIO((struct IORequest *) data->writereq1);
+
+              if(data->writereq1->ahir_Std.io_Error) {
+                packet->dp_Res1 = -1;
+                length = 0;
+                break;
+              }
+            }
+            else {
+              data->writereq1 = AllocVec(sizeof (struct AHIRequest), MEMF_PUBLIC);
+
+              if(data->writereq1 == NULL) {
+                packet->dp_Res1 = -1;
+                length = 0;
+                break;
+              }
+              CopyMem(AHIio, data->writereq1, sizeof (struct AHIRequest));
+            }
+
+            data->offset = 0;
+
+  kprintf("Spelar 0x%08lx, länkad till 0x%08lx..\n", data->writereq1, data->writereq2);
+            data->writereq1->ahir_Std.io_Message.mn_Node.ln_Pri = 0;
+            data->writereq1->ahir_Std.io_Command = CMD_WRITE;
+            data->writereq1->ahir_Std.io_Data    = data->buffer2;
+            data->writereq1->ahir_Std.io_Length  = data->buffersize;
+            data->writereq1->ahir_Std.io_Offset  = 0;
+            data->writereq1->ahir_Type           = data->type;
+            data->writereq1->ahir_Frequency      = data->freq;
+            data->writereq1->ahir_Volume         = data->vol;
+            data->writereq1->ahir_Position       = data->pos;
+            data->writereq1->ahir_Link           = data->writereq2;
+            SendIO((struct IORequest *) data->writereq1);
+          } /* if */
+
+          thislength = min(data->length - data->offset, length);
+kprintf("Kopierar %ld bytes..\n", thislength);
+          CopyMem(src, data->buffer1 + data->offset, thislength); 
+          src               += thislength;
+          length            -= thislength;
+          data->offset      += thislength;
+          data->totallength -= thislength;
+        } /* while */
+
+        packet->dp_Res1 = filled;
         break;
       }
 
@@ -439,8 +480,18 @@ void _main ()
         struct HandlerData *data = (struct HandlerData *) packet->dp_Arg1;
 
         kprintf("ACTION_END\n");
-        AbortIO((struct IORequest *) data->req);
-        WaitIO((struct IORequest *) data->req);
+        if(data->readreq) {
+          AbortIO((struct IORequest *) data->readreq);
+          WaitIO((struct IORequest *) data->readreq);
+        }
+        if(data->writereq1) {
+          AbortIO((struct IORequest *) data->writereq1);
+          WaitIO((struct IORequest *) data->writereq1);
+        }
+        if(data->writereq2) {
+          AbortIO((struct IORequest *) data->writereq2);
+          WaitIO((struct IORequest *) data->writereq2);
+        }
 
         FreeHData(data);
         FreeAudio();
@@ -453,6 +504,9 @@ void _main ()
 
       default:
       {
+        if(AllocCnt == 0)
+          Running = FALSE;
+        kprintf("Unknow packet!\n");
         packet->dp_Res2 = ERROR_ACTION_NOT_KNOWN;
         break;
       }
@@ -468,7 +522,7 @@ void _main ()
   } /* for */
 
   kprintf("Dying..!\n");
-  UnInitialize ();
+  UnInitialize();
   _exit (0);
 }
 
@@ -580,22 +634,24 @@ long InitHData(struct HandlerData *data, char *initstring)
       "L=LENGTH/K/N,S=SECONDS/K/N,BUF=BUFFER/K/N",
       (LONG *) &args, rdargs);
 
-    kprintf("%ld bits, %ld channels, %ld Hz, %s, %ld%% volume, position %ld%%, "
-            "%ld bytes total, %ld seconds, %ld bytes buffer\n",
-        *args.bits, *args.channels, *args.rate, args.type, *args.volume, *args.position,
-        *args.length, (args.seconds ? *args.seconds : 0), *args.buffersize);
+    if(rdargs2 != NULL) {
+      kprintf("%ld bits, %ld channels, %ld Hz, %s, %ld%% volume, position %ld%%, "
+              "%ld bytes total, %ld seconds, %ld bytes buffer\n",
+          *args.bits, *args.channels, *args.rate, args.type, *args.volume, *args.position,
+          *args.length, (args.seconds ? *args.seconds : 0), *args.buffersize);
 
-    if(data->req = AllocVec(sizeof (struct AHIRequest), MEMF_PUBLIC) ) {
-      CopyMem(AHIio, data->req, sizeof (struct AHIRequest));
+      FreeArgs(rdargs2);    
     }
     else
-      rc = ERROR_NO_FREE_STORE;
+      rc = ERROR_BAD_TEMPLATE;
 
-    FreeArgs(rdargs2);    
     FreeDosObject(DOS_RDARGS, rdargs);
   }
   else
     rc = ERROR_OBJECT_WRONG_TYPE;
+
+
+  if(rc == 0) {
 
 #define S8bitmode      0
 #define S16bitmode     1
@@ -604,71 +660,73 @@ long InitHData(struct HandlerData *data, char *initstring)
 #define Sstereoflag    2
 #define Sunsignedflag  4
 
-  // 8, 16 or 32 bit
-
-  if(*args.bits <= 8)
-    data->type = S8bitmode;
-  else if(*args.bits <= 16)
-    data->type = S16bitmode;
-  else if(*args.bits <= 32)
-    data->type = S32bitmode;
-  else
-    rc = ERROR_OBJECT_WRONG_TYPE;
-
-  // Mono or stereo
-
-  if(*args.channels == 2)
-    data->type |= Sstereoflag;
-  else if(*args.channels != 1)
-    rc = ERROR_OBJECT_WRONG_TYPE;
-
-  // Signed, unsigned, aiff, aifc...
-
-  if(Stricmp("SIGNED", args.type) == 0) {
-    data->format = RAW;
-    kprintf("Signed\n");
+    // 8, 16 or 32 bit
+  
+    if(*args.bits <= 8)
+      data->type = S8bitmode;
+    else if(*args.bits <= 16)
+      data->type = S16bitmode;
+    else if(*args.bits <= 32)
+      data->type = S32bitmode;
+    else
+      rc = ERROR_OBJECT_WRONG_TYPE;
+  
+    // Mono or stereo
+  
+    if(*args.channels == 2)
+      data->type |= Sstereoflag;
+    else if(*args.channels != 1)
+      rc = ERROR_OBJECT_WRONG_TYPE;
+  
+    // Signed, unsigned, aiff, aifc...
+  
+    if(Stricmp("SIGNED", args.type) == 0) {
+      data->format = RAW;
+      kprintf("Signed\n");
+    }
+    else if(Stricmp("UNSIGNED", args.type) == 0) {
+      data->type |= Sunsignedflag;
+      data->format = RAW;
+      kprintf("Unsigned\n");
+    }
+    else if(Stricmp("AIFF", args.type) == 0) {
+      data->format = AIFF;
+      kprintf("AIFF\n");
+    }
+    else if(Stricmp("AIFC", args.type) == 0) {
+      data->format = AIFC;
+      kprintf("AIFC\n");
+    }
+    else {
+      rc = ERROR_OBJECT_WRONG_TYPE;
+    }
+  
+    data->bits     = *args.bits;
+    data->channels = *args.channels;
+    data->freq     = *args.rate;
+    data->vol      = *args.volume * 0x10000 / 100;
+    data->pos      = *args.position * 0x8000 / 100 + 0x8000;
+    if(args.seconds)
+      data->totallength = *args.seconds * data->freq 
+                          * AHI_SampleFrameSize(data->type);
+    else
+      data->totallength = (*args.length / AHI_SampleFrameSize(data->type))
+                          * AHI_SampleFrameSize(data->type);
+  
+    switch(data->format) {
+      case AIFF:
+      case AIFC:
+        data->totallength = (data->totallength + 1) & ~1;    // Make even
+        break;
+      default:
+        break;
+    }
+  
+    // User doesn't know about double buffering!
+  
+    data->buffersize = *args.buffersize >> 1;
   }
-  else if(Stricmp("UNSIGNED", args.type) == 0) {
-    data->type |= Sunsignedflag;
-    data->format = RAW;
-    kprintf("Unsigned\n");
-  }
-  else if(Stricmp("AIFF", args.type) == 0) {
-    data->format = AIFF;
-    kprintf("AIFF\n");
-  }
-  else if(Stricmp("AIFC", args.type) == 0) {
-    data->format = AIFC;
-    kprintf("AIFC\n");
-  }
-  else {
-    rc = ERROR_OBJECT_WRONG_TYPE;
-  }
 
-  data->bits     = *args.bits;
-  data->channels = *args.channels;
-  data->freq     = *args.rate;
-  data->vol      = *args.volume * 0x10000 / 100;
-  data->pos      = *args.position * 0x8000 / 100 + 0x8000;
-  if(args.seconds)
-    data->totallength = *args.seconds * data->freq 
-                        * AHI_SampleFrameSize(data->type);
-  else
-    data->totallength = (*args.length / AHI_SampleFrameSize(data->type))
-                        * AHI_SampleFrameSize(data->type);
-
-  switch(data->format) {
-    case AIFF:
-    case AIFC:
-      data->totallength = (data->totallength + 1) & ~1;    // Make even
-      break;
-    default:
-      break;
-  }
-
-  // User doesn't know about double buffering!
-
-  data->buffersize = *args.buffersize >> 1;
   return rc;
 }
 
@@ -681,7 +739,9 @@ void FreeHData(struct HandlerData *data)
 {
   FreeVec(data->buffer1);
   FreeVec(data->buffer2);
-  FreeVec(data->req);
+  FreeVec(data->readreq);
+  FreeVec(data->writereq1);
+  FreeVec(data->writereq2);
   FreeVec(data);
 }
 
