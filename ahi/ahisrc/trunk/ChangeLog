@@ -1,3 +1,8 @@
+2002-02-09  Martin Blom  <martin@blom.org>
+
+	* toccata.audio: The CPU load check now also includes the
+	PlayerFunc.
+
 2002-01-20  Martin Blom  <martin@blom.org>
 
 	* The '-s' flag is not used when stripping the binaries anymore.
