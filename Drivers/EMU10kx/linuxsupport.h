@@ -64,7 +64,9 @@ typedef unsigned int   dma_addr_t;
 
 #define AC97_RESET               0x0000
 #define AC97_MASTER_VOL_STEREO   0x0002
+#define AC97_HEADPHONE_VOL       0x0004
 #define AC97_MASTER_VOL_MONO     0x0006
+#define AC97_MASTER_TONE         0x0008
 #define AC97_PCBEEP_VOL          0x000a
 #define AC97_PHONE_VOL           0x000c
 #define AC97_MIC_VOL             0x000e
@@ -73,12 +75,22 @@ typedef unsigned int   dma_addr_t;
 #define AC97_AUX_VOL             0x0016
 #define AC97_VIDEO_VOL           0x0014
 #define AC97_PCMOUT_VOL          0x0018
+#define AC97_RECORD_SELECT       0x001a
 #define AC97_RECORD_GAIN         0x001c
 
 #define AC97_EXTENDED_ID         0x0028
 #define AC97_SURROUND_MASTER     0x0038
 
 #define AC97_MUTE                0x8000
+
+#define AC97_RECMUX_MIC          0x0000
+#define AC97_RECMUX_CD           0x0101
+#define AC97_RECMUX_VIDEO        0x0202
+#define AC97_RECMUX_AUX          0x0303
+#define AC97_RECMUX_LINE         0x0404
+#define AC97_RECMUX_STEREO_MIX   0x0505
+#define AC97_RECMUX_MONO_MIX     0x0606
+#define AC97_RECMUX_PHONE        0x0707
 
 
 unsigned long

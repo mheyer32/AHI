@@ -71,7 +71,7 @@ struct Driver
     BPTR           seglist;
 };
 
-#define dd ((struct DriverData*) AudioCtrl->ahiac_DriverData)
+//#define dd ((struct DriverData*) AudioCtrl->ahiac_DriverData)
 
 /******************************************************************************
 ** Driver entry ***************************************************************
@@ -109,90 +109,90 @@ BPTR ASMCALL
 LibClose( REG( a6, struct Driver* driver ) );
 
 ULONG ASMCALL
-intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
-		      REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibAllocAudio( REG( a1, struct TagItem* taglist ),
+	       REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-intAHIsub_FreeAudio( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibFreeAudio( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-asmAHIsub_Disable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+AsmDisable( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-intAHIsub_Disable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibDisable( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-asmAHIsub_Enable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+AsmEnable( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-intAHIsub_Enable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibEnable( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 ULONG ASMCALL
-intAHIsub_Start( REG( d0, ULONG Flags ),
-                 REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibStart( REG( d0, ULONG flags ),
+	  REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-intAHIsub_Update( REG( d0, ULONG Flags ),
-                  REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibUpdate( REG( d0, ULONG flags ),
+	   REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 void ASMCALL
-intAHIsub_Stop( REG( d0, ULONG Flags ),
-                REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibStop( REG( d0, ULONG flags ),
+	 REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 LONG ASMCALL
-intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
-                   REG( d1, LONG Argument ),
-                   REG( d2, LONG Default ),
-                   REG( a1, struct TagItem* tagList ),
-                   REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibGetAttr( REG( d0, ULONG attribute ),
+	    REG( d1, LONG argument ),
+	    REG( d2, LONG def ),
+	    REG( a1, struct TagItem* taglist ),
+	    REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 ULONG ASMCALL
-intAHIsub_HardwareControl( REG( d0, ULONG attribute ),
-                           REG( d1, LONG argument ),
-                           REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibHardwareControl( REG( d0, ULONG attribute ),
+		    REG( d1, LONG argument ),
+		    REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 ULONG ASMCALL
-intAHIsub_SetVol( REG( d0, UWORD channel ),
-                  REG( d1, Fixed volume ),
-                  REG( d2, sposition pan ),
-                  REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ),
-                  REG( d3, ULONG Flags ) );
+LibSetVol( REG( d0, UWORD channel ),
+	   REG( d1, Fixed volume ),
+	   REG( d2, sposition pan ),
+	   REG( a2, struct AHIAudioCtrlDrv* audioctrl ),
+	   REG( d3, ULONG flags ) );
 
 ULONG ASMCALL
-intAHIsub_SetFreq( REG( d0, UWORD channel ),
-                   REG( d1, ULONG freq ),
-                   REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ),
-                   REG( d2, ULONG flags ) );
+LibSetFreq( REG( d0, UWORD channel ),
+	    REG( d1, ULONG freq ),
+	    REG( a2, struct AHIAudioCtrlDrv* audioctrl ),
+	    REG( d2, ULONG flags ) );
 
 ULONG ASMCALL
-intAHIsub_SetSound( REG( d0, UWORD channel ),
-                    REG( d1, UWORD sound ),
-                    REG( d2, ULONG offset ),
-                    REG( d3, LONG length ),
-                    REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ),
-                    REG( d4, ULONG flags ) );
+LibSetSound( REG( d0, UWORD channel ),
+	     REG( d1, UWORD sound ),
+	     REG( d2, ULONG offset ),
+	     REG( d3, LONG length ),
+	     REG( a2, struct AHIAudioCtrlDrv* audioctrl ),
+	     REG( d4, ULONG flags ) );
 
 ULONG ASMCALL
-intAHIsub_SetEffect( REG( a0, APTR effect ),
-                     REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibSetEffect( REG( a0, APTR effect ),
+	      REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 ULONG ASMCALL
-intAHIsub_LoadSound( REG( d0, UWORD sound ),
-                     REG( d1, ULONG type ),
-                     REG( a0, APTR info ),
-                     REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibLoadSound( REG( d0, UWORD sound ),
+	      REG( d1, ULONG type ),
+	      REG( a0, APTR info ),
+	      REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 ULONG ASMCALL
-intAHIsub_UnloadSound( REG( d0, UWORD sound ),
-                       REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) );
+LibUnloadSound( REG( d0, UWORD sound ),
+		REG( a2, struct AHIAudioCtrlDrv* audioctrl ) );
 
 
 
 static ULONG ASMCALL INTERRUPT 
-EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) );
+EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
 
 static void ASMCALL INTERRUPT 
-Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) );
+Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
 
 static ULONG
 samplerate_to_linearpitch( ULONG samplingrate );
@@ -242,7 +242,7 @@ struct UtilityBase*  UtilityBase = NULL;
 
 #define FREQUENCIES 8
 
-static const ULONG frequency[ FREQUENCIES ] =
+static const ULONG Frequencies[ FREQUENCIES ] =
 {
   8000,     // µ- and A-Law
   11025,    // CD/4
@@ -254,25 +254,39 @@ static const ULONG frequency[ FREQUENCIES ] =
   48000     // DAT
 };
 
-#define INPUTS 6
+#define INPUTS 8
 
-static const STRPTR inputs[ INPUTS ] =
+static const STRPTR Inputs[ INPUTS ] =
 {
-  "Line in",
   "Mic",
   "CD",
-  "Phone",
   "Video",
-  "Mixer"
+  "Aux",
+  "Line in",
+  "Mixer",
+  "Mixer (mono)",
+  "Phone"
+};
+
+static const UWORD Input_bits[ INPUTS ] =
+{
+  AC97_RECMUX_MIC,
+  AC97_RECMUX_CD,
+  AC97_RECMUX_VIDEO,
+  AC97_RECMUX_AUX,
+  AC97_RECMUX_LINE,
+  AC97_RECMUX_STEREO_MIX,
+  AC97_RECMUX_MONO_MIX,
+  AC97_RECMUX_PHONE
 };
 
 
 #define OUTPUTS 2
 
-static const STRPTR outputs[ OUTPUTS ] =
+static const STRPTR Outputs[ OUTPUTS ] =
 {
   "Front",
-  "Back"
+  "Front & Rear"
 };
 
 
@@ -280,28 +294,28 @@ static const STRPTR outputs[ OUTPUTS ] =
 ** Driver resident structure **************************************************
 ******************************************************************************/
 
-static const APTR funcTable[] =
+static const APTR FuncTable[] =
 {
   LibOpen,
   LibClose,
   LibExpunge,
   Null,
   
-  intAHIsub_AllocAudio,
-  intAHIsub_FreeAudio,
-  asmAHIsub_Disable,
-  asmAHIsub_Enable,
-  intAHIsub_Start,
-  intAHIsub_Update,
-  intAHIsub_Stop,
-  intAHIsub_SetVol,
-  intAHIsub_SetFreq,
-  intAHIsub_SetSound,
-  intAHIsub_SetEffect,
-  intAHIsub_LoadSound,
-  intAHIsub_UnloadSound,
-  intAHIsub_GetAttr,
-  intAHIsub_HardwareControl,
+  LibAllocAudio,
+  LibFreeAudio,
+  AsmDisable,
+  AsmEnable,
+  LibStart,
+  LibUpdate,
+  LibStop,
+  LibSetVol,
+  LibSetFreq,
+  LibSetSound,
+  LibSetEffect,
+  LibLoadSound,
+  LibUnloadSound,
+  LibGetAttr,
+  LibHardwareControl,
   (APTR) -1
 };
 
@@ -309,7 +323,7 @@ static const APTR funcTable[] =
 static const APTR InitTable[4] =
 {
   (APTR) sizeof( struct Driver ),
-  (APTR) &funcTable,
+  (APTR) &FuncTable,
   NULL,
   (APTR) LibInit
 };
@@ -473,14 +487,16 @@ LibClose( REG( a6, struct Driver* driver ) )
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
-		      REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibAllocAudio( REG( a1, struct TagItem* taglist ),
+	       REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
-  int              card_num;
-  UWORD            command_word;
-  int              ret;
+  struct DriverData* dd;
+  int                card_num;
+  UWORD              command_word;
+  int                ret;
+  int                i;
 
-  card_num = ( GetTagData( AHIDB_AudioID, 0, tagList) & 0x0000f000 ) >> 12;
+  card_num = ( GetTagData( AHIDB_AudioID, 0, taglist) & 0x0000f000 ) >> 12;
 
   // FIXME: This shoule be non-cachable, DMA-able memory
   dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
@@ -491,17 +507,19 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
   }
   else
   {
+    audioctrl->ahiac_DriverData = dd;
+
     dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
     dd->interrupt.is_Node.ln_Pri  = 0;
     dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
     dd->interrupt.is_Code         = (void(*)(void)) EMU10kx_interrupt;
-    dd->interrupt.is_Data         = (APTR) AudioCtrl;
+    dd->interrupt.is_Data         = (APTR) audioctrl;
     
     dd->software_interrupt.is_Node.ln_Type = NT_INTERRUPT;
     dd->software_interrupt.is_Node.ln_Pri  = 0;
     dd->software_interrupt.is_Node.ln_Name = (STRPTR) LibName;
     dd->software_interrupt.is_Code         = (void(*)(void)) Mixer_interrupt;
-    dd->software_interrupt.is_Data         = (APTR) AudioCtrl;
+    dd->software_interrupt.is_Data         = (APTR) audioctrl;
     
     dd->card.pci_dev = 0;
 
@@ -548,7 +566,7 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
 
     dd->master_enabled = TRUE;
     
-    dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 );
+    dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 );	
     dd->card.length  = ( (ULONG) pci_get_base_end( dd->card.pci_dev, 0 ) -
 			 (ULONG) dd->card.iobase ) + 1;
 
@@ -562,6 +580,13 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
 
     pci_add_irq( dd->card.pci_dev, &dd->interrupt );
     dd->interrupt_added = TRUE;
+
+//    KPrintF( DRIVER_NAME ": I/O status: Base: 0x%08lx; Length:%08lx\n",
+//	     dd->card.iobase, dd->card.length );
+//    KPrintF( DRIVER_NAME ": IRQ status: Bus: %ld; Amiga: %ld\n",
+//	     dd->card.irq, pci_ask_irq( dd->card.pci_dev ) & 0xff );
+//    KPrintF( DRIVER_NAME ": Model: %04lx; Chip: 0x%02lx\n",
+//	     dd->card.model, dd->card.chiprev );
 
     /* Initialize chip */
 
@@ -581,37 +606,62 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
       KPrintF( DRIVER_NAME ": ac97 codec not present.\n");
       return AHISF_ERROR;
     }
-    else
-    {
-      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0808 );
-      emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x000a );
-      emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
-      emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x000a );
-      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x000a );
-      emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0a0a );
 
-      if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
-      {
-	sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
-	emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
-      }
+    dd->input          = 0;
+    dd->output         = 0;
+    dd->monitor_volume = 0;
+    dd->input_gain     = 0x10000;
+    dd->output_volume  = 0x10000;
+
+    // No attenuation and natural tone for all outputs
+    emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
+    emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
+    emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
+    emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
+
+    emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0000 );
+    
+    emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0404 );
+    emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x0002 );
+    emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0202 );
+    emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
+    emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0202 );
+    emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0202 );
+    emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x0002 );
+    emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0202 );
+
+
+    if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
+    {
+      sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
+      emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
     }
 
     dd->emu10k1_initialized = TRUE;
 
     /* Since the EMU10kx chips can play a voice at any sample rate, we
-       do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
+       do not have to examine/modify audioctrl->ahiac_MixFreq here.
 
-       Had this not been the case, AudioCtrl->ahiac_MixFreq should be
-       set to the frequency we will use.  */
+       Had this not been the case, audioctrl->ahiac_MixFreq should be
+       set to the frequency we will use.
+
+       However, recording can only be performed at the fixed sampling
+       rates.
+    */
   }
 
-  return AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_MIXING | AHISF_TIMING;
+  ret = AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_MIXING | AHISF_TIMING;
+  
+  for( i = 0; i < FREQUENCIES; ++i )
+  {
+    if( audioctrl->ahiac_MixFreq == Frequencies[ i ] )
+    {
+      ret |= AHISF_CANRECORD;
+      break;
+    }
+  }
+
+  return ret;
 }
 
 
@@ -621,8 +671,10 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
 ******************************************************************************/
 
 void ASMCALL
-intAHIsub_FreeAudio( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibFreeAudio( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
+  
   if( dd != NULL )
   {
     if( dd->card.pci_dev != NULL )
@@ -668,16 +720,16 @@ intAHIsub_FreeAudio( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
 ******************************************************************************/
 
 __asm__("
-_asmAHIsub_Disable:
+_AsmDisable:
 	moveml	d0-d1/a0-a1,-(sp)
-	bsr	_intAHIsub_Disable
+	bsr	_LibDisable
 	moveml	(sp)+,d0-d1/a0-a1
 	rts
 ");
 
 
 void ASMCALL
-intAHIsub_Disable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibDisable( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   Disable();
 }  
@@ -688,16 +740,16 @@ intAHIsub_Disable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
 ******************************************************************************/
 
 __asm__("
-_asmAHIsub_Enable:
+_AsmEnable:
 	moveml	d0-d1/a0-a1,-(sp)
-	bsr	_intAHIsub_Enable
+	bsr	_LibEnable
 	moveml	(sp)+,d0-d1/a0-a1
 	rts
 ");
 
 
 void ASMCALL
-intAHIsub_Enable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibEnable( REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   Enable();
 }
@@ -708,35 +760,37 @@ intAHIsub_Enable( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_Start( REG( d0, ULONG Flags ),
-                 REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibStart( REG( d0, ULONG flags ),
+	  REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
-  AHIsub_Stop( Flags, AudioCtrl );
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
 
-  if(Flags & AHISF_PLAY)
+  AHIsub_Stop( flags, audioctrl );
+
+  if( flags & AHISF_PLAY )
   {
     ULONG dma_buffer_size;
     ULONG dma_sample_frame_size;
     
     /* Stop playback, free old buffers (if any) */
     
-    AHIsub_Stop( AHISF_PLAY, AudioCtrl );
+    AHIsub_Stop( AHISF_PLAY, audioctrl );
 
     /* Update cached/syncronized variables */
 
-    AHIsub_Update( AHISF_PLAY, AudioCtrl );
+    AHIsub_Update( AHISF_PLAY, audioctrl );
     
     /* Allocate a new mixing buffer. Note: The buffer must be cleared, since
        it might not be filled by the mixer software interrupt because of
        pretimer/posttimer! */
 
-    dd->mixbuffer = AllocVec( AudioCtrl->ahiac_BuffSize,
+    dd->mixbuffer = AllocVec( audioctrl->ahiac_BuffSize,
 			      MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR );
 
     if( dd->mixbuffer == NULL )
     {
       KPrintF( DRIVER_NAME ": Unable to allocate %ld bytes for mixing buffer.\n",
-	       AudioCtrl->ahiac_BuffSize );
+	       audioctrl->ahiac_BuffSize );
       return AHIE_NOMEM;
     }
 
@@ -744,15 +798,15 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
        playback (mono or stereo) */
 
 
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+    if( audioctrl->ahiac_Flags & AHIACF_STEREO )
     {
       dma_sample_frame_size = 4;
-      dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
+      dma_buffer_size = audioctrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
     }
     else
     {
       dma_sample_frame_size = 2;
-      dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
+      dma_buffer_size = audioctrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
     }
 
     if( emu10k1_voice_alloc_buffer( &dd->card,
@@ -771,7 +825,7 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
     
     dd->voice.usage = VOICE_USAGE_PLAYBACK;
 
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+    if( audioctrl->ahiac_Flags & AHIACF_STEREO )
     {
       dd->voice.flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
     }
@@ -788,8 +842,8 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 
     dd->voice_allocated = TRUE;
     
-    dd->voice.initial_pitch = (u16) ( srToPitch( AudioCtrl->ahiac_MixFreq ) >> 8 );
-    dd->voice.pitch_target  = samplerate_to_linearpitch( AudioCtrl->ahiac_MixFreq );
+    dd->voice.initial_pitch = (u16) ( srToPitch( audioctrl->ahiac_MixFreq ) >> 8 );
+    dd->voice.pitch_target  = samplerate_to_linearpitch( audioctrl->ahiac_MixFreq );
 
     DPD(2, "Initial pitch --> %#x\n", dd->voice.initial_pitch);
 
@@ -797,7 +851,7 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 
     dd->voice.start     = ( ( dd->voice.mem.emupageindex << 12 )
 			    / dma_sample_frame_size );
-    dd->voice.endloop   = dd->voice.start + AudioCtrl->ahiac_MaxBuffSamples * 2;
+    dd->voice.endloop   = dd->voice.start + audioctrl->ahiac_MaxBuffSamples * 2;
     dd->voice.startloop = dd->voice.start;
 
     
@@ -807,13 +861,13 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
     dd->current_buffer   = ( dd->voice.mem.addr +
 			     dd->current_position * dma_sample_frame_size );
 
-    
+
     if( dd->voice.flags & VOICE_FLAGS_STEREO )
     {
       dd->voice.params[0].send_a             = 0xff;
-      dd->voice.params[0].send_b             = 0x0;
-      dd->voice.params[0].send_c             = 0x0;
-      dd->voice.params[0].send_d             = 0x0;
+      dd->voice.params[0].send_b             = 0x00;
+      dd->voice.params[0].send_c             = 0x00;
+      dd->voice.params[0].send_d             = 0x00;
       dd->voice.params[0].send_routing       = 0x3210;
       dd->voice.params[0].volume_target      = 0xffff;
       dd->voice.params[0].initial_fc         = 0xff;
@@ -836,8 +890,8 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
     {
       dd->voice.params[0].send_a             = 0xff;
       dd->voice.params[0].send_b             = 0xff;
-      dd->voice.params[0].send_c             = 0x0;
-      dd->voice.params[0].send_d             = 0x0;
+      dd->voice.params[0].send_c             = 0x00;
+      dd->voice.params[0].send_d             = 0x00;
       dd->voice.params[0].send_routing       = 0x3210;
       dd->voice.params[0].volume_target      = 0xffff;
       dd->voice.params[0].initial_fc         = 0xff;
@@ -862,7 +916,7 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
     emu10k1_voices_start( &dd->voice, 1, 0 );    
   }
 
-  if( Flags & AHISF_RECORD )
+  if( flags & AHISF_RECORD )
   {
     return AHIE_UNKNOWN;
   }
@@ -876,12 +930,14 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 ******************************************************************************/
 
 void ASMCALL
-intAHIsub_Update( REG( d0, ULONG Flags ),
-                  REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibUpdate( REG( d0, ULONG flags ),
+	   REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
-  dd->current_length = AudioCtrl->ahiac_BuffSamples;
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
 
-  if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+  dd->current_length = audioctrl->ahiac_BuffSamples;
+
+  if( audioctrl->ahiac_Flags & AHIACF_STEREO )
   {
     dd->current_size = dd->current_length * 4;
   }
@@ -897,10 +953,12 @@ intAHIsub_Update( REG( d0, ULONG Flags ),
 ******************************************************************************/
 
 void ASMCALL
-intAHIsub_Stop( REG( d0, ULONG Flags ),
-                REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibStop( REG( d0, ULONG flags ),
+	 REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
-  if( Flags & AHISF_PLAY )
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
+  
+  if( flags & AHISF_PLAY )
   {
     if( dd->voice_started )
     {
@@ -933,7 +991,7 @@ intAHIsub_Stop( REG( d0, ULONG Flags ),
     dd->mixbuffer = NULL;
   }
 
-  if(Flags & AHISF_RECORD)
+  if( flags & AHISF_RECORD )
   {
     // Do nothing
   }
@@ -945,15 +1003,15 @@ intAHIsub_Stop( REG( d0, ULONG Flags ),
 ******************************************************************************/
 
 LONG ASMCALL
-intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
-                   REG( d1, LONG Argument ),
-                   REG( d2, LONG Default ),
-                   REG( a1, struct TagItem* tagList ),
-                   REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibGetAttr( REG( d0, ULONG attribute ),
+	    REG( d1, LONG argument ),
+	    REG( d2, LONG def ),
+	    REG( a1, struct TagItem* taglist ),
+	    REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   int i;
 
-  switch( Attribute )
+  switch( attribute )
   {
     case AHIDB_Bits:
       return 16;
@@ -962,25 +1020,25 @@ intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
       return FREQUENCIES;
 
     case AHIDB_Frequency: // Index->Frequency
-      return (LONG) frequency[ Argument ];
+      return (LONG) Frequencies[ argument ];
 
     case AHIDB_Index: // Frequency->Index
-      if( Argument <= (LONG) frequency[ 0 ] )
+      if( argument <= (LONG) Frequencies[ 0 ] )
       {
         return 0;
       }
 
-      if( Argument >= (LONG) frequency[ FREQUENCIES - 1 ] )
+      if( argument >= (LONG) Frequencies[ FREQUENCIES - 1 ] )
       {
         return FREQUENCIES-1;
       }
 
       for( i = 1; i < FREQUENCIES; i++ )
       {
-        if( (LONG) frequency[ i ] > Argument )
+        if( (LONG) Frequencies[ i ] > argument )
         {
-          if( ( Argument - (LONG) frequency[ i - 1 ] )
-	      < ( (LONG) frequency[ i ] - Argument ) )
+          if( ( argument - (LONG) Frequencies[ i - 1 ] )
+	      < ( (LONG) Frequencies[ i ] - argument ) )
           {
             return i-1;
           }
@@ -994,7 +1052,7 @@ intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
       return 0;  // Will not happen
 
     case AHIDB_Author:
-      return (LONG) "Martin 'Leviticus' Blom/Bertrand Lee et al.";
+      return (LONG) "Martin 'Leviticus' Blom, Bertrand Lee et al.";
 
     case AHIDB_Copyright:
       return (LONG) "GNU GPL";
@@ -1004,11 +1062,10 @@ intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
 
     case AHIDB_Annotation:
       return (LONG)
-	"Based on the Linux kernel driver\n"
-	"Funded by Hyperion Entertainment.";
+	"Based on the Linux kernel driver. Funded by Hyperion Entertainment.";
 
     case AHIDB_Record:
-      return FALSE;
+      return TRUE;
 
     case AHIDB_FullDuplex:
       return TRUE;
@@ -1023,34 +1080,34 @@ intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
       return 0x00000;
 
     case AHIDB_MaxMonitorVolume:
-      return 0x00000;
+      return 0x40000;
 
     case AHIDB_MinInputGain:
-      return 0x00000;
+      return 0x10000;
       
     case AHIDB_MaxInputGain:
-      return 0x00000;
+      return 0xD7450;
       
     case AHIDB_MinOutputVolume:
       return 0x00000;
 
     case AHIDB_MaxOutputVolume:
-      return 0x10000;
+      return 0x40000;
 
     case AHIDB_Inputs:
       return INPUTS;
 
     case AHIDB_Input:
-      return (LONG) inputs[ Argument ];
+      return (LONG) Inputs[ argument ];
 
     case AHIDB_Outputs:
       return OUTPUTS;
 
     case AHIDB_Output:
-      return (LONG) outputs[ Argument ];
+      return (LONG) Outputs[ argument ];
 
     default:
-      return Default;
+      return def;
   }
 }
 
@@ -1059,12 +1116,176 @@ intAHIsub_GetAttr( REG( d0, ULONG Attribute ),
 ** AHIsub_HardwareControl *****************************************************
 ******************************************************************************/
 
-ULONG ASMCALL
-intAHIsub_HardwareControl( REG( d0, ULONG attribute ),
-                           REG( d1, LONG argument ),
-                           REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+static Fixed
+Linear2MixerGain( Fixed  linear,
+		  UWORD* bits )
 {
-  return FALSE;
+  static const Fixed gain[ 33 ] =
+  {
+    260904, // +12.0 dB
+    219523, // +10.5 dB
+    184706, //  +9.0 dB
+    155410, //  +7.5 dB
+    130762, //  +6.0 dB
+    110022, //  +4.5 dB
+    92572,  //  +3.0 dB
+    77890,  //  +1.5 dB
+    65536,  //  ±0.0 dB
+    55142,  //  -1.5 dB
+    46396,  //  -3.0 dB
+    39037,  //  -4.5 dB
+    32846,  //  -6.0 dB
+    27636,  //  -7.5 dB
+    23253,  //  -9.0 dB
+    19565,  // -10.5 dB
+    16462,  // -12.0 dB
+    13851,  // -13.5 dB
+    11654,  // -15.0 dB
+    9806,   // -16.5 dB
+    8250,   // -18.0 dB
+    6942,   // -19.5 dB
+    5841,   // -21.0 dB
+    4915,   // -22.5 dB
+    4135,   // -24.0 dB
+    3479,   // -25.5 dB
+    2927,   // -27.0 dB
+    2463,   // -28.5 dB
+    2072,   // -30.0 dB
+    1744,   // -31.5 dB
+    1467,   // -33.0 dB
+    1234,   // -34.5 dB
+    0       //   -oo dB
+  };
+
+  int v = 0;
+  
+  while( linear < gain[ v ] )
+  {
+    ++v;
+  }
+
+  if( v == 32 )
+  {
+    *bits = 0x8000; // Mute
+  }
+  else
+  {
+    *bits = ( v << 8 ) | v;
+  }
+
+//  KPrintF( "l2mg %08lx -> %08lx (%04lx)\n", linear, gain[ v ], *bits );
+  return gain[ v ];
+}
+
+static Fixed
+Linear2RecordGain( Fixed  linear,
+		   UWORD* bits )
+{
+  static const Fixed gain[ 17 ] =
+  {
+    873937, // +22.5 dB
+    735326, // +21.0 dB
+    618700, // +19.5 dB
+    520571, // +18.0 dB
+    438006, // +16.5 dB
+    368536, // +15.0 dB
+    310084, // +13.5 dB
+    260904, // +12.0 dB
+    219523, // +10.5 dB
+    184706, //  +9.0 dB
+    155410, //  +7.5 dB
+    130762, //  +6.0 dB
+    110022, //  +4.5 dB
+    92572,  //  +3.0 dB
+    77890,  //  +1.5 dB
+    65536,  //  ±0.0 dB
+    0       //  -oo dB
+  };
+
+  int v = 0;
+  
+  while( linear < gain[ v ] )
+  {
+    ++v;
+  }
+
+  if( v == 16 )
+  {
+    *bits = 0x8000; // Mute
+  }
+  else
+  {
+    *bits = ( ( 15 - v ) << 8 ) | ( 15 - v );
+  }
+
+  return gain[ v ];
+}
+
+
+ULONG ASMCALL
+LibHardwareControl( REG( d0, ULONG attribute ),
+		    REG( d1, LONG argument ),
+		    REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
+{
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
+
+  switch( attribute )
+  {
+    case AHIC_MonitorVolume:
+      dd->monitor_volume = Linear2MixerGain( (Fixed) argument,
+					     &dd->monitor_volume_bits );
+      return TRUE;
+
+    case AHIC_MonitorVolume_Query:
+      return dd->monitor_volume;
+
+    case AHIC_InputGain:
+      dd->input_gain = Linear2RecordGain( (Fixed) argument,
+					  &dd->input_gain_bits );
+      emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN, dd->input_gain_bits );
+      return TRUE;
+
+    case AHIC_InputGain_Query:
+      return dd->input_gain;
+
+    case AHIC_OutputVolume:
+      dd->output_volume = Linear2MixerGain( (Fixed) argument,
+					    &dd->output_volume_bits );
+      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL, dd->output_volume_bits );
+      return TRUE;
+
+    case AHIC_OutputVolume_Query:
+      return dd->output_volume;
+
+    case AHIC_Input:
+      dd->input = argument;
+      emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT, Input_bits[ dd->input ] );
+      return TRUE;
+
+    case AHIC_Input_Query:
+      return dd->input;
+
+    case AHIC_Output:
+      dd->output = argument;
+
+      if( dd->output == 0 )
+      {
+	emu10k1_set_volume_gpr( &dd->card, 0x19, 0, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, 0x1a, 0, VOL_5BIT);
+      }
+      else
+      {
+	emu10k1_set_volume_gpr( &dd->card, 0x19, 80, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, 0x1a, 80, VOL_5BIT);
+      }
+      return TRUE;
+
+    case AHIC_Output_Query:
+      return dd->output;
+
+    default:
+      return FALSE;
+  }
 }
 
 
@@ -1073,11 +1294,11 @@ intAHIsub_HardwareControl( REG( d0, ULONG attribute ),
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_SetVol( REG( d0, UWORD channel ),
-                  REG( d1, Fixed volume ),
-                  REG( d2, sposition pan ),
-                  REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ),
-                  REG( d3, ULONG Flags ) )
+LibSetVol( REG( d0, UWORD channel ),
+	   REG( d1, Fixed volume ),
+	   REG( d2, sposition pan ),
+	   REG( a2, struct AHIAudioCtrlDrv* audioctrl ),
+	   REG( d3, ULONG flags ) )
 {
   return AHIS_UNKNOWN;
 }
@@ -1088,10 +1309,10 @@ intAHIsub_SetVol( REG( d0, UWORD channel ),
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_SetFreq( REG( d0, UWORD channel ),
-                   REG( d1, ULONG freq ),
-                   REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ),
-                   REG( d2, ULONG flags ) )
+LibSetFreq( REG( d0, UWORD channel ),
+	    REG( d1, ULONG freq ),
+	    REG( a2, struct AHIAudioCtrlDrv* audioctrl ),
+	    REG( d2, ULONG flags ) )
 {
   return AHIS_UNKNOWN;
 }
@@ -1102,12 +1323,12 @@ intAHIsub_SetFreq( REG( d0, UWORD channel ),
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_SetSound( REG( d0, UWORD channel ),
-                    REG( d1, UWORD sound ),
-                    REG( d2, ULONG offset ),
-                    REG( d3, LONG length ),
-                    REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ),
-                    REG( d4, ULONG flags ) )
+LibSetSound( REG( d0, UWORD channel ),
+	     REG( d1, UWORD sound ),
+	     REG( d2, ULONG offset ),
+	     REG( d3, LONG length ),
+	     REG( a2, struct AHIAudioCtrlDrv* audioctrl ),
+	     REG( d4, ULONG flags ) )
 {
   return AHIS_UNKNOWN;
 }
@@ -1118,8 +1339,8 @@ intAHIsub_SetSound( REG( d0, UWORD channel ),
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_SetEffect( REG( a0, APTR effect ),
-                     REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibSetEffect( REG( a0, APTR effect ),
+	      REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   return AHIS_UNKNOWN;
 }
@@ -1130,10 +1351,10 @@ intAHIsub_SetEffect( REG( a0, APTR effect ),
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_LoadSound( REG( d0, UWORD sound ),
-                     REG( d1, ULONG type ),
-                     REG( a0, APTR info ),
-                     REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibLoadSound( REG( d0, UWORD sound ),
+	      REG( d1, ULONG type ),
+	      REG( a0, APTR info ),
+	      REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 { 
   return AHIS_UNKNOWN;
 }
@@ -1144,8 +1365,8 @@ intAHIsub_LoadSound( REG( d0, UWORD sound ),
 ******************************************************************************/
 
 ULONG ASMCALL
-intAHIsub_UnloadSound( REG( d0, UWORD sound ),
-                       REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
+LibUnloadSound( REG( d0, UWORD sound ),
+		REG( a2, struct AHIAudioCtrlDrv* audioctrl ) )
 {
   return AHIS_UNKNOWN;
 }
@@ -1156,8 +1377,10 @@ intAHIsub_UnloadSound( REG( d0, UWORD sound ),
 ******************************************************************************/
 
 static ULONG ASMCALL INTERRUPT 
-EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
+EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 {
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
+
   ULONG intreq;
   BOOL  handled = FALSE;
 
@@ -1170,13 +1393,13 @@ EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
 
       if( diff < 0 )
       {
-	diff += AudioCtrl->ahiac_MaxBuffSamples * 2;
+	diff += audioctrl->ahiac_MaxBuffSamples * 2;
       }
 
 //      KPrintF( ">>> hw_pos = %08lx; current_pos = %08lx; diff=%ld <<<\n",
 //	       hw, dd->current_position, diff );
 
-      if( diff < dd->current_length )
+      if( (ULONG) diff < dd->current_length )
       {
 	if( dd->mixing_enabled )
 	{
@@ -1203,12 +1426,14 @@ EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
 ******************************************************************************/
 
 static void ASMCALL INTERRUPT 
-Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
+Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 {
+  struct DriverData* dd = (struct DriverData*) audioctrl->ahiac_DriverData;
+  
   if( dd->mixbuffer != NULL && dd->current_buffer != NULL )
   {
-    PreTimer_proto*  pretimer  = (PreTimer_proto*)  AudioCtrl->ahiac_PreTimer;
-    PostTimer_proto* posttimer = (PostTimer_proto*) AudioCtrl->ahiac_PostTimer;
+    PreTimer_proto*  pretimer  = (PreTimer_proto*)  audioctrl->ahiac_PreTimer;
+    PostTimer_proto* posttimer = (PostTimer_proto*) audioctrl->ahiac_PostTimer;
     BOOL             pretimer_rc;
 
     WORD*            src;
@@ -1217,25 +1442,25 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
     size_t           samples;
     int              i;
 
-    pretimer_rc = pretimer( AudioCtrl );
+    pretimer_rc = pretimer( audioctrl );
 	
-    CallHookPkt( AudioCtrl->ahiac_PlayerFunc, (Object*) AudioCtrl, NULL );
+    CallHookPkt( audioctrl->ahiac_PlayerFunc, (Object*) audioctrl, NULL );
 
     if( ! pretimer_rc )
     {
-      CallHookPkt( AudioCtrl->ahiac_MixerFunc, (Object*) AudioCtrl, dd->mixbuffer );
+      CallHookPkt( audioctrl->ahiac_MixerFunc, (Object*) audioctrl, dd->mixbuffer );
     }
 
     /* Now translate and transfer to the DMA buffer */
 
-    skip    = ( AudioCtrl->ahiac_Flags & AHIACF_HIFI ) ? 2 : 1;
+    skip    = ( audioctrl->ahiac_Flags & AHIACF_HIFI ) ? 2 : 1;
     samples = dd->current_length;
 
     src     = dd->mixbuffer;
     dst     = dd->current_buffer;
 
     i = min( samples,
-	     AudioCtrl->ahiac_MaxBuffSamples * 2 - dd->current_position );
+	     audioctrl->ahiac_MaxBuffSamples * 2 - dd->current_position );
 
     /* Update 'current_position' and 'samples' before destroying 'i' */
     
@@ -1243,7 +1468,7 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
     
     samples -= i;
     
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+    if( audioctrl->ahiac_Flags & AHIACF_STEREO )
     {
       i *= 2;
     }
@@ -1258,7 +1483,7 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
       --i;
     }
 
-    if( dd->current_position == AudioCtrl->ahiac_MaxBuffSamples * 2 )
+    if( dd->current_position == audioctrl->ahiac_MaxBuffSamples * 2 )
     {
       dst = dd->voice.mem.addr;
       dd->current_position = 0;
@@ -1270,7 +1495,7 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
     
       dd->current_position += samples;
 
-      if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+      if( audioctrl->ahiac_Flags & AHIACF_STEREO )
       {
 	samples *= 2;
       }
@@ -1290,7 +1515,7 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
 
     dd->current_buffer = dst;
   
-    posttimer( AudioCtrl );
+    posttimer( audioctrl );
   }
 
   dd->mixing_enabled = TRUE;

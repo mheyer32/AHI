@@ -61,6 +61,10 @@ struct DriverData
     Fixed               monitor_volume;
     Fixed               input_gain;
     Fixed               output_volume;
+
+    UWORD               monitor_volume_bits;
+    UWORD               input_gain_bits;
+    UWORD               output_volume_bits;
 };
 
 #endif /* EMU10kx_DriverData_h */

@@ -369,7 +369,8 @@ static int fx_init(struct emu10k1_card *card)
 //	left = card->ac97.mixer_state[SOUND_MIXER_VOLUME] & 0xff;
 //	right = (card->ac97.mixer_state[SOUND_MIXER_VOLUME] >> 8) & 0xff;
 
-	left = right = 0x43;
+//	left = right = 0x43;
+	left = right = 80;
 	
 	emu10k1_set_volume_gpr(card, 8, left, 1 << 5);
 	emu10k1_set_volume_gpr(card, 9, right, 1 << 5);
@@ -378,7 +379,6 @@ static int fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][0] = 0x19;
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][1] = 0x1a;
 
-	left = right = 67;
 //	card->ac97.mixer_state[SOUND_MIXER_OGAIN] = (right << 8) | left;
 
 //	card->ac97.supported_mixers |= SOUND_MASK_OGAIN;
@@ -401,7 +401,7 @@ static int fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_DIGITAL1][0] = 0xd;
 	mgr->ctrl_gpr[SOUND_MIXER_DIGITAL1][1] = 0xf;
 
-	left = right = 67;
+//	left = right = 67;
 //	card->ac97.mixer_state[SOUND_MIXER_DIGITAL1] = (right << 8) | left; 
 
 //	card->ac97.supported_mixers |= SOUND_MASK_DIGITAL1;
