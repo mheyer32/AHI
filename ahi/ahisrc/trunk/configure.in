@@ -158,6 +158,8 @@ AC_CONFIG_FILES([AHI/Makefile
                  AHI-Handler/Makefile
                  AddAudioModes/Makefile
                  Classes/Makefile
+                 Classes/Common/Makefile.common
+                 Classes/AHIRootClass/Makefile
                  Device/Makefile
                  Docs/Makefile
                  Drivers/Makefile
