@@ -1,11 +1,14 @@
 * $Id$
 * $Log$
+* Revision 1.11  1997/02/02 18:15:04  lcs
+* Added protection against CPU overload
+*
 * Revision 1.10  1997/02/01 23:54:26  lcs
 * Rewrote the library open code in C and removed the library bases
 * from AHIBase
 *
 * Revision 1.9  1997/02/01 21:54:53  lcs
-* Max freq. for AHI_SetFreq() uncreased to more than one million! ;)
+* Max freq. for AHI_SetFreq() increased to more than one million! ;)
 *
 * Revision 1.8  1997/02/01 19:44:18  lcs
 * Added stereo samples
@@ -37,6 +40,7 @@
 
 	incdir	include:
 
+	include devices/timer.i
 	include	exec/exec.i
 	include	dos/dos.i
 	include	utility/utility.i
@@ -44,6 +48,7 @@
 	include	devices/ahi.i
 	include	libraries/ahi_sub.i
 	include	lvo/exec_lib.i
+	include	lvo/timer_lib.i
 	include	lvo/utility_lib.i
 	include	lvo/ahi_lib.i
 
@@ -58,6 +63,10 @@
 
 	XDEF	_RecalcBuff
 	XDEF	_InitMixroutine
+	XDEF	_PreTimer
+	XDEF	_PostTimer
+	XDEF	_DummyPreTimer
+	XDEF	_DummyPostTimer
 
 	XDEF	_DefPlayerHook
 	XDEF	_DefRecordHook
@@ -74,11 +83,11 @@
 	XREF	initSignedTable
 	XREF	calcSignedTable
 	XREF	calcUnsignedTable
-	XREF	_Mix
 	XREF	CalcSamples
 	XREF	update_DSPEcho
 	XREF	free_DSPEcho
 
+	XREF	_TimerBase
 	XREF	_UtilityBase
 
 _DefPlayerHook:
@@ -824,8 +833,21 @@ SetFreq_nodebug
 	move.l	d1,d0
 
 * Calculate period
-	lsl.l	#8,d0
-	lsl.l	#8-4,d0				;Makes the sample freq limit 1048576
+	cmp.l	#65536,d0
+	bhs	.gt64k
+	moveq	#0,d3
+	bra	.shiftfreq
+.gt64k
+	cmp.l	#262144,d0
+	bhs	.gt256k
+	moveq	#2,d3
+	bra	.shiftfreq
+.gt256k
+	moveq	#4,d3
+.shiftfreq
+	moveq	#16,d1
+	sub.l	d3,d1
+	lsl.l	d1,d0
 	move.l	ahiac_MixFreq(a2),d1
  IFGE	__CPU-68020
 	divu.l	d1,d0
@@ -834,7 +856,9 @@ SetFreq_nodebug
 	jsr	_LVOUDivMod32(a1)
  ENDC
 .setperiod
-	lsl.l	#4,d0
+	lsl.l	d3,d0
+
+
 	move.w	d0,cd_NextAddF(a0)
 	clr.w	d0
 	swap.w	d0
@@ -2750,3 +2774,47 @@ _InitMixroutine:
 .error
 	moveq	#FALSE,d0
 	bra	.exit
+
+;in:
+* a2	ptr to AHIAudioCtrl
+;out:
+* d0	TRUE if too much CPU is used
+* Z	Updated
+_PreTimer:
+	pushm	d1-d2/a0-a1/a6
+	move.l	_TimerBase(pc),a6
+	lea	ahiac_Timer(a2),a0
+	move.l	EntryTime+EV_LO(a0),d2
+	call	ReadEClock
+	move.l	EntryTime+EV_LO(a0),d1
+	sub.l	d1,d2			; d2 = -(clocks since last entry)
+	sub.l	ExitTime+EV_LO(a0),d1	; d1 = clocks since last exit
+	add.l	d2,d1			; d1 = -(clocks spent mixing)
+	beq	.ok
+	neg.l	d1			; d1 = clocks spent mixing
+	neg.l	d2			; d2 = clocks since last entry
+	lsl.l	#8,d1
+	divu.l	d2,d1
+	cmp.b	ahiac_MaxCPU(a2),d1
+	bls	.ok
+	moveq	#TRUE,d0
+	bra	.exit
+.ok
+	moveq	#FALSE,d0
+.exit
+	tst.l	d0
+	popm	d1-d2/a0-a1/a6
+	rts
+
+_PostTimer:
+	pushm	d0-d1/a0-a1/a6
+	move.l	_TimerBase(pc),a6
+	lea	ahiac_Timer+ExitTime(a2),a0
+	call	ReadEClock
+	popm	d0-d1/a0-a1/a6
+	rts
+
+_DummyPreTimer:
+	moveq	#FALSE,d0
+_DummyPostTimer:
+	rts

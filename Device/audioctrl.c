@@ -1,10 +1,10 @@
 /* $Id$
 * $Log$
+* Revision 1.8  1997/02/02 18:15:04  lcs
+* Added protection against CPU overload
+*
 * Revision 1.7  1997/02/01 21:54:53  lcs
 * Will never use drivers that are newer than itself anymore
-*
-* Revision 1.6  1997/02/01 19:44:18  lcs
-* *** empty log message ***
 *
 * Revision 1.4  1997/01/15 18:35:07  lcs
 * AHIB_Dizzy has a better implementation and definition now.
@@ -48,6 +48,10 @@
 extern __asm ULONG RecalcBuff( register __d1 ULONG , register __a2 struct AHIPrivAudioCtrl * );
 extern __asm BOOL InitMixroutine(register __a2 struct AHIPrivAudioCtrl *);
 extern __asm void Mix(void);
+extern __asm BOOL PreTimer(void);
+extern __asm void PostTimer(void);
+extern __asm BOOL DummyPreTimer(void);
+extern __asm void DummyPostTimer(void);
 
 /******************************************************************************
 ** CreateAudioCtrl & UpdateAudioCtrl ******************************************
@@ -420,7 +424,19 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
       goto error;
 
 
-    audioctrl->ac.ahiac_MixerFunc->h_Entry=(ULONG (*)())Mix;
+    audioctrl->ac.ahiac_MixerFunc->h_Entry = (ULONG (*)()) Mix;
+
+    if((AHIBase->ahib_MaxCPU >= 0x10000) || (AHIBase->ahib_MaxCPU <= 0x0))
+    {
+      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)()) DummyPreTimer;
+      audioctrl->ac.ahiac_PostTimer = (void (*)()) DummyPostTimer;
+    }
+    else
+    {
+      audioctrl->ahiac_MaxCPU       = AHIBase->ahib_MaxCPU >> 8;
+      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)()) PreTimer;
+      audioctrl->ac.ahiac_PostTimer = (void (*)()) PostTimer;
+    }
 
 /* FIXIT!
     audioctrl->ac.ahiac_SamplerFunc=AllocVec(sizeof(struct Hook),MEMF_PUBLIC!MEMF_CLEAR);
