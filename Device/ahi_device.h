@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/01/15 14:59:50  lcs
+* Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
+*
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * PLAYERFREQ added
 *
@@ -119,13 +122,15 @@ struct AHIDevUnit
 	BOOL			 IsRecording;	// Currently recording
 	BOOL			 ValidRecord;	// The record buffer contains valid data
 	BOOL			 FullDuplex;	// Mode is full duplex
-
+	UWORD			 StopCnt;	// CMD_STOP count
 
 	struct SignalSemaphore	 ListLock;
 	struct MinList		 ReadList;
 	struct MinList		 PlayingList;
 	struct MinList		 SilentList;
 	struct MinList		 WaitingList;
+
+	struct MinList		 RequestQueue;	// Not locked by ListLock!
 
 	struct Voice		*Voices;
 

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.6  1997/01/15 14:59:50  lcs
+* Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
+*
 * Revision 1.5  1997/01/05 13:38:01  lcs
 * Fixed a bug (attaching a iorequest to a silent one) in NewWriter()
 *
@@ -38,8 +41,12 @@
 static void TermIO(struct AHIRequest *, struct AHIBase *);
 void PerformIO(struct AHIRequest *, struct AHIBase *);
 static void Devicequery(struct AHIRequest *, struct AHIBase *);
+static void ResetCmd(struct AHIRequest *, struct AHIBase *);
 static void ReadCmd(struct AHIRequest *, struct AHIBase *);
 static void WriteCmd(struct AHIRequest *, struct AHIBase *);
+static void StopCmd(struct AHIRequest *, struct AHIBase *);
+static void StartCmd(struct AHIRequest *, struct AHIBase *);
+static void FlushCmd(struct AHIRequest *, struct AHIBase *);
 
 void FeedReaders(struct AHIDevUnit *,struct AHIBase *);
 static void FillReadBuffer(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
@@ -78,10 +85,13 @@ __asm void DevBeginIO(
 
 // Immediate commands
     case NSCMD_DEVICEQUERY:
+    case CMD_STOP:
+    case CMD_FLUSH:
       PerformIO(ioreq,AHIBase);
       break;
 
 // Queued commands
+    case CMD_RESET:
     case CMD_READ:
     case CMD_WRITE:
       ioreq->ahir_Std.io_Flags &= ~IOF_QUICK;
@@ -216,18 +226,37 @@ void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   struct AHIDevUnit *iounit;
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
-  ioreq->ahir_Std.io_Error = NULL;
+  ioreq->ahir_Std.io_Error = 0;
 
   switch(ioreq->ahir_Std.io_Command)
   {
     case NSCMD_DEVICEQUERY:
       Devicequery(ioreq, AHIBase);
       break;
+    case CMD_RESET:
+      ResetCmd(ioreq, AHIBase);
+      break;
     case CMD_READ:
       ReadCmd(ioreq, AHIBase);
       break;
     case CMD_WRITE:
-      WriteCmd(ioreq, AHIBase);
+      if(iounit->StopCnt)
+      {
+        AddTail((struct List *) &iounit->RequestQueue,(struct Node *) ioreq);
+      }
+      else
+      {
+        WriteCmd(ioreq, AHIBase);
+      }
+      break;
+    case CMD_STOP:
+      StopCmd(ioreq, AHIBase);
+      break;
+    case CMD_START:
+      StartCmd(ioreq, AHIBase);
+      break;
+    case CMD_FLUSH:
+      FlushCmd(ioreq, AHIBase);
       break;
     default:
       ioreq->ahir_Std.io_Error = IOERR_NOCMD;
@@ -268,8 +297,10 @@ struct Node *FindNode(struct List *list, struct Node *node)
 static UWORD commandlist[] =
 {
   NSCMD_DEVICEQUERY,
+  CMD_RESET,
   CMD_READ,
   CMD_WRITE,
+  CMD_FLUSH,
   NULL
 };
 
@@ -296,9 +327,91 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 }
 
 
+/******************************************************************************
+** StopCmd ********************************************************************
+******************************************************************************/
+
+static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+{
+  struct AHIDevUnit *iounit;
+  struct AHIPrivAudioCtrl *audioctrl;
+  struct Library *AHIsubBase;
+
+  iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
+  audioctrl = (struct AHIPrivAudioCtrl *) iounit->AudioCtrl;
+
+  if(AHIsubBase = audioctrl->ahiac_SubLib)
+  {
+    iounit->StopCnt++;
+    if(iounit->IsPlaying && (iounit->StopCnt == 1))
+    {
+      AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
+    }
+  }
+  TermIO(ioreq,AHIBase);
+}
+
+/******************************************************************************
+** FlushCmd *******************************************************************
+******************************************************************************/
+
+static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+{
+  struct AHIDevUnit *iounit;
+  struct AHIRequest *ior;
+
+  iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
+
+  ioreq->ahir_Std.io_Actual = 0;
+
+  // Abort all current IO-requests
+  while(ior = (struct AHIRequest *) iounit->ReadList.mlh_Head)
+  {
+    DevAbortIO(ior, AHIBase);
+    ioreq->ahir_Std.io_Actual++;
+  }
+  while(ior = (struct AHIRequest *) iounit->PlayingList.mlh_Head)
+  {
+    DevAbortIO(ior, AHIBase);
+    ioreq->ahir_Std.io_Actual++;
+  }
+  while(ior = (struct AHIRequest *) iounit->SilentList.mlh_Head)
+  {
+    DevAbortIO(ior, AHIBase);
+    ioreq->ahir_Std.io_Actual++;
+  }
+  while(ior = (struct AHIRequest *) iounit->WaitingList.mlh_Head)
+  {
+    DevAbortIO(ior, AHIBase);
+    ioreq->ahir_Std.io_Actual++;
+  }
+  TermIO(ioreq,AHIBase);
+}
+
+
 
 /* All the following functions are called within the unit process context */
 
+
+/******************************************************************************
+** ResetCmd *******************************************************************
+******************************************************************************/
+
+static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+{
+  struct AHIDevUnit *iounit;
+
+  iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
+
+  // Remove all requests (beware, invalid IORequest to FlushCmd!)
+  FlushCmd(ioreq, AHIBase);
+
+  // Reset the hardware
+  ReadConfig(iounit, AHIBase);
+  FreeHardware(iounit, AHIBase);
+  AllocHardware(iounit, AHIBase);
+  TermIO(ioreq,AHIBase);
+}
 
 /******************************************************************************
 ** ReadCmd ********************************************************************
@@ -415,7 +528,16 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 
     if( ! error)
     {
+      int i = iounit->StopCnt;
+
       iounit->IsPlaying = TRUE;
+
+      iounit->StopCnt = 0;
+      while(i--)
+      {
+        // beware, invalid IORequest to StopCmd!
+        StopCmd(ioreq, AHIBase);
+      }
     }
   }
 
@@ -459,6 +581,47 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
     ioreq->ahir_Std.io_Error = error;
     TermIO(ioreq, AHIBase);
   }
+}
+
+
+/******************************************************************************
+** StartCmd *******************************************************************
+******************************************************************************/
+
+static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+{
+  struct AHIDevUnit *iounit;
+  struct AHIPrivAudioCtrl *audioctrl;
+  struct Library *AHIsubBase;
+
+  iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
+  audioctrl = (struct AHIPrivAudioCtrl *) iounit->AudioCtrl;
+
+  if(iounit->StopCnt)
+  {
+    if(AHIsubBase = audioctrl->ahiac_SubLib)
+    {
+      if(iounit->StopCnt == 1)
+      {
+        struct AHIRequest *ior;
+
+        while(ior = (struct AHIRequest *) RemHead(
+            (struct List *) &iounit->RequestQueue))
+        {
+          WriteCmd(ior, AHIBase);
+        }
+
+        iounit->StopCnt--;
+        AHIsub_Enable((struct AHIAudioCtrlDrv *) audioctrl);
+      }
+    }
+  }
+  else
+  {
+    ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
+  }
+  TermIO(ioreq,AHIBase);
+
 }
 
 

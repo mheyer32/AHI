@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.6  1997/01/15 14:59:50  lcs
+* Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
+*
 * Revision 1.5  1997/01/05 13:38:01  lcs
 * Prettified the code a bit... ;)
 *
@@ -42,9 +45,9 @@
 
 static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase );
 static void ExpungeUnit(struct AHIDevUnit *iounit, struct AHIBase *AHIBase );
-static BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase );
-static BOOL AllocHardware(struct AHIDevUnit *,struct AHIBase *);
-static void FreeHardware(struct AHIDevUnit *,struct AHIBase *);
+BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase );
+BOOL AllocHardware(struct AHIDevUnit *,struct AHIBase *);
+void FreeHardware(struct AHIDevUnit *,struct AHIBase *);
 static __asm __interrupt void PlayerFunc(
     register __a0 struct Hook *hook,
     register __a2 struct AHIAudioCtrl *actrl,
@@ -239,7 +242,7 @@ static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase )
       NewList((struct List *)&iounit->PlayingList);
       NewList((struct List *)&iounit->SilentList);
       NewList((struct List *)&iounit->WaitingList);
-
+      NewList((struct List *)&iounit->RequestQueue);
       if(ReadConfig(iounit,AHIBase))
       {
         if(iounit->Voices=AllocVec(
@@ -302,7 +305,7 @@ static void ExpungeUnit(struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
 // This functions loads the users settings for AHI.
 
-static BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
+BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 {
   struct IFFHandle *iff;
   struct StoredProperty *prhd,*ahig;
@@ -429,7 +432,7 @@ static BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase )
 
 // Allocates the audio hardware
 
-static BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
+BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 {
   BOOL rc = FALSE;
   struct AHISampleInfo snd8info   = {AHIST_M8S,0,0xffffffff};
@@ -495,7 +498,7 @@ static BOOL AllocHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 
 // Take a wild guess!
 
-static void FreeHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
+void FreeHardware(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 {
   if(iounit->AudioCtrl)
   {
