@@ -537,14 +537,29 @@ ExpungeUnit ( struct AHIDevUnit *iounit,
               struct AHIBase *AHIBase )
 {
   struct Task *unittask;
+  BYTE signal;
+
+  signal = AllocSignal(-1);
+  if(signal == -1)
+  {
+    /* Fallback */
+    signal = SIGB_SINGLE;
+    SetSignal(0, SIGF_SINGLE);
+  }
 
   unittask = (struct Task *) iounit->Process;
   iounit->Process = (struct Process *) FindTask(NULL);
+  iounit->SyncSignal = signal;
   Signal(unittask,SIGBREAKF_CTRL_F);
-  Wait(SIGBREAKF_CTRL_F);
+  Wait(1UL << signal);
   AHIBase->ahib_DevUnits[iounit->UnitNum]=NULL;
   FreeVec(iounit->Voices);
   FreeVec(iounit);
+
+  if(signal != SIGB_SINGLE)
+  {
+    FreeSignal(signal);
+  }
 }
 
 
@@ -982,7 +997,7 @@ DevProc( void )
   if(iounit->Process)
   {
     Forbid();
-    Signal((struct Task *) iounit->Process, SIGBREAKF_CTRL_F);
+    Signal((struct Task *) iounit->Process, 1UL << iounit->SyncSignal);
   }
   FreeSignal(signalbit);
 }

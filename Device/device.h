@@ -131,6 +131,7 @@ struct AHIDevUnit
         BYTE                     RecordSignal;
         BYTE                     SampleSignal;
         struct Process          *Process;
+        BYTE                     SyncSignal;
         struct Process          *Master;
         struct Hook              PlayerHook;
         struct Hook              RecordHook;
