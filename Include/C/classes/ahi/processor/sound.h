@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace Sound {
 #else
-# define _P _Processor_Sound
+# define _P _SoundProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

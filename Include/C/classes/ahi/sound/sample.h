@@ -26,7 +26,7 @@ namespace AHI {
   namespace Sound {
     namespace Sample {
 #else
-# define _P _Sound_Sample
+# define _P _SampleSound
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

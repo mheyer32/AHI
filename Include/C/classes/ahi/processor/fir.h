@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace FIR {
 #else
-# define _P _Processor_FIR
+# define _P _FIRProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
