@@ -529,17 +529,23 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
       return AHISF_ERROR;
     }
 
+    dd->requested = TRUE;
+    
     if( pci_enable( dd->card.pci_dev ) )
     {
       KPrintF( DRIVER_NAME ": Unable to enable card.\n" );
       return AHISF_ERROR;
     }
 
+    dd->enabled = TRUE;
+
     command_word = pci_read_conf_word( dd->card.pci_dev, PCI_COMMAND );
     command_word |= PCI_CMD_IO_MASK | PCI_CMD_MEMORY_MASK | PCI_CMD_MASTER_MASK;
     pci_write_conf_word( dd->card.pci_dev, PCI_COMMAND, command_word );
 
     // FIXME: How about latency/pcibios_set_master()??
+
+    dd->master_enabled = TRUE;
     
     dd->card.iobase  = (ULONG) pci_get_base_start( dd->card.pci_dev, 0 );
     dd->card.length  = ( (ULONG) pci_get_base_end( dd->card.pci_dev, 0 ) -
@@ -596,6 +602,8 @@ intAHIsub_AllocAudio( REG( a1, struct TagItem* tagList ),
       return AHISF_ERROR;
     }
 
+    dd->emu10k1_initialized = TRUE;
+
     /* Since the EMU10kx chips can play a voice at any sample rate, we
        do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
 
@@ -619,9 +627,30 @@ intAHIsub_FreeAudio( REG( a2, struct AHIAudioCtrlDrv* AudioCtrl ) )
   {
     if( dd->card.pci_dev != NULL )
     {
-      emu10k1_cleanup( &dd->card );
-      pci_disable( dd->card.pci_dev );
-      pci_release( dd->card.pci_dev );
+      if( dd->emu10k1_initialized )
+      {
+	emu10k1_cleanup( &dd->card );
+      }
+
+      if( dd->master_enabled )
+      {
+	UWORD cmd;
+
+	cmd = pci_read_conf_word( dd->card.pci_dev, PCI_COMMAND );
+	cmd &= ~( PCI_CMD_IO_MASK | PCI_CMD_MEMORY_MASK | PCI_CMD_MASTER_MASK );
+	pci_write_conf_word( dd->card.pci_dev, PCI_COMMAND, cmd );
+      }
+      
+      if( dd->enabled )
+      {
+	pci_disable( dd->card.pci_dev );
+      }
+
+      if( dd->requested )
+      {
+	pci_release( dd->card.pci_dev );
+      }
+
       if( dd->interrupt_added )
       {
 	pci_rem_irq( dd->card.pci_dev, &dd->interrupt );
