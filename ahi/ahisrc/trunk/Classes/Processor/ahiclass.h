@@ -12,6 +12,7 @@ struct AHIClassBase {
 
 struct AHIClassData {
     struct MinList members;
+    struct MinList buffers;
     ULONG          num_members;
     Object*        ic;
     Object*        buffer;
