@@ -1,5 +1,7 @@
 2004-06-06  Martin Blom  <martin@blom.org>
 
+	* Added error codes and handling.
+
 	* Implemented ahi.class, ahi-buffer.class and ahi-processor.class.
 
 2004-06-05  Martin Blom  <martin@blom.org>
