@@ -31,16 +31,6 @@ DEBUG_DETAIL	SET	2
 	include	macros.i
 
 
-*** Processor identification ****
-
- IFGE	__CPU-68020
-
-HAVE_HIFI	EQU	1
-HAVE_CLIPPING	EQU	1
-
- ENDC
-
-
 *** Definitions ***
 
 	STRUCTURE Timer,0
@@ -56,9 +46,6 @@ HAVE_CLIPPING	EQU	1
 	APTR	ahiac_SoundDatas
 	ULONG	ahiac_BuffSizeNow		* Now many bytes of the buffer are used?
 	
-	APTR	ahiac_MasterVolumeTable
-	APTR	ahiac_MultTableS
-	APTR	ahiac_MultTableU
 	APTR	ahiac_RecordFunc		* AHIA_RecordFunc
 	ULONG	ahiac_AudioID
 	Fixed	ahiac_MasterVolume;		* Real

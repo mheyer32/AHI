@@ -33,6 +33,8 @@ void ASMCALL PostTimer ( void );
 BOOL ASMCALL DummyPreTimer ( void );
 void ASMCALL DummyPostTimer ( void );
 
-void ASMCALL Mix ( REG(a0, struct Hook *Hook), REG(a1, void *dst), REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
+void ASMCALL MixEntry( REG(a0, struct Hook *Hook), 
+                       REG(a1, void *dst), 
+                       REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 #endif /* _ASMFUNCS_H_ */

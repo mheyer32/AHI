@@ -39,21 +39,6 @@ void
 CleanUpMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
 
 void
-calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl );
-
-BOOL
-initSignedTable ( struct AHIPrivAudioCtrl *audioctrl );
-
-void
-calcSignedTable ( struct AHIPrivAudioCtrl *audioctrl );
-
-BOOL
-initUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl );
-
-void
-calcUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl );
-
-void
 SelectAddRoutine ( Fixed     VolumeLeft,
                    Fixed     VolumeRight,
                    ULONG     SampleType,

@@ -71,11 +71,6 @@ update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl )
   /* This is the actual master volume in use */
   audioctrl->ahiac_MasterVolume = volume;
 
-  /* Update the mastervolume table, and the volume tables */
-  calcMasterVolumeTable( audioctrl );
-  calcSignedTable( audioctrl );
-  calcUnsignedTable( audioctrl );
-
   /* Update volume for channels */
 
   AHIsubBase = audioctrl->ahiac_SubLib;

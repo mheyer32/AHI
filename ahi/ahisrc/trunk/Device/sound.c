@@ -938,36 +938,13 @@ LoadSound ( REG(d0, UWORD sound),
       {
         case AHIST_M8S:
         case AHIST_M16S:
-#ifdef HAVE_HIFI
         case AHIST_S8S:
         case AHIST_S16S:
-#endif
           /* AHI_FreeAudio() will deallocate...  */
 
-          if( initSignedTable( audioctrl ) )
-          {
-            audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
-            audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
-            audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
-          }
-          else rc = AHIE_NOMEM;
-
-          break;
-
-        /* Obsolete, present for compability only. FIXIT! */
-
-        case AHIST_M8U:
-
-          /* AHI_FreeAudio() will deallocate...  */
-
-          if( ((audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0) && 
-              initUnsignedTable( audioctrl ) )
-          {
-            audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
-            audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
-            audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
-          }
-          else rc = AHIE_NOMEM;
+          audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
+          audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
+          audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
 
           break;
 
