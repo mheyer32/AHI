@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -19,6 +19,11 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.9  1999/04/22 19:41:22  lcs
+ * Removed SAS/C smakefile.
+ * I had the copyright date screwed up: Changed to 1996-1999 (which is only
+ * partly correct, but still better than 1997-1999....)
+ *
  * Revision 4.8  1999/03/28 22:30:49  lcs
  * AHI is now GPL/LGPL software.
  * Make target bindist work correctly when using a separate build directory.
@@ -584,7 +589,7 @@ BOOL BuildGUI(char *screenname)
   MUIApp = ApplicationObject,
     MUIA_Application_Title, (char *) msgTextProgramName,
     MUIA_Application_Version, Version,
-    MUIA_Application_Copyright, "©1997-1999 Martin Blom",
+    MUIA_Application_Copyright, "©1996-1999 Martin Blom",
     MUIA_Application_Author, "Stéphane Barbaray/Martin Blom",
     MUIA_Application_Base, "AHI",
     MUIA_Application_HelpFile, HELPFILE,
@@ -773,7 +778,7 @@ void EventLoop(void)
       case ACTID_ABOUT:
         MUI_Request(MUIApp, MUIWindow, 0, (char *) msgTextProgramName,
             (char*)msgButtonOK, (char*)msgTextCopyright, "\033c",
-            (char*)msgTextProgramName, "1997-1999 Stéphane Barbaray/Martin Blom");
+            (char*)msgTextProgramName, "1996-1999 Stéphane Barbaray/Martin Blom");
         break;
 
       case ACTID_SAVE:

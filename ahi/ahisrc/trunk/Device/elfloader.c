@@ -2,7 +2,7 @@
 
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -362,7 +362,7 @@ loadelf32(struct ElfObject *eo,struct Elf32_Shdr *shdrs);
 
 static BOOL
 scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
-                      struct Hook *hook,BOOL relmode);
+                      BOOL relmode);
 
 static BOOL
 getsyminfo(struct ElfObject *eo,struct PPCObjectInfo *info,
@@ -565,7 +565,7 @@ static BOOL loadelf32(struct ElfObject *eo,struct Elf32_Shdr *shdrs)
 
 
 static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
-                          struct Hook *hook,BOOL relmode)
+                           BOOL relmode)
 /* Find an ELF symbol by its name or address and return all infos  */
 /* in the supplied PPCObjectInfo structure. Return FALSE if symbol */
 /* doesn't exist. */
@@ -586,18 +586,14 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
             info->Address = (ULONG)es->address + r->r_offset;
             info->Type = PPCELFINFOTYPE_RELOC;
             info->SubType = (ULONG)ELF32_R_TYPE(r->r_info);
-            if (!hook) {
-              if (info->Address == addr) {
-                if (name) {
-                  if (!strcmp(name,info->Name))
-                    return (TRUE);
-                }
-                else
+            if (info->Address == addr) {
+              if (name) {
+                if (!strcmp(name,info->Name))
                   return (TRUE);
               }
+              else
+                return (TRUE);
             }
-            else
-              _callhook(hook,(APTR)eo,(APTR)info);
           }
         }
       }
@@ -610,24 +606,20 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
 
     while (--i) {
       if (getsyminfo(eo,info,++stab)) {
-        if (!hook) {
-          if (!name) {
-            if (info->Size) {
-              if (addr>=info->Address && addr<(info->Address+info->Size))
-                return (TRUE);
-            }
-            else {
-              if (addr == info->Address)
-                return (TRUE);
-            }
+        if (!name) {
+          if (info->Size) {
+            if (addr>=info->Address && addr<(info->Address+info->Size))
+              return (TRUE);
           }
           else {
-            if (!strcmp(name,info->Name))
+            if (addr == info->Address)
               return (TRUE);
           }
         }
-        else
-          _callhook(hook,(APTR)eo,(APTR)info);
+        else {
+          if (!strcmp(name,info->Name))
+            return (TRUE);
+        }
       }
     }
   }
