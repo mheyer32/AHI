@@ -37,6 +37,15 @@
 #include "8010.h"
 //#include "icardmid.h"
 
+unsigned short my_inb(unsigned long port)
+{
+  unsigned char res = *(u8*) port;
+
+  DPD(6, "my_inb(%08x) ->%02x\n", port, res );
+
+  return res;
+}
+
 unsigned short my_inw(unsigned long port)
 {
   unsigned short res = *(u16*) port;
@@ -55,6 +64,12 @@ unsigned int my_inl(unsigned long port)
   return res;
 }
 
+void my_outb(unsigned char value, unsigned long port)
+{
+  *(u8*) port = value;
+  DPD(6, "my_outb(%08x,%02x)\n", port, value );  
+}
+
 void my_outw(unsigned short value, unsigned long port)
 {
   *(u16*) port = value;
@@ -67,8 +82,10 @@ void my_outl(unsigned int value, unsigned long port)
   DPD(6, "my_outl(%08x,%08x)\n", port, value );  
 }
 
+#define inb  my_inb
 #define inw  my_inw
 #define inl  my_inl
+#define outb my_outb
 #define outw my_outw
 #define outl my_outl
 
@@ -419,7 +436,38 @@ void emu10k1_ac97_write(struct ac97_codec *codec, u8 reg, u16 value)
 
 	spin_unlock_irqrestore(&card->lock, flags);
 }
+#else
+u16 emu10k1_readac97(struct emu10k1_card *card, u8 reg)
+{
+	u16 data;
+	unsigned long flags;
 
+	spin_lock_irqsave(&card->lock, flags);
+
+	outb(reg, card->iobase + AC97ADDRESS);
+	data = inw(card->iobase + AC97DATA);
+
+	spin_unlock_irqrestore(&card->lock, flags);
+
+	printk( "emu10k1_readac97 %02x->%08x\n", reg, data );
+	return data;
+}
+
+void emu10k1_writeac97(struct emu10k1_card *card, u8 reg, u16 value)
+{
+	unsigned long flags;
+
+	spin_lock_irqsave(&card->lock, flags);
+
+	outb(reg, card->iobase + AC97ADDRESS);
+	outw(value, card->iobase + AC97DATA);
+
+	spin_unlock_irqrestore(&card->lock, flags);
+	printk( "emu10k1_writeac97 %02x, %08x\n", reg, value );
+}
+#endif
+
+#ifdef lcs
 /*********************************************************
 *            MPU access functions                        *
 **********************************************************/
