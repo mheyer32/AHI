@@ -984,7 +984,7 @@ AllocAudioRequestA( struct TagItem* tags,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("=>0x%08lx\n",req);
+    KPrintF("=>0x%08lx\n", (ULONG) req);
   }
 
   return (struct AHIAudioModeRequester *) req;
@@ -1484,7 +1484,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("=>%s\n",rc ? "TRUE" : "FALSE" );
+    KPrintF("=>%s\n",rc ? (ULONG) "TRUE" : (ULONG) "FALSE" );
   }
   return (ULONG) rc;
 }

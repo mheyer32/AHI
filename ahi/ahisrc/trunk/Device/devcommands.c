@@ -41,6 +41,7 @@
 #include <math.h>
 
 #include "ahi_def.h"
+#include "debug.h"
 #include "misc.h"
 #include "devcommands.h"
 #include "device.h"
@@ -78,7 +79,7 @@ DevBeginIO( struct AHIRequest* ioreq,
 {
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("BeginIO(0x%08lx)\n", ioreq);
+    KPrintF("BeginIO(0x%08lx)\n", (ULONG) ioreq);
   }
 
   ioreq->ahir_Std.io_Message.mn_Node.ln_Type = NT_MESSAGE;
@@ -127,7 +128,7 @@ DevAbortIO( struct AHIRequest* ioreq,
   
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AbortIO(0x%08lx)", ioreq);
+    KPrintF("AbortIO(0x%08lx)", (ULONG) ioreq);
   }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
@@ -213,7 +214,7 @@ TermIO ( struct AHIRequest *ioreq,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("Terminating IO Request 0x%08lx", ioreq);
+    KPrintF("Terminating IO Request 0x%08lx", (ULONG) ioreq);
   }
 
   if(ioreq->ahir_Extras != NULL)

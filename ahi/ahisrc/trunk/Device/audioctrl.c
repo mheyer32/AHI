@@ -615,7 +615,7 @@ AllocAudioA( struct TagItem* tags,
 exit:
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("=>0x%08lx\n",audioctrl);
+    KPrintF("=>0x%08lx\n", (ULONG) audioctrl);
   }
   return (struct AHIAudioCtrl *) audioctrl;
 

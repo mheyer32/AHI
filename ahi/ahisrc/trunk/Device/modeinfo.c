@@ -563,7 +563,7 @@ GetAudioAttrsA( ULONG                    id,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
-    KPrintF("=>%s\n", rc ? "TRUE" : "FALSE" );
+    KPrintF("=>%s\n", rc ? (ULONG) "TRUE" : (ULONG) "FALSE" );
   }
 
   return (ULONG) rc;

@@ -46,6 +46,7 @@
 #include <stddef.h>
 
 #include "ahi_def.h"
+#include "debug.h"
 #include "device.h"
 #include "devcommands.h"
 #include "gateway.h"
