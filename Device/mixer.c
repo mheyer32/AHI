@@ -1444,7 +1444,7 @@ AddWordMVH ( ADDARGS )
   *Offset = offset;
 }
 
-#if 0
+#if 1
 void
 AddWordSVPH ( ADDARGS )
 {
