@@ -794,7 +794,6 @@ MixGeneric ( struct Hook *Hook,
           samples     = min( samplesleft, cd->cd_Samples );
           try_samples = min( samples, cd->cd_AntiClickCount );
 
-//kprintf("<search %ld = min( %ld, %ld )> ",try_samples, samples, cd->cd_AntiClickCount );
           processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
                                                        cd->cd_ScaleLeft,
                                                        cd->cd_ScaleRight,
@@ -807,7 +806,6 @@ MixGeneric ( struct Hook *Hook,
                                                        TRUE );
           cd->cd_Samples -= processed;
           samplesleft    -= processed;
-//kprintf("<searched %ld> ", processed);
 
           if( try_samples == cd->cd_AntiClickCount ||
               processed != samples )
@@ -825,7 +823,6 @@ MixGeneric ( struct Hook *Hook,
             if( cd->cd_VolDelayed )
             {
               cd->cd_VolDelayed = FALSE;
-//kprintf("<vol> ");
               cd->cd_VolumeLeft  = cd->cd_DelayedVolumeLeft;
               cd->cd_VolumeRight = cd->cd_DelayedVolumeRight;
               cd->cd_ScaleLeft   = cd->cd_DelayedScaleLeft;
@@ -836,7 +833,6 @@ MixGeneric ( struct Hook *Hook,
             if( cd->cd_FreqDelayed )
             {
               cd->cd_FreqDelayed = FALSE;
-//kprintf("<freq> ");
               cd->cd_FreqOK      = cd->cd_DelayedFreqOK;
               cd->cd_Add         = cd->cd_DelayedAdd;
               
@@ -850,22 +846,23 @@ MixGeneric ( struct Hook *Hook,
             if( cd->cd_SoundDelayed )
             {
               cd->cd_SoundDelayed = FALSE;
-//kprintf("<sound> ");
+
+              cd->cd_SoundOK       = cd->cd_DelayedSoundOK;
+
               cd->cd_Offset        = cd->cd_DelayedOffset;
               cd->cd_FirstOffsetI  = cd->cd_DelayedFirstOffsetI;
               cd->cd_LastOffset    = cd->cd_DelayedLastOffset;
               cd->cd_DataStart     = cd->cd_DelayedDataStart;
+
               cd->cd_Type          = cd->cd_DelayedType;
-              cd->cd_SoundOK       = cd->cd_DelayedSoundOK;
               cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
+
               cd->cd_Samples       = cd->cd_DelayedSamples;
+
               cd->cd_ScaleLeft     = cd->cd_DelayedScaleLeft;
               cd->cd_ScaleRight    = cd->cd_DelayedScaleRight;
               cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
             }
-
-//            cd->cd_AntiClickCount = 0;
-//kprintf("<new %ld %ld> ", cd->cd_Samples, cd->cd_AntiClickCount );
           }
 
           if( cd->cd_VolDelayed || cd->cd_FreqDelayed || cd->cd_SoundDelayed )
@@ -876,7 +873,6 @@ MixGeneric ( struct Hook *Hook,
           {
             cd->cd_AntiClickCount = 0;
           }
-//kprintf("acc: %ld\n",cd->cd_AntiClickCount);
         }
 
         if( cd->cd_FreqOK && cd->cd_SoundOK )
@@ -884,8 +880,7 @@ MixGeneric ( struct Hook *Hook,
           // Sound is still ok, let's rock'n roll.
 
           samples = min( samplesleft, cd->cd_Samples );
-//kprintf("<mixing %ld: %08lx> ", samples, cd->cd_AddRoutine);
-//kprintf("<%ld, %lx, %lx, %08lx, %08lx> ", samples, cd->cd_ScaleLeft, cd->cd_ScaleRight, cd->cd_DataStart,dstptr );
+
           processed = ((ADDFUNC *) cd->cd_AddRoutine)( samples,
                                                        cd->cd_ScaleLeft,
                                                        cd->cd_ScaleRight,
@@ -896,7 +891,6 @@ MixGeneric ( struct Hook *Hook,
                                                       &dstptr,
                                                        cd,
                                                        FALSE );
-//kprintf("<mixed %ld> ", processed );
           cd->cd_Samples -= processed;
           samplesleft    -= processed;
 
@@ -906,7 +900,7 @@ MixGeneric ( struct Hook *Hook,
 
             cd->cd_StartPointL = cd->cd_TempStartPointL;
             cd->cd_StartPointR = cd->cd_TempStartPointR;
-//kprintf("1 ");
+
             /*
             ** Offset always points OUTSIDE the sample after this
             ** call.  Ie, if we read a sample at offset (Offset.I)
@@ -972,21 +966,39 @@ MixGeneric ( struct Hook *Hook,
 
             /* Also update all cd_Delayed#? stuff */
 
-            cd->cd_DelayedFreqOK        = cd->cd_NextFreqOK;
-            cd->cd_DelayedSoundOK       = cd->cd_NextSoundOK;
-            cd->cd_DelayedDataStart     = cd->cd_NextDataStart;
-            cd->cd_DelayedOffset        = cd->cd_NextOffset;
-            cd->cd_DelayedAdd           = cd->cd_NextAdd;
-            cd->cd_DelayedLastOffset    = cd->cd_NextLastOffset;
-            cd->cd_DelayedScaleLeft     = cd->cd_NextScaleLeft;
-            cd->cd_DelayedScaleRight    = cd->cd_NextScaleRight;
-            cd->cd_DelayedVolumeLeft    = cd->cd_NextVolumeLeft;
-            cd->cd_DelayedVolumeRight   = cd->cd_NextVolumeRight;
-            cd->cd_DelayedAddRoutine    = cd->cd_NextAddRoutine;
-            cd->cd_DelayedType          = cd->cd_NextType;
+            if( !cd->cd_VolDelayed )
+            {
+              cd->cd_DelayedVolumeLeft    = cd->cd_NextVolumeLeft;
+              cd->cd_DelayedVolumeRight   = cd->cd_NextVolumeRight;
+            }
 
-            cd->cd_DelayedSamples       = cd->cd_Samples;
-            cd->cd_DelayedFirstOffsetI  = cd->cd_FirstOffsetI;
+            if( !cd->cd_FreqDelayed )
+            {
+              cd->cd_DelayedFreqOK        = cd->cd_NextFreqOK;
+              cd->cd_DelayedAdd           = cd->cd_NextAdd;
+            }
+
+            if( !cd->cd_SoundDelayed )
+            {
+              cd->cd_DelayedSoundOK       = cd->cd_NextSoundOK;
+              cd->cd_DelayedOffset        = cd->cd_NextOffset;
+              cd->cd_DelayedFirstOffsetI  = cd->cd_FirstOffsetI;  // See above
+              cd->cd_DelayedLastOffset    = cd->cd_NextLastOffset;
+              cd->cd_DelayedType          = cd->cd_NextType;
+              cd->cd_DelayedDataStart     = cd->cd_NextDataStart;
+            }
+
+            if( !cd->cd_VolDelayed && !cd->cd_SoundDelayed )
+            {
+              cd->cd_DelayedScaleLeft     = cd->cd_NextScaleLeft;
+              cd->cd_DelayedScaleRight    = cd->cd_NextScaleRight;
+              cd->cd_DelayedAddRoutine    = cd->cd_NextAddRoutine;
+            }
+
+            if( !cd->cd_FreqDelayed && !cd->cd_SoundDelayed )
+            {
+              cd->cd_DelayedSamples       = cd->cd_Samples;
+            }
 
             cd->cd_EOS = TRUE;      // signal End-Of-Sample
             continue;               // .contchannel (same channel, new sound)
