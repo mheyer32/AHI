@@ -185,6 +185,7 @@ AC_OUTPUT(Makefile
           Drivers/Filesave/Makefile
           Drivers/Void/Makefile
 	  Examples/Makefile
+	  Examples/Device/PlayTest/Makefile
 	  Examples/Extras/CloneAudioModes/Makefile
 	  Examples/Low-level/PlaySineEverywhere/Makefile
           Include/Makefile,
