@@ -1,10 +1,11 @@
 # $Id$
 # $Log$
+# Revision 1.19  1997/03/27 12:16:27  lcs
+# Norwegian translation added.
+# Amiga E modules added.
+#
 # Revision 1.18  1997/03/24 12:43:09  lcs
 # Echo rewritten
-#
-# Revision 1.17  1997/03/20 02:06:50  lcs
-# *** empty log message ***
 #
 # Revision 1.14  1997/02/20 10:26:13  lcs
 # New Flexcat caused some problems
@@ -190,6 +191,16 @@ includes:
 	fd2inline AHIINC:FD/ahi_sub_lib.fd\
 	          AHIINC:C/clib/ahi_sub_protos.h\
 	       -o AHIINC:ADE/inline/ahi_sub.h
+	# E modules
+	copy AHIINC:FD/ahi_lib.fd AHIINC:FD/ahi_sub_lib.fd AHIINC:E
+	Programmering:AmigaE/Bin/FD2Module AHIINC:E/ahi
+	Programmering:AmigaE/Bin/FD2Module AHIINC:E/ahi_sub
+	--makedir AHIINC:E/devices AHIINC:E/libraries
+	rep AHIINC:Asm/devices/ahi.i Fixed LONG AHIINC:E/devices/ahi.i
+	rep AHIINC:Asm/libraries/ahi_sub.i Fixed LONG AHIINC:E/libraries/ahi_sub.i
+	Programmering:AmigaE/Bin/IConvert AHIINC:E/devices/ahi.i
+	Programmering:AmigaE/Bin/IConvert AHIINC:E/libraries/ahi_sub.i
+	delete AHIINC:E/\#?.fd AHIINC:E/\#?/\#?.i
 
 ##
 ## Build autodoc files
@@ -218,6 +229,7 @@ autodocs:
 
 catalogs:
 	FlexCat ahi.cd Svenska.ct CATALOG AHI:User/Catalogs/Svenska/ahi.catalog
+	FlexCat ahi.cd Norsk.ct CATALOG AHI:User/Catalogs/Norsk/ahi.catalog
 
 ##
 ## Update catalog files
@@ -227,6 +239,7 @@ catalogs:
 newcatalogs:
 	--FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
 	--FlexCat ahi.cd Svenska.ct NEWCTFILE Svenska.ct
+	--FlexCat ahi.cd Norsk.ct NEWCTFILE Norsk.ct
 
 ##
 ## Build user documentation
@@ -237,6 +250,7 @@ userdoc:
 	makeinfo --amiga-40 ahi.texinfo
 	rep ahi.guide Ahi AHI AHI:User/Help/ahi.guide
 	delete ahi.guide
+	execute MakeManual
 
 ##
 ## Check in all files
