@@ -39,7 +39,7 @@
 # include <proto/ppc.h> 
 # include <proto/powerpc.h> 
 # include <clib/ahi_protos.h>
-# include <pragmas/ahi_pragmas.h>
+# include <inline/ahi.h>
 #endif
 
 #include <string.h>

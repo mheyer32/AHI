@@ -32,7 +32,7 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 #include <clib/ahi_protos.h>
-#include <pragmas/ahi_pragmas.h>
+#include <inline/ahi.h>
 #include <proto/ahi_sub.h>
 #include <strings.h>
 

@@ -53,47 +53,6 @@ InternalSampleFrameSize( ULONG sampletype );
 
 // This must be the first code in the ELF object!
 
-asm( "
-        .align  2
-        .globl  KernelObject
-      	.type   KernelObject,@function
-
-KernelObject:
-        stwu    1,-24(1)
-        mflr    0
-        stw     0,28(1)
-        stw     11,8(1)
-        stw     12,12(1)
-        stw     13,16(1)
-
-        bl      CallMixroutine
-
-        lwz     11,8(1)
-        lwz     12,12(1)
-        lwz     13,16(1)
-        lwz     0,28(1)
-        mtlr    0
-        addi    1,1,24
-        blr
-");
-
-
-// Just some library stuff... All the stuff will have to be added 
-// in the final release.
-
-ULONG	__LIB_Version  = VERSION;
-ULONG	__LIB_Revision = REVISION;
-
-static const char VersTag[] = 
- "$VER: ahi.elf " VERS " ©1994-1999 Martin Blom. " CPU " version.\r\n";
-
-
-// Make sure all add-routines are fetched.
-
-static void* a1 = AddByteMono;
-static void* a2 = AddLofiByteMono;
-
-
 // Function used to call the actual mixing routine.
 
 int
@@ -241,5 +200,46 @@ InvalidateCache:
         sync                    /* force mem transactions to complete */
         blr                     /* return to calling routine */
 ");
+
+
+asm( "
+        .align  2
+        .globl  KernelObject
+      	.type   KernelObject,@function
+
+KernelObject:
+        stwu    1,-24(1)
+        mflr    0
+        stw     0,28(1)
+        stw     11,8(1)
+        stw     12,12(1)
+        stw     13,16(1)
+
+        bl      CallMixroutine
+
+        lwz     11,8(1)
+        lwz     12,12(1)
+        lwz     13,16(1)
+        lwz     0,28(1)
+        mtlr    0
+        addi    1,1,24
+        blr
+");
+
+
+// Just some library stuff... All the stuff will have to be added 
+// in the final release.
+
+ULONG	__LIB_Version  = VERSION;
+ULONG	__LIB_Revision = REVISION;
+
+static const char VersTag[] = 
+ "$VER: ahi.elf " VERS " ©1994-1999 Martin Blom. " CPU " version.\r\n";
+
+
+// Make sure all add-routines are fetched.
+
+static void* a1 = AddByteMono;
+static void* a2 = AddLofiByteMono;
 
 #endif /* defined( VERSIONPPC ) */
