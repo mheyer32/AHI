@@ -82,13 +82,13 @@ AC_CHECK_TOOL( AS, as, : )
 AC_CHECK_TOOL( AR, ar, : )
 AC_CHECK_TOOL( RANLIB, ranlib, : )
 AC_CHECK_TOOL( STRIP, strip, : )
+AC_CHECK_TOOL( OBJCOPY, objcopy, : ) 
 
 AC_PROG_INSTALL
 #AC_PROG_CC
 AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
-AC_CHECK_PROG( ASM, PhxAss, PhxAss )
 AC_CHECK_PROG( FD2INLINE, fd2inline, fd2inline )
 AC_CHECK_PROG( FD2PRAGMA, fd2pragma, fd2pragma )
 
@@ -130,5 +130,7 @@ AC_OUTPUT(Makefile
           AddAudioModes/Makefile
           Device/Makefile
           Docs/Makefile
+          Drivers/EMU10kx/Makefile
+	  Examples/Extras/CloneAudioModes/Makefile
           Include/Makefile,
           echo timestamp > stamp-h)

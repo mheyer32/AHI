@@ -133,7 +133,7 @@ DevAbortIO( struct AHIRequest* ioreq,
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
-  ObtainSemaphore(&iounit->Lock);
+  AHIObtainSemaphore(&iounit->Lock);
 
   if(ioreq->ahir_Std.io_Message.mn_Node.ln_Type != NT_REPLYMSG)
   {
@@ -212,7 +212,7 @@ DevAbortIO( struct AHIRequest* ioreq,
     }
   }
 
-  ReleaseSemaphore(&iounit->Lock);
+  AHIReleaseSemaphore(&iounit->Lock);
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -301,7 +301,7 @@ PerformIO ( struct AHIRequest *ioreq,
       break;
 
     case CMD_WRITE:
-      ObtainSemaphore(&iounit->Lock);
+      AHIObtainSemaphore(&iounit->Lock);
 
       if(iounit->StopCnt)
       {
@@ -312,7 +312,7 @@ PerformIO ( struct AHIRequest *ioreq,
         WriteCmd(ioreq, AHIBase);
       }
 
-      ReleaseSemaphore(&iounit->Lock);
+      AHIReleaseSemaphore(&iounit->Lock);
       break;
 
     case CMD_STOP:
@@ -482,11 +482,11 @@ StopCmd ( struct AHIRequest *ioreq,
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
-  ObtainSemaphore(&iounit->Lock);
+  AHIObtainSemaphore(&iounit->Lock);
 
   iounit->StopCnt++;
 
-  ReleaseSemaphore(&iounit->Lock);
+  AHIReleaseSemaphore(&iounit->Lock);
 
   TermIO(ioreq,AHIBase);
 }
@@ -741,7 +741,7 @@ ReadCmd ( struct AHIRequest *ioreq,
     else
       ioreq->ahir_Frequency = 0x00010000;       // Fixed 1.0
 
-    ObtainSemaphore(&iounit->Lock);
+    AHIObtainSemaphore(&iounit->Lock);
 
     /* Add the request to the list of readers */
     AddTail((struct List *) &iounit->ReadList,(struct Node *) ioreq);
@@ -749,7 +749,7 @@ ReadCmd ( struct AHIRequest *ioreq,
     /* Copy the current buffer contents */
     FillReadBuffer(ioreq, iounit, AHIBase);
 
-    ReleaseSemaphore(&iounit->Lock);
+    AHIReleaseSemaphore(&iounit->Lock);
   }
   else
   {
@@ -955,7 +955,7 @@ StartCmd ( struct AHIRequest *ioreq,
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
   audioctrl = (struct AHIPrivAudioCtrl *) iounit->AudioCtrl;
 
-  ObtainSemaphore(&iounit->Lock);
+  AHIObtainSemaphore(&iounit->Lock);
 
   if(iounit->StopCnt)
   {
@@ -996,7 +996,7 @@ StartCmd ( struct AHIRequest *ioreq,
     ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
   }
 
-  ReleaseSemaphore(&iounit->Lock);
+  AHIReleaseSemaphore(&iounit->Lock);
 
   TermIO(ioreq,AHIBase);
 }
@@ -1016,7 +1016,7 @@ FeedReaders ( struct AHIDevUnit *iounit,
 {
   struct AHIRequest *ioreq;
 
-  ObtainSemaphore(&iounit->Lock);
+  AHIObtainSemaphore(&iounit->Lock);
 
   for(ioreq = (struct AHIRequest *)iounit->ReadList.mlh_Head;
       ioreq->ahir_Std.io_Message.mn_Node.ln_Succ;
@@ -1042,7 +1042,7 @@ FeedReaders ( struct AHIDevUnit *iounit,
     iounit->RecordOffDelay = 2;
   }
 
-  ReleaseSemaphore(&iounit->Lock);
+  AHIReleaseSemaphore(&iounit->Lock);
 }
 
 
@@ -1185,7 +1185,7 @@ NewWriter ( struct AHIRequest *ioreq,
 
     GetExtras(ioreq)->Sound = sound;
 
-    ObtainSemaphore(&iounit->Lock);
+    AHIObtainSemaphore(&iounit->Lock);
   
     if(ioreq->ahir_Link)
     {
@@ -1298,7 +1298,7 @@ NewWriter ( struct AHIRequest *ioreq,
       AddWriter(ioreq, iounit, AHIBase);
     }
 
-    ReleaseSemaphore(&iounit->Lock);
+    AHIReleaseSemaphore(&iounit->Lock);
   }
   else // No free sound found, or sound failed to load
   {
@@ -1469,7 +1469,7 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
 
   NewList((struct List *) &templist);
 
-  ObtainSemaphore(&iounit->Lock);
+  AHIObtainSemaphore(&iounit->Lock);
 
   RemPlayers((struct List *) &iounit->PlayingList, iounit, AHIBase);
   RemPlayers((struct List *) &iounit->SilentList, iounit, AHIBase);
@@ -1487,7 +1487,7 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
     AddWriter(ioreq, iounit, AHIBase);
   }
 
-  ReleaseSemaphore(&iounit->Lock);
+  AHIReleaseSemaphore(&iounit->Lock);
 }
 
 

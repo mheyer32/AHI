@@ -51,6 +51,22 @@ SprintfA( char *dst, const char *fmt, ULONG* args );
 #define Sprintf(a0, a1, args...) \
         ({ULONG _args[] = { args }; SprintfA((a0), (a1), (ULONG*)_args);})
 
+
+
+void
+AHIInitSemaphore( struct SignalSemaphore* ss );
+
+void
+AHIObtainSemaphore( struct SignalSemaphore* ss );
+
+void
+AHIReleaseSemaphore( struct SignalSemaphore* ss );
+
+LONG
+AHIAttemptSemaphore( struct SignalSemaphore* ss );
+
+
+
 APTR
 AHIAllocVec( ULONG byteSize,
              ULONG requirements );
