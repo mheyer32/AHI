@@ -1,0 +1,9 @@
+Short:    Retargetable audio v4.REVISION, Developer's Archive
+Type:     dev/misc
+Author:   Martin Blom <lcs@lysator.liu.se>
+Uploader: Martin Blom <lcs@lysator.liu.se>
+
+     This archive contains the developer documentation and
+     example source code for AHI, both for programmer who wish
+     to use AHI in their own applications and those who want
+     to write hardware drivers.
