@@ -114,5 +114,5 @@ char *getCopyright(void);
 char *getDriver(void);
 char *getVersion(void);
 
-#endif _AHI_H_
+#endif /* _AHI_H_ */
 
