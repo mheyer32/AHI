@@ -23,7 +23,7 @@ BOOL
 MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg);
 
 Object*
-MethodClone(Class* class, Object* object, Msg msg);
+MethodClone(Class* class, Object* object, struct AHIP_Buffer_Clone* msg);
 
 BOOL
 MethodShift(Class* class, Object* object, Msg msg);

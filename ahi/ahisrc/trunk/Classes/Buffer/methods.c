@@ -47,11 +47,19 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
       case AHIA_Buffer_Capacity:
 	AHIClassData->capacity = tag->ti_Data;
 	break;
-
-      default:
+ 
+      case AHIA_Buffer_PreLength:
+	AHIClassData->pre_length = tag->ti_Data;
+	break;
+	
+     default:
 	break;
     }
   }
+
+  AHIClassData->prelen_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
+				       AHIClassData->sample_type,
+				       AHIClassData->pre_length, NULL);
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
@@ -67,7 +75,7 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
   }
   
   if (AHIClassData->length == 0) {
-    AHIClassData->length = AHIClassData->capacity - AHIClassData->offset;
+    AHIClassData->length = AHIClassData->capacity;
   }
 
   if (AHIClassData->capacity == 0) {
@@ -78,10 +86,13 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 			  AHIClassData->sample_type, AHIClassData->capacity, NULL);
 
     if (size == 0) {
+
+#warning TODO: Should AHIM_Buffer_SampleFrameSize set error?
       return AHIE_Buffer_InvalidSampleType;
     }
     
-    AHIClassData->data = AllocVec(size, MEMF_PUBLIC | MEMF_CLEAR);
+    AHIClassData->data = AllocVec(size + AHIClassData->prelen_size,
+				  MEMF_PUBLIC | MEMF_CLEAR);
   }
 
   if (AHIClassData->data == NULL) {
@@ -116,10 +127,8 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
   ULONG length = AHIClassData->length;
-  ULONG offset = AHIClassData->offset;
   
   BOOL check_length = FALSE;
-  BOOL check_offset = FALSE;
 
   struct TagItem* tstate = msg->opu_AttrList;
   struct TagItem* tag;
@@ -131,11 +140,6 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	check_length = TRUE;
 	break;
 
-      case AHIA_Buffer_Offset:
-	offset = tag->ti_Data;
-	check_offset = TRUE;
-	break;
-	
       case AHIA_Buffer_TimestampHigh:
 	AHIClassData->timestamp_hi = tag->ti_Data;
 	break;
@@ -157,23 +161,13 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
     }
   }
 
-  if (check_length || check_offset) {
-    if (offset + length < AHIClassData->capacity) {
+  if (check_length) {
+    if (length < AHIClassData->capacity) {
       AHIClassData->length = length;
-      AHIClassData->offset = offset;
-      
-      AHIClassData->offset_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
-					   AHIClassData->sample_type, offset, NULL);
-      
+
       AHIClassData->buffer_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
 					   AHIClassData->sample_type, length, NULL);
-
-      NotifySuper(class, object, msg,
-		  check_length ? AHIA_Buffer_Length : TAG_IGNORE, length,
-		  check_offset ? AHIA_Buffer_Offset : TAG_IGNORE, offset,
-		  check_offset ? AHIA_Buffer_Data   : TAG_IGNORE, ((ULONG) AHIClassData->data +
-								   AHIClassData->offset_size),
-		  TAG_DONE);
+      NotifySuper(class, object, msg, AHIA_Buffer_Length, length, TAG_DONE);
     }
     else {
       SetSuperAttrs(class, object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
@@ -244,15 +238,18 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       *msg->opg_Storage = AHIClassData->length;
       break;
 
-    case AHIA_Buffer_Offset:
-      *msg->opg_Storage = (ULONG) AHIClassData->offset;
+    case AHIA_Buffer_Data:
+      *msg->opg_Storage = (ULONG) AHIClassData->data + AHIClassData->prelen_size;
+      break;
+      
+    case AHIA_Buffer_RealData:
+      *msg->opg_Storage = (ULONG) AHIClassData->data;
+      break;
+      
+    case AHIA_Buffer_PreLength:
+      *msg->opg_Storage = (ULONG) AHIClassData->pre_length;
       break;
 
-    case AHIA_Buffer_Data: {
-      *msg->opg_Storage = (ULONG) AHIClassData->data + AHIClassData->offset_size;
-      break;
-    }
-      
     case AHIA_Buffer_TimestampHigh:
       *msg->opg_Storage = AHIClassData->timestamp_hi;
       break;
@@ -376,7 +373,7 @@ MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg) {
 ******************************************************************************/
 
 Object*
-MethodClone(Class* class, Object* object, Msg msg) {
+MethodClone(Class* class, Object* object, struct AHIP_Buffer_Clone* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
   Object*  r;
@@ -389,7 +386,7 @@ MethodClone(Class* class, Object* object, Msg msg) {
 		AHIA_Buffer_SampleFreqFract, AHIClassData->sample_freq_fract,
 		AHIA_Buffer_Capacity,        AHIClassData->capacity,
 		AHIA_Buffer_Length,          AHIClassData->length,
-		AHIA_Buffer_Offset,          AHIClassData->offset,
+		AHIA_Buffer_PreLength,       msg->PreLength,
 		AHIA_Buffer_TimestampHigh,   AHIClassData->timestamp_hi,
 		AHIA_Buffer_TimestampLow,    AHIClassData->timestamp_lo,
 		AHIA_Buffer_AgeHigh,         AHIClassData->age_hi,
@@ -419,15 +416,15 @@ MethodShift(Class* class, Object* object, Msg msg) {
     return FALSE;
   }
   
-  if (AHIClassData->offset_size > AHIClassData->buffer_size) {
+  if (AHIClassData->prelen_size > AHIClassData->buffer_size) {
     // Old: ooooOOOOOOBBBB
     // New: OOOOOOBBBBxxxx
-    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->offset_size);
+    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->prelen_size);
   }
   else {
     // Old: oooobbbbbbBBBB
     // New: BBBBxxxxxxxxxx
-    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->offset_size); // Deja vu!
+    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->prelen_size); // Deja vu!
   }
 
   return TRUE;

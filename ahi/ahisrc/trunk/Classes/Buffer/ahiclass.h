@@ -13,7 +13,7 @@ struct AHIClassData {
     ULONG             sample_type;
     ULONG             capacity;
     ULONG             length;
-    ULONG             offset;
+    ULONG             pre_length;
     APTR              data;
     ULONG             sample_freq_int;
     ULONG             sample_freq_fract;
@@ -22,7 +22,7 @@ struct AHIClassData {
     ULONG             age_hi;
     ULONG             age_lo;
 
-    ULONG             offset_size;
+    ULONG             prelen_size;
     ULONG             buffer_size;
 };
 
