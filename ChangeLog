@@ -1,5 +1,9 @@
 2005-01-08  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.54.
+
+	* Released AHI preferences 5.14.
+
 	* AHI preferences: Moved the selection of scale modes to the
 	global, advanced prerference page. Changed the default to "Full".
 
