@@ -1,7 +1,6 @@
 #ifndef AHI_Drivers_Common_DriverBase_h
 #define AHI_Drivers_Common_DriverBase_h
 
-#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
@@ -20,8 +19,6 @@ struct DriverBase
 
 #ifndef DRIVER_NEED_GLOBAL_EXECBASE
 #define SysBase       ((struct ExecBase*)      AHIsubBase->execbase)
-#else
-struct ExecBase* SysBase;
 #endif
 
 #define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)

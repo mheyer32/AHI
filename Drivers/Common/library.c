@@ -20,7 +20,6 @@
 #include "gatestubs2.h"
 #include "library.h"
 
-#include "DriverBase.h"
 #include "DriverData.h"
 #include "version.h"
 
@@ -162,6 +161,44 @@ ReqA( const char*        text,
 
   EasyRequestArgs( NULL, &es, NULL, args );
 }
+
+/******************************************************************************
+** Serial port debugging ******************************************************
+******************************************************************************/
+
+#if defined( __AROS__ ) && !defined( __mc68000__ )
+
+#include <aros/asmcall.h>
+
+AROS_UFH2( static void,
+	   rawputchar_m68k,
+	   AROS_UFHA( UBYTE,            c,       D0 ),
+	   AROS_UFHA( struct ExecBase*, SysBase, A3 ) )
+{
+  AROS_USERFUNC_INIT
+  RawPutChar( c );
+  AROS_USERFUNC_EXIT  
+}
+
+#else
+
+static UWORD rawputchar_m68k[] = 
+{
+  0x2C4B,             // MOVEA.L A3,A6
+  0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
+  0x4E75              // RTS
+};
+
+#endif
+
+void
+MyKPrintFArgs( UBYTE*           fmt, 
+	       ULONG*           args,
+	       struct DriverBase* AHIsubBase )
+{
+  RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
+}
+
 
 /******************************************************************************
 ** Library init ***************************************************************
