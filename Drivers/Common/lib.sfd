@@ -3,7 +3,7 @@
 ==include <exec/libraries.h>
 ==include <dos/dos.h>
 ==base _AHIsubBase
-==libname ahi_sub.audio
+==libname ahi_sub_lib.audio
 ==bias 0
 ==public
 struct Library* LibInit(struct Library* library, BPTR seglist, struct ExecBase* SysBase) (d0,a0,a6)

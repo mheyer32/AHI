@@ -1,4 +1,5 @@
 ==bias 0
+==libname camd_drv.camd
 
 ==include <exec/types.h>
 ==include <midi/camddevices.h>
