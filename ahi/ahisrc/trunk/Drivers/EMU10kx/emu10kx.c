@@ -365,6 +365,12 @@ _AHIsub_Start( ULONG                   flags,
 	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x3210;
 	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0;
       }
+
+      dd->voice.params[1].volume_target = 0xffff;
+      dd->voice.params[1].initial_fc = 0xff;
+      dd->voice.params[1].initial_attn = 0x00;
+      dd->voice.params[1].byampl_env_sustain = 0x7f;
+      dd->voice.params[1].byampl_env_decay = 0x7f;
     }
     else
     {
