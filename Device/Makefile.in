@@ -93,7 +93,7 @@ GENERATED	= version.h \
 all:		$(EXECUTABLE) $(srcdir)/ahi.ct $(CATALOGS)
 
 mostlyclean:
-	$(RM) $(EXECUTABLE) *.o *.a *.bak *~ \#*\# core Makefile.dep
+	$(RM) $(EXECUTABLE) *.o *.a Makefile.dep
 
 clean:		mostlyclean
 	$(RM) $(CATALOGS) $(GENERATED)
