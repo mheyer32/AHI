@@ -77,33 +77,46 @@ AHIClassDispatch(Class*  class,
 
     case OM_SET:
     case OM_UPDATE:
+      DoSuperMethod(class,object, AHIM_Lock);
       DoSuperMethodA(class, object, msg);
       result = MethodUpdate(class, object, (struct opUpdate*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break; 
 
     case OM_GET:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodGet(class, object, (struct opGet*) msg);
       
       if (!result) {
 	result = DoSuperMethodA(class, object, msg);
       }
+
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case AHIM_Buffer_SampleFrameSize:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodSampleFrameSize(class, object,
 				     (struct AHIP_Buffer_SampleFrameSize*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case AHIM_Buffer_Load:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = MethodLoad(class, object, (struct AHIP_Buffer_Load*) msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
 
     case AHIM_Buffer_Clone:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = (ULONG) MethodClone(class, object, msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
       
     case AHIM_Buffer_Shift:
+      DoSuperMethod(class,object, AHIM_Lock);
       result = (ULONG) MethodShift(class, object, msg);
+      DoSuperMethod(class,object, AHIM_Unlock);
       break;
       
     default:

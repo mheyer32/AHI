@@ -38,11 +38,17 @@ namespace AHI {
       /* The mode (shared/exclusive/any) to use */
       _AHIA(_P, Mode,		(_AHIA_Dummy+58)),		/* OM_NEW,
 								   OM_GET */
-      /* The different buffer sizes supported returned as an ULONG
-       * array (~0-terminated). The unit is bytes. */
-      _AHIA(_P, BufferSizes,	(_AHIA_Dummy+59)),		/* OM_GET */
 
-      /* The current buffer size (unit is bytes) */
+      /* TRUE if this output is available */
+      _AHIA(_P, Available,	(_AHIA_Dummy+102)),		/* OM_GET,
+								   OM_NOTIFY */
+
+      /* The different buffer lengths supported returned as an ULONG
+       * array (~0-terminated). The unit is sample frames. */
+      _AHIA(_P, BufferSizeArray,(_AHIA_Dummy+59)),		/* OM_GET,
+								   OM_NOTIFY */
+
+      /* The current buffer size (unit is sample frames) */
       _AHIA(_P, BufferSize,	(_AHIA_Dummy+60)),		/* OM_NEW,
 								   OM_SET,
 								   OM_GET,
@@ -50,7 +56,7 @@ namespace AHI {
 
       /* The different sample frequencies supported returned as an
        * ULONG array (~0-terminated). The unit is Hz. */
-      _AHIA(_P, SampleFreqs,	(_AHIA_Dummy+61)),		/* OM_GET */
+      _AHIA(_P, SampleFreqArray,(_AHIA_Dummy+61)),		/* OM_GET */
 
       /* The current sample frequency (unit is Hz) */
       _AHIA(_P, SampleFreq,	(_AHIA_Dummy+62)),		/* OM_NEW,
@@ -58,9 +64,20 @@ namespace AHI {
 								   OM_GET,
 								   OM_NOTIFY */
 
-      /* The current sample frequency's fractional part (unit is Hz >>32) */
-      _AHIA(_P, SampleFreqFract, (_AHIA_Dummy+63)),		/* OM_GET */
+      /* The current sample frequency's fractional part (unit is Hz >> 32). */
+      _AHIA(_P, SampleFreqFract, (_AHIA_Dummy+63)),		/* OM_GET,
+								   OM_NOTIFY */
 
+      /* The different sample types supported returned as an
+       * ULONG array (~0-terminated). */
+      _AHIA(_P, SampleTypeArray,(_AHIA_Dummy+99)),		/* OM_GET,
+								   OM_NOTIFY */
+
+      /* The current sample type */
+      _AHIA(_P, SampleType,	(_AHIA_Dummy+100)),		/* OM_NEW,
+								   OM_SET,
+								   OM_GET,
+								   OM_NOTIFY */
       /* TRUE if playback is realtime */
       _AHIA(_P, Realtime,	(_AHIA_Dummy+64))		/* OM_GET */
 

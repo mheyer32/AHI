@@ -35,6 +35,10 @@ namespace AHI {
       /* The board number */
       _AHIA(_P, Number,		(_AHIA_Dummy+46)),		/* OM_NEW */
 
+      /* TRUE if this board is available */
+      _AHIA(_P, Available,	(_AHIA_Dummy+101)),		/* OM_GET,
+								   OM_NOTIFY */
+      
       /* The number of discrete outputs (i.e., D/A converters, S/PDIF
        * outputs etc) */
       _AHIA(_P, Outputs,	(_AHIA_Dummy+47)),		/* OM_GET,
