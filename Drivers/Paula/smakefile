@@ -1,5 +1,14 @@
 # $Id$
 # $Log$
+# Revision 4.3  2001/09/16 19:04:28  lcs
+# * paula.audio:  The fixed CMD_STOP/CMD_START in ahi.device
+# triggered a bug that could make the driver lose track of the
+# AHIsub_Disable and AHIsub_Enable nesting.  Also, these functions
+# was not "thread safe" (they are not actually called from a thread
+# but rather an interrupt).
+#
+# Now uses "rx" to launch the rexx script.
+#
 # Revision 4.2  1998/01/10 19:47:33  lcs
 # Alright, the DMA version is ready for release.
 #
@@ -31,7 +40,7 @@ $(PDEST): prefsfile.a smakefile
 	AHI:User/C/AddAudioModes $(PDEST)
 
 version.i: paula_audio.a version.rexx smakefile
-	grep $$Id: paula_audio.a | version.rexx > version.i
+	grep $$Id: paula_audio.a | rx version.rexx > version.i
 
 paula_audio.o: paula_audio.a version.i smakefile
 	PhxAss $(AFLAGS) TO $@ MACHINE 68020 paula_audio.a
