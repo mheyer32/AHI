@@ -19,6 +19,7 @@
 
 #include <config.h>
 
+#include <clib/alib_protos.h>
 #include <proto/utility.h>
 
 #include "library.h"
@@ -39,8 +40,8 @@ OpenCAMDPort( struct Hook*        hook,
 
   BOOL in_use;
 
-  KPrintF( "OpenCAMDPort(%ld)\n", msg->PortNum );
-  
+  KPrintF( "OpenCAMDPort(%ld,%ld)\n", msg->PortNum, msg->V40Mode );
+
   if( msg->PortNum >= EMU10kxBase->cards_found ||
       EMU10kxBase->driverdatas[ msg->PortNum ] == NULL )
   {
@@ -55,6 +56,7 @@ OpenCAMDPort( struct Hook*        hook,
 	     dd->camd_receivefunc != NULL );
   if( !in_use )
   {
+    dd->camd_v40          = msg->V40Mode;
     dd->camd_transmitfunc = msg->TransmitFunc;
     dd->camd_receivefunc  = msg->ReceiveFunc;
   }
@@ -65,9 +67,10 @@ OpenCAMDPort( struct Hook*        hook,
     return FALSE;
   }
 
+  emu10k1_irq_disable( &dd->card, INTE_MIDIRXENABLE );
+  emu10k1_irq_disable( &dd->card, INTE_MIDITXENABLE );
   emu10k1_mpu_reset( &dd->card );
   emu10k1_irq_enable( &dd->card, INTE_MIDIRXENABLE );
-  emu10k1_irq_enable( &dd->card, INTE_MIDITXENABLE );
 
   return TRUE;
 }
@@ -85,8 +88,6 @@ CloseCAMDPort( struct Hook*         hook,
   struct DriverBase*  AHIsubBase = (struct DriverBase*) EMU10kxBase;
   struct EMU10kxData* dd         = EMU10kxBase->driverdatas[ msg->PortNum ];
 
-  KPrintF( "CloseCAMDPort(%ld)\n", msg->PortNum );
-  
   emu10k1_irq_disable( &dd->card, INTE_MIDIRXENABLE );
   emu10k1_irq_disable( &dd->card, INTE_MIDITXENABLE );
   emu10k1_mpu_reset( &dd->card );
@@ -111,15 +112,9 @@ ActivateCAMDXmit( struct Hook*            hook,
   struct EMU10kxData* dd         = EMU10kxBase->driverdatas[ msg->PortNum ];
   ULONG               b;
 
-  KPrintF( "ActivateCAMDXmit(%ld)\n", msg->PortNum );
+  KPrintF( "ActivateCAMDXmit(%08lx)\n", msg->PortNum );
 
-  b = CallHookA( dd->camd_transmitfunc, (Object*) EMU10kxBase, NULL );
+  emu10k1_irq_enable( &dd->card, INTE_MIDITXENABLE );
 
-  if( b != 0x100 )
-  {
-    emu10k1_mpu_write_data( &dd->card, b );
-  }
-
-  // The remaining bytes, if any, will be handled by the interrupt
-  // handler.
+  // The interrupt handler will now fetch the bytes and transmit them.
 }
