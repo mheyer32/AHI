@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2004 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -81,7 +79,7 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt * );
 #define ownIDCMP    0x0008
 #define defaultmode 0x0010
 
-static struct TagItem reqboolmap[] =
+static const struct TagItem reqboolmap[] =
 {
   { AHIR_PrivateIDCMP,   haveIDCMP   },
   { AHIR_SleepWindow,    lockwin     },
@@ -153,7 +151,7 @@ struct AHIAudioModeRequesterExt
 };
 
 
-static struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
+static const struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 
 #define MINSLIDERWIDTH 40
 
@@ -481,7 +479,7 @@ static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
 ** Positions all gadgets in the requester.
 */
 
-static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *TextAttr)
+static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, const struct TextAttr *TextAttr)
 {
   struct Gadget *gad;
   struct NewGadget ng;
@@ -516,7 +514,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
   if((gad=CreateContext(&req->Gadgets)))
   {
     if(TextAttr)
-      gadtextattr=TextAttr;
+      gadtextattr=(struct TextAttr *)TextAttr;
     else
       gadtextattr=req->Window->WScreen->Font;
 
@@ -974,7 +972,7 @@ static void OpenInfoWindow( struct AHIAudioModeRequesterExt *req )
 static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
 {
   LONG id=0, bits=0, stereo=0, pan=0, hifi=0, channels=0, minmix=0, maxmix=0,
-       record=0, fullduplex=0;
+       record=0, fullduplex=0, multichannel=0;
   int i;
 
   id = req->tempAudioID;
@@ -985,6 +983,7 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
   if(req->InfoWindow)
   {
     AHI_GetAudioAttrs(id, NULL,
+      AHIDB_MultiChannel, (ULONG) &multichannel,
       AHIDB_Stereo,       (ULONG) &stereo,
       AHIDB_Panning,      (ULONG) &pan,
       AHIDB_HiFi,         (ULONG) &hifi,
@@ -1015,9 +1014,9 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
         id);
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
     Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
-        bits, (ULONG) GetString((stereo ?
+        bits, (ULONG) GetString((multichannel ? msgReqInfoMultiChannel : (stereo ?
           (pan ? msgReqInfoStereoPan : msgReqInfoStereo) :
-          msgReqInfoMono), req->Catalog));
+          msgReqInfoMono)), req->Catalog));
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
     Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoChannels, req->Catalog),
         channels);
@@ -1601,7 +1600,9 @@ _AHI_AudioRequestA( struct AHIAudioModeRequester* req_in,
         {
           InitRequester(&lockreq);
           locksuxs=Request(&lockreq,req->SrcWindow);
+#ifndef __AMIGAOS4__
           if(IntuitionBase->LibNode.lib_Version >= 39)
+#endif
             SetWindowPointer(req->SrcWindow,
                 WA_BusyPointer,TRUE,
                 TAG_DONE);
@@ -1637,7 +1638,9 @@ _AHI_AudioRequestA( struct AHIAudioModeRequester* req_in,
         {
           if(locksuxs)
             EndRequest(&lockreq,req->SrcWindow);
+#ifndef __AMIGAOS4__
           if(IntuitionBase->LibNode.lib_Version >= 39)
+#endif
             SetWindowPointer(req->SrcWindow,
                 WA_BusyPointer,FALSE,
                 TAG_DONE);
