@@ -429,12 +429,12 @@ struct EmulLibEntry m68k_DevProc =
 };
 
 
-/* HookEntry *****************************************************************/
+/* native_HookEntry *************************************************************/
 
 ULONG
-HookEntry( struct Hook* h,
-           void*        o, 
-           void*        msg )
+native_HookEntry( struct Hook* h,
+		  void*        o, 
+		  void*        msg )
 {
   return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
 }
@@ -814,12 +814,12 @@ m68k_DevProc( void )
 }
 
 
-/* HookEntry *****************************************************************/
+/* native_HookEntry *************************************************************/
 
 ULONG ASMCALL
-HookEntry( REG( a0, struct Hook* h ),
-           REG( a2, void*        o ), 
-           REG( a1, void*        msg ) )
+native_HookEntry( REG( a0, struct Hook* h ),
+		  REG( a2, void*        o ), 
+		  REG( a1, void*        msg ) )
 {
   return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
 }

@@ -61,7 +61,7 @@ void m68k_DevProc( void );
 
 /* Hook entry points */
 
-void HookEntry( void );
+void native_HookEntry( void );
 
 void m68k_HookEntry( void );
 void m68k_HookEntryPreserveAllRegs( void );
