@@ -11,7 +11,8 @@
 	* Released ahi.device 5.44.
 
 	* ahi.device: Fixed a memory trashing bug introduced with the
-	dynamic volume update. [Kev Harrison and Michael Malyshev]
+	dynamic volume update (ahi.device tried to play a sound on channel
+	65535.) [Kev Harrison and Michael Malyshev]
 
 	* Released void.audio 5.7.
 
