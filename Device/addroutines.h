@@ -80,6 +80,8 @@ LONG AddLongMono( ADDARGS );
 LONG AddLongStereo( ADDARGS );
 LONG AddLongsMono( ADDARGS );
 LONG AddLongsStereo( ADDARGS );
+LONG Add71Mono( ADDARGS );
+LONG Add71Stereo( ADDARGS );
 
 LONG AddByte71( ADDARGS );
 LONG AddBytes71( ADDARGS );
@@ -101,6 +103,8 @@ LONG AddLongMonoB( ADDARGS );
 LONG AddLongStereoB( ADDARGS );
 LONG AddLongsMonoB( ADDARGS );
 LONG AddLongsStereoB( ADDARGS );
+LONG Add71MonoB( ADDARGS );
+LONG Add71StereoB( ADDARGS );
 
 LONG AddLofiByteMono( ADDARGS );
 LONG AddLofiByteStereo( ADDARGS );

@@ -64,6 +64,8 @@ extern ADDFUNC*                 AddLongMonoPtr;
 extern ADDFUNC*                 AddLongStereoPtr;
 extern ADDFUNC*                 AddLongsMonoPtr;
 extern ADDFUNC*                 AddLongsStereoPtr;
+extern ADDFUNC*                 Add71MonoPtr;
+extern ADDFUNC*                 Add71StereoPtr;
 extern ADDFUNC*                 AddByteMonoBPtr;
 extern ADDFUNC*                 AddByteStereoBPtr;
 extern ADDFUNC*                 AddBytesMonoBPtr;
@@ -76,6 +78,8 @@ extern ADDFUNC*                 AddLongMonoBPtr;
 extern ADDFUNC*                 AddLongStereoBPtr;
 extern ADDFUNC*                 AddLongsMonoBPtr;
 extern ADDFUNC*                 AddLongsStereoBPtr;
+extern ADDFUNC*                 Add71MonoBPtr;
+extern ADDFUNC*                 Add71StereoBPtr;
 
 extern ADDFUNC*			AddByte71Ptr;
 extern ADDFUNC*			AddBytes71Ptr;

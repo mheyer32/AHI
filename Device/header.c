@@ -172,6 +172,8 @@ ADDFUNC* AddLongStereoPtr                 = NULL;
 ADDFUNC* AddLong71Ptr                     = NULL;
 ADDFUNC* AddLongsMonoPtr                  = NULL;
 ADDFUNC* AddLongsStereoPtr                = NULL;
+ADDFUNC* Add71MonoPtr                     = NULL;
+ADDFUNC* Add71StereoPtr                   = NULL;
 ADDFUNC* AddLongs71Ptr                    = NULL;
 ADDFUNC* Add7171Ptr                       = NULL;
 ADDFUNC* AddByteMonoBPtr                  = NULL;
@@ -186,6 +188,8 @@ ADDFUNC* AddLongMonoBPtr                  = NULL;
 ADDFUNC* AddLongStereoBPtr                = NULL;
 ADDFUNC* AddLongsMonoBPtr                 = NULL;
 ADDFUNC* AddLongsStereoBPtr               = NULL;
+ADDFUNC* Add71MonoBPtr                    = NULL;
+ADDFUNC* Add71StereoBPtr                  = NULL;
 
 ADDFUNC* AddLofiByteMonoPtr               = NULL;
 ADDFUNC* AddLofiByteStereoPtr             = NULL;
@@ -689,6 +693,8 @@ OpenLibs ( void )
   AddLong71Ptr           = AddLong71;
   AddLongsMonoPtr        = AddLongsMono;
   AddLongsStereoPtr      = AddLongsStereo;
+  Add71MonoPtr           = Add71Mono;
+  Add71StereoPtr         = Add71Stereo;
   AddLongs71Ptr          = AddLongs71;
   Add7171Ptr             = Add7171;
  
@@ -704,6 +710,8 @@ OpenLibs ( void )
   AddLongStereoBPtr      = AddLongStereoB;
   AddLongsMonoBPtr       = AddLongsMonoB;
   AddLongsStereoBPtr     = AddLongsStereoB;
+  Add71MonoBPtr          = Add71MonoB;
+  Add71StereoBPtr        = Add71StereoB;
 
   AddLofiByteMonoPtr     = AddLofiByteMono;
   AddLofiByteStereoPtr   = AddLofiByteStereo;
