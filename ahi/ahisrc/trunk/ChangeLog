@@ -1,3 +1,9 @@
+2003-05-01  Martin Blom  <martin@blom.org>
+
+	* The PlaySineEverywhere example now plays the sine using all
+	available sample types (mono/stereo, 8/16/32 bits). It also slides
+	the pan from the extreme left to the extreme right.
+
 2003-04-30  Martin Blom  <martin@blom.org>
 
 	* Added catalonian translations by Josep Subirats i Ferré. Thanks!
