@@ -283,7 +283,7 @@ endif
 
 include Makefile.dep
 
-asmfuncs.o:	asmfuncs.s ahi_def.i
+asmfuncs.o:	asmfuncs.s
 devsupp.o:	devsupp.s
 addroutines_ppc.o:	addroutines_ppc.s
 addroutines_68k.o:	addroutines_68k.s
