@@ -138,6 +138,9 @@ static const STRPTR Outputs[ OUTPUTS ] =
   "Front & Rear"
 };
 
+INTGW( static, void,  playbackinterrupt, PlaybackInterrupt );
+INTGW( static, void,  recordinterrupt,   RecordInterrupt );
+INTGW( static, ULONG, emu10kxinterrupt,  EMU10kxInterrupt );
 
 /******************************************************************************
 ** AHIsub_AllocAudio **********************************************************
@@ -174,19 +177,19 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
     dd->interrupt.is_Node.ln_Pri  = 0;
     dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->interrupt.is_Code         = (void(*)(void)) EMU10kxInterrupt;
+    dd->interrupt.is_Code         = (void(*)(void)) &emu10kxinterrupt;
     dd->interrupt.is_Data         = (APTR) AudioCtrl;
 
     dd->playback_interrupt.is_Node.ln_Type = NT_INTERRUPT;
     dd->playback_interrupt.is_Node.ln_Pri  = 0;
     dd->playback_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->playback_interrupt.is_Code         = (void(*)(void)) PlaybackInterrupt;
+    dd->playback_interrupt.is_Code         = (void(*)(void)) &playbackinterrupt;
     dd->playback_interrupt.is_Data         = (APTR) AudioCtrl;
 
     dd->record_interrupt.is_Node.ln_Type = NT_INTERRUPT;
     dd->record_interrupt.is_Node.ln_Pri  = 0;
     dd->record_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->record_interrupt.is_Code         = (void(*)(void)) RecordInterrupt;
+    dd->record_interrupt.is_Code         = (void(*)(void)) &recordinterrupt;
     dd->record_interrupt.is_Data         = (APTR) AudioCtrl;
 
     dd->card.pci_dev = 0;
