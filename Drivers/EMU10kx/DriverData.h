@@ -35,10 +35,18 @@
 
 struct EMU10kxBase
 {
-    struct DriverBase driverbase;
+    /** Skeleton's variables *************************************************/
 
-    // This driver requires that the bases are global, since I don't
-    // want to change the original sources too much.
+    struct DriverBase      driverbase;
+
+    /** The driver's global data *********************************************/
+
+    /** A sempahore used for locking *****************************************/
+    struct SignalSemaphore semaphore;
+
+    /** A bit mask (protected by 'semaphore') used to prevent more than one
+	user of a sound card at a time */
+    ULONG                  allocated_bitmask;
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))

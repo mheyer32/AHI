@@ -130,15 +130,33 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
   int                 ret;
   int                 i;
   struct pci_dev*     dev;
+  BOOL                in_use;
 
   card_num = ( GetTagData( AHIDB_AudioID, 0, taglist) & 0x0000f000 ) >> 12;
 
+  if( card_num >= 32 )
+  {
+    Req( "More than 32 cards not supported." );
+    return AHISF_ERROR;
+  }
+
+  ObtainSemaphore( &EMU10kxBase->semaphore );
+  in_use = ( ( EMU10kxBase->allocated_bitmask & ( 1UL << card_num ) ) != 0 );
+  EMU10kxBase->allocated_bitmask |= ( 1UL << card_num );
+  ReleaseSemaphore( &EMU10kxBase->semaphore );
+
+  if( in_use )
+  {
+    return AHISF_ERROR;
+  }
+  
   // FIXME: This shoule be non-cachable, DMA-able memory
   dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
 
   if( dd == NULL )
   {
-    Req( "Unable to allocate driver structure.\n" );
+    Req( "Unable to allocate driver structure." );
+    return AHISF_ERROR;
   }
   else
   {
@@ -175,7 +193,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 
     if( dev == NULL )
     {
-      Req( "Unable to find EMU10k subsystem.\n" );
+      Req( "Unable to find EMU10k subsystem." );
       return AHISF_ERROR;
     }
 
@@ -183,7 +201,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 
 //  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
 //  {
-//    printf( "Unable to set DMA mask for card\n." );
+//    printf( "Unable to set DMA mask for card." );
 //    goto error;
 //  }
 
@@ -212,7 +230,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 
     if( emu10k1_init( &dd->card ) < 0 )
     {
-      Req( "Unable to initialize EMU10kx subsystem.\n");
+      Req( "Unable to initialize EMU10kx subsystem.");
       return AHISF_ERROR;
     }
 
@@ -223,7 +241,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     Delay( 1 );
 
     if (emu10k1_readac97( &dd->card, AC97_RESET ) & 0x8000) {
-      Req( "ac97 codec not present.\n");
+      Req( "ac97 codec not present.");
       return AHISF_ERROR;
     }
 
@@ -394,7 +412,7 @@ _AHIsub_Start( ULONG                   flags,
 
     if( dd->mix_buffer == NULL )
     {
-      Req( "Unable to allocate %ld bytes for mixing buffer.\n",
+      Req( "Unable to allocate %ld bytes for mixing buffer.",
 	   AudioCtrl->ahiac_BuffSize );
       return AHIE_NOMEM;
     }
@@ -419,7 +437,7 @@ _AHIsub_Start( ULONG                   flags,
 				    ( dma_buffer_size * 2 + PAGE_SIZE - 1 )
 				    / PAGE_SIZE ) < 0 )
     {
-      Req( "Unable to allocate voice buffer.\n" );
+      Req( "Unable to allocate voice buffer." );
       return AHIE_NOMEM;
     }
 
@@ -441,7 +459,7 @@ _AHIsub_Start( ULONG                   flags,
 
     if( emu10k1_voice_alloc( &dd->card, &dd->voice ) < 0 )
     {
-      Req( "Unable to allocate voice.\n" );
+      Req( "Unable to allocate voice." );
       return AHIE_UNKNOWN;
     }
 
@@ -576,7 +594,7 @@ _AHIsub_Start( ULONG                   flags,
 
     if( dd->record_buffer == NULL )
     {
-      Req( "Unable to allocate %ld bytes for the recording buffer.\n",
+      Req( "Unable to allocate %ld bytes for the recording buffer.",
 	   RECORD_BUFFER_SAMPLES * 4 );
       return AHIE_NOMEM;
     }
