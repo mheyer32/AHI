@@ -49,8 +49,11 @@ MethodDispose(Class* class, Object* object, Msg msg) {
   Object* ostate = (Object*) AHIClassData->members.mlh_Head;
   Object* member;
 
+  // Make sure OM_REMMEMBER succeeds
+  AHIClassData->busy = FALSE;
+  
   while ((member = NextObject(&ostate)) != NULL) {
-    DoMethod(member, OM_REMOVE);
+    DoMethod(object, OM_REMMEMBER, member);
     DoMethodA(member, msg);
   }
 
@@ -86,26 +89,48 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	  { AHIA_Buffer_Data,            0            },
 	  { TAG_DONE,                    0            }
 	};
-	
+
+	Object* ostate = (Object*) AHIClassData->members.mlh_Head;
+	Object* member;
+
+	// Propagate AHIA_Processor_Buffer to our children, if they were
+	// operating on our current buffer too.
+	while ((member = NextObject(&ostate)) != NULL) {
+	  Object* member_buffer = NULL;
+	  
+	  GetAttr(AHIA_Processor_Buffer, member, (ULONG*) &member_buffer);
+
+	  if (member_buffer == AHIClassData->buffer) {
+	    SetAttrs(member_buffer, AHIA_Processor_Buffer, tag->ti_Data, TAG_DONE);
+	  }
+	}
+
+	// Remove us from the buffer's notify list
 	if (AHIClassData->buffer != NULL) {
 	  DoMethod(AHIClassData->buffer, AHIM_RemNotify, AHIClassData->ic);
 	}
-	
+
+	// Install new buffer object
 	AHIClassData->buffer = (Object*) tag->ti_Data;
 	
 	if (AHIClassData->buffer != NULL) {
+	  // Add us to the new buffer's notify list
 	  DoMethod(AHIClassData->buffer, AHIM_AddNotify, AHIClassData->ic);
-	  
+
+	  // Fill in OM_UPDATE attributes
 	  GetAttr(AHIA_Buffer_SampleType,      AHIClassData->buffer, &update_tags[0].ti_Data);
 	  GetAttr(AHIA_Buffer_SampleFreqInt,   AHIClassData->buffer, &update_tags[1].ti_Data);
 	  GetAttr(AHIA_Buffer_SampleFreqFract, AHIClassData->buffer, &update_tags[2].ti_Data);
 	  GetAttr(AHIA_Buffer_Length,          AHIClassData->buffer, &update_tags[3].ti_Data);
 	  GetAttr(AHIA_Buffer_Data,            AHIClassData->buffer, &update_tags[4].ti_Data);
 	}
-	
+
+	// Send notify for AHIA_Processor_Buffer to our own notification list
 	NotifySuper(class, object, msg,
 		    AHIA_Processor_Buffer,       (ULONG) AHIClassData->buffer,
 		    TAG_DONE);
+
+	// Send AHIA_Buffer_* notifications to subclasses
 	DoMethod(object, OM_UPDATE, (ULONG) update_tags, (ULONG) msg->opu_GInfo, 0);
 	break;
       }
@@ -120,11 +145,7 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	break;
 	
       case AHIA_Processor_AddChild: {
-	struct opMember om = {
-	  OM_ADDMEMBER, (Object*) tag->ti_Data
-	};
-
-	MethodAddMember(class, object, &om);
+	DoMethod(object, OM_ADDMEMBER, tag->ti_Data);
 	break;
       }
 
@@ -343,7 +364,7 @@ BOOL
 MethodRemMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-  ULONG parent = 0;
+  Object* parent = NULL;
 
   if (msg->opam_Object == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NullMember, TAG_DONE);
@@ -355,7 +376,7 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
     return FALSE;
   }
 
-  GetAttr(AHIA_Processor_Parent, msg->opam_Object, &parent);
+  GetAttr(AHIA_Processor_Parent, msg->opam_Object, (ULONG*) &parent);
 
   if (parent != object) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NotMember, TAG_DONE);
