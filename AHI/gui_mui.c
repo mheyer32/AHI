@@ -274,7 +274,7 @@ static void GUINewUnit(void)
   set(MUIList, MUIA_List_Quiet, TRUE);
   DoMethod(MUIList, MUIM_List_Insert, Modes, -1, MUIV_List_Insert_Bottom);
   set(MUIList, MUIA_List_Quiet, FALSE);
-  set(MUIList, MUIA_List_Active, state.ModeSelected);
+  set(MUIList, MUIA_List_Active, state.ModeSelected != ~0 ? state.ModeSelected : MUIV_List_Active_Off);
   GUINewMode();
 }
 

@@ -601,7 +601,7 @@ void FreeList(struct List *list) {
 struct Node *GetNode(int index, struct List *list) {
   struct Node *n;
 
-  if(list == NULL)
+  if(list == NULL || list->lh_Head->ln_Succ == NULL)
     return NULL;
     
   for(n = list->lh_Head; n->ln_Succ; n = n->ln_Succ) {
