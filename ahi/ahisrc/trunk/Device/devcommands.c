@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.4  1997/01/04 20:19:56  lcs
+* Changed the AHI_DEBUG levels
+* CMD_WRITE seem to work as supposed now
+*
 * Revision 1.3  1997/01/04 13:26:41  lcs
 * Debugged CMD_WRITE
 *
@@ -42,6 +46,7 @@ static void AddWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *
 static void PlayRequest(int, struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
 void RethinkPlayers( struct AHIDevUnit *, struct AHIBase *);
 static void RemPlayers( struct List *, struct AHIDevUnit *, struct AHIBase *);
+void UpdateSilentPlayers( struct AHIDevUnit *, struct AHIBase *);
 
 // Should be moved to a separate file... IMHO.
 struct Node *FindNode(struct List *, struct Node *);
@@ -58,8 +63,13 @@ __asm void DevBeginIO(
     register __a1 struct AHIRequest *ioreq,
     register __a6 struct AHIBase *AHIBase)
 {
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("BeginIO(0x%08lx)\n", ioreq);
+  }
+
   ioreq->ahir_Std.io_Message.mn_Node.ln_Type = NT_MESSAGE;
-  
+
   switch(ioreq->ahir_Std.io_Command)
   {
 
@@ -98,6 +108,11 @@ __asm ULONG DevAbortIO(
   ULONG rc = NULL;
   struct AHIDevUnit *iounit;
   
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("AbortIO(0x%08lx)", ioreq);
+  }
+
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
   
   ObtainSemaphore(&iounit->ListLock);
@@ -107,24 +122,46 @@ __asm ULONG DevAbortIO(
     {
 
       case CMD_READ:
-      {
-        struct Node *node, *next;
-
-        node = (struct Node *) iounit->ReadList.mlh_Head;
-        while(node->ln_Succ)
+        if(FindNode((struct List *) &iounit->ReadList, (struct Node *) ioreq))
         {
-          next = node->ln_Succ;
-          if(node == (struct Node *) ioreq )
-          {
-            Remove((struct Node *) ioreq);
-            ioreq->ahir_Std.io_Error = IOERR_ABORTED;
-            TermIO(ioreq,AHIBase);
-            break;
-          }
-          node = next;
+          Remove((struct Node *) ioreq);
+          ioreq->ahir_Std.io_Error = IOERR_ABORTED;
+          TermIO(ioreq,AHIBase);
         }
         break;
-      }
+
+      case CMD_WRITE:
+      case AHICMD_WRITTEN:
+        if(FindNode((struct List *) &iounit->PlayingList, (struct Node *) ioreq)
+        || FindNode((struct List *) &iounit->SilentList, (struct Node *) ioreq)
+        || FindNode((struct List *) &iounit->WaitingList, (struct Node *) ioreq))
+        {
+          struct AHIRequest *nextreq;
+
+          while(ioreq)
+          {
+            Remove((struct Node *) ioreq);
+
+            if(ioreq->ahir_Channel != NOCHANNEL)
+            {
+              iounit->Voices[ioreq->ahir_Channel].PlayingRequest = NULL;
+              iounit->Voices[ioreq->ahir_Channel].QueuedRequest = NULL;
+              iounit->Voices[ioreq->ahir_Channel].NextRequest = NULL;
+              iounit->Voices[ioreq->ahir_Channel].NextOffset = MUTE;
+              if(iounit->AudioCtrl)
+              {
+                AHI_SetSound(ioreq->ahir_Channel,AHI_NOSOUND,0,0,
+                    iounit->AudioCtrl,AHISF_IMM);
+              }
+            }
+
+            ioreq->ahir_Std.io_Command = CMD_WRITE;
+            ioreq->ahir_Std.io_Error   = IOERR_ABORTED;
+            nextreq = ioreq->ahir_Link;
+            TermIO(ioreq,AHIBase);
+            ioreq = nextreq;
+          }
+        }
 
       default:
         rc = IOERR_NOCMD;
@@ -132,6 +169,12 @@ __asm ULONG DevAbortIO(
     }
   }
   ReleaseSemaphore(&iounit->ListLock);
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("=>%ld\n",rc);
+  }
+
   return rc;
 }
 
@@ -144,8 +187,20 @@ __asm ULONG DevAbortIO(
 
 static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
-    if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
-        ReplyMsg(&ioreq->ahir_Std.io_Message);
+  ULONG error = ioreq->ahir_Std.io_Error;
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("Terminating IO Request 0x%08lx", ioreq);
+  }
+
+  if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
+      ReplyMsg(&ioreq->ahir_Std.io_Message);
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
+  {
+    KPrintF("=>%ld\n", error);
+  }
 }
 
 
@@ -219,6 +274,11 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
   struct NSDeviceQueryResult *dqr;
 
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("NSCMD_DEVICEQUERY\n");
+  }
+
   dqr = ioreq->ahir_Std.io_Data;
   if(ioreq->ahir_Std.io_Length >= 16)
   {
@@ -245,6 +305,11 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
   struct AHIDevUnit *iounit;
   ULONG error,mixfreq = 0;
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("CMD_READ\n");
+  }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
@@ -324,7 +389,10 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   struct AHIDevUnit *iounit;
   ULONG error = 0;
 
-  KPrintF("WriteCmd(0x%08lx)\n", ioreq);
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("CMD_WRITE\n");
+  }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
@@ -351,15 +419,21 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
   if(iounit->IsPlaying)     // (error == 0)
   {
     ioreq->ahir_Std.io_Actual = 0;
-    
+
+    if(ioreq->ahir_Frequency >= 262144)
+    {
+      error = AHIE_UNKNOWN;
+    }
+
     switch(ioreq->ahir_Type)
     {
       case AHIST_M8S:
         break;
       case AHIST_M16S:
-        // Address to sample offset
+
+        // Address to sample offset and length in bytes to length in samples
+
         ioreq->ahir_Std.io_Data = (APTR) ((ULONG) ioreq->ahir_Std.io_Data >> 1);
-        // Length in bytes to length in samples
         ioreq->ahir_Std.io_Length >>= 1;
         break;
       case AHIST_S8S:
@@ -368,7 +442,7 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
       case AHIST_M32S:
       case AHIST_S32S:
       default:
-        error=AHIE_BADSAMPLETYPE;
+        error = AHIE_BADSAMPLETYPE;
     }
 
     if(! error)
@@ -562,13 +636,11 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
   int channel;
   BOOL delay = FALSE;
 
-  KPrintF("NewWriter(0x%08lx)\n", ioreq);
   iounit=(struct AHIDevUnit *)ioreq->ahir_Std.io_Unit;
   ObtainSemaphore(&iounit->ListLock);
 
   if(ioreq->ahir_Link)
   {
-    KPrintF("Linked\n");
     // See if the linked request is playing, silent or waiting...
 
     if(FindNode((struct List *) &iounit->PlayingList,
@@ -594,13 +666,10 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 
   if(delay)
   {
-    KPrintF("Delay\n");
     if( ! ioreq->ahir_Link->ahir_Link)
     {
       channel = ioreq->ahir_Link->ahir_Channel;
       ioreq->ahir_Channel = channel;
-
-      KPrintF("Channel %ld\n",channel);
 
       ioreq->ahir_Link->ahir_Link = ioreq;
       ioreq->ahir_Link = NULL;
@@ -653,15 +722,12 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 {
   int channel;
 
-  KPrintF("Addwriter(0x%08lx)\n", ioreq);
-
   // Search for a free channel, and use if found
 
   for(channel = 0; channel < iounit->Channels; channel++)
   {
     if(iounit->Voices[channel].NextOffset == FREE)
     {
-      KPrintF("Found free channel: %ld\n",channel);
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
       PlayRequest(channel, ioreq, iounit, AHIBase);
       break;
@@ -681,7 +747,6 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
         > ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri)
     {
       // Let's steal his place!
-      KPrintF("Stealing channel %ld\n", ioreq2->ahir_Channel);
       RemTail((struct List *) &iounit->PlayingList);
       channel = ioreq2->ahir_Channel;
       ioreq2->ahir_Channel = NOCHANNEL;
@@ -694,7 +759,6 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     {
       // Let's be quiet for a while.
 
-      KPrintF("There's no place left for us!\n");
       ioreq->ahir_Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
     }
@@ -713,16 +777,12 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
 {
   // Start the sound
 
-  KPrintF("Playrequest(0x%08lx, %ld)\n", ioreq, channel);
-
   ioreq->ahir_Channel = channel;
 
   if(ioreq->ahir_Link)
   {
     struct Voice        *v = & iounit->Voices[channel];
     struct AHIRequest   *r = ioreq->ahir_Link;
-
-    KPrintF("Has link!\n");
 
     v->NextSound     = type2snd[r->ahir_Type];
     v->NextVolume    = r->ahir_Volume;
@@ -740,12 +800,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
     iounit->Voices[channel].NextRequest = NULL;
   }
 
-  KPrintF("Channel: %ld, Freq: %ld, Vol: %ld, Pan: %ld\n"
-          "Sound: %ld, Offset: 0x%08lx, Length:%ld\n",
-      channel, ioreq->ahir_Frequency, ioreq->ahir_Volume, ioreq->ahir_Position,
-      type2snd[ioreq->ahir_Type], (ULONG) ioreq->ahir_Std.io_Data+ioreq->ahir_Std.io_Actual,
-      ioreq->ahir_Std.io_Length-ioreq->ahir_Std.io_Actual);
-
+  iounit->Voices[channel].PlayingRequest = NULL;
   iounit->Voices[channel].QueuedRequest = ioreq;
   AHI_Play(iounit->AudioCtrl,
       AHIP_BeginChannel,  channel,
@@ -774,8 +829,6 @@ void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
   struct MinList templist;
   struct AHIRequest *ioreq;
 
-
-  KPrintF("RethinkPlayers()\n");
   NewList((struct List *) &templist);
 
   ObtainSemaphore(&iounit->ListLock);
@@ -793,7 +846,6 @@ void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
   // And add them back...
   while(ioreq = (struct AHIRequest *) RemHead((struct List *) &templist))
   {
-    KPrintF("Re-Adding request...");
     AddWriter(ioreq, iounit, AHIBase);
   }
 
@@ -812,11 +864,9 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
 {
   struct AHIRequest *ioreq, *node;
 
-  KPrintF("RemPlayers()\n");
   node = (struct AHIRequest *) list->lh_Head;
   while(node->ahir_Std.io_Message.mn_Node.ln_Succ)
   {
-    KPrintF("Processing node 0x%08lx\n", node);
     ioreq = node;
     node = (struct AHIRequest *) node->ahir_Std.io_Message.mn_Node.ln_Succ;
 
@@ -826,7 +876,6 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
 
       if(ioreq->ahir_Link)
       {
-        KPrintF("Moving linked child to the list on channel %ld\n", ioreq->ahir_Channel);
         // Move the attached one to the list
         Remove((struct Node *) ioreq->ahir_Link);
         ioreq->ahir_Link->ahir_Channel = ioreq->ahir_Channel;
@@ -836,12 +885,42 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
         node = (struct AHIRequest *) list->lh_Head;
       }
 
-      KPrintF("IO Request 0x%08lx is finished\n",ioreq);
       ioreq->ahir_Std.io_Error = AHIE_OK;
       ioreq->ahir_Std.io_Command = CMD_WRITE;
       ioreq->ahir_Std.io_Actual = ioreq->ahir_Std.io_Length
                                 * AHI_SampleFrameSize(ioreq->ahir_Type);
       TermIO(ioreq, AHIBase);
+    }
+  }
+}
+
+/******************************************************************************
+** UpdateSilentPlayers ********************************************************
+******************************************************************************/
+
+// Updates the io_Actual field of all silent requests. The lists must be locked.
+// This function is either called from the interrupt or DevProc.
+
+void UpdateSilentPlayers( struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
+{
+  struct AHIRequest *ioreq;
+
+  for(ioreq = (struct AHIRequest *)iounit->SilentList.mlh_Head;
+      ioreq->ahir_Std.io_Message.mn_Node.ln_Succ;
+      ioreq = (struct AHIRequest *)ioreq->ahir_Std.io_Message.mn_Node.ln_Succ)
+
+  {
+    // Update io_Actual
+    ioreq->ahir_Std.io_Actual += ((ioreq->ahir_Frequency << 14) / PLAYERFREQ) >> 14;
+
+    // Check if the whole sample has been "played"
+    if(ioreq->ahir_Std.io_Actual >= ioreq->ahir_Std.io_Length)
+    {
+      // Mark request as finished
+      ioreq->ahir_Std.io_Command = AHICMD_WRITTEN;
+
+      // Make us call Rethinkplayers later
+      Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
     }
   }
 }
