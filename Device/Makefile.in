@@ -5,7 +5,7 @@
 
 # The CPU to generate code for:
 
-CPU	= 68030
+CPU	= 68060
 
 #Can be VERSION68K, VERSIONGEN, VERSIONPOWERUP or VERSIONWARPUP:
 
