@@ -870,23 +870,7 @@ WriteCmd ( struct AHIRequest *ioreq,
 
     ioreq->ahir_Std.io_Length /= AHI_SampleFrameSize(ioreq->ahir_Type);
 
-    switch(ioreq->ahir_Type)
-    {
-      case AHIST_M8S:
-      case AHIST_S8S:
-      case AHIST_M16S:
-      case AHIST_S16S:
-        break;
-      case AHIST_M32S:
-      case AHIST_S32S:
-      default:
-        error = AHIE_BADSAMPLETYPE;
-    }
-
-    if(! error)
-    {
-      NewWriter(ioreq, iounit, AHIBase);
-    }
+    NewWriter(ioreq, iounit, AHIBase);
   }
 
   if(error)
@@ -1302,7 +1286,17 @@ NewWriter ( struct AHIRequest *ioreq,
   }
   else // No free sound found, or sound failed to load
   {
-    ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
+    if( sound < MAXSOUNDS )
+    {
+      // Clean up and set error code
+      iounit->Sounds[sound]    = SOUND_FREE;
+      ioreq->ahir_Std.io_Error = AHIE_BADSAMPLETYPE;
+    }
+    else
+    {
+      ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
+    }
+
     TermIO(ioreq, AHIBase);
   }
 }

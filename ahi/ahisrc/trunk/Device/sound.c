@@ -860,6 +860,8 @@ SetEffect( ULONG*                   effect,
 *                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V4). 
 *                   AHIST_M16S: Mono, 16 bit signed (WORDs).
 *                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V4).
+*                   AHIST_M32S: Mono, 32 bit signed (LONGs). (V6)
+*                   AHIST_S32S: Stereo, 32 bit signed (2×LONGs) (V6).
 *               ahisi_Address - Address to the sample array.
 *               ahisi_Length - The size of the array, in samples.
 *               Don't even think of setting ahisi_Address to 0 and
@@ -936,6 +938,8 @@ LoadSound( UWORD                    sound,
         case AHIST_M16S:
         case AHIST_S8S:
         case AHIST_S16S:
+        case AHIST_M32S:
+        case AHIST_S32S:
           /* AHI_FreeAudio() will deallocate...  */
 
           audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
@@ -946,6 +950,7 @@ LoadSound( UWORD                    sound,
 
         default:
           rc = AHIE_BADSAMPLETYPE;
+	  break;
       }
       
       break;

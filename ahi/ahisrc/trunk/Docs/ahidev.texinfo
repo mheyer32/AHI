@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.2  2003/01/19 14:24:45  martin
+Added support for playing 32 bit samples.
+
 Revision 5.1  2003/01/19 12:22:41  martin
 Another year, another copyright update.
  ... which seems to have caused the translation files to change slightly.
@@ -755,8 +758,9 @@ frequency the sound will be played at and Fm is the actual mixing frequency
 
 @end vtable
 
-The samples can be in one of four different formats, named @code{AHIST_M8S},
-@code{AHIST_S8S}, @code{AHIST_M16S}, and @code{AHIST_S16S}.
+The samples can be in one of six different formats, named @code{AHIST_M8S},
+@code{AHIST_S8S}, @code{AHIST_M16S}, @code{AHIST_S16S}, @code{AHIST_M32S}
+and @code{AHIST_S32S}.
 
 @vtable @code
 
@@ -777,8 +781,22 @@ word, in big endian/network order format (most significant byte first)
 representing the left channel, followed by another one for the right
 channel.
 
-@end vtable
+@item AHIST_M32S
+This is a 32 bit mono sound.  Each sample frame is just one signed 32
+bit word, in big endian/network order format (most significant byte
+first).  Note that only the 24 most significant bits are guaranteed to
+be processed correctly! Support for this sample format was added in
+V6.
 
+@item AHIST_S32S
+This is a 32 bit stereo sound.  Each sample frame is one signed 32 bit
+word, in big endian/network order format (most significant byte first)
+representing the left channel, followed by another one for the right
+channel. Note that only the 24 most significant bits are guaranteed to
+be processed correctly! Support for this sample format was added in
+V6.
+
+@end vtable
 
 @findex AHI_UnloadSound()
 

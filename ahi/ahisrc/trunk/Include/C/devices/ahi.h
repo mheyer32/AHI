@@ -2,7 +2,7 @@
 #define DEVICES_AHI_H
 
 /*
-**	$VER: ahi.h 5.2 (4.3.01)
+**	$VER: ahi.h 5.3 (19.1.2003)
 **
 **	ahi.device definitions
 **
@@ -322,6 +322,7 @@ struct AHIEffChannelInfo
 
  /* Sample types */
 /* Note that only AHIST_M8S, AHIST_S8S, AHIST_M16S and AHIST_S16S
+   (plus AHIST_M32S and AHIST_S32S in V6)
    are supported by AHI_LoadSound(). */
 #define AHIST_M8S		(0UL)			/* Mono, 8 bit signed (BYTE) */
 #define AHIST_M16S		(1UL)			/* Mono, 16 bit signed (WORD) */
