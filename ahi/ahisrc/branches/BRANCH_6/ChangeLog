@@ -2,6 +2,12 @@
 
 	* Released emu10kx.audio 5.22.
 
+	* emu10kx.audio: Reduced the volume boost by 6 dB. According to my
+	voltmeter, the driver now outputs around 2 Vpp when the master
+	volume is set to 0 dB and around 8 Vpp when the master volume is
+	+12 dB. If you have a real oscilloscope, I'd be happy to hear your
+	verification.
+
 	* emu10kx.audio: Merged the AROS port by Georg Steger. Thanks
 	Georg!
 
