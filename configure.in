@@ -48,8 +48,9 @@ case $host in
   optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math"
   asflags="-m${CPU} --register-prefix-optional --bitwise-or --defsym CPU=${CPU}"
  ;;
- powerpc-unknown-amigaos)
+ powerpc-unknown-morphos)
   : ${CPU="603"}
+  linkerflags="-noixemul"
   optflags="-mcpu=${CPU} -O2"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
  ;;
@@ -79,7 +80,7 @@ AC_CHECK_TOOL( AR, ar, : )
 AC_CHECK_TOOL( RANLIB, ranlib, : )
 
 AC_PROG_INSTALL
-AC_PROG_CC
+#AC_PROG_CC
 AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
