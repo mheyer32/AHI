@@ -25,9 +25,6 @@ changed there as well:
 I'd estimate that exactly one program is affected by these changes (the AHI
 preferences program), but maybe there are a few more.  Sorry about that.
 
-Oh...  I had to temporary remove recording in device mode.  Sorry, no more
-copying from the AUDIO: device....
-
 
 Things still to do before the full release
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
@@ -68,11 +65,16 @@ sh ../ahisrc/configure --host=m68k-unknown-amigaos
 There are also a few configure options to set:
 
   --with-os-includedir    Path to AmigaOS include directory [/gg/os-include]
+  --with-cpu              The CPU to optimize for
   --enable-warpup         Enable WarpUp support
   --enable-morphos        Enable MorphOS support
 
 --with-os-includedir specifies where the AmigaOS include files are located.
 If unspecified, /gg/os-include is assumed.
+
+--with-cpu lets you specify what CPU to generate code and optimize for. Some
+legal values include 68020, 68030, 68040 or 68060 for m68k and 603 or 604
+for PPC. The default is either 68020 or 603, depending on the host.
 
 --enable-warpup adds code (that doesn't work, by the way) to support WarpUp.
 
