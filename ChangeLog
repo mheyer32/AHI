@@ -1,3 +1,12 @@
+2005-04-05  Martin Blom  <martin@blom.org>
+
+	* Device/header.c: The __attribute__ is back again. [Davy
+	Wentzler]
+
+	* Oh, I forgot to mention: That PreTimer/PostTimer fix Gunther
+	helped with in January with made the Concierto driver work again!
+	Fett med credz till Gunther!!
+
 2005-04-03  Martin Blom  <martin@blom.org>
 
 	* ahi.device: The copyright year accidentally went back to 2004
