@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.6  1997/06/28 21:14:58  lcs
+* DizzyTestAudioID() much faster (FindTagitem()->NextTagItem())
+*
 * Revision 4.5  1997/06/21 18:13:43  lcs
 * Fixed some problems in AHI_BestAudioIDA(), like Dizzytags for example.
 *
@@ -247,21 +250,16 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
   LONG volume=0,stereo=0,panning=0,hifi=0,pingpong=0,record=0,realtime=0,
        fullduplex=0,bits=0,channels=0,minmix=0,maxmix=0;
   ULONG total=0,hits=0;
-  struct TagItem *tag;
+  struct TagItem *tstate, *tag;
   
   if(tags == NULL)
   {
     return (Fixed) 0x10000;
   }
 
-// Check source mode
-  if(tag=FindTagItem(AHIDB_AudioID,tags))
+  if(id == AHI_DEFAULT_ID)
   {
-    total++;
-    if(id == AHI_DEFAULT_ID)
-      id = AHIBase->ahib_AudioMode;
-    if( ((tag->ti_Data)&0xffff0000) == (id & 0xffff0000) )
-      hits++;
+    id = AHIBase->ahib_AudioMode;
   }
 
   AHI_GetAudioAttrs(id, NULL,
@@ -279,81 +277,89 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
       AHIDB_FullDuplex,&fullduplex,
       TAG_DONE);
 
-// Boolean tags
-  if(tag=FindTagItem(AHIDB_Volume,tags))
-  {
-    total++;
-    if(tag->ti_Data == volume)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_Stereo,tags))
-  {
-    total++;
-    if(tag->ti_Data == stereo)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_Panning,tags))
-  {
-    total++;
-    if(tag->ti_Data == panning)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_HiFi,tags))
-  {
-    total++;
-    if(tag->ti_Data == hifi)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_PingPong,tags))
-  {
-    total++;
-    if(tag->ti_Data == pingpong)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_Record,tags))
-  {
-    total++;
-    if(tag->ti_Data == record)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_Realtime,tags))
-  {
-    total++;
-    if(tag->ti_Data == realtime)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_FullDuplex,tags))
-  {
-    total++;
-    if(tag->ti_Data == fullduplex)
-      hits++;
-  }
+  tstate = tags;
 
-// The rest
-  if(tag=FindTagItem(AHIDB_Bits,tags))
+  while (tag = NextTagItem(&tstate))
   {
-    total++;
-    if(tag->ti_Data <= bits)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_MaxChannels,tags))
-  {
-    total++;
-    if(tag->ti_Data <= channels )
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_MinMixFreq,tags))
-  {
-    total++;
-    if(tag->ti_Data >= minmix)
-      hits++;
-  }
-  if(tag=FindTagItem(AHIDB_MaxMixFreq,tags))
-  {
-    total++;
-    if(tag->ti_Data <= maxmix)
-      hits++;
-  }
+    switch (tag->ti_Tag)
+    {
+      // Check source mode
+
+      case AHIDB_AudioID:    
+        total++;
+        if( ((tag->ti_Data)&0xffff0000) == (id & 0xffff0000) )
+          hits++;
+        break;
+
+      // Boolean tags
+
+      case AHIDB_Volume:
+        total++;
+        if(tag->ti_Data == volume)
+          hits++;
+        break;
+
+      case AHIDB_Stereo:
+        total++;
+        if(tag->ti_Data == stereo)
+          hits++;
+        break;
+      case AHIDB_Panning:
+        total++;
+        if(tag->ti_Data == panning)
+          hits++;
+        break;
+      case AHIDB_HiFi:
+        total++;
+        if(tag->ti_Data == hifi)
+          hits++;
+        break;
+      case AHIDB_PingPong:
+        total++;
+        if(tag->ti_Data == pingpong)
+          hits++;
+        break;
+      case AHIDB_Record:
+        total++;
+        if(tag->ti_Data == record)
+          hits++;
+        break;
+      case AHIDB_Realtime:
+        total++;
+        if(tag->ti_Data == realtime)
+          hits++;
+        break;
+      case AHIDB_FullDuplex:
+        total++;
+        if(tag->ti_Data == fullduplex)
+          hits++;
+        break;
+
+      // The rest
+
+      case AHIDB_Bits:
+        total++;
+        if(tag->ti_Data <= bits)
+          hits++;
+        break;
+      case AHIDB_MaxChannels:
+        total++;
+        if(tag->ti_Data <= channels )
+          hits++;
+        break;
+      case AHIDB_MinMixFreq:
+        total++;
+        if(tag->ti_Data >= minmix)
+          hits++;
+        break;
+      case AHIDB_MaxMixFreq:
+        total++;
+        if(tag->ti_Data <= maxmix)
+          hits++;
+        break;
+    } /* switch */
+  } /* while */
+
 
   if(total)
     return (Fixed) ((hits<<16)/total);
