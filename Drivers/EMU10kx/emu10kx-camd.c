@@ -40,7 +40,7 @@ OpenCAMDPort( struct Hook*        hook,
 
   BOOL in_use;
 
-  KPrintF( "OpenCAMDPort(%ld,%ld)\n", msg->PortNum, msg->V40Mode );
+//  KPrintF( "OpenCAMDPort(%ld,%ld)\n", msg->PortNum, msg->V40Mode );
 
   if( msg->PortNum >= EMU10kxBase->cards_found ||
       EMU10kxBase->driverdatas[ msg->PortNum ] == NULL )
@@ -112,7 +112,7 @@ ActivateCAMDXmit( struct Hook*            hook,
   struct EMU10kxData* dd         = EMU10kxBase->driverdatas[ msg->PortNum ];
   ULONG               b;
 
-  KPrintF( "ActivateCAMDXmit(%08lx)\n", msg->PortNum );
+//  KPrintF( "ActivateCAMDXmit(%08lx)\n", msg->PortNum );
 
   emu10k1_irq_enable( &dd->card, INTE_MIDITXENABLE );
 

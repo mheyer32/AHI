@@ -100,13 +100,15 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
       while( emu10k1_mpu_read_data( &dd->card, &b ) >= 0 )
       {
+	struct ReceiveMessage msg = { b };
+
 	if( dd->camd_receivefunc == NULL )
 	{
 	  KPrintF( "emu10kx.audio got unexpected IPR_MIDIRECVBUFEMPTY\n" );
 	}
 
-	KPrintF( "\t%lx\n", (int) b );
-	CallHook( dd->camd_receivefunc, (Object*) EMU10kxBase, (ULONG) b );
+//	KPrintF( "\t%lx\n", (int) b );
+	CallHookA( dd->camd_receivefunc, (Object*) EMU10kxBase, &msg );
       }
     }
  
@@ -121,7 +123,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 
       b = CallHookA( dd->camd_transmitfunc, (Object*) EMU10kxBase, NULL );
 
-      KPrintF( "%08lx\n", b );
+//      KPrintF( "%08lx\n", b );
 
       // Check if d0.w is negative (as the V37 did once?) or if bit 8
       // is set (as the V40 example does)
@@ -134,7 +136,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
       if( ( !dd->camd_v40 && ( b & 0x00ff0000 ) != 0 ) ||
 	  ( b & 0x00008100 ) != 0 )
       {
-	KPrintF( "Disabling interrupts\n" );
+//	KPrintF( "Disabling interrupts\n" );
 	emu10k1_irq_disable( &dd->card, INTE_MIDITXENABLE );	
       }
     }
