@@ -800,6 +800,9 @@ AddModeFile ( UBYTE *filename )
 
               while( rc && ( tag = NextTagItem( &tstate ) ) != NULL )
               {
+		EndianSwap( sizeof tag->ti_Tag, &tag->ti_Tag );
+		EndianSwap( sizeof tag->ti_Data, &tag->ti_Data );
+		
                 if(tag->ti_Tag & (AHI_TagBaseR ^ AHI_TagBase))
                 {
                   tag->ti_Data += (ULONG) ci->ci_Data;
