@@ -1,6 +1,6 @@
 /* $Id$
 * $Log$
-* Revision 4.2  1999/01/15 23:04:47  lcs
+* Revision 4.3  1999/09/11 22:02:29  lcs
 * *** empty log message ***
 *
 * Revision 4.1  1997/04/02 22:29:53  lcs
@@ -12,7 +12,7 @@
 */
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "ahi.cd".
+   from "./ahi.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
