@@ -1,6 +1,6 @@
 /* $Id$
 * $Log$
-* Revision 1.5  1997/01/29 23:34:38  lcs
+* Revision 1.6  1997/02/01 19:44:18  lcs
 * *** empty log message ***
 *
 * Revision 1.4  1997/01/15 18:35:07  lcs
