@@ -40,7 +40,7 @@ case $host in
   : ${CPU="i686"}
   linkerflags="-noixemul -r"
   optflags="-mcpu=${CPU} -O2"
-  asflags="--defsym CPU=${CPU}"
+  asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
   resident=""   dnl *** Not supported (yet?)
   stripflag=""
  ;;
@@ -139,6 +139,12 @@ AC_CHECK_LIB( amiga, NewList,,      AC_MSG_ERROR( "libamiga is missing." ) )
 AC_CHECK_LIB( mui,   MUI_NewObject,,AC_MSG_WARN(  "Who cares?" ) )
 AC_SEARCH_LIBS( floor, m,,	    AC_MSG_ERROR( "libm is missing." ) )
 
+case $host in
+ i?86be-pc-amithlon)
+  : ${CPU="i686"}
+  LIBS="-lm $LIBS" dnl *** AC_CHECK_LIBS doesn't work with -r ...?
+ ;;
+esac
 
 dnl Checks for header files.
 
