@@ -50,8 +50,6 @@ AHIClassDispatch(Class*  class,
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
   ULONG result = 0;
 
-  KPrintF(_AHI_CLASS_NAME " dispatching method %lx\n", msg->MethodID);
-
   switch (msg->MethodID)
   {
     case OM_NEW:
@@ -108,10 +106,8 @@ AHIClassDispatch(Class*  class,
       break;
       
     default:
-      KPrintF(_AHI_CLASS_NAME " passes method %lx to superclass\n", msg->MethodID);
       result = DoSuperMethodA(class, object, msg);
       break;
-
   }
   
   return result;

@@ -106,8 +106,6 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
 	break;
 
       default:
-	KPrintF("Unknown NEW attribute in " _AHI_CLASS_NAME ": %08lx, %08lx\n",
-		tag->ti_Tag, tag->ti_Data);
 	break;
     }
   }
@@ -215,8 +213,6 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
       }
 
       default:
-	KPrintF("Unknown SET attribute in " _AHI_CLASS_NAME ": %08lx, %08lx\n",
-		tag->ti_Tag, tag->ti_Data);
 	break;
     }
   }
@@ -282,7 +278,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       break;
 
     case AHIA_ErrorMessage:
-      *msg->opg_Storage = get_error_message(AHIClassData);
+      *msg->opg_Storage = (ULONG) get_error_message(AHIClassData);
       break;
       
     case AHIA_UserData:

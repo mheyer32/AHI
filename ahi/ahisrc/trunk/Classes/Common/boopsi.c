@@ -222,9 +222,6 @@ _ClassInit(struct ClassLibrary*  library,
 
   // Go public
   AddClass(AHIClassBase->common.cl.cl_Class);
-  KPrintF( "Made class %08lx (%s) public.\n",
-	   AHIClassBase->common.cl.cl_Class,
-	   AHIClassBase->common.cl.cl_Class->cl_ID);
   return &AHIClassBase->common.cl;
 
 error:

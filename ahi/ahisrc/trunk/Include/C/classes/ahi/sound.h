@@ -48,7 +48,7 @@ namespace AHI {
 
     enum {
 
-      /* Decode to a buffer */
+      /* Decode to a buffer. Returns TRUE if successful. */
       _AHIM(_P, Decode,		(_AHIM_Dummy+11))
 
     };

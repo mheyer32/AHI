@@ -79,59 +79,71 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
+  BOOL check_ready = FALSE;
+  
   struct TagItem* tstate = msg->opu_AttrList;
   struct TagItem* tag;
 
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
-      case AHIA_Processor_Buffer: {
-	Object* buffer = (Object*) tag->ti_Data;
+      case AHIA_Buffer_Data:
+	AHIClassData->data = (float*) tag->ti_Data;
+	check_ready = TRUE;
+	break;
 
-	if (buffer != NULL) {
-	  ULONG st  = AHIST_NOTYPE;
+      case AHIA_Buffer_Length:
+	AHIClassData->length = tag->ti_Data;
+	check_ready = TRUE;
+	break;
 
-	  GetAttr(AHIA_Buffer_Data, buffer, (ULONG*) &AHIClassData->data);
-	  GetAttr(AHIA_Buffer_Length, buffer, &AHIClassData->length);
-	  GetAttr(AHIA_Buffer_SampleType, buffer, &st);
+      case AHIA_Buffer_SampleType: {
+	ULONG st = tag->ti_Data;
 
-	  if ((st & AHIST_TYPE_MASK) ==
-	      (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
-	    AHIClassData->channels = AHIST_C_DECODE(st);
-	    AHIClassData->gains = AllocVec( sizeof (float) * AHIClassData->channels,
-					    MEMF_PUBLIC);
+	FreeVec(AHIClassData->gains);
+	AHIClassData->gains = NULL;
+	AHIClassData->channels = 0;
+	
+	if ((st & AHIST_TYPE_MASK) ==
+	    (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
+	  AHIClassData->channels = AHIST_C_DECODE(st);
+	  AHIClassData->gains = AllocVec( sizeof (float) * AHIClassData->channels,
+					  MEMF_PUBLIC);
 
-	    if (AHIClassData->gains != NULL) {
-	      ULONG c;
+	  if (AHIClassData->gains != NULL) {
+	    ULONG c;
 
-	      for (c = 0; c < AHIClassData->channels; ++c) {
-		AHIClassData->gains[c] = 1.0f;
-	      }
-	      
-	      // Leave now
-	      break;
-	    }
-	    else {
-	      SetAttrs(object, AHIA_Error, ERROR_NO_FREE_STORE,
-		       TAG_DONE);
+	    for (c = 0; c < AHIClassData->channels; ++c) {
+	      AHIClassData->gains[c] = 1.0f;
 	    }
 	  }
 	  else {
-	    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_InvalidSampleType,
-		     TAG_DONE);
+	    SetSuperAttrs(class, object,
+			  AHIA_Error, ERROR_NO_FREE_STORE,
+			  TAG_DONE);
 	  }
 	}
+	else {
+	  SetSuperAttrs(class, object,
+			AHIA_Error, AHIE_GainProcessor_InvalidSampleType,
+			TAG_DONE);
+	}
 
-	AHIClassData->channels = 0;
-	FreeVec(AHIClassData->gains);
-	AHIClassData->gains = NULL;
-	AHIClassData->data = NULL;
-	AHIClassData->length = 0;
+	check_ready = TRUE;
 	break;
       }
-
+	
       default:
 	break;
     }
+  }
+
+  if (check_ready) {
+    SetSuperAttrs(class, object,
+		  AHIA_Processor_Ready, (AHIClassData->gains != NULL &&
+					 AHIClassData->data != NULL &&
+					 AHIClassData->length > 0 &&
+					 AHIClassData->channels > 0),
+		  TAG_DONE);
   }
 
   return 0;
@@ -202,15 +214,11 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
   ULONG result = DoSuperMethodA(class, object, (Msg) msg);
   
   switch (result) {
-    case AHIV_Processor_Process_FAIL:
-    case AHIV_Processor_Process_SKIP:
+    case AHIV_Processor_FailProc:
+    case AHIV_Processor_SkipProc:
       break;
 
-    case AHIV_Processor_Process_PERFORM:
-      if (AHIClassData->gains != NULL &&
-	  AHIClassData->data != NULL &&
-	  AHIClassData->length > 0 &&
-	  AHIClassData->channels > 0) {
+    case AHIV_Processor_PerformProc: {
 	ULONG  c;
 	ULONG  s;
 	float* data = AHIClassData->data;
@@ -239,7 +247,7 @@ MethodSetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg)
   ULONG c;
   
   if (msg->Channels > AHIClassData->channels || AHIClassData->gains == NULL) {
-    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
 
@@ -262,7 +270,7 @@ MethodGetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg)
   ULONG c;
 
   if (msg->Channels > AHIClassData->channels || AHIClassData->gains == NULL) {
-    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
 
@@ -285,7 +293,7 @@ MethodSetAllGain(Class* class, Object* object, struct AHIP_GainProcessor_GainAll
   ULONG c;
   
   if (AHIClassData->gains == NULL) {
-    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
 

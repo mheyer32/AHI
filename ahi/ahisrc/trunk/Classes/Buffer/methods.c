@@ -120,11 +120,11 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
       case AHIA_Buffer_Length:
 	if (tag->ti_Data < AHIClassData->capacity) {
 	  AHIClassData->length = tag->ti_Data;
-	  NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data);
+	  NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	}
 	else {
-	  SetAttrs(object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
-//	  SetSuperAttrs(class, object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
+//	  SetAttrs(object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
+	  SetSuperAttrs(class, object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
 	}
 	break;
 

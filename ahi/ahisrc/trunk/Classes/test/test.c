@@ -96,6 +96,8 @@ int main(void) {
 	for (i = 0; i < buffer_len; ++i) {
 	  printf( "%f, %f\n", buffer[2 * i + 0], buffer[2 * i + 1]);
 	}
+
+	SetAttrs(b, AHIA_Buffer_Length, 8, TAG_DONE);
       }
 
     }

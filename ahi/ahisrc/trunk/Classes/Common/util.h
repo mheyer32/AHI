@@ -45,17 +45,13 @@ MySPrintFArgs( char*       buffer,
 
 /*** NotifySuper *************************************************************/
 
-static inline void
-NotifySuper(Class* class, Object* object, struct opUpdate* msg,
-	    ULONG tag, ULONG data) {
-  struct TagItem tl[] = {
-    { tag,      data },
-    { TAG_DONE, 0    }
-  };
 
-  DoSuperMethod(class, object,
-		OM_NOTIFY, (ULONG) tl, (ULONG) msg->opu_GInfo,
-		msg->MethodID == OM_UPDATE ? msg->opu_Flags : 0 );
+#define NotifySuper(class, object, msg, ...) {\
+  ULONG _tags[] = { __VA_ARGS__ };					\
+									\
+  DoSuperMethod(class, object,						\
+		OM_NOTIFY, (ULONG) _tags, (ULONG) msg->opu_GInfo,	\
+		msg->MethodID == OM_UPDATE ? msg->opu_Flags : 0 );	\
 }
   
 

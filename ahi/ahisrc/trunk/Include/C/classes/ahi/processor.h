@@ -32,7 +32,14 @@ namespace AHI {
 
     enum {
       
-      /* The buffer object we're operating on. */
+      /* The buffer object we're operating on. Note that subclasses of
+	 ahi-processor.class will receive OM_UPDATE messages for
+	 AHIA_Buffer_SampleType, AHIA_Buffer_SampleFreqInt,
+	 AHIA_Buffer_SampleFreqFract, AHIA_Buffer_Length and
+	 AHIA_Buffer_Data when this attribute is changed. The
+	 ahi-processor will also be added to the buffers' notification
+	 list automatically.
+      */
       _AHIA(_P, Buffer,		(_AHIA_Dummy+20)),	/* OM_NEW,
 							   OM_SET,
 							   OM_GET,
@@ -43,7 +50,10 @@ namespace AHI {
 							   OM_SET,
 							   OM_GET */
 
+      /* The maximum number of children. */
+      _AHIA(_P, MaxChildren,	(_AHIA_Dummy+82)),	/* OM_GET */
 
+      
       /* Disable processing (pass-through) when TRUE. */
       _AHIA(_P, Disabled,	(_AHIA_Dummy+22)),	/* OM_NEW,
 							   OM_SET,
@@ -57,12 +67,19 @@ namespace AHI {
 
       /* When TRUE, this object is busy and no children can be added
 	 or removed, nor can this object be removed from its
-	 parent. When FALSE, the AHIPM_PREPARE and AHIPM_PROCESS
-	 methods cannot be called. */
-
-      _AHIA(_P, Busy,		(_AHIA_Dummy+24))	/* OM_SET,
+	 parent. When FALSE, the AHIM_Processor_Prepare and
+	 AHIM_Processor_Process methods cannot be called
+	 (ahi-processor will return AHIV_Processor_FailProc). This
+	 attribute should not be set by the user or subclasses. */
+      _AHIA(_P, Busy,		(_AHIA_Dummy+24)),	/* OM_SET,
 							   OM_GET */
 
+      /* This attribute should be set to TRUE by the subclass when
+	 it's ready to handle AHIM_Processor_Prepare/
+	 AHIM_Processor_Process calls. If FALSE, ahi-processor will
+	 return AHIV_Processor_FailProc. */
+      _AHIA(_P, Ready,		(_AHIA_Dummy+81))	/* OM_SET,
+							   OM_GET */
     };
 
 /*****************************************************************************/
@@ -98,16 +115,17 @@ namespace AHI {
      /* Return value */
 
      enum {
-       _AHIV(_P, Process_FAIL,		(0)),
-       _AHIV(_P, Process_SKIP,		(1)),
-       _AHIV(_P, Process_PERFORM,	(2)),
+       _AHIV(_P, FailProc,		(0)),
+       _AHIV(_P, SkipProc,		(1)),
+       _AHIV(_P, PerformProc,		(2)),
      };
      
 /*****************************************************************************/
 
      enum {
        _AHIE(_P, ObjectNotReady,		(_AHIE_Dummy+5)),
-       _AHIE(_P, ObjectBusy,			(_AHIE_Dummy+6))
+       _AHIE(_P, ObjectBusy,			(_AHIE_Dummy+6)),
+       _AHIE(_P, TooManyChildren,		(_AHIE_Dummy+9))
      };
 
 /*****************************************************************************/
