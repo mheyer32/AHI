@@ -1,0 +1,99 @@
+## chunk AUTH Dósa Márton (dm_@freemail.hu)
+## language magyar
+## version $VER: ahi.ct 4.2 (30.12.01)
+msgDefault
+Alapértelmezett
+;#DEF Default
+;#SET (//)
+msgMenuControl
+\000\000Vezérlés
+;#DEF \000\000Control
+;#SET (//)
+msgMenuLastMode
+L\000Elõzõ mód
+;#DEF L\000Last Mode
+;#SET (//)
+msgMenuNextMode
+N\000Következõ mód
+;#DEF N\000Next Mode
+;#SET (//)
+msgMenuPropertyList
+?\000Tulajdonságok...
+;#DEF ?\000Property List...
+;#SET (//)
+msgMenuRestore
+R\000Visszaállítás
+;#DEF R\000Restore
+;#SET (//)
+msgMenuOK
+O\000Oké
+;#DEF O\000OK
+;#SET (//)
+msgMenuCancel
+C\000Mégse
+;#DEF C\000Cancel
+;#SET (//)
+msgUnknown
+ISMERETLEN:Audió ID 0x%08lx
+;#DEF UNKNOWN:Audio ID 0x%08lx
+;#SET (//)
+msgReqOK
+Oké
+;#DEF OK
+;#SET (//)
+msgReqCancel
+Mégse
+;#DEF Cancel
+;#SET (//)
+msgReqFrequency
+Frekvencia
+;#DEF Frequency
+;#SET (//)
+msgDefaultMode
+Alap audió mód
+;#DEF Default audio mode
+;#SET (//)
+msgReqInfoTitle
+Mód tulajdonságai
+;#DEF Mode Properties
+;#SET (//)
+msgReqInfoAudioID
+Audió mód ID: 0x%08lx
+;#DEF Audio mode ID: 0x%08lx
+;#SET (//)
+msgReqInfoResolution
+Felbontás: %ld bit %s
+;#DEF Resolution: %ld bit %s
+;#SET (//)
+msgReqInfoMono
+monó
+;#DEF mono
+;#SET (//)
+msgReqInfoStereo
+sztereó
+;#DEF stereo
+;#SET (//)
+msgReqInfoStereoPan
+sztereó panorámázással
+;#DEF stereo with panning
+;#SET (//)
+msgReqInfoChannels
+Csatornák: %ld
+;#DEF Channels: %ld
+;#SET (//)
+msgReqInfoMixrate
+Keverési szintek: %ld-%ld Hz
+;#DEF Mixing rates: %ld-%ld Hz
+;#SET (//)
+msgReqInfoHiFi
+HiFi keverés
+;#DEF HiFi mixing
+;#SET (//)
+msgReqInfoRecordHalf
+Felvétel fél duplexben
+;#DEF Record in half duplex
+;#SET (//)
+msgReqInfoRecordFull
+Felvétel duplexben
+;#DEF Record in full duplex
+;#SET (//)
