@@ -3,7 +3,7 @@
  	* Released AHI-Handler 5.5.
 
 	* AHI-Handler: Fixed bad IFF chunk lengths for AIFF/AIFC
-	files. [Stefan Haubenthal]
+	files. [Patch from Stefan Haubenthal]
 
 2004-11-03  Martin Blom  <martin@blom.org>
 
