@@ -228,7 +228,7 @@ asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
 $(TARGET):		$(OBJECTS) libaddroutines.a
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
-libaddroutines.a:	addroutines_hifi.o dspecho.o
+libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o dspecho.o
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
 

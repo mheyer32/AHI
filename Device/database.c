@@ -306,7 +306,7 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
 
   if(audiodb != NULL)
   {
-    BOOL hifi = FALSE;
+    BOOL fast = FALSE;
 
 // Find total size
 
@@ -330,8 +330,8 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
           nodesize     += driverlength;
           break;
 
-        case AHIDB_HiFi:
-          hifi = tag->ti_Data;
+        case AHIDB_MultTable:
+          fast = tag->ti_Data;
           break;
       }
 
@@ -340,11 +340,9 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
     }
 
 #ifdef VERSIONGEN
-    if( !hifi )
+    if( fast )
     {
-      // Silently filter away all non-hifi modes!
-      // This is not really correct. All non-hifi, non-softwaremixed
-      // modes should be filtered away. This is a design flaw, I'm afraid...
+      // Silently filter away all fast modes!
       rc = TRUE;
       goto unlock;
     }
