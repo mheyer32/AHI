@@ -1,5 +1,7 @@
 2004-06-08  Martin Blom  <martin@blom.org>
 
+	* Added 7.1 multichannel support.
+
 	* Added missing TAG_DONEs to ScanAudioModes.
 
 2004-06-02  Martin Blom  <martin@blom.org>
