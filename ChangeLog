@@ -1,3 +1,9 @@
+2003-04-22  Martin Blom  <martin@blom.org>
+
+	* void.audio: This example driver can now be compiled using gcc
+	and builds for all targets (m68k-amigaos, ppc-morphos,
+	i?86be-amithlon and i386-aros).
+
 2003-04-18  Martin Blom  <martin@blom.org>
 
 	* AHI: If no mode is available, the "Play a test sound" button is
