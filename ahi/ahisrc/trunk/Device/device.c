@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.16  1997/03/01 21:36:04  lcs
+* Added docs for OpenDevice() and CloseDevice().
+*
 * Revision 1.15  1997/02/18 22:26:49  lcs
 * Added flag for OpenDevice(): AHIDF_NOMODESCAN
 *
@@ -230,6 +233,61 @@ __asm void CloseLibs(register __a6 struct ExecBase *SysBase)
 ** DevOpen ********************************************************************
 ******************************************************************************/
 
+/****** ahi.device/OpenDevice **********************************************
+*
+*   NAME
+*       OpenDevice -- Open the device
+*
+*   SYNOPSIS
+*       error = OpenDevice(AHINAME, unit, ioRequest, flags)
+*       D0                 A0       D0    A1         D1
+*
+*       BYTE OpenDevice(STRPTR, ULONG, struct AHIRequest *, ULONG);
+*
+*   FUNCTION
+*       This is an exec call.  Exec will search for the ahi.device, and
+*       if found, will pass this call on to the device.
+*
+*   INPUTS
+*       AHINAME - pointer to the string "ahi.device".
+*       unit - Either AHI_DEFAULT_UNIT (0), AHI_NO_UNIT (255) or any other
+*           unit the user has requested, for example with a UNIT tooltype.
+*           AHI_NO_UNIT should be used when you're using the low-level
+*           API.
+*       ioRequest - a pointer to a struct AHIRequest, initialized by
+*           exec.library/CreateIORequest().
+*       flags - There is only one flag defined, AHIDF_NOMODESCAN, which
+*           asks ahi.device not to build the audio mode database if not
+*           already initialized. It should not be used by applications
+*           without good reasons (AddAudioModes uses this flag).
+*
+*   RESULT
+*       error - Same as io_Error.
+*       io_Error - If the call succeeded, io_Error will be 0, else
+*           an error code as defined in <exec/errors.h> and
+*           <devices/ahi.h>.
+*       io_Device - A pointer to the device base, which can be used
+*           to call the functions the device provides.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       Currently, there is only one unit that can be used with
+*       the device style API; AHI_DEFAULT_UNIT. But since this may
+*       very well change in the future, it is a good idea to provide
+*       a way to let the user change it, if only by means of tooltypes
+*       or a command line option.
+*
+*   BUGS
+*
+*   SEE ALSO
+*      CloseDevice(), exec.library/OpenDevice(), <exec/errors.h>,
+*      <devices/ahi.h>.
+*
+****************************************************************************
+*
+*/
+
 // This function is called by the system each time a unit is opened with
 // exec.library/OpenDevice().
 
@@ -325,6 +383,43 @@ __asm ULONG DevOpen(
 /******************************************************************************
 ** DevClose *******************************************************************
 ******************************************************************************/
+
+/****** ahi.device/CloseDevice *********************************************
+*
+*   NAME
+*       CloseDevice -- Close the device
+*
+*   SYNOPSIS
+*       CloseDevice(ioRequest)
+*                   A1
+*
+*       void CloseDevice(struct IORequest *);
+*
+*   FUNCTION
+*       This is an exec call that closes the device. Every OpenDevice()
+*       must be mached with a call to CloseDevice().
+*
+*       The user must ensure that all outstanding IO Requests have been
+*       returned before closing the device.
+*
+*   INPUTS
+*       ioRequest - a pointer to the same struct AHIRequest that was used
+*           to open the device.
+*
+*   RESULT
+*
+*   EXAMPLE
+*
+*   NOTES
+*
+*   BUGS
+*
+*   SEE ALSO
+*      OpenDevice(), exec.library/CloseDevice()
+*
+****************************************************************************
+*
+*/
 
 // This function is called by the system each time a unit is closed with
 // exec.library/CloseDevice().
