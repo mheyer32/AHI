@@ -90,8 +90,8 @@ void SlaveEntry(void)
 
   struct EIGHTSVXheader EIGHTSVXheader = // All NULLs will be filled later.
   { 
-    ID_FORM, 0, ID_8SVX,
-    ID_VHDR, __htobe_long(sizeof(Voice8Header)),
+    __htobe_long(ID_FORM), 0, __htobe_long(ID_8SVX),
+    __htobe_long(ID_VHDR), __htobe_long(sizeof(Voice8Header)),
     {
       0,
       0,
@@ -101,13 +101,13 @@ void SlaveEntry(void)
       sCmpNone,
       __htobe_long(0x10000)
     },
-    ID_BODY, 0
+    __htobe_long(ID_BODY), 0
   };
 
   struct AIFFheader AIFFheader = // All NULLs will be filled later.
   { 
-    ID_FORM, 0, ID_AIFF,
-    ID_COMM, __htobe_long(sizeof(CommonChunk)),
+    __htobe_long(ID_FORM), 0, __htobe_long(ID_AIFF),
+    __htobe_long(ID_COMM), __htobe_long(sizeof(CommonChunk)),
     {
       0,
       0,
@@ -125,12 +125,12 @@ void SlaveEntry(void)
 
   struct AIFCheader AIFCheader = // All NULLs will be filled later.
   { 
-    ID_FORM, 0, ID_AIFC,
-    ID_FVER, __htobe_long(sizeof(FormatVersionHeader)),
+    __htobe_long(ID_FORM), 0, __htobe_long(ID_AIFC),
+    __htobe_long(ID_FVER), __htobe_long(sizeof(FormatVersionHeader)),
     {
       __htobe_long(AIFCVersion1)
     },
-    ID_COMM, __htobe_long(sizeof(ExtCommonChunk)),
+    __htobe_long(ID_COMM), __htobe_long(sizeof(ExtCommonChunk)),
     {
       0,
       0,
@@ -142,7 +142,7 @@ void SlaveEntry(void)
       { sizeof("not compressed") - 1,
 	'n','o','t',' ','c','o','m','p','r','e','s','s','e','d' }
     },
-    ID_SSND, 0,
+    __htobe_long(ID_SSND), 0,
     {
       0,
       0
@@ -172,8 +172,8 @@ void SlaveEntry(void)
 
   struct WAVEheader WAVEheader = // All NULLs will be filled later.
   {
-    ID_RIFF, 0, ID_WAVE,
-    ID_fmt, __htole_long( sizeof(FormatChunk) ),
+    __htobe_long(ID_RIFF), 0, __htobe_long(ID_WAVE),
+    __htobe_long(ID_fmt), __htole_long( sizeof(FormatChunk) ),
     {
       __htole_short( WAVE_PCM ),
       0,
@@ -182,7 +182,7 @@ void SlaveEntry(void)
       0,
       __htole_short( 16 )
     },
-    ID_data, 0
+    __htobe_long(ID_data), 0
   };
 
   BPTR lock = 0,cd = 0,file = 0, file2 = 0;
