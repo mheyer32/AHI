@@ -21,6 +21,7 @@ PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 PREFSDIR	= ${DISTDIR}/User/Prefs
 CATDIR		= ${DISTDIR}/User/Catalogs
+CATSRCDIR	= ${DISTDIR}/Developer/Translations
 
 build_os	= @build_os@
 
@@ -75,7 +76,7 @@ install:	all
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFIX)/Prefs/AHI
 
 bindist:	all
-	$(INSTALL) -d $(PREFSDIR)
+	$(INSTALL) -d $(PREFSDIR) $(CATDIR) $(CATSRCDIR) $(CATSRCDIR)/ahiprefs
 	$(INSTALL_PROGRAM) AHI_MUI $(PREFSDIR)/AHI
 	$(STRIP) $(PREFSDIR)/AHI
 #	for i in $(EXECUTABLES); do \
@@ -84,14 +85,16 @@ bindist:	all
 #	done
 	$(INSTALL_DATA) ${srcdir}/AHI.info $(PREFSDIR)
 	$(INSTALL_DATA) ${srcdir}/AHI.MWB.info $(PREFSDIR)
+
+	$(INSTALL_DATA) ${srcdir}/ahiprefs.cd $(CATSRCDIR)
+	$(INSTALL_DATA) ${srcdir}/ahiprefs.ct $(CATSRCDIR)
 	for i in $(LANGUAGES); do \
 	  $(INSTALL) -d $(CATDIR)/$$i; \
+	  $(INSTALL) -d $(CATSRCDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
-	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
-	  $(INSTALL_DATA) ${srcdir}/translations/$$i.ct $(CATDIR)/$$i/ahiprefs.ct; \
+	  $(INSTALL_DATA) ${srcdir}/translations/$$i.ct \
+			  $(CATSRCDIR)/ahiprefs/$$i.ct; \
 	done
-	$(INSTALL_DATA) ${srcdir}/ahiprefs.cd $(CATDIR)
-	$(INSTALL_DATA) ${srcdir}/ahiprefs.ct $(CATDIR)
 
 version.h:	version.rev version.date
 	@echo Creating $@
