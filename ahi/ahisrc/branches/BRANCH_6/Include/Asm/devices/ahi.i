@@ -2,12 +2,12 @@
 DEVICES_AHI_I		SET	1
 
 **
-**	$VER: ahi.i 5.2 (19.1.2003)
+**	$VER: ahi.i 5.4 (25.7.2004)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi.device definitions
 **
-**	(C) Copyright 1994-2003 Martin Blom
+**	(C) Copyright 1994-2004 Martin Blom
 **	All Rights Reserved.
 **
 **
@@ -426,7 +426,7 @@ ID_AHIG 		EQU "AHIG"
 
 	STRUCTURE AHIUnitPrefs,0
 	UBYTE	ahiup_Unit
-        UBYTE	ahiup_Pad
+        UBYTE	ahiup_ScaleMode				; See below (V6)
         UWORD	ahiup_Channels
         ULONG	ahiup_AudioMode
         ULONG	ahiup_Frequency
@@ -436,6 +436,14 @@ ID_AHIG 		EQU "AHIG"
         ULONG	ahiup_Input
         ULONG	ahiup_Output
 	LABEL	AHIUnitPrefs_SIZEOF
+
+ ; Scale modes
+AHI_SCALE_FIXED_SAFE	EQU (0)			; x=y*1/max(ch)
+AHI_SCALE_DYNAMIC_SAFE	EQU (1)			; x=y*1/ch
+AHI_SCALE_FIXED_0_DB	EQU (2)			; x=y
+AHI_SCALE_FIXED_3_DB	EQU (3)			; x=y*1/sqrt(2)
+AHI_SCALE_FIXED_6_DB	EQU (4)			; x=y*1/2
+
 
 	STRUCTURE AHIGlobalPrefs,0
 	UWORD	ahigp_DebugLevel			; Range: 0-3 (for None, Low,
