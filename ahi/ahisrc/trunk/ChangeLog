@@ -1,3 +1,9 @@
+2003-04-29  Martin Blom  <martin@blom.org>
+
+	* When building the developer's archives, only relevant header
+	files are included now. For example, only the m68k archive
+	contains header files for SAS/C, Storm and assemblers.
+
 2003-04-25  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.36.
