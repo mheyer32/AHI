@@ -34,7 +34,8 @@
 
 
 int
-CallMixroutine( struct Hook *Hook, 
+CallMixroutine( unsigned int magic,
+                struct Hook *Hook, 
                 void *dst, 
                 struct AHIPrivAudioCtrl *audioctrl );
 
@@ -56,12 +57,20 @@ InternalSampleFrameSize( ULONG sampletype );
 // Function used to call the actual mixing routine.
 
 int
-CallMixroutine( struct Hook *Hook, 
-       void *dst, 
-       struct AHIPrivAudioCtrl *audioctrl )
+CallMixroutine( unsigned int magic,
+                struct Hook *Hook, 
+                void *dst, 
+                struct AHIPrivAudioCtrl *audioctrl )
 {
   struct AHISoundData *sd;
   int                  i;
+
+  if( magic != 0xC0DECAFE )
+  {
+    // If the magic cookie was not correct, return error.
+
+    return 20; // RETURN_FAIL
+  }
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_START );
 
@@ -107,7 +116,7 @@ CallMixroutine( struct Hook *Hook,
   for( i = 0; i < 150; i++ )
   {
     audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
-//    *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+    *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
     while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
   }
 */
@@ -117,7 +126,7 @@ CallMixroutine( struct Hook *Hook,
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_QUIT;
-//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
