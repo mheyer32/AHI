@@ -1,3 +1,12 @@
+2001-04-21  Martin Blom  <martin@blom.org>
+
+        * Released ahi.device 5.7.
+
+	* The default PlayerFunc (which is used unless the application
+	provides one) did not have an m68k wrapper when the device was
+	compiled for ppc, making ReqAttack (and many other programs, I
+	guess) crash. [Jaca/D-CAPS]
+
 2001-04-12  Martin Blom  <martin@blom.org>
 
 	* PAULA: Always use calibration tables for 14-bit output.
