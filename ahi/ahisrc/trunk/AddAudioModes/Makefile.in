@@ -3,6 +3,7 @@
 #  Makefile.in for the AddAudioModes program
 #
 
+
 #
 # Autoconfig stuff
 ########################################
@@ -24,6 +25,7 @@ LDFLAGS		= @LDFLAGS@
 
 VPATH		= @srcdir@
 
+
 #
 # Files
 ########################################
@@ -31,6 +33,7 @@ VPATH		= @srcdir@
 SOURCES		= AddAudioModes.c
 OBJECTS		= $(SOURCES:%.c=%.o)
 TARGET		= AddAudioModes
+
 
 #
 # Targets
@@ -58,6 +61,7 @@ version.h:	AddAudioModes.c
 	@echo $@
 	@grep '$$Id' AddAudioModes.c | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
 
+
 #
 # Auto-remake autoconf stuff
 ########################################
@@ -71,15 +75,15 @@ ${srcdir}/stamp-h.in: configure.in
 	cd ${srcdir} && autoheader
 	echo timestamp > ${srcdir}/stamp-h.in
 
-#config.h: stamp-h
-#stamp-h: config.h.in config.status
-#	./config.status
-#
-#Makefile: Makefile.in config.status
-#	./config.status
-#
-#config.status: configure
-#	./config.status --recheck
+config.h: stamp-h
+stamp-h: config.h.in config.status
+	./config.status
+
+Makefile: Makefile.in config.status
+	./config.status
+
+config.status: configure
+	./config.status --recheck
 
 
 #
