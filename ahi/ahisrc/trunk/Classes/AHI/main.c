@@ -1,4 +1,6 @@
 
+#include <classes/ahi.h>
+
 #include <clib/alib_protos.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -47,7 +49,7 @@ AHIClassDispatch(Class*  class,
 
       if (result != NULL)
       {
-	LONG error = MethodNew(class, (Object*) result, msg);
+	LONG error = MethodNew(class, (Object*) result, (struct opSet*) msg);
 	
 	if (error)
 	{
@@ -64,6 +66,46 @@ AHIClassDispatch(Class*  class,
       result = DoSuperMethodA(class, object, msg);
       break;
 
+    case OM_SET:
+    case OM_UPDATE:
+      DoSuperMethodA(class, object, msg);
+      result = MethodUpdate(class, object, (struct opUpdate*) msg);
+      break; 
+
+    case OM_GET:
+      result = MethodGet(class, object, (struct opGet*) msg);
+      
+      if (!result) {
+	result = DoSuperMethodA(class, object, msg);
+      }
+      break;
+
+    case OM_NOTIFY:
+      DoMethodA(AHIClassData->model_class, msg);
+      break;
+
+    case AHIM_AddNotify:
+      DoMethod(AHIClassData->model_class, OM_ADDMEMBER,
+	       ((struct AHIP_Notify*) msg)->Object);
+      break;
+
+    case AHIM_RemNotify:
+      DoMethod(AHIClassData->model_class, OM_REMMEMBER,
+	       ((struct AHIP_Notify*) msg)->Object);
+      break;
+      
+    case AHIM_Lock:
+      MethodLock(class, object, msg);
+      break;
+
+    case AHIM_Unlock:
+      MethodUnlock(class, object, msg);
+      break;
+
+    case AHIM_GetParamValue:
+      result = 0;
+      break;
+      
     default:
       KPrintF(_AHI_CLASS_NAME " passes method %lx to superclass\n", msg->MethodID);
       result = DoSuperMethodA(class, object, msg);
