@@ -71,7 +71,7 @@ OBJECTS		= header.o device.o devcommands.o devsupp.o \
 ifeq ($(VER),68K)
 OBJECTS		+= dspecho_68k.o mixer_68k.o
 else
-OBJECTS		+= dspecho.o mixer.o
+OBJECTS		+= dspecho.o mixer.o addroutines.o
 endif
 
 TARGET		= ahi.device.$(VER)-$(CPU)
@@ -81,7 +81,7 @@ CC		= ppc-amigaos-gcc
 CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -mcpu=$(CPU)
 LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
 LIBS		=
-OBJECTS		= ppcheader.o dspecho.o mixer.o
+OBJECTS		= ppcheader.o dspecho.o mixer.o addroutines.o
 TARGET		= ahi.elf.$(CPU)
 endif
 
