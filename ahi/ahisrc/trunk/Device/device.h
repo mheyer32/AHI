@@ -150,6 +150,7 @@ struct AHIDevUnit
         BOOL                     IsRecording;   // Currently recording
         BOOL                     ValidRecord;   // The record buffer contains valid data
         BOOL                     FullDuplex;    // Mode is full duplex
+        BOOL                     PseudoStereo;  // Mode is Paula-like stereo
         UWORD                    StopCnt;       // CMD_STOP count
 
 	/* Lock is used to serialize access to StopCnt, ReadList, PlayingList,
@@ -170,7 +171,7 @@ struct AHIDevUnit
         ULONG                    AudioMode;
         ULONG                    Frequency;
         UWORD                    Channels;
-        UWORD                    Pad2;
+        UWORD                    ChannelsInUse;
         Fixed                    MonitorVolume;
         Fixed                    InputGain;
         Fixed                    OutputVolume;

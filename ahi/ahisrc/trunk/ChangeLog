@@ -2,6 +2,12 @@
 
 	* Released ahi.device 5.31.
 
+	* ahi.device: Device mode now automatically scales the volume to
+	the number of playing requests. This means that you can now set
+	the number of channels in the preferences program as high as you
+	wish without getting annoyingly low volumes when playing just one
+	audio stream.
+ 
 	* ahi.device: Added support for playing 32 bit samples in both
 	low-level and device mode. Note that 32 bit samples are truncated
 	to 16 bit in non-HiFi modes and there are no assembly mixing
