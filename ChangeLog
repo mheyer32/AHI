@@ -1,6 +1,10 @@
 2003-01-19  Martin Blom  <martin@blom.org>
 
-	* Released ahi.device 5.31.
+	* Released ahi.device 5.31. This is actually all I had in mind for
+	V6 (except for a proper distribution with installation scripts
+	etc, which I don't feel like doing anymore), so unless somebody
+	complains, I'll bump the version to 6.0 and branch the source
+	tree. Speak now or forever hold ...
 
 	* ahi.device: Device mode now automatically scales the volume to
 	the number of playing requests. This means that you can now set
