@@ -735,14 +735,7 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 
     dd->voice_buffer_allocated = TRUE;
 
-    {
-      int i;
-      char value;
-      char* ptr = dd->voice.mem.addr;
-
-      for( i = 0; i < dma_buffer_size*2; ++i  ) {*ptr++ = value; value++; }
-//      memset( dd->voice.mem.addr, 0, dma_buffer_size * 2 );
-    }
+    memset( dd->voice.mem.addr, 0, dma_buffer_size * 2 );
 
     dd->voice.usage = VOICE_USAGE_PLAYBACK;
 
@@ -774,14 +767,6 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 			    / dma_sample_frame_size );
     dd->voice.endloop   = dd->voice.start + AudioCtrl->ahiac_BuffSamples *2;
     dd->voice.startloop = dd->voice.start;
-//    dd->voice.endloop   = dd->voice.start + AudioCtrl->ahiac_BuffSamples;
-//    dd->voice.startloop = dd->voice.endloop;
-
-    dd->emu_start      = dd->voice.start;
-    dd->emu_startloop  = dd->voice.startloop;
-      
-    KPrintF( "Playing %08lx to %08lx, repeating at %08lx\n",
-	     dd->voice.start, dd->voice.endloop, dd->voice.startloop, );
 
     if( dd->voice.flags & VOICE_FLAGS_STEREO )
     {
@@ -828,9 +813,9 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 
     DPF(2, "emu10k1_waveout_start()\n");
 
-    /* Enable channel loop interrupts for channel 0 */
-    sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 1 );
-
+    /* Make interrupt routine set the correct value */
+    dd->current_buffer = NULL;
+    
     /* Enable timer interrupts */
     emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
     emu10k1_writefn0( &dd->card, TIMER_RATE,
@@ -893,8 +878,6 @@ intAHIsub_Stop( REG( d0, ULONG Flags ),
     
     memset( &dd->voice, 0, sizeof( dd->voice ) );
 
-    dd->emu_start      = 0;
-    dd->emu_startloop  = 0;
     dd->current_length = 0;
     dd->current_size   = 0;
     dd->current_buffer = NULL;
@@ -1133,17 +1116,10 @@ EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
 
   while( ( intreq = *(ULONG*) ( dd->card.iobase + IPR ) ) != 0 )
   {
-    KPrintF( "intreq: %08lx\n", *(ULONG*) ( dd->card.iobase + IPR ) );
+//    KPrintF( "intreq: %08lx\n", *(ULONG*) ( dd->card.iobase + IPR ) );
 
     if( intreq & IPR_INTERVALTIMER )
-//    if( ( intreq & IPR_CHANNELLOOP ) &&
-//	sblive_readptr( &dd->card, CLIPL, dd->voice.num ) )
     {
-      int   lr;
-      ULONG new_startloop;
-
-      sblive_writeptr( &dd->card, CLIPL, dd->voice.num, 0 );
-      
       if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
       {
 	dd->current_size = dd->current_length * 4;
@@ -1153,43 +1129,18 @@ EMU10kx_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
 	dd->current_size = dd->current_length * 2;
       }
 
-      if( dd->emu_startloop == dd->emu_start )
+      if( dd->current_buffer == dd->voice.mem.addr )
       {
-	new_startloop      = dd->emu_start + dd->current_length;
-	dd->current_buffer = dd->voice.mem.addr;
+	dd->current_buffer = dd->voice.mem.addr + dd->current_size;
       }
       else
       {
-	new_startloop      = dd->emu_start;
-	dd->current_buffer = dd->voice.mem.addr + dd->current_size;;
+	dd->current_buffer = dd->voice.mem.addr;
       }
-#if 0
-      for( lr = 0; lr < (dd->voice.flags & VOICE_FLAGS_STEREO ? 2 : 1); ++lr )
-      {
-	ULONG old_val;
 
-	/* Set start loop */
-
-	old_val = sblive_readptr( &dd->card, PSST, dd->voice.num + lr );
-
-	sblive_writeptr( &dd->card, PSST, dd->voice.num + lr,
-			 ( old_val & 0xff000000 ) | new_startloop );
-
-	/* Set end loop */
-    
-	old_val = sblive_readptr( &dd->card, DSL, dd->voice.num + lr );
-
-	sblive_writeptr( &dd->card, DSL, dd->voice.num + lr,
-			 ( old_val & 0xff000000 ) |
-			 ( dd->emu_startloop + dd->current_length ) );
-      }
-#endif
-      dd->emu_startloop = new_startloop;
-      
       /* Invoke softint to fetch new sample data */
 	 
       Cause( &dd->software_interrupt );
-//      Mixer_interrupt( AudioCtrl );
     }
 
     /* Clear interrupt pending bit(s) */
@@ -1229,7 +1180,6 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
       CallHookPkt( AudioCtrl->ahiac_MixerFunc, (Object*) AudioCtrl, dd->mixbuffer );
     }
 
-#if 1
     /* Now translate and transfer to the DMA buffer */
 
     skip    = AudioCtrl->ahiac_Flags & AHIACF_HIFI   ? 2 : 1;
@@ -1239,19 +1189,11 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
     src     = dd->mixbuffer;
     dst     = dd->current_buffer;
 
-    KPrintF( "Mixer: %08lx (%ld samples) from %08lx.\n",
-	     dst, samples, src );
-  
-//    KPrintF( ">>> hw_pos = %08lx <<<\n", sblive_readptr( &dd->card,
-//							 CCCA_CURRADDR,
-//							 dd->voice.num ) );
+//    KPrintF( "Mixer: %08lx (%ld samples) from %08lx.\n",
+//	     dst, samples, src );
 
-      while( samples > 0 )
+    while( samples > 0 )
     {
-//      static short value;
-
-//      *src = value;
-//      value += 256;
       *dst = ( ( *src & 0xff ) << 8 ) | ( ( *src & 0xff00 ) >> 8 );
 
       src += skip;
@@ -1264,11 +1206,10 @@ Mixer_interrupt( REG( a1, struct AHIAudioCtrlDrv* AudioCtrl ) )
   
     CacheClearE( dd->current_buffer, dd->current_size, CACRF_ClearD );
   
-    KPrintF( ">>> hw_pos = %08lx <<<\n", sblive_readptr( &dd->card,
-							 CCCA_CURRADDR,
-							 dd->voice.num ) );
+//    KPrintF( ">>> hw_pos = %08lx <<<\n", sblive_readptr( &dd->card,
+//							 CCCA_CURRADDR,
+//							 dd->voice.num ) );
     
-#endif
     posttimer( AudioCtrl );
   }
 }

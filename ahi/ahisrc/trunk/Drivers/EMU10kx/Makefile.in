@@ -48,7 +48,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 # Files
 ########################################
 
-OBJECTS		= emu10kx.o hwaccess.o emuadxmg.o efxmgr.o voicemgr.o \
+OBJECTS		= emu10kx.o main.o hwaccess.o emuadxmg.o efxmgr.o voicemgr.o \
 		  linuxsupport.o 
 
 #
@@ -73,6 +73,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
+	$(INSTALL) --directory $(PREFIX)/Devs/AHI $(PREFIX)/Devs/AudioModes
 	$(INSTALL_PROGRAM) $(DRIVER) $(PREFIX)/Devs/AHI/$(DRIVER)
 	$(INSTALL_DATA) $(MODEFILE) $(PREFIX)/Devs/AudioModes/$(MODEFILE)
 
