@@ -46,7 +46,7 @@ driver! Anything that is based on this driver is GPL:ed.
 #include <proto/powerpci.h>
 #include <proto/utility.h>
 
-#include "EMU10kx.h"
+#include "DriverData.h"
 #include "version.h"
 #include "8010.h"
 
@@ -57,7 +57,7 @@ struct Driver
     BPTR           seglist;
 };
 
-#define dd ((struct EMU10kx*) AudioCtrl->ahiac_DriverData)
+#define dd ((struct DriverData*) AudioCtrl->ahiac_DriverData)
 
 const char  LibName[]     = "emu10kx.audio";
 const char  LibIDString[] = "emu10kx.audio " VERS "\r\n";

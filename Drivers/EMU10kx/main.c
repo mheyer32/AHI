@@ -14,7 +14,7 @@
 
 #include <CompilerSpecific.h>
 
-#include "EMU10kx.h"
+#include "DriverData.h"
 #include "version.h"
 
 #include "linuxsupport.h"
@@ -33,11 +33,11 @@ const UWORD LibRevision   = REVISION;
 
 struct Library *ppcibase = NULL;
 
-struct EMU10kx*
-AllocEMU10kx( ULONG card_num );
+struct DriverData*
+AllocDriverData( ULONG card_num );
 
 void
-FreeEMU10kx( struct EMU10kx* driver_data );
+FreeDriverData( struct DriverData* driver_data );
 
 void __chkabort(void) {}
 
@@ -65,7 +65,7 @@ CloseLibs( void )
 
 
 static ASM INTERRUPT ULONG
-EMU10kx_interrupt( REG( a1, struct EMU10kx* dd ) )
+EMU10kx_interrupt( REG( a1, struct DriverData* dd ) )
 {
   ULONG intreq;
   BOOL  handled = FALSE;
@@ -724,10 +724,10 @@ static void emu10k1_cleanup(struct emu10k1_card *card)
 
 
 
-struct EMU10kx*
-AllocEMU10kx( ULONG card_num )
+struct DriverData*
+AllocDriverData( ULONG card_num )
 {
-  struct EMU10kx*  dd;
+  struct DriverData*  dd;
   UWORD            command_word;
   int              ret;
 
@@ -861,7 +861,7 @@ AllocEMU10kx( ULONG card_num )
     return dd;
 
 error:
-    FreeEMU10kx( dd );
+    FreeDriverData( dd );
   }
 
   return NULL;
@@ -869,7 +869,7 @@ error:
 
 
 void
-FreeEMU10kx( struct EMU10kx* dd )
+FreeDriverData( struct DriverData* dd )
 {
   if( dd != NULL )
   {
@@ -921,7 +921,7 @@ main( int argc, char* argv[] )
 
   if( OpenLibs() )
   {
-    struct EMU10kx* dd = AllocEMU10kx( 0 );
+    struct DriverData* dd = AllocDriverData( 0 );
     
     if( dd == NULL )
     {
@@ -1072,7 +1072,7 @@ main( int argc, char* argv[] )
 	}
       }
       
-      FreeEMU10kx( dd );
+      FreeDriverData( dd );
     }
   }
 
