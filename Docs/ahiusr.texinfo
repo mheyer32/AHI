@@ -30,7 +30,7 @@
 This file documents AHI version @value{ahiver}, a hardware independent
 audio subsystem for Amiga.
 
-Copyright @copyright{} 1994-1997 Martin Blom. This publication may
+Copyright @copyright{} 1994-1998 Martin Blom. This publication may
 not be modified in any way, including translation, without prior consent,
 in writing, by the author.
 
@@ -53,6 +53,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.14  1998/01/18 19:50:42  lcs
+Updated the acknowledges. Probably more.
+
 Revision 4.13  1997/12/17 19:53:17  lcs
 Added the translators of of Hrvatski and Magyar to the hall of fame...
 
@@ -106,7 +109,7 @@ Initial revision.
 
 @vskip 0pt plus 1filll
 
-Copyright @copyright{} 1994-1997 Martin Blom. This publication may
+Copyright @copyright{} 1994-1998 Martin Blom. This publication may
 not be modified in any way, including translation, without prior consent,
 in writing, by the author.
 
@@ -137,7 +140,7 @@ publication, even if advised of the possibility of such damage.}
 
 @majorheading @sc{Ahi} User's Guide, version @value{ahiver}
 
-Copyright @copyright{} 1994-1997 Martin Blom
+Copyright @copyright{} 1994-1998 Martin Blom
 
 The latest release of @sc{Ahi} can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
@@ -234,7 +237,7 @@ ever get.
 @cindex Software license
 @cindex Copyright
 
-Copyright @copyright{} 1994-1997 Martin Blom
+Copyright @copyright{} 1994-1998 Martin Blom
 
 @sc{Ahi} is available as @dfn{freeware}.  That is, it may be freely
 distributed in unmodified form with no changes what so ever, but you may
@@ -1202,14 +1205,19 @@ For the catalog translations.
 @item Daniel Arthursson and Johan Nyblom
 For making it possible to write the first driver for a sound card, the
 @dfn{Wavetools} card.  I'm sure @sc{Ahi} would not have been accepted as
-quick as it was without this driver.  Funny that it didn't even
-work@enddots{}
+quick as it was without this driver.
 
 @item Christian Buchner
 For the calibrated 14 bit routines for Paula.
 
-@item SAS Institute, Inc. and Steve Krueger
+@item MacroSystem Computer GmbH
+For lending me a Toccata card.
+
+@item Steve Krueger and SAS Institute, Inc.
 For the compiler and all the updates.
+
+@item Johan Otterström
+For all the help with the Toccata driver.
 
 @item Jyrki Petsalo and Teemu Suikki
 For the Delfina driver, and for supporting @sc{Ahi} in the early days.  And
