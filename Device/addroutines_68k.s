@@ -231,7 +231,6 @@ AddSilenceStereoB:
 
 	.endm
 
-
 	.macro	postlude
 
 	sub.l	(Samples,sp),d0
@@ -349,6 +348,8 @@ _AddByteMono:
 
 _AddLofiByteMono:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
@@ -362,8 +363,7 @@ _AddLofiByteMono:
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
+	extb.l	d7
 
 	tst.l	a5
 	bgt.b	5f
@@ -377,8 +377,8 @@ _AddLofiByteMono:
 6:	/* .lastpoint_checkedZ */
 	move.l	d7,a5				/* update lastsample */
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -389,11 +389,10 @@ _AddLofiByteMono:
 	addx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
+	ext.w	d7
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+ 	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -575,13 +574,15 @@ _AddBytesMono:
 
 _AddLofiBytesMono:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceMono
 	bra	7f
 
@@ -590,22 +591,22 @@ _AddLofiBytesMono:
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
 	tst.l	d7
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	d7
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	d7,a5				/* update lastsample */
 
@@ -613,23 +614,23 @@ _AddLofiBytesMono:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)
+	muls.w	d1,d7
+	add.w	d7,(a1)
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -637,19 +638,19 @@ _AddLofiBytesMono:
 	addx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)
+	muls.w	d1,d7
+	add.w	d7,(a1)
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -786,6 +787,8 @@ _AddByteStereo:
 
 _AddLofiByteStereo:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
@@ -801,7 +804,7 @@ _AddLofiByteStereo:
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	tst.l	a5
@@ -816,11 +819,12 @@ _AddLofiByteStereo:
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
 	move.l	a3,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
+	move.l	a3,d7
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -832,14 +836,15 @@ _AddLofiByteStereo:
 2:	/* .first_sample */
 4:	/* .got_sample */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
 	move.l	a3,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
+	move.l	a3,d7
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -1021,13 +1026,15 @@ _AddBytesStereo:
 
 _AddLofiBytesStereo:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceStereo
 	bra	7f
 
@@ -1036,22 +1043,22 @@ _AddLofiBytesStereo:
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -1059,23 +1066,23 @@ _AddLofiBytesStereo:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -1083,19 +1090,19 @@ _AddLofiBytesStereo:
 	addx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -1245,7 +1252,8 @@ _AddLofiWordMono:
 	move.l	d7,a5				/* update lastsample */
 
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -1259,7 +1267,8 @@ _AddLofiWordMono:
 	ext.l	d7
 
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -1341,11 +1350,11 @@ _AddWordsMono:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
@@ -1431,9 +1440,9 @@ _AddLofiWordsMono:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceMono
 	bra	7f
 
@@ -1441,19 +1450,19 @@ _AddLofiWordsMono:
 	add.w	d6,d4
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
-	move.w	(0,a0,d3.l*4),a3		/* sign extend /*
+	move.w	(0,a0,d3.l*4),a3		/* sign extend */
 
-	move.w	(2,a0,d3.l*4),a4		/* sign extend /*
+	move.w	(2,a0,d3.l*4),a4		/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -1461,39 +1470,43 @@ _AddLofiWordsMono:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)
+	swap.w	d7
+	add.w	d7,(a1)
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
 	add.w	d6,d4
 	addx.l	d5,d3
 2:	/* .first_sample */
-	move.w	(0,a0,d3.l*4),a3		/* sign extend /*
+	move.w	(0,a0,d3.l*4),a3		/* sign extend */
 
-	move.w	(2,a0,d3.l*4),a4		/* sign extend /*
+	move.w	(2,a0,d3.l*4),a4		/* sign extend */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)
+	swap.w	d7
+	add.w	d7,(a1)
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -1637,7 +1650,7 @@ _AddLofiWordStereo:
 	add.w	d6,d4
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
-	move.w	(0,a0,d3.l*2),a3		/* sign extend /*
+	move.w	(0,a0,d3.l*2),a3		/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
@@ -1647,16 +1660,18 @@ _AddLofiWordStereo:
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a3,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -1666,14 +1681,16 @@ _AddLofiWordStereo:
 	add.w	d6,d4
 	addx.l	d5,d3
 2:	/* .first_sample */
-	move.w	(0,a0,d3.l*2),a3		/* sign extend /*
+	move.w	(0,a0,d3.l*2),a3		/* sign extend */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a3,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -1755,11 +1772,11 @@ _AddWordsStereo:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
@@ -1845,9 +1862,9 @@ _AddLofiWordsStereo:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceStereo
 	bra	7f
 
@@ -1855,19 +1872,19 @@ _AddLofiWordsStereo:
 	add.w	d6,d4
 	addx.l	d5,d3
 1:	/* .first_sampleZ */
-	move.w	(0,a0,d3.l*4),a3		/* sign extend /*
+	move.w	(0,a0,d3.l*4),a3		/* sign extend */
 
-	move.w	(2,a0,d3.l*4),a4		/* sign extend /*
+	move.w	(2,a0,d3.l*4),a4		/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -1875,39 +1892,43 @@ _AddLofiWordsStereo:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
 	add.w	d6,d4
 	addx.l	d5,d3
 2:	/* .first_sample */
-	move.w	(0,a0,d3.l*4),a3		/* sign extend /*
+	move.w	(0,a0,d3.l*4),a3		/* sign extend */
 
-	move.w	(2,a0,d3.l*4),a4		/* sign extend /*
+	move.w	(2,a0,d3.l*4),a4		/* sign extend */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -2038,6 +2059,8 @@ _AddByteMonoB:
 
 _AddLofiByteMonoB:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 	neg.w	d4
 
 	tst.w	(StopAtZero,sp)
@@ -2052,8 +2075,7 @@ _AddLofiByteMonoB:
 	subx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
+	extb.l	d7
 
 	tst.l	a5
 	bgt.b	5f
@@ -2067,8 +2089,8 @@ _AddLofiByteMonoB:
 6:	/* .lastpoint_checkedZ */
 	move.l	d7,a5				/* update lastsample */
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -2079,11 +2101,10 @@ _AddLofiByteMonoB:
 	subx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
+	ext.w	d7
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -2266,12 +2287,14 @@ _AddBytesMonoB:
 
 _AddLofiBytesMonoB:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 	neg.w	d4
 
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceMonoB
 	bra	7f
 
@@ -2280,22 +2303,22 @@ _AddLofiBytesMonoB:
 	subx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -2303,23 +2326,23 @@ _AddLofiBytesMonoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)
+	muls.w	d1,d7
+	add.w	d7,(a1)
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -2327,19 +2350,19 @@ _AddLofiBytesMonoB:
 	subx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)
+	muls.w	d1,d7
+	add.w	d7,(a1)
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -2479,6 +2502,8 @@ _AddByteStereoB:
 
 _AddLofiByteStereoB:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 	neg.w	d4
 
 	tst.w	(StopAtZero,sp)
@@ -2495,7 +2520,7 @@ _AddLofiByteStereoB:
 	subx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	tst.l	a5
@@ -2510,11 +2535,11 @@ _AddLofiByteStereoB:
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 	move.l	a3,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -2525,14 +2550,14 @@ _AddLofiByteStereoB:
 	subx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 	move.l	a3,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -2717,14 +2742,16 @@ _AddBytesStereoB:
 
 _AddLofiBytesStereoB:
 	prelude
+	asr.l	#8,d1
+	asr.l	#8,d2
 	neg.w	d4
 
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceStereoB
 	bra	7f
 
@@ -2733,22 +2760,22 @@ _AddLofiBytesStereoB:
 	subx.l	d5,d3
 1:	/* .first_sampleZ */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	tst.l	a5
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -2756,23 +2783,23 @@ _AddLofiBytesStereoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -2780,19 +2807,19 @@ _AddLofiBytesStereoB:
 	subx.l	d5,d3
 2:	/* .first_sample */
 	move.b	(0,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a3				/* sign extend */
 
 	move.b	(1,a0,d3.l*2),d7
-	lsl.w	#8,d7
+	ext.w	d7
 	move.w	d7,a4				/* sign extend */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)+
+	muls.w	d1,d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -2946,7 +2973,8 @@ _AddLofiWordMonoB:
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -2960,7 +2988,8 @@ _AddLofiWordMonoB:
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -3044,11 +3073,11 @@ _AddWordsMonoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
@@ -3102,7 +3131,7 @@ _AddWordsMonoB:
 	add.l	d7,(a1)+
 	
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 7:	/* .abort */
@@ -3136,9 +3165,9 @@ _AddLofiWordsMonoB:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceMonoB
 	bra	7f
 
@@ -3154,11 +3183,11 @@ _AddLofiWordsMonoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -3166,23 +3195,25 @@ _AddLofiWordsMonoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)
+	swap.w	d7
+	add.w	d7,(a1)
 	move.l	a4,d7
-	muls.l	d2,d7
-	add.l	d7,(a1)+
+	muls.w	d2,d7
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -3194,14 +3225,16 @@ _AddLofiWordsMonoB:
 	move.w	(2,a0,d3.l*4),a4		/* sign extend */
 
 	move.l	a3,d7
-	muls.l	d1,d7
-	add.l	d7,(a1)
+	muls.w	d1,d7
+	swap.w	d7
+	add.w	d7,(a1)
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 7:	/* .abort */
@@ -3362,10 +3395,12 @@ _AddLofiWordStereoB:
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a3,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
 	bne.b	0b
@@ -3379,10 +3414,12 @@ _AddLofiWordStereoB:
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a3,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
@@ -3466,11 +3503,11 @@ _AddWordsStereoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
@@ -3558,9 +3595,9 @@ _AddLofiWordsStereoB:
 	tst.w	(StopAtZero,sp)
 	bne.b	1f
 	tst.l	d1
-	bne	2f
+	bne.b	2f
 	tst.l	d2
-	bne	2f
+	bne.b	2f
 	bsr	AddSilenceStereoB
 	bra	7f
 
@@ -3576,11 +3613,11 @@ _AddLofiWordsStereoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a3
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a3
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a3,a5				/* update lastsample */
 
@@ -3588,23 +3625,25 @@ _AddLofiWordsStereoB:
 	bgt.b	5f
 	beq.b	6f
 	tst.l	a4
-	bge	7f
+	bge.b	7f
 	bra.b	6f
 5:	/* .lastpoint_gtZ */
 	tst.l	a4
-	ble	7f
+	ble.b	7f
 6:	/* .lastpoint_checkedZ */
 	move.l	a4,a6				/* update lastsample */
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 
 	subq.l	#1,d0
-	bne	0b
+	bne.b	0b
 	bra.b	8f
 
 0:	/* .next_sample */
@@ -3617,10 +3656,12 @@ _AddLofiWordsStereoB:
 
 	move.l	a3,d7
 	muls.l	d1,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	move.l	a4,d7
 	muls.l	d2,d7
-	add.l	d7,(a1)+
+	swap.w	d7
+	add.w	d7,(a1)+
 	
 	subq.l	#1,d0
 	bne.b	0b
