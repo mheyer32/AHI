@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.8  1997/02/01 21:54:53  lcs
+* Max freq. for AHI_SetFreq() uncreased to more than one million! ;)
+*
 * Revision 1.7  1997/02/01 19:44:18  lcs
 * Added stereo samples
 *
@@ -524,7 +527,7 @@ SelectAddRoutine:
 	and.l	#~AHIST_BW,d2
 
 ;FIXIT  -- Unsigned samples are obosolete, and should be removed!
-	cmp.l	#AHIST_M8U,d6
+	cmp.l	#AHIST_M8U,d2
 	beq	sar_unsigned
 
 	lsl.l	#2,d2
@@ -1200,7 +1203,7 @@ CalcSamples:
 
 ;UDivMod64 -- unsigned 64 by 32 bit division
 ;             64 bit quotient, 32 bit remainder.
-; (d1:d2)/d0 = d0, d1 remainder.
+; (d1:d2)/d0 = d0:d2, d1 remainder.
 
 UDivMod64:
 	movem.l	d3-d7,-(sp)
@@ -1227,7 +1230,7 @@ UDivMod64:
 	roxr.l	#1,d4
 	bcc	.2
 
-;	move.l	d5,d1			;waste upper 32 bits!
+	move.l	d5,d2
 	move.l	d0,d1
 	move.l	d6,d0
 	movem.l	(sp)+,d3-d7
