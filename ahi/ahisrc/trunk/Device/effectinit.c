@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.5  1997/10/23 01:10:03  lcs
+* Better debug output.
+*
 * Revision 4.4  1997/08/02 17:11:59  lcs
 * Right. Now echo should work!
 *
@@ -26,9 +29,14 @@
 #include "ahi_def.h"
 #include "dsp.h"
 
+#ifndef  noprotos
+
 #ifndef _GENPROTO
 #include "effectinit_protos.h"
 #endif
+
+#endif
+
 
 __asm extern void do_DSPEchoMono16(void);
 __asm extern void do_DSPEchoMono16Fast(void);

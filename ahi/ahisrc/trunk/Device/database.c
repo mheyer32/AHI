@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/10/23 01:10:03  lcs
+* Better debug output.
+*
 * Revision 4.3  1997/06/28 22:00:37  lcs
 * Roze the database semaphore pri from 0 to 20.
 *
@@ -43,8 +46,14 @@
 #include <proto/iffparse.h>
 #include <proto/utility.h>
 
+#ifndef  noprotos
+
 #ifndef _GENPROTO
 #include "database_protos.h"
+#endif
+
+#include "debug_protos.h"
+
 #endif
 
 /******************************************************************************
@@ -184,7 +193,7 @@ __asm ULONG NextAudioID( register __d0 ULONG id )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
-    KPrintF("AHI_NextAudioID(0x%08lx)",id);
+    Debug_NextAudioID(id);
   }
 
   if(audiodb=LockDatabase())
@@ -261,7 +270,7 @@ __asm ULONG AddAudioMode( register __a0 struct TagItem *DBtags )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
-    KPrintF("AHI_AddAudioMode(0x%08lx)",DBtags);
+    Debug_AddAudioMode(DBtags);
   }
 
 // Remove old mode if present in database
@@ -383,7 +392,7 @@ __asm ULONG RemoveAudioMode( register __d0 ULONG id )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
-    KPrintF("AHI_RemoveAudioMode(0x%08lx)",id);
+    Debug_RemoveAudioMode(id);
   }
 
   if(audiodb=LockDatabaseWrite())
@@ -481,7 +490,7 @@ __asm ULONG LoadModeFile( register __a0 UBYTE *name )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
-    KPrintF("AHI_LoadModeFile(%s)",name);
+    Debug_LoadModeFile(name);
   }
 
   SetIoErr(NULL);

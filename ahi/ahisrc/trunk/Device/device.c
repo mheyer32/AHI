@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.9  1997/10/23 01:10:03  lcs
+* Better debug output.
+*
 * Revision 4.8  1997/07/15 00:52:05  lcs
 * This is the second bugfix release of AHI 4.
 *
@@ -109,11 +112,13 @@
 #include <stddef.h>
 
 #ifndef  noprotos
+
 #ifndef _GENPROTO
 #include "device_protos.h"
 #endif
 
 #include "devcommands_protos.h"
+
 #endif
 
 __asm BOOL OpenLibs(register __a6 struct ExecBase *);

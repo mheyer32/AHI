@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.14  1997/10/23 01:10:03  lcs
+* Better debug output.
+*
 * Revision 4.13  1997/10/21 15:55:18  lcs
 * Updated the audiodocs for AHI_AllocAudio().
 *
@@ -110,10 +113,14 @@
 #include <strings.h>
 
 #ifndef  noprotos
-#include "database_protos.h"
+
 #ifndef _GENPROTO
 #include "cfuncs_protos.h"
 #endif
+
+#include "database_protos.h"
+#include "debug_protos.h"
+
 #endif
 
 // Makes 'in' fit the given bounds.
@@ -604,7 +611,7 @@ __asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_AllocAudioA(0x%08lx)",tags);
+    Debug_AllocAudioA(tags);
   }
 
   audioctrl=CreateAudioCtrl(tags);
@@ -819,7 +826,7 @@ __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_FreeAudio(0x%08lx)\n",audioctrl);
+    Debug_FreeAudio(audioctrl);
   }
 
   if(audioctrl)
@@ -902,7 +909,7 @@ __asm ULONG KillAudio(void)
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_KillAudio()\n");
+    Debug_KillAudio();
   }
 
   for(i=0xffff;i != 0; i--)
@@ -1029,7 +1036,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_ControlAudioA(0x%08lx, 0x%08lx)",audioctrl,tags);
+    Debug_ControlAudioA(audioctrl,tags);
   }
 
   while(tag=NextTagItem(&tstate))
@@ -1332,7 +1339,7 @@ __asm ULONG GetAudioAttrsA( register __d0 ULONG id,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
   {
-    KPrintF("AHI_GetAudioAttrsA(0x%08lx, 0x%08lx, 0x%08lx)",id,actrl,tags);
+    Debug_GetAudioAttrsA(id, actrl, tags);
   }
 
   if(audiodb=LockDatabase())
@@ -1600,7 +1607,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_BestAudioIDA(0x%08lx)",tags);
+    Debug_BestAudioIDA(tags);
   }
 
   dizzytags = (struct TagItem *) GetTagData(AHIB_Dizzy, (ULONG) defdizzy,tags);
@@ -1738,7 +1745,7 @@ __asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)", sound, type, info, audioctrl);
+    Debug_LoadSound(sound, type, info, audioctrl);
   }
 
   rc = AHIsub_LoadSound(sound, type, info, (struct AHIAudioCtrlDrv *) audioctrl);
@@ -1930,7 +1937,7 @@ __asm ULONG UnloadSound(register __d0 UWORD sound,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_UnloadSound(%ld, 0x%08lx)\n", sound, audioctrl);
+    Debug_UnloadSound(sound, audioctrl);
   }
 
   rc = AHIsub_UnloadSound(sound, (struct AHIAudioCtrlDrv *) audioctrl);
@@ -2046,7 +2053,7 @@ __asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_ALL)
   {
-    KPrintF("AHI_PlayA(0x%08lx, 0x%08lx)\n",audioctrl,tags);
+    Debug_PlayA(audioctrl,tags);
   }
 
   AHIsub_Disable((struct AHIAudioCtrlDrv *)audioctrl);
@@ -2189,7 +2196,8 @@ __asm ULONG SampleFrameSize( register __d0 ULONG sampletype )
 {
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
-    KPrintF("AHI_SampleFrameSize(%ld)=>%ld\n",sampletype,type2bytes[sampletype]);
+    Debug_SampleFrameSize(sampletype);
+    KPrintF("=>%ld\n",type2bytes[sampletype]);
   }
 
   return type2bytes[sampletype];

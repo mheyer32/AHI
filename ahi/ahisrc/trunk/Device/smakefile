@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.13  1997/10/23 01:10:03  lcs
+# Better debug output.
+#
 # Revision 4.12  1997/10/11 15:58:13  lcs
 # *** empty log message ***
 #
@@ -81,14 +84,14 @@ OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
 DEBUG   = DEBUG=FULL
 TARGET	= AHI:User/Devs/ahi.device
 
-SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
+SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c debug.c devcommands.c\
 device.c devsupp.a dspecho.a effectinit.c footer.a header.a\
 requester.c ahi.cd C_c_AHI.sd C_h_AHI.sd
 
 RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h smakefile
 
 OBJECTS = header.o asmfuncs.o addroutines.o effectinit.o dspecho.o cfuncs.o\
-database.o requester.o devcommands.o device.o devsupp.o localize.o\
+debug.o database.o requester.o devcommands.o device.o devsupp.o localize.o\
 footer.o
 
 CCOMP	= SC:c/sc
@@ -178,6 +181,7 @@ addroutines.o:	addroutines.a ahi_def.i dsp.i
 asmfuncs.o:	asmfuncs.a ahi_def.i
 cfuncs.o:	cfuncs.c localize.h ahi_def.h
 database.o:	database.c ahi_def.h
+debug.o:	debug.c
 devcommands.o:	devcommands.c ahi_def.h ahi_device.h
 device.o:	device.c localize.h ahi_def.h ahi_device.h
 devsupp.o:	devsupp.a
@@ -195,7 +199,7 @@ requester.o:	requester.c localize.h ahi_def.h
 ###############################################################################
 
 protos: device_protos.h cfuncs_protos.h database_protos.h requester_protos.h\
-	devcommands_protos.h devsupp_protos.h effectinit_protos.h
+	devcommands_protos.h devsupp_protos.h effectinit_protos.h debug_protos.h
 
 device_protos.h: device.c
 	$(CCOMP) GPROTO $(CFLAGS) $<
@@ -218,6 +222,8 @@ requester_protos.h: requester.c
 effectinit_protos.h: effectinit.c
 	$(CCOMP) GPROTO $(CFLAGS) $<
 
+debug_protos.h: debug.c
+	$(CCOMP) GPROTO $(CFLAGS) $<
 
 ##
 ## Build include files

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.10  1997/10/23 01:10:03  lcs
+* Better debug output.
+*
 * Revision 4.9  1997/10/16 10:20:56  lcs
 * Removed a KPrintF("Oops!");.... SIGH!
 *
@@ -97,13 +100,16 @@
 #include <math.h>
 
 #ifndef  noprotos
+
 #ifndef _GENPROTO
 #include "devcommands_protos.h"
-#endif
 #endif
 
 #include "device_protos.h"
 #include "devsupp_protos.h"
+
+#endif
+
 
 static void TermIO(struct AHIRequest *, struct AHIBase *);
 void PerformIO(struct AHIRequest *, struct AHIBase *);
