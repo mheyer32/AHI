@@ -7,7 +7,7 @@
 **
 **	ahi/[driver].audio definitions
 **
-**	(C) Copyright 1994-2001 Martin Blom
+**	(C) Copyright 1994-2003 Martin Blom
 **	All Rights Reserved.
 **
 */

@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -19,6 +19,10 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.3  2003/01/19 12:22:29  martin
+ * Another year, another copyright update.
+ *  ... which seems to have caused the translation files to change slightly.
+ *
  * Revision 5.2  2002/07/07 14:39:17  martin
  * No enforcer hits if no modes are available. [Don Cox]
  * Version 5.7.

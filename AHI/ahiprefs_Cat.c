@@ -1,5 +1,5 @@
 /****************************************************************
-   This file was created automatically by `FlexCat 1.9'
+   This file was created automatically by `FlexCat 2.4'
    from "../../ahisrc/AHI/ahiprefs.cd".
 
    Do NOT edit by hand!

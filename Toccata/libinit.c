@@ -2,7 +2,7 @@
 
 /*
      toccata.library - AHI-based Toccata emulation library
-     Copyright (C) 1997-2002 Martin Blom <martin@blom.org> and Teemu Suikki.
+     Copyright (C) 1997-2003 Martin Blom <martin@blom.org> and Teemu Suikki.
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -22,6 +22,10 @@
 
 /*
  * $Log$
+ * Revision 1.4  2003/01/19 12:22:59  martin
+ * Another year, another copyright update.
+ *  ... which seems to have caused the translation files to change slightly.
+ *
  * Revision 1.3  2002/01/03 08:56:24  martin
  * Added license notice.
  *
