@@ -47,7 +47,6 @@
 #include "header.h"
 #include "misc.h"
 
-
 static ULONG AddModeFile ( UBYTE *filename );
 
 /******************************************************************************
@@ -303,7 +302,7 @@ AddAudioMode( struct TagItem* DBtags,
   struct AHI_AudioDatabase *audiodb;
   struct AHI_AudioMode *node;
   ULONG nodesize = sizeof(struct AHI_AudioMode), tagitems = 0;
-  ULONG datalength = 0, namelength = 0, driverlength = 0;
+  ULONG datalength = 0, namelength = 0, driverlength = 0, dvrbasenamelength = 0;
   struct TagItem *tstate = DBtags, *tp, *tag;
   ULONG rc = FALSE;
 
@@ -343,6 +342,11 @@ AddAudioMode( struct TagItem* DBtags,
           driverlength  = strlen((UBYTE *)tag->ti_Data)+1;
           nodesize     += driverlength;
           break;
+
+        case AHIDB_DriverBaseName:
+          dvrbasenamelength    = strlen((UBYTE *)tag->ti_Data)+1;
+          nodesize     += dvrbasenamelength;
+          break;
       }
 
       nodesize += sizeof(struct TagItem);
@@ -366,14 +370,22 @@ AddAudioMode( struct TagItem* DBtags,
             tp->ti_Data = ((ULONG) &node->ahidbn_Tags[tagitems]);
             CopyMem((APTR)tag->ti_Data, (APTR)tp->ti_Data, datalength);
             break;
+
           case AHIDB_Name:
             tp->ti_Data = ((ULONG) &node->ahidbn_Tags[tagitems]) + datalength;
             strcpy((UBYTE *)tp->ti_Data, (UBYTE *)tag->ti_Data);
             break;
+
           case AHIDB_Driver:
             tp->ti_Data= ((ULONG) &node->ahidbn_Tags[tagitems]) + datalength + namelength;
             strcpy((UBYTE *)tp->ti_Data, (UBYTE *)tag->ti_Data);
             break;
+
+          case AHIDB_DriverBaseName:
+            tp->ti_Data = ((ULONG) &node->ahidbn_Tags[tagitems]) + datalength + namelength + driverlength;
+            strcpy((UBYTE *)tp->ti_Data, (UBYTE *)tag->ti_Data);
+            break;
+
           default:
             tp->ti_Data = tag->ti_Data;
             break;
@@ -642,9 +654,10 @@ AddModeFile ( UBYTE *filename )
   struct TagItem *tag,*tstate;
   struct TagItem extratags[]=
   {
-    { AHIDB_Driver, 0 },
-    { AHIDB_Data,   0 },
-    { TAG_MORE,     0 }
+    { AHIDB_Driver,         0 },
+    { AHIDB_Data,           0 },
+    { AHIDB_DriverBaseName, (ULONG) "DEVS:AHI" },
+    { TAG_MORE,             0 }
   };
   ULONG rc=FALSE;
 
@@ -716,16 +729,44 @@ AddModeFile ( UBYTE *filename )
 
               // Now verify that the driver can really be opened
               
-              strcpy( driver_name, "DEVS:AHI/" );
+#ifdef __MORPHOS__
+
+              strcpy( driver_name, "MOSSYS:DEVS:AHI/" );
               strncat( driver_name, name->sp_Data, 100 );
               strcat( driver_name, ".audio" );
               
+              driver_base = OpenLibrary( &driver_name[7], DriverVersion );
+              if( driver_base == NULL )
+              {
+                // Make it MOSSYS:DEVS/AHI/...
+                //                    ^
+                driver_name[7 + 4] = '/';
+
+                driver_base = OpenLibrary( driver_name, DriverVersion );
+
+                if( driver_base == NULL )
+                {
+                  rc = FALSE;
+                }
+                else
+                {
+                  // It is a MOSSYS:DEVS/AHI driver!
+                  extratags[2].ti_Data = (ULONG) "MOSSYS:DEVS/AHI";
+
+                  CloseLibrary( driver_base );
+                }
+              }
+#else
+              strcpy( driver_name, "DEVS:AHI/" );
+              strncat( driver_name, name->sp_Data, 100 );
+              strcat( driver_name, ".audio" );
+
               driver_base = OpenLibrary( driver_name, DriverVersion );
-              
               if( driver_base == NULL )
               {
                 rc = FALSE;
               }
+#endif
               else
               {
                 CloseLibrary( driver_base );
@@ -810,7 +851,7 @@ AddModeFile ( UBYTE *filename )
               {
                 // Link taglists
 
-                extratags[2].ti_Data = (ULONG) ci->ci_Data;
+                extratags[3].ti_Data = (ULONG) ci->ci_Data;
 
                 rc = AHI_AddAudioMode(extratags);
 

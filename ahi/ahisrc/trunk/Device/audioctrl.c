@@ -30,6 +30,7 @@
 
 #include <proto/exec.h>
 #include <proto/utility.h>
+#include <proto/dos.h>
 #define __NOLIBBASE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
@@ -228,6 +229,8 @@ CreateAudioCtrl(struct TagItem *tags)
     {
       if((dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID)))
       {
+        char driver_name[128];
+
         audioctrl->ac.ahiac_Flags=PackBoolTags(GetTagData(AHIDB_Flags,NULL,dbtags),dbtags,boolmap);
 
         if(AHIBase->ahib_Flags & AHIBF_CLIPPING)
@@ -236,11 +239,13 @@ CreateAudioCtrl(struct TagItem *tags)
         }
 
         strcpy( audioctrl->ahiac_DriverName,
-                "DEVS:AHI/" );
-        strcat( audioctrl->ahiac_DriverName,
+                (char *) GetTagData( AHIDB_DriverBaseName, (ULONG) "DEVS:AHI", dbtags) );
+
+        strcpy( driver_name,
                 (char *) GetTagData( AHIDB_Driver, (ULONG) "", dbtags ) );
-        strcat( audioctrl->ahiac_DriverName,
-                ".audio" );
+        strcat( driver_name, ".audio" );
+
+        AddPart(audioctrl->ahiac_DriverName, driver_name, sizeof(audioctrl->ahiac_DriverName));
 
         error=FALSE;
       }

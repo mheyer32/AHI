@@ -143,13 +143,26 @@ main( void )
       /* First, empty the database */
       
       for( id = AHI_NextAudioID( AHI_INVALID_ID );
-           id != AHI_INVALID_ID;
+           id != (ULONG) AHI_INVALID_ID;
            id = AHI_NextAudioID( AHI_INVALID_ID ) )
       {
         AHI_RemoveAudioMode( id );
       }
 
       /* Now add all modes */
+
+#ifdef __MORPHOS__
+      // Be quiet here. - Piru
+      {
+        struct Process *Self = (struct Process *) FindTask(NULL);
+        APTR oldwindowptr = Self->pr_WindowPtr;
+        Self->pr_WindowPtr = (APTR) -1;
+
+        AHI_LoadModeFile( "MOSSYS:DEVS/AudioModes" );
+
+        Self->pr_WindowPtr = oldwindowptr;
+      }
+#endif
 
       if( !AHI_LoadModeFile( "DEVS:AudioModes" ) && !args.quiet )
       {
@@ -193,7 +206,7 @@ main( void )
         OpenAHI();
 
         for( id = AHI_NextAudioID( AHI_INVALID_ID );
-             id != AHI_INVALID_ID;
+             id != (ULONG) AHI_INVALID_ID;
              id = AHI_NextAudioID( AHI_INVALID_ID ) )
         {
           AHI_RemoveAudioMode( id );
