@@ -185,6 +185,7 @@ AHILoadObject( const char* objname )
   }
   else
   {
+kprintf( "loading elf object\n" );
     return ELFLoadObject( objname );
   }
 }
@@ -206,8 +207,54 @@ AHIUnLoadObject( void* obj )
   }
   else
   {
+kprintf( "unloading elf object\n" );
     ELFUnLoadObject( obj );
   }
+}
+
+#endif
+
+/******************************************************************************
+** AHIUnLoadObject ************************************************************
+******************************************************************************/
+
+#ifndef VERSION68K
+
+BOOL
+AHIGetELFSymbol( const char* name,
+                 void** ptr )
+{
+  BOOL rc = FALSE;
+
+  if( PPCLibBase != NULL )
+  {
+    struct PPCObjectInfo oi =
+    {
+      0,
+      NULL,
+      PPCELFINFOTYPE_SYMBOL,
+      STT_SECTION,
+      STB_GLOBAL,
+      0
+    };
+
+    struct TagItem tag_done =
+    {
+      TAG_DONE, 0
+    };
+
+    oi.Name = (char*) name;
+    rc = PPCGetObjectAttrs( PPCObject, &oi, &tag_done );
+    *ptr = (void*) oi.Address;
+  }
+  else
+  {
+kprintf( "getting symbol %s: ", name );
+    rc = ELFGetSymbol( PPCObject, name, ptr );
+kprintf( "%08lx\n", *ptr );
+  }
+
+  return rc;
 }
 
 #endif

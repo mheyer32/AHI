@@ -37,9 +37,10 @@
                 struct    AHIPrivAudioCtrl *audioctrl,\
                 void     *Src,\
                 void    **Dst,\
-                struct    AHIChannelData *cd
+                struct    AHIChannelData *cd, \
+                BOOL      StopAtZero
 
-typedef void (ADDFUNC)(ADDARGS);
+typedef LONG (ADDFUNC)(ADDARGS);
 
 BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );

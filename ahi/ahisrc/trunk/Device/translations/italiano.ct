@@ -5,33 +5,9 @@
 ## chunk AUTH Translated by Bernardo Innocenti <bernie@shock.cosmos.it>
 ;
 ; $Id$
-; $Log$
-; Revision 1.2  1999/03/28 22:32:31  lcs
-; AHI is now GPL/LGPL software.
-; Make target bindist work correctly when using a separate build directory.
-; Small first steps towards a WarpOS PPC version.
-;
-; Revision 4.2  1997/05/03 19:59:56  lcs
-; Set version to 4
-;
-; Revision 4.1  1997/04/02 22:29:53  lcs
-; Bumped to version 4
-;
-; Revision 1.4  1997/02/20 10:26:13  lcs
-; New Flexcat caused some problems
-;
-; Revision 1.3  1997/02/10 02:23:06  lcs
-; Infowindow in the requester added.
-;
-; Revision 1.2  1997/02/04 22:14:27  lcs
-; The users preffered audio mode can now be selected in the requester
-;
-; Revision 1.1  1997/02/02 22:37:47  lcs
-; Initial revision
-;
 ;
 ;    AHI - Hardware independent audio subsystem
-;    Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+;    Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
 ;     
 ;    This library is free software; you can redistribute it and/or
 ;    modify it under the terms of the GNU Library General Public

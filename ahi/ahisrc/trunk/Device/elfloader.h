@@ -25,7 +25,7 @@
 
 #include <config.h>
 #include <CompilerSpecific.h>
-
+#include <powerup/ppclib/object.h>
 
 void*
 ELFLoadObject( const char* objname );
@@ -33,5 +33,8 @@ ELFLoadObject( const char* objname );
 void
 ELFUnLoadObject( void* obj );
 
+BOOL ELFGetSymbol( void* obj,
+                   const char* name,
+                   void** ptr );
 
 #endif /* _ELFLOADER_H_ */

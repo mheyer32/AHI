@@ -44,6 +44,8 @@ entry( struct Hook *Hook,
        void *dst, 
        struct AHIPrivAudioCtrl *audioctrl )
 {
+  int i;
+
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_START );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_INIT;
@@ -51,7 +53,17 @@ entry( struct Hook *Hook,
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
+/*
+  for( i = 0; i < 15000; i++ )
+  {
+    audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
+    *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+    while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+  }
+*/
+
   MixGeneric( Hook, dst, audioctrl );
+
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_QUIT;
@@ -61,6 +73,12 @@ entry( struct Hook *Hook,
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_FINISHED;
   return 0;
+}
+
+void
+WarpInit( void )
+{
+
 }
 
 asm( "

@@ -160,16 +160,56 @@ SetVol ( REG(d0, UWORD channel),
   cd->cd_NextVolumeLeft  = ((volume >> 1) * ((0x10000 - abs(pan)) >> 1)) >> (16 - 2);
   cd->cd_NextVolumeRight = ((volume >> 1) * (pan >> 1)) >> (16 - 2);
 
+  SelectAddRoutine( cd->cd_NextVolumeLeft,
+                    cd->cd_NextVolumeRight,
+                    cd->cd_NextType,
+                    audioctrl,
+                   &cd->cd_NextScaleLeft,
+                   &cd->cd_NextScaleRight,
+       (ADDFUNC**) &cd->cd_NextAddRoutine );
+
   if(flags & AHISF_IMM)
   {
+#ifdef VERSION68K
     cd->cd_VolumeLeft  = cd->cd_NextVolumeLeft;
     cd->cd_VolumeRight = cd->cd_NextVolumeRight;
-    SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
-                     &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
-  }
+    
+    SelectAddRoutine( cd->cd_VolumeLeft,
+                      cd->cd_VolumeRight, 
+                      cd->cd_Type, 
+                      audioctrl,
+                     &cd->cd_ScaleLeft,
+                     &cd->cd_ScaleRight, 
+         (ADDFUNC**) &cd->cd_AddRoutine );
+#else
+    cd->cd_DelayedVolumeLeft  = cd->cd_NextVolumeLeft;
+    cd->cd_DelayedVolumeRight = cd->cd_NextVolumeRight;
+    
+    SelectAddRoutine( cd->cd_DelayedVolumeLeft,
+                      cd->cd_DelayedVolumeRight, 
+                      cd->cd_DelayedType, 
+                      audioctrl,
+                     &cd->cd_DelayedScaleLeft,
+                     &cd->cd_DelayedScaleRight, 
+         (ADDFUNC**) &cd->cd_DelayedAddRoutine );
 
-  SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
-                   &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
+    /* Enable anti-click routine */
+    cd->cd_AntiClickCount = audioctrl->ac.ahiac_AntiClickSamples;
+
+    if( ( flags & AHISF_NODELAY ) || 
+        ( cd->cd_AntiClickCount == 0 ) )
+    {
+      cd->cd_VolumeLeft  = cd->cd_DelayedVolumeLeft;
+      cd->cd_VolumeRight = cd->cd_DelayedVolumeRight;
+      cd->cd_ScaleLeft   = cd->cd_DelayedScaleLeft;
+      cd->cd_ScaleRight  = cd->cd_DelayedScaleRight;
+      cd->cd_AddRoutine  = cd->cd_DelayedAddRoutine;
+    
+      cd->cd_AntiClickCount = 0;
+    }
+
+#endif
+  }
 
   AHIsub_Enable(&audioctrl->ac);
 
@@ -306,13 +346,28 @@ SetFreq ( REG( d0, UWORD channel ),
                                   cd->cd_LastOffset.I, cd->cd_LastOffset.F,
                                   cd->cd_Offset.I, cd->cd_Offset.F );
 #else
-    cd->cd_Add     = cd->cd_NextAdd;
-    cd->cd_FreqOK  = cd->cd_NextFreqOK;
+    cd->cd_DelayedAdd     = cd->cd_NextAdd;
+    cd->cd_DelayedFreqOK  = cd->cd_NextFreqOK;
 
-    cd->cd_Samples = CalcSamples( cd->cd_Add,
-                                  cd->cd_Type,
-                                  cd->cd_LastOffset,
-                                  cd->cd_Offset );
+    cd->cd_DelayedSamples = CalcSamples( cd->cd_DelayedAdd,
+                                         cd->cd_DelayedType,
+                                         cd->cd_DelayedLastOffset,
+                                         cd->cd_DelayedOffset );
+
+    /* Enable anti-click routine */
+    cd->cd_AntiClickCount = audioctrl->ac.ahiac_AntiClickSamples;
+
+    if( ( flags & AHISF_NODELAY ) || 
+        ( cd->cd_AntiClickCount == 0 ) ||
+         !cd->cd_FreqOK || !cd->cd_SoundOK )
+    {
+      cd->cd_Add     = cd->cd_DelayedAdd;
+      cd->cd_FreqOK  = cd->cd_DelayedFreqOK;
+      cd->cd_Samples = cd->cd_DelayedSamples;
+
+      cd->cd_AntiClickCount = 0;
+    }
+
 #endif
 
   }
@@ -475,6 +530,14 @@ SetSound ( REG(d0, UWORD channel),
 #endif
     }
 
+    SelectAddRoutine( cd->cd_NextVolumeLeft,
+                      cd->cd_NextVolumeRight,
+                      cd->cd_NextType,
+                      audioctrl,
+                     &cd->cd_NextScaleLeft,
+                     &cd->cd_NextScaleRight,
+         (ADDFUNC**) &cd->cd_NextAddRoutine );
+
     if(flags & AHISF_IMM)
     {
 #ifdef VERSION68K
@@ -486,38 +549,65 @@ SetSound ( REG(d0, UWORD channel),
       cd->cd_DataStart     = cd->cd_NextDataStart;
       cd->cd_Type          = cd->cd_NextType;
       cd->cd_SoundOK       = cd->cd_NextSoundOK;
-#else
-      cd->cd_Offset        = cd->cd_NextOffset;
-      cd->cd_FirstOffsetI  = cd->cd_NextOffset >> 32; /* for linear interpol. */
-      cd->cd_LastOffset    = cd->cd_NextLastOffset;
-      cd->cd_DataStart     = cd->cd_NextDataStart;
-      cd->cd_Type          = cd->cd_NextType;
-      cd->cd_SoundOK       = cd->cd_NextSoundOK;
-#endif
 
-      SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
-                       &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
+      SelectAddRoutine( cd->cd_VolumeLeft,
+                        cd->cd_VolumeRight,
+                        cd->cd_Type,
+                        audioctrl,
+                       &cd->cd_ScaleLeft,
+                       &cd->cd_ScaleRight,
+           (ADDFUNC**) &cd->cd_DelayedAddRoutine );
 
-#ifdef VERSION68K
       cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
                                     cd->cd_Type,
                                     cd->cd_LastOffset.I, cd->cd_LastOffset.F,
                                     cd->cd_Offset.I, cd->cd_Offset.F);
 #else
-      cd->cd_Samples = CalcSamples( cd->cd_Add,
-                                    cd->cd_Type,
-                                    cd->cd_LastOffset,
-                                    cd->cd_Offset );
-#endif
-      cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
+      cd->cd_DelayedOffset        = cd->cd_NextOffset;
+      cd->cd_DelayedFirstOffsetI  = cd->cd_NextOffset >> 32; /* for linear interpol. */
+      cd->cd_DelayedLastOffset    = cd->cd_NextLastOffset;
+      cd->cd_DelayedDataStart     = cd->cd_NextDataStart;
+      cd->cd_DelayedType          = cd->cd_NextType;
+      cd->cd_DelayedSoundOK       = cd->cd_NextSoundOK;
+
+      SelectAddRoutine( cd->cd_DelayedVolumeLeft,
+                        cd->cd_DelayedVolumeRight,
+                        cd->cd_DelayedType,
+                        audioctrl,
+                       &cd->cd_DelayedScaleLeft,
+                       &cd->cd_DelayedScaleRight,
+           (ADDFUNC**) &cd->cd_DelayedAddRoutine );
+
+      cd->cd_DelayedSamples = CalcSamples( cd->cd_DelayedAdd,
+                                           cd->cd_DelayedType,
+                                           cd->cd_DelayedLastOffset,
+                                           cd->cd_DelayedOffset );
 
       /* Enable anti-click routine */
-      cd->cd_AntiClickCount = min(audioctrl->ac.ahiac_AntiClickSamples,
-                                  (ULONG) cd->cd_Samples);
-    }
+      cd->cd_AntiClickCount = audioctrl->ac.ahiac_AntiClickSamples;
 
-    SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
-                     &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
+      if( ( flags & AHISF_NODELAY ) || 
+          ( cd->cd_AntiClickCount == 0 ) ||
+           !cd->cd_FreqOK || !cd->cd_SoundOK )
+      {
+        cd->cd_Offset        = cd->cd_DelayedOffset;
+        cd->cd_FirstOffsetI  = cd->cd_DelayedFirstOffsetI;
+        cd->cd_LastOffset    = cd->cd_DelayedLastOffset;
+        cd->cd_DataStart     = cd->cd_DelayedDataStart;
+        cd->cd_Type          = cd->cd_DelayedType;
+        cd->cd_SoundOK       = cd->cd_DelayedSoundOK;
+        cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
+        cd->cd_Samples       = cd->cd_DelayedSamples;
+        cd->cd_ScaleLeft     = cd->cd_DelayedScaleLeft;
+        cd->cd_ScaleRight    = cd->cd_DelayedScaleRight;
+        cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
+
+        cd->cd_AntiClickCount = 0;
+      }
+#endif
+
+      cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
+    }
   }
 
   AHIsub_Enable(&audioctrl->ac);
