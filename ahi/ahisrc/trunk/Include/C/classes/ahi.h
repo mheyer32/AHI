@@ -132,11 +132,11 @@ namespace AHI {
     /* Unserialize object from an IFF stream */
     _AHIM(_P, Unserialize,	(_AHIM_Dummy+6)),
     
-    /* Create a dispatcher hook (no valid object required) */
-    _AHIM(_P, NewDispatcher,	(_AHIM_Dummy+7)),
+/*     /\* Create a dispatcher hook (no valid object required) *\/ */
+/*     _AHIM(_P, NewDispatcher,	(_AHIM_Dummy+7)), */
     
-    /* Dispose a dispatcher hook */
-    _AHIM(_P, DisposeDispatcher,(_AHIM_Dummy+8)),
+/*     /\* Dispose a dispatcher hook *\/ */
+/*     _AHIM(_P, DisposeDispatcher,(_AHIM_Dummy+8)), */
 
     /* Add notification: Will be forwarded as OM_ADDMEMBER to the
      * internal modelclass object */
@@ -164,27 +164,35 @@ namespace AHI {
   };
 
 
-  /* AHIM_NewDispatcher */
-  struct _AHIP(_P, DispatcherEntry) {
-    ULONG	ID;
-    ULONG	(*FunctionPtr)(Class*  cl,
-			       Object* obj,
-			       Msg     msg);
-  };
+/*   /\* AHIM_NewDispatcher *\/ */
+/*   struct _AHIP(_P, DispatcherEntry) { */
+/*     ULONG	ID; */
+/*     ULONG	(*FunctionPtr)(Class*  cl, */
+/* 			       Object* obj, */
+/* 			       Msg     msg); */
+/*   }; */
 
-  struct _AHIP(_P, NewDispatcher) {
-    ULONG				MethodID;
-    struct _AHIP(_P, DispatcherEntry)*	Methods;
-    struct _AHIP(_P, DispatcherEntry)*	SetAttributes;
-    struct _AHIP(_P, DispatcherEntry)*	GetAttributes;
-  };
+/*   struct _AHIP(_P, NewDispatcher) { */
+/*     ULONG				MethodID; */
+/*     Class*                              Class; */
+/*     APTR                                HookEntry; */
+/*     struct _AHIP(_P, DispatcherEntry)*	Methods; */
+/*     struct _AHIP(_P, DispatcherEntry)*	SetAttributes; */
+/*     struct _AHIP(_P, DispatcherEntry)*	GetAttributes; */
+/*   }; */
 
-  /* AHIM_DisposeDispatcher */
-  struct _AHIP(_P, DisposeDispatcher) {
+/*   /\* AHIM_DisposeDispatcher *\/ */
+/*   struct _AHIP(_P, DisposeDispatcher) { */
+/*       ULONG		MethodID; */
+/*       struct Hook*	Dispatcher; */
+/*   }; */
+
+  /* AHIM_AddNotify/AHIM_RemNotify */
+  struct _AHIP(_P, Notify) {
       ULONG		MethodID;
-      struct Hook*	Dispatcher;
+      Object*		Object;
   };
-
+  
   /* AHIM_GetParamValue */
   struct _AHIP(_P, ParamValue) {
       ULONG		MethodID;
