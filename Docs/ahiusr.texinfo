@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.1  2004/06/08 21:16:16  martin
+Added 7.1 multichannel support.
+
 Revision 5.9  2004/06/01 19:00:01  martin
 Makeinfo fix.
 
@@ -1181,6 +1184,12 @@ volume with clipping automatically (@pxref{Advanced settings}).
 ``HiFi'' modes are useful when you're playing music---@dfn{MIDI} songs or
 @dfn{modules}, for example---and want the best possible quality @sc{Ahi}
 has to offer.
+
+
+@cindex HiFi 7.1 (audio mode)
+
+@item  HiFi 7.1
+``HiFi 7.1'' modes can be used by movie players or audio editors.
 
 @end table
 

@@ -150,30 +150,53 @@ struct AHIsubIFace        *IAHIsub        = NULL;
 struct Resident           *MorphOSRes     = NULL;
 static struct timerequest *TimerIO        = NULL;
 
+#if defined( ENABLE_WARPUP )
+struct Library            *PowerPCBase    = NULL;
+void                      *PPCObject      = NULL;
+#endif
+
 ADDFUNC* AddByteMonoPtr                   = NULL;
 ADDFUNC* AddByteStereoPtr                 = NULL;
+ADDFUNC* AddByte71Ptr                     = NULL;
 ADDFUNC* AddBytesMonoPtr                  = NULL;
 ADDFUNC* AddBytesStereoPtr                = NULL;
+ADDFUNC* AddBytes71Ptr                    = NULL;
 ADDFUNC* AddWordMonoPtr                   = NULL;
 ADDFUNC* AddWordStereoPtr                 = NULL;
+ADDFUNC* AddWord71Ptr                     = NULL;
 ADDFUNC* AddWordsMonoPtr                  = NULL;
 ADDFUNC* AddWordsStereoPtr                = NULL;
+ADDFUNC* AddWords71Ptr                    = NULL;
 ADDFUNC* AddLongMonoPtr                   = NULL;
 ADDFUNC* AddLongStereoPtr                 = NULL;
+ADDFUNC* AddLong71Ptr                     = NULL;
 ADDFUNC* AddLongsMonoPtr                  = NULL;
 ADDFUNC* AddLongsStereoPtr                = NULL;
+ADDFUNC* Add71MonoPtr                     = NULL;
+ADDFUNC* Add71StereoPtr                   = NULL;
+ADDFUNC* AddLongs71Ptr                    = NULL;
+ADDFUNC* Add7171Ptr                       = NULL;
 ADDFUNC* AddByteMonoBPtr                  = NULL;
 ADDFUNC* AddByteStereoBPtr                = NULL;
+ADDFUNC* AddByte71BPtr                    = NULL;
 ADDFUNC* AddBytesMonoBPtr                 = NULL;
 ADDFUNC* AddBytesStereoBPtr               = NULL;
+ADDFUNC* AddBytes71BPtr                   = NULL;
 ADDFUNC* AddWordMonoBPtr                  = NULL;
 ADDFUNC* AddWordStereoBPtr                = NULL;
+ADDFUNC* AddWord71BPtr                    = NULL;
 ADDFUNC* AddWordsMonoBPtr                 = NULL;
 ADDFUNC* AddWordsStereoBPtr               = NULL;
+ADDFUNC* AddWords71BPtr                   = NULL;
 ADDFUNC* AddLongMonoBPtr                  = NULL;
 ADDFUNC* AddLongStereoBPtr                = NULL;
+ADDFUNC* AddLong71BPtr                    = NULL;
 ADDFUNC* AddLongsMonoBPtr                 = NULL;
 ADDFUNC* AddLongsStereoBPtr               = NULL;
+ADDFUNC* AddLongs71BPtr                   = NULL;
+ADDFUNC* Add71MonoBPtr                    = NULL;
+ADDFUNC* Add71StereoBPtr                  = NULL;
+ADDFUNC* Add7171BPtr                      = NULL;
 
 ADDFUNC* AddLofiByteMonoPtr               = NULL;
 ADDFUNC* AddLofiByteStereoPtr             = NULL;
@@ -221,6 +244,8 @@ static const char VersTag[] =
  "603e" 
  " version.\r\n";
 #endif
+
+enum MixBackend_t          MixBackend     = MB_NATIVE;
 
 /* linker can use symbol b for symbol a if a is not defined */
 #define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
@@ -660,28 +685,47 @@ OpenLibs ( void )
 
   AddByteMonoPtr         = AddByteMono;
   AddByteStereoPtr       = AddByteStereo;
+  AddByte71Ptr           = AddByte71;
   AddBytesMonoPtr        = AddBytesMono;
   AddBytesStereoPtr      = AddBytesStereo;
+  AddBytes71Ptr          = AddBytes71;
   AddWordMonoPtr         = AddWordMono;
   AddWordStereoPtr       = AddWordStereo;
+  AddWord71Ptr           = AddWord71;
   AddWordsMonoPtr        = AddWordsMono;
   AddWordsStereoPtr      = AddWordsStereo;
+  AddWords71Ptr          = AddWords71;
   AddLongMonoPtr         = AddLongMono;
   AddLongStereoPtr       = AddLongStereo;
+  AddLong71Ptr           = AddLong71;
   AddLongsMonoPtr        = AddLongsMono;
   AddLongsStereoPtr      = AddLongsStereo;
+  Add71MonoPtr           = Add71Mono;
+  Add71StereoPtr         = Add71Stereo;
+  AddLongs71Ptr          = AddLongs71;
+  Add7171Ptr             = Add7171;
+ 
   AddByteMonoBPtr        = AddByteMonoB;
   AddByteStereoBPtr      = AddByteStereoB;
+  AddByte71BPtr          = AddByte71B;
   AddBytesMonoBPtr       = AddBytesMonoB;
   AddBytesStereoBPtr     = AddBytesStereoB;
+  AddBytes71BPtr         = AddBytes71B;
   AddWordMonoBPtr        = AddWordMonoB;
   AddWordStereoBPtr      = AddWordStereoB;
+  AddWord71BPtr          = AddWord71B;
   AddWordsMonoBPtr       = AddWordsMonoB;
   AddWordsStereoBPtr     = AddWordsStereoB;
+  AddWords71BPtr         = AddWords71B;
   AddLongMonoBPtr        = AddLongMonoB;
   AddLongStereoBPtr      = AddLongStereoB;
+  AddLong71BPtr          = AddLong71B;
   AddLongsMonoBPtr       = AddLongsMonoB;
   AddLongsStereoBPtr     = AddLongsStereoB;
+  AddLongs71BPtr         = AddLongs71B;
+  Add71MonoBPtr          = Add71MonoB;
+  Add71StereoBPtr        = Add71StereoB;
+  Add7171BPtr            = Add7171B;
 
   AddLofiByteMonoPtr     = AddLofiByteMono;
   AddLofiByteStereoPtr   = AddLofiByteStereo;
@@ -708,6 +752,185 @@ OpenLibs ( void )
   AddLofiLongsMonoBPtr   = AddLofiLongsMonoB;
   AddLofiLongsStereoBPtr = AddLofiLongsStereoB;
 
+  /* MorphOS/PowerUp/WarpOS loading
+
+     Strategy:
+
+      1) If MorphOS is running, use it.
+      2) If PowerUp is running, but not WarpUp, use the m68k core
+      3) If neither of them are running, try WarpUp.
+
+  */
+
+  // Check if MorpOS/PowerUp/WarpUp is running.
+  {
+#if defined( ENABLE_WARPUP )
+    struct Library* ppclib     = NULL;
+    struct Library* powerpclib = NULL;
+#endif
+
+    Forbid();
+    MorphOSRes  = FindResident( "MorphOS" );
+    
+#if defined( ENABLE_WARPUP )
+    powerpclib = (struct Library *) FindName( &SysBase->LibList,
+                                              "powerpc.library" );
+    ppclib     = (struct Library *) FindName( &SysBase->LibList,
+                                              "ppc.library" );
+#endif
+
+    Permit();
+
+#if defined( ENABLE_WARPUP )
+    if( MorphOSRes == NULL && ! ( ppclib != NULL && powerpclib == NULL ) )
+    {
+      // Open WarpUp (but not if MorphOS or PowerUp is active)
+
+      PowerPCBase = OpenLibrary( "powerpc.library", 15 );
+    }
+#endif
+  }
+
+  if( MorphOSRes != NULL )
+  {
+    MixBackend  = MB_NATIVE;
+  }
+
+#if defined( ENABLE_WARPUP )
+
+  else if( PowerPCBase != NULL )
+  {
+    MixBackend = MB_WARPUP;
+
+    /* Load our code to PPC..  */
+
+    PPCObject = AHILoadObject( "DEVS:ahi.device.elf" );
+
+    if( PPCObject != NULL )
+    {
+      ULONG* version = NULL;
+      ULONG* revision = NULL;
+
+      int r = ~0;
+
+      AHIGetELFSymbol( "__LIB_Version", (void*) &version );
+      AHIGetELFSymbol( "__LIB_Revision", (void*) &revision );
+    
+      if( version != NULL && revision != NULL )
+      {
+        if( *version == Version && *revision == Revision )
+        {
+          r &= GetSymbol( AddByteMono     );
+          r &= GetSymbol( AddByteStereo   );
+          r &= GetSymbol( AddBytesMono    );
+          r &= GetSymbol( AddBytesStereo  );
+          r &= GetSymbol( AddWordMono     );
+          r &= GetSymbol( AddWordStereo   );
+          r &= GetSymbol( AddWordsMono    );
+          r &= GetSymbol( AddWordsStereo  );
+          r &= GetSymbol( AddLongMono     );
+          r &= GetSymbol( AddLongStereo   );
+          r &= GetSymbol( AddLongsMono    );
+          r &= GetSymbol( AddLongsStereo  );
+          r &= GetSymbol( AddByteMonoB    );
+          r &= GetSymbol( AddByteStereoB  );
+          r &= GetSymbol( AddBytesMonoB   );
+          r &= GetSymbol( AddBytesStereoB );
+          r &= GetSymbol( AddWordMonoB    );
+          r &= GetSymbol( AddWordStereoB  );
+          r &= GetSymbol( AddWordsMonoB   );
+          r &= GetSymbol( AddWordsStereoB );
+          r &= GetSymbol( AddLongMonoB    );
+          r &= GetSymbol( AddLongStereoB  );
+          r &= GetSymbol( AddLongsMonoB   );
+          r &= GetSymbol( AddLongsStereoB );
+
+          r &= GetSymbol( AddLofiByteMono     );
+          r &= GetSymbol( AddLofiByteStereo   );
+          r &= GetSymbol( AddLofiBytesMono    );
+          r &= GetSymbol( AddLofiBytesStereo  );
+          r &= GetSymbol( AddLofiWordMono     );
+          r &= GetSymbol( AddLofiWordStereo   );
+          r &= GetSymbol( AddLofiWordsMono    );
+          r &= GetSymbol( AddLofiWordsStereo  );
+          r &= GetSymbol( AddLofiLongMono     );
+          r &= GetSymbol( AddLofiLongStereo   );
+          r &= GetSymbol( AddLofiLongsMono    );
+          r &= GetSymbol( AddLofiLongsStereo  );
+          r &= GetSymbol( AddLofiByteMonoB    );
+          r &= GetSymbol( AddLofiByteStereoB  );
+          r &= GetSymbol( AddLofiBytesMonoB   );
+          r &= GetSymbol( AddLofiBytesStereoB );
+          r &= GetSymbol( AddLofiWordMonoB    );
+          r &= GetSymbol( AddLofiWordStereoB  );
+          r &= GetSymbol( AddLofiWordsMonoB   );
+          r &= GetSymbol( AddLofiWordsStereoB );
+          r &= GetSymbol( AddLofiLongMonoB    );
+          r &= GetSymbol( AddLofiLongStereoB  );
+          r &= GetSymbol( AddLofiLongsMonoB   );
+          r &= GetSymbol( AddLofiLongsStereoB );
+
+          if( r != 0 )
+          {
+            char buffer[ 2 ] = "0";
+        
+            GetVar( "PowerPC/UseDisable", buffer, sizeof buffer, 0 );
+        
+            if( buffer[ 0 ] == '1' )
+            {
+              // OK, then...
+            }
+            else
+            {
+              Req( "The WarpUp variable 'PowerPC/UseDisable' must be '1'." );
+
+              AHIUnloadObject( PPCObject );
+              PPCObject  = NULL;
+              MixBackend = MB_NATIVE;
+            }
+          }
+          else
+          {
+            Req( "Unable to fetch all symbols from ELF object." );
+
+            AHIUnloadObject( PPCObject );
+            PPCObject  = NULL;
+            MixBackend = MB_NATIVE;
+          }
+        }
+        else
+        {
+          Req( "'ahi.device.elf' version %ld.%ld doesn't match "
+               "'ahi.device' version %ld.%ld.",
+               *version, *revision, Version, Revision );
+
+          AHIUnloadObject( PPCObject );
+          PPCObject  = NULL;
+          MixBackend = MB_NATIVE;
+        }
+      }
+      else
+      {
+        Req( "Unable to fetch version information from 'ahi.device.elf'." );
+
+        AHIUnloadObject( PPCObject );
+        PPCObject  = NULL;
+        MixBackend = MB_NATIVE;
+      }
+    }
+    else
+    {
+      MixBackend = MB_NATIVE;
+    }
+  }
+
+#endif
+
+  else 
+  {
+    MixBackend = MB_NATIVE;
+  }
+
   OpenahiCatalog(NULL, NULL);
 
 /* #if defined( __amithlon__ ) */
@@ -733,6 +956,15 @@ static void
 CloseLibs ( void )
 {
   CloseahiCatalog();
+
+#if defined( ENABLE_WARPUP )
+  if( PPCObject != NULL )
+  {
+    AHIUnloadObject( PPCObject );
+  }
+
+  CloseLibrary( PowerPCBase );
+#endif
 
   CloseLibrary( (struct Library *) UtilityBase );
   if( TimerIO  != NULL )

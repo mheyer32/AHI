@@ -137,6 +137,7 @@ static struct TagItem boolmap[] =
   { AHIDB_PingPong,  AHIACF_PINGPONG },
   { AHIDB_Record,    AHIACF_RECORD },
   { AHIDB_MultTable, AHIACF_MULTTAB },
+  { AHIDB_MultiChannel, AHIACF_MULTICHANNEL },
   { TAG_DONE,        0 }
 };
 
@@ -149,8 +150,24 @@ CreateAudioCtrl(struct TagItem *tags)
   struct TagItem *dbtags;
   BOOL   error=TRUE;
 
-  audioctrl = AllocVec( sizeof( struct AHIPrivAudioCtrl ),
-			MEMF_PUBLIC | MEMF_CLEAR );
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+#endif
+  }
+
+  audioctrl = AHIAllocVec( sizeof( struct AHIPrivAudioCtrl ),
+                           data_flags );
 
   if( audioctrl != NULL )
   {
@@ -240,7 +257,7 @@ CreateAudioCtrl(struct TagItem *tags)
 
   if(error)
   {
-    FreeVec(audioctrl);
+    AHIFreeVec(audioctrl);
     return NULL;
   }
   else
@@ -520,6 +537,10 @@ _AHI_AllocAudioA( struct TagItem* tags,
   if(!(audioctrl->ahiac_SubAllocRC & AHISF_KNOWSTEREO))
     audioctrl->ac.ahiac_Flags &= ~AHIACF_STEREO;
 
+// Multichannel 7.1
+  if(!(audioctrl->ahiac_SubAllocRC & AHISF_KNOWMULTICHANNEL))
+    audioctrl->ac.ahiac_Flags &= ~AHIACF_MULTICHANNEL;
+  
 // HiFi
 
   if(!(audioctrl->ahiac_SubAllocRC & AHISF_KNOWHIFI))
@@ -531,7 +552,7 @@ _AHI_AllocAudioA( struct TagItem* tags,
 
   if(!(audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING))
   {
-    switch(audioctrl->ac.ahiac_Flags & (AHIACF_STEREO | AHIACF_HIFI))
+    switch(audioctrl->ac.ahiac_Flags & (AHIACF_STEREO | AHIACF_HIFI | AHIACF_MULTICHANNEL))
     {
       case 0:
         audioctrl->ac.ahiac_BuffType=AHIST_M16S;
@@ -546,6 +567,10 @@ _AHI_AllocAudioA( struct TagItem* tags,
       case (AHIACF_STEREO | AHIACF_HIFI):
         audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
         audioctrl->ac.ahiac_BuffType=AHIST_S32S;
+        break;
+      case (AHIACF_STEREO | AHIACF_HIFI | AHIACF_MULTICHANNEL):
+        audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
+        audioctrl->ac.ahiac_BuffType=AHIST_L7_1;
         break;
       default:
         Alert(AT_Recovery|AG_BadParm);
@@ -735,7 +760,7 @@ _AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
     FreeVec( audioctrl->ac.ahiac_PreTimerFunc );
     FreeVec( audioctrl->ac.ahiac_PostTimerFunc );
 
-    FreeVec( audioctrl );
+    AHIFreeVec( audioctrl );
   }
   return 0;
 }

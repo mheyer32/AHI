@@ -181,7 +181,6 @@ AllocDriverData( struct pci_dev*    dev,
 
   // No attenuation and natural tone for all outputs
   emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-  emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
   emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
   emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
 
@@ -202,6 +201,11 @@ AllocDriverData( struct pci_dev*    dev,
   if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
   {
     sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
+
+    // Disable center/LFE to front speakers (Not headphone; it's actially surround mix.)
+    emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL, AC97_MUTE | 0x0808 ); 
+
+    // No attenuation for center/LFE
     emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
   }
   
