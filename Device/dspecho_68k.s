@@ -1,27 +1,14 @@
 * $Id$
 * $Log$
+* Revision 4.6  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.5  1997/08/02 17:11:59  lcs
 * Right. Now echo should work!
 * Also fixed a bug in the 32 bit stereo echo code.
 *
 * Revision 4.4  1997/08/02 16:32:39  lcs
 * Fixed a memory trashing error. Will change it yet again now...
-*
-* Revision 4.3  1997/04/22 01:35:21  lcs
-* This is release 4! Finally.
-*
-* Revision 4.2  1997/04/14 01:50:39  lcs
-* Spellchecked
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.5  1997/03/26 00:14:32  lcs
-* Echo is finally working!
-*
-* Revision 1.4  1997/03/24 12:41:51  lcs
-* Echo rewritten
-*
 *
 
 

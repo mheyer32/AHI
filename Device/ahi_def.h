@@ -1,50 +1,12 @@
+/* :ts= 8 */
+
 /* $Id$
 * $Log$
+* Revision 4.5  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.4  1997/10/11 15:58:13  lcs
 * Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
-*
-* Revision 4.3  1997/07/15 00:52:05  lcs
-* This is the second bugfix release of AHI 4.
-*
-* Revision 4.2  1997/06/02 18:15:02  lcs
-* Added optional clipping when using master volume > 100%.
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.13  1997/03/25 22:27:49  lcs
-* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
-*
-* Revision 1.12  1997/03/24 18:03:10  lcs
-* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
-*
-* Revision 1.11  1997/03/24 12:41:51  lcs
-* Echo rewritten
-*
-* Revision 1.10  1997/03/15 09:51:52  lcs
-* Dynamic sample loading in the device: No more alignment restrictions.
-*
-* Revision 1.9  1997/03/13 00:19:43  lcs
-* Up to 4 device units are now available.
-*
-* Revision 1.8  1997/02/02 22:35:50  lcs
-* Localized it
-*
-* Revision 1.7  1997/02/02 18:15:04  lcs
-* Added protection against CPU overload
-*
-* Revision 1.6  1997/02/01 23:54:26  lcs
-* Rewrote the library open code in C and removed the library bases
-* from AHIBase
-*
-* Revision 1.4  1997/01/04 20:19:56  lcs
-* ahiac_EffChannelInfoStruct addded
-*
-* Revision 1.3  1997/01/04 13:26:41  lcs
-* Debugged CMD_WRITE
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
 *
 */
 
@@ -146,6 +108,62 @@ struct AHISoundData
 	APTR	sd_InputBuffer[3];
 };
 
+/* Private AHIChannelData */
+
+struct AHIChannelData
+{
+	UWORD	cd_EOS;			/* $FFFF: Sample has reached end */
+	UBYTE	cd_FreqOK;		/* $00: Freq=0 ; $FF: Freq<>0 */
+	UBYTE	cd_SoundOK;		/* $00: No sound set ; $FF: S. OK. */
+	ULONG	cd_OffsetI;
+	UWORD	cd_Pad1;
+	UWORD	cd_OffsetF;
+	ULONG	cd_AddI;
+	UWORD	cd_Pad2;
+	UWORD	cd_AddF;
+	APTR	cd_DataStart;
+	ULONG	cd_LastOffsetI;
+	UWORD	cd_Pad3;
+	UWORD	cd_LastOffsetF;
+	ULONG	cd_ScaleLeft;
+	ULONG	cd_ScaleRight;
+	APTR	cd_AddRoutine;
+	Fixed	cd_VolumeLeft;
+	Fixed	cd_VolumeRight;
+	ULONG	cd_Type;
+
+	UWORD	cd_NextEOS;		/* Not in use */
+	UBYTE	cd_NextFreqOK;
+	UBYTE	cd_NextSoundOK;
+	ULONG	cd_NextOffsetI;
+	UWORD	cd_NextPad1;
+	UWORD	cd_NextOffsetF;
+	ULONG	cd_NextAddI;
+	UWORD	cd_NextPad2;
+	UWORD	cd_NextAddF;
+	APTR	cd_NextDataStart;
+	ULONG	cd_NextLastOffsetI;
+	UWORD	cd_NextPad3;
+	UWORD	cd_NextLastOffsetF;
+	ULONG	cd_NextScaleLeft;
+	ULONG	cd_NextScaleRight;
+	APTR	cd_NextAddRoutine;
+	Fixed	cd_NextVolumeLeft;
+	Fixed	cd_NextVolumeRight;
+	ULONG	cd_NextType;
+
+	ULONG	cd_Samples;		/* Samples left to store (down-counter) */
+	ULONG	cd_FirstOffsetI;	/* for linear interpolation routines */
+	LONG	cd_LastSampleL;		/* for linear interpolation routines */
+	LONG	cd_TempLastSampleL;	/* for linear interpolation routines */
+	LONG	cd_LastSampleR;		/* for linear interpolation routines */
+	LONG	cd_TempLastSampleR;	/* for linear interpolation routines */
+
+	struct AHIChannelData *cd_Succ;	/* For the wet and dry lists */
+	UWORD	cd_ChannelNo;
+	UWORD	cd_Pad;
+};
+
 #define AHIACB_NOMIXING	31		/* private ahiac_Flags flag */
 #define AHIACF_NOMIXING	(1L<<31)	/* private ahiac_Flags flag */
 #define AHIACB_NOTIMING	30		/* private ahiac_Flags flag */
@@ -156,12 +174,13 @@ struct AHISoundData
 #define AHIACF_CLIPPING (1L<<28)	/* private ahiac_Flags flag */
 
 /* Private AudioCtrl structure */
+
 struct AHIPrivAudioCtrl
 {
 	struct	AHIAudioCtrlDrv	 ac;
 	struct	Library		*ahiac_SubLib;
 	ULONG			 ahiac_SubAllocRC;
-	APTR			 ahiac_ChannelDatas;
+	struct AHIChannelData	*ahiac_ChannelDatas;
 	struct AHISoundData	*ahiac_SoundDatas;
 	ULONG			 ahiac_BuffSizeNow;	/* How many bytes of the buffer are used? */
 
@@ -183,8 +202,8 @@ struct AHIPrivAudioCtrl
 	struct AHIEffOutputBuffer *ahiac_EffOutputBufferStruct;
 	struct Echo		*ahiac_EffDSPEchoStruct;
 	struct AHIEffChannelInfo *ahiac_EffChannelInfoStruct;
-	APTR			 ahiac_WetList;
-	APTR			 ahiac_DryList;
+	struct AHIChannelData	*ahiac_WetList;
+	struct AHIChannelData	*ahiac_DryList;
 	UBYTE			 ahiac_WetOrDry;
 	UBYTE			 ahiac_MaxCPU;
 	UWORD			 ahiac_Channels2;	/* Max virtual channels/hw channel */
@@ -196,4 +215,4 @@ struct AHIPrivAudioCtrl
 
 
 
-#endif
+#endif /* AHI_DEF_H */

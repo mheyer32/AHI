@@ -1,41 +1,12 @@
+/* :ts=8 */
+
 /* $Id$
 * $Log$
+* Revision 4.4  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.3  1997/05/03 19:59:56  lcs
 * Fixed a race condition (happened with small CMD_WRITE's).
-*
-* Revision 4.2  1997/04/07 13:12:35  lcs
-* Increased playerfreq to 100 Hz again
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.10  1997/03/20 02:07:02  lcs
-* Weiß nicht?
-*
-* Revision 1.9  1997/03/15 09:51:52  lcs
-* Dynamic sample loading in the device: No more alignment restrictions.
-*
-* Revision 1.8  1997/03/13 00:19:43  lcs
-* Up to 4 device units are now available.
-*
-* Revision 1.7  1997/01/31 20:23:05  lcs
-* Enabled stereo samples
-*
-* Revision 1.5  1997/01/15 14:59:50  lcs
-* Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
-*
-* Revision 1.4  1997/01/04 20:19:56  lcs
-* PLAYERFREQ added
-*
-* Revision 1.3  1997/01/04 13:26:41  lcs
-* Debugged CMD_WRITE
-*
-* Revision 1.2  1996/12/21 23:08:47  lcs
-* AHICMD_FINISHED => AHICMD_WRITTEN
-* New stuff in the Voice structure
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
 *
 */
 

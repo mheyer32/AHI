@@ -1,5 +1,10 @@
+/* :ts=8 */
+
 /* $Id$
 * $Log$
+* Revision 4.4  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.3  1997/08/02 17:11:59  lcs
 * Right. Now echo should work!
 *
@@ -38,4 +43,4 @@ struct Echo
 	BYTE	ahiecho_Buffer[0];	// Delay buffer
 };
 
-#endif
+#endif /* DSP_H */

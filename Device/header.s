@@ -1,30 +1,88 @@
 * $Id$
 * $Log$
+* Revision 4.5  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.4  1997/07/15 00:52:05  lcs
 * This is the second bugfix release of AHI 4.
 *
-* Revision 4.3  1997/05/03 19:59:56  lcs
-* *** empty log message ***
+
+
+****** ahi.device/--background-- *******************************************
 *
-* Revision 4.2  1997/04/14 01:50:39  lcs
-* Spellchecked
+*   PURPOSE
 *
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
+*       The 'ahi.device' was first created because the lack of standards
+*       when it comes to sound cards on the Amiga. Another reason was to
+*       make it easier to write multi-channel music programs.
 *
-* Revision 1.4  1997/03/24 12:41:51  lcs
-* Echo rewritten
+*       This device is by no means the final and perfect solution. But
+*       hopefully, it can evolve into something useful until AT brings you
+*       The Real Thing (TM).
 *
-* Revision 1.3  1997/02/02 22:35:50  lcs
-* Localized it
+*   OVERVIEW
 *
-* Revision 1.2  1997/02/01 23:54:26  lcs
-* Rewrote the library open code in C and removed the library bases
-* from AHIBase
+*       Please see the document "AHI Developer's Guide" for more
+*       information.
 *
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
 *
+*       * Driver based
+*
+*       Each supported sound card is controlled by a library-based audio
+*       driver. For a 'dumb' sound card, a new driver could be written in
+*       a few hours. For a 'smart' sound card, it is possible to utilize an
+*       on-board DSP, for example, to maximize performance and sound quality.
+*       For sound cards with own DSP but little or no memory, it is possible
+*       to use the main CPU to mix channels and do the post-processing
+*       with the DSP. Drivers are available for most popular sound cards,
+*       as well as an 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
+*       driver.
+*  
+*       * Fast, powerful mixing routines (yeah, right... haha)
+*  
+*       The device's mixing routines mix 8- or 16-bit signed samples, both
+*       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
+*       (with stereo panning if desired) data, using any number of channels
+*       (as long as 'any' means less than 128).  Tables can be used speed
+*       the mixing up (especially when using 8-bit samples).  The samples can
+*       have any length (including odd) and can have any number of loops.
+*       There are also so-called HiFi mixing routines that can be used, that
+*       use linear interpolation and gives 32 bit output.
+*       
+*       * Support for non-realtime mixing
+*  
+*       By providing a timing feature, it is possible to create high-
+*       quality output even if the processing power is lacking, by saving
+*       the output to disk, for example as an IFF AIFF or 8SXV file.
+*  
+*       * Audio database
+*  
+*       Uses ID codes, much like Screenmode IDs, to select the many
+*       parameters that can be set. The functions to access the audio
+*       database are not too different from those in 'graphics.library'.
+*       The device also features a requester to get an ID code from the
+*       user.
+*  
+*       * Both high- and low-level protocol
+*  
+*       By acting both like a device and a library, AHI gives the programmer
+*       a choice between full control and simplicity. The device API allows
+*       several programs to use the audio hardware at the same time, and
+*       the AUDIO: dos-device driver makes playing and recording sound very
+*       simple for both the programmer and user.
+*  
+*       * Future Compatible
+*  
+*       When AmigaOS gets device-independent audio worth it's name, it should
+*       not be too difficult to write a driver for AHI, allowing applications
+*       using 'ahi.device' to automatically use the new OS interface. At
+*       least I hope it wont.
+*
+*
+****************************************************************************
+*
+*
+
 
 	include	devices/timer.i
 	include	exec/exec.i
@@ -213,7 +271,7 @@ _timeval:	dc.l	0
 ** initRoutine ****************************************************************
 *******************************************************************************
 
-	XREF	initcode
+	XREF	_initcode
 	XREF	_OpenLibs
 
 initRoutine:
@@ -242,7 +300,7 @@ initRoutine:
 	tst.l	d0
 	beq	.exit
 
-	jsr	initcode
+	jsr	_initcode
 
 	move.l	a5,d0
 .exit

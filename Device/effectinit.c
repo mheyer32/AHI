@@ -1,31 +1,17 @@
 /* $Id$
 * $Log$
+* Revision 4.6  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.5  1997/10/23 01:10:03  lcs
 * Better debug output.
-*
-* Revision 4.4  1997/08/02 17:11:59  lcs
-* Right. Now echo should work!
-*
-* Revision 4.3  1997/08/02 16:32:39  lcs
-* Fixed a memory trashing error. Will change it yet again now...
-*
-* Revision 4.2  1997/06/02 18:15:02  lcs
-* Renamed it from dspinit.c to effectinit.c
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.3  1997/03/26 00:14:32  lcs
-* Echo is finally working!
-*
-* Revision 1.1  1997/03/24 12:41:51  lcs
-* Initial revision
 *
 */
 
 #include <exec/memory.h>
 #include <proto/exec.h>
 
+#include <CompilerSpecific.h>
 #include "ahi_def.h"
 #include "dsp.h"
 
@@ -35,48 +21,105 @@
 #include "effectinit_protos.h"
 #endif
 
+#include "asmfuncs_protos.h"
+#include "mixer_protos.h"
+
 #endif
 
 
-__asm extern void do_DSPEchoMono16(void);
-__asm extern void do_DSPEchoMono16Fast(void);
-__asm extern void do_DSPEchoStereo16(void);
-__asm extern void do_DSPEchoStereo16Fast(void);
-__asm extern void do_DSPEchoMono32(void);
-__asm extern void do_DSPEchoStereo32(void);
-__asm extern void do_DSPEchoMono16NCFM(void);
-__asm extern void do_DSPEchoStereo16NCFM(void);
-__asm extern void do_DSPEchoMono16NCFMFast(void);
-__asm extern void do_DSPEchoStereo16NCFMFast(void);
+ASMCALL void do_DSPEchoMono16 ( void );
+ASMCALL void do_DSPEchoMono16Fast ( void );
+ASMCALL void do_DSPEchoStereo16 ( void );
+ASMCALL void do_DSPEchoStereo16Fast ( void );
+ASMCALL void do_DSPEchoMono32 ( void );
+ASMCALL void do_DSPEchoStereo32 ( void );
+ASMCALL void do_DSPEchoMono16NCFM ( void );
+ASMCALL void do_DSPEchoStereo16NCFM ( void );
+ASMCALL void do_DSPEchoMono16NCFMFast ( void );
+ASMCALL void do_DSPEchoStereo16NCFMFast ( void );
 
-__asm extern LONG Fixed2Shift(register __d0 Fixed);
 
-__asm extern void update_MasterVolume(register __a2 struct AHIPrivAudioCtrl *,
-    register __a5 struct AHIBase *AHIBase);
+/***********************************************
+***** NOTE: The mixing routine might execute while we are inside these
+***** functions!
+***********************************************/
 
-/**
-*** DSPECHO
-**/
+
+/******************************************************************************
+** MASTERVOLUME ***************************************************************
+******************************************************************************/
+
+ASMCALL BOOL 
+update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+                      REG(a5, struct AHIBase *AHIBase) )
+{
+  struct Library        *AHIsubBase;
+  struct AHIChannelData *cd;
+  Fixed                  volume;
+  int                    i;
+
+  if(audioctrl->ac.ahiac_Flags & AHIACF_CLIPPING)
+  {
+    volume = 0x10000;
+  }
+  else
+  {
+    volume = audioctrl->ahiac_SetMasterVolume;
+  }
+
+  /* Scale to what the echo effect think is best... */
+  volume = (volume * (audioctrl->ahiac_EchoMasterVolume >> 8)) >> 8;
+
+  /* This is the actual master volume in use */
+  audioctrl->ahiac_MasterVolume = volume;
+
+  /* Update the mastervolume table, and the volume tables */
+  calcMasterVolumeTable(audioctrl, AHIBase);
+  calcSignedTable(audioctrl, AHIBase);
+  calcUnsignedTable(audioctrl, AHIBase);
+
+  /* Update volume for channels */
+
+  AHIsubBase = audioctrl->ahiac_SubLib;
+
+  AHIsub_Disable(&audioctrl->ac);
+
+  for(i = audioctrl->ac.ahiac_Channels, cd = audioctrl->ahiac_ChannelDatas;
+      i > 0;
+      i--, cd++)
+  {
+    SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
+                     &cd->cd_ScaleLeft, &cd->cd_ScaleRight, &cd->cd_AddRoutine);
+    SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
+                     &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, &cd->cd_NextAddRoutine);
+  }
+
+  AHIsub_Enable(&audioctrl->ac);
+
+  return TRUE;
+}
+
+
+/******************************************************************************
+** DSPECHO ********************************************************************
+******************************************************************************/
 
 #define mode_stereo 1
 #define mode_32bit  2
 #define mode_ncnm   4       // No cross, no mix
 #define mode_fast   8
 
-// NOTE: The mixing routine might execute while we are inside these
-// functions!
-
-__asm BOOL update_DSPEcho(
-    register __a0 struct AHIDSPEcho *echo,
-    register __a2 struct AHIPrivAudioCtrl *actrl,
-    register __a5 struct AHIBase *AHIBase)
+ASMCALL BOOL
+update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
+                 REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+                 REG(a5, struct AHIBase *AHIBase) )
 {
   ULONG length, samplesize;
   struct Echo *es;
 
-  free_DSPEcho(actrl, AHIBase);
+  free_DSPEcho(audioctrl, AHIBase);
 
-  switch(actrl->ac.ahiac_BuffType)
+  switch(audioctrl->ac.ahiac_BuffType)
   {
     case AHIST_M16S:
     case AHIST_M32S:
@@ -93,7 +136,7 @@ __asm BOOL update_DSPEcho(
       break;
   }
 
-  length = samplesize * (echo->ahiede_Delay + actrl->ac.ahiac_MaxBuffSamples);
+  length = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
 
   es = AllocVec(sizeof(struct Echo) + length, MEMF_PUBLIC|MEMF_CLEAR);
   
@@ -105,10 +148,10 @@ __asm BOOL update_DSPEcho(
     es->ahiecho_SrcPtr       = es->ahiecho_Buffer;
     es->ahiecho_DstPtr       = es->ahiecho_Buffer + (samplesize * echo->ahiede_Delay);
     es->ahiecho_EndPtr       = es->ahiecho_Buffer + length;
-    es->ahiecho_BufferLength = echo->ahiede_Delay + actrl->ac.ahiac_MaxBuffSamples;
+    es->ahiecho_BufferLength = echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples;
     es->ahiecho_BufferSize   = length;
 
-    switch(actrl->ac.ahiac_BuffType)
+    switch(audioctrl->ac.ahiac_BuffType)
     {
       case AHIST_M16S:
         echo->ahiede_Cross = 0;
@@ -141,17 +184,17 @@ __asm BOOL update_DSPEcho(
     if((echo->ahiede_Cross == 0) && (echo->ahiede_Mix == 0x10000))
     {
       mode |= mode_ncnm;
-      actrl->ahiac_EchoMasterVolume = es->ahiecho_FeedbackNS;
+      audioctrl->ahiac_EchoMasterVolume = es->ahiecho_FeedbackNS;
     }
     else
     {
-      actrl->ahiac_EchoMasterVolume = 0x10000;
+      audioctrl->ahiac_EchoMasterVolume = 0x10000;
     }
 
-    update_MasterVolume(actrl,AHIBase);
+    update_MasterVolume(audioctrl,AHIBase);
 
     // No fast echo in 32 bit (HiFi) modes!
-    switch(actrl->ac.ahiac_BuffType)
+    switch(audioctrl->ac.ahiac_BuffType)
     {
       case AHIST_M16S:
       case AHIST_S16S:
@@ -254,22 +297,134 @@ __asm BOOL update_DSPEcho(
     }
 
     // Structure filled, make it available to the mixing routine
-    actrl->ahiac_EffDSPEchoStruct = es;
+
+    audioctrl->ahiac_EffDSPEchoStruct = es;
+
+    return TRUE;
   }
+
   return FALSE;
 }
 
 
-__asm void free_DSPEcho(
-    register __a2 struct AHIPrivAudioCtrl *actrl,
-    register __a5 struct AHIBase *AHIBase)
+ASMCALL void 
+free_DSPEcho ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+               REG(a5, struct AHIBase *AHIBase) )
 {
-  void *p = actrl->ahiac_EffDSPEchoStruct;
+  void *p = audioctrl->ahiac_EffDSPEchoStruct;
 
   // Hide it from mixing routine before freeing it!
-  actrl->ahiac_EffDSPEchoStruct = NULL;
+  audioctrl->ahiac_EffDSPEchoStruct = NULL;
   FreeVec(p);
 
-  actrl->ahiac_EchoMasterVolume = 0x10000;
-  update_MasterVolume(actrl,AHIBase);
+  audioctrl->ahiac_EchoMasterVolume = 0x10000;
+  update_MasterVolume(audioctrl,AHIBase);
+}
+
+
+
+
+/******************************************************************************
+** DSPMASK ********************************************************************
+******************************************************************************/
+
+static void
+addchannel ( struct AHIChannelData **list, struct AHIChannelData *cd )
+{
+  struct AHIChannelData *ptr;
+
+  if(*list == NULL)
+  {
+    *list = cd;
+  }
+  else
+  {
+    ptr = *list;
+    while(ptr->cd_Succ != NULL)
+    {
+      ptr = ptr->cd_Succ;
+    }
+    ptr->cd_Succ = cd;
+  }
+
+  cd->cd_Succ = NULL;
+}
+
+ASMCALL BOOL
+update_DSPMask ( REG(a0, struct AHIEffDSPMask *mask),
+                 REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+                 REG(a5, struct AHIBase *AHIBase) )
+{
+  struct AHIChannelData *cd, *wet = NULL, *dry = NULL;
+  struct Library        *AHIsubBase;
+  int                    i;
+  UBYTE                 *flag;
+
+  if(mask->ahiedm_Channels != audioctrl->ac.ahiac_Channels)
+  {
+    return FALSE;
+  }
+
+  cd = audioctrl->ahiac_ChannelDatas;
+
+  flag = mask->ahiedm_Mask;
+
+  AHIsubBase = audioctrl->ahiac_SubLib;
+
+  AHIsub_Disable(&audioctrl->ac);
+
+  for(i = 0; i < audioctrl->ac.ahiac_Channels; i++)
+  {
+    if(*flag == AHIEDM_WET)
+    {
+      addchannel(&wet, cd);
+    }
+    else
+    {
+      addchannel(&dry, cd);
+    }
+    
+    flag++;
+    cd++;
+  }
+
+  audioctrl->ahiac_WetList = wet;
+  audioctrl->ahiac_DryList = dry;
+
+  AHIsub_Enable(&audioctrl->ac);
+
+  return TRUE;
+}
+
+
+ASMCALL void
+clear_DSPMask ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+                REG(a5, struct AHIBase *AHIBase) )
+{
+  struct AHIChannelData *cd;
+  struct Library        *AHIsubBase;
+  int                    i;
+
+  // Make all channels wet
+
+  cd = audioctrl->ahiac_ChannelDatas;
+
+  audioctrl->ahiac_WetList = cd;
+  audioctrl->ahiac_DryList = NULL;
+
+  AHIsubBase = audioctrl->ahiac_SubLib;
+
+  AHIsub_Disable(&audioctrl->ac);
+
+  for(i = 0; i < audioctrl->ac.ahiac_Channels - 1; i++)
+  {
+    // Set link to next channel
+    cd->cd_Succ = cd + 1;
+    cd++;
+  }
+
+  // Clear the last link;
+  cd->cd_Succ = NULL;
+
+  AHIsub_Enable(&audioctrl->ac);
 }

@@ -1,73 +1,14 @@
 /* $Id$
 * $Log$
+* Revision 4.6  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+*
 * Revision 4.5  1997/10/23 01:10:03  lcs
 * Better debug output.
 *
-* Revision 4.4  1997/06/21 18:13:43  lcs
-* ahiam_AudioID and ahiam_MixFreq are now left unchanged if the user
-* cancels the audio mode requester.
-*
-* Changed BOOL return values to ULONG in ordet to set all 32 bits.
-*
-* Revision 4.3  1997/05/28 20:35:18  lcs
-* AudioID and MixFreq is not changed if the user cancels the requester
-* anymore.
-*
-* Revision 4.2  1997/04/14 01:50:39  lcs
-* Spellchecked
-*
-* Revision 4.1  1997/04/02 22:28:11  lcs
-* Bumped to version 4
-*
-* Revision 1.16  1997/03/25 22:27:49  lcs
-* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
-*
-* Revision 1.15  1997/03/08 18:12:56  lcs
-* The freqgadget wasn't ghosted if the requester was opened
-* with audioid set to AHI_DEFAULT_ID. Now it is
-*
-* Revision 1.14  1997/02/15 14:02:02  lcs
-* All functions that take an audio mode id as input can now use
-* AHI_DEFAULT_ID as well.
-*
-* Revision 1.13  1997/02/14 18:43:31  lcs
-* AHIR_DoDefaultMode added
-*
-* Revision 1.12  1997/02/12 15:32:45  lcs
-* Moved each autodoc header to the file where the function is
-*
-* Revision 1.11  1997/02/10 10:36:48  lcs
-* Really, I fixed it! Trust me.
-*
-* Revision 1.10  1997/02/10 10:32:28  lcs
-* Fixed a bug in the mode list building code (unterminated taglist)
-*
-* Revision 1.9  1997/02/10 02:23:06  lcs
-* Infowindow in the requester added.
-*
-* Revision 1.8  1997/02/09 18:12:23  lcs
-* Default audio mode added? Don't remember...
-*
-* Revision 1.7  1997/02/04 22:14:27  lcs
-* The users preffered audio mode can now be selected in the requester
-*
-* Revision 1.6  1997/02/03 16:21:23  lcs
-* AHIR_Locale should work now
-*
-* Revision 1.5  1997/02/02 22:35:50  lcs
-* Localized it
-*
-* Revision 1.3  1997/01/04 20:19:56  lcs
-* Changed the AHI_DEBUG levels
-*
-* Revision 1.2  1996/12/21 23:08:47  lcs
-* Replaced all EQ with ==
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
-*
 */
 
+#include <CompilerSpecific.h>
 #include "ahi_def.h"
 
 #include <math.h>
@@ -95,7 +36,7 @@
 #include "requester_protos.h"
 #endif
 
-#include "cfuncs_protos.h"
+#include "modeinfo_protos.h"
 #include "debug_protos.h"
 #endif
 
@@ -968,7 +909,9 @@ static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
 *
 */
 
-__asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct TagItem *tags )
+ASMCALL struct AHIAudioModeRequester *
+AllocAudioRequestA( REG(a0, struct TagItem *tags),
+                    REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHIAudioModeRequesterExt *req;
 
@@ -1184,7 +1127,10 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 *
 */
 
-__asm ULONG AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, register __a1 struct TagItem *tags )
+ASMCALL ULONG
+AudioRequestA( REG(a0, struct AHIAudioModeRequester *req_in),
+               REG(a1, struct TagItem *tags ),
+               REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHIAudioModeRequesterExt *req=(struct AHIAudioModeRequesterExt *)req_in;
   struct MinList list;
@@ -1534,7 +1480,9 @@ __asm ULONG AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, r
 *
 */
 
-__asm void FreeAudioRequest( register __a0 struct AHIAudioModeRequester *req)
+ASMCALL void
+FreeAudioRequest( REG(a0, struct AHIAudioModeRequester *req),
+                  REG(a6, struct AHIBase *AHIBase) )
 {
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)

@@ -1,78 +1,14 @@
 # $Id$
 # $Log$
+# Revision 4.15  1997/12/21 17:41:50  lcs
+# Major source cleanup, moved some functions to separate files.
+#
 # Revision 4.14  1997/11/23 13:06:18  lcs
 # Reordered the object files (problem with 16 bit offsets).
 #
 # Revision 4.13  1997/10/23 01:10:03  lcs
 # Better debug output.
-#
-# Revision 4.11  1997/07/15 02:40:40  lcs
-# Well, close. Fixed for the new fd2pragma version.
-#
-# Revision 4.10  1997/07/15 00:52:05  lcs
-# This is the second bugfix release of AHI 4.
-#
-# Revision 4.9  1997/06/02 18:15:02  lcs
-# Added optional clipping when using master volume > 100%.
-#
-# Revision 4.8  1997/05/04 15:59:30  lcs
-# Separated the documentation from the device code.
-#
-# Revision 4.7  1997/05/03 19:59:56  lcs
-# Catalog fixes, and more
-#
-# Revision 4.6  1997/04/22 01:35:21  lcs
-# This is release 4! Finally.
-#
-# Revision 4.5  1997/04/15 12:22:14  lcs
-# Catalog changes.
-#
-# Revision 4.3  1997/04/07 13:12:35  lcs
-# Better handling of catalog files now (no need to change the makefile
-# when new translations are added).
-#
-# Revision 4.1  1997/04/02 22:28:11  lcs
-# Bumped to version 4
-#
-# Revision 1.19  1997/03/27 12:16:27  lcs
-# Norwegian translation added.
-# Amiga E modules added.
-#
-# Revision 1.18  1997/03/24 12:43:09  lcs
-# Echo rewritten
-#
-# Revision 1.14  1997/02/20 10:26:13  lcs
-# New Flexcat caused some problems
-#
-# Revision 1.13  1997/02/12 15:32:45  lcs
-# Moved each autodoc header to the file where the function is
-#
-# Revision 1.12  1997/02/10 02:23:06  lcs
-# Infowindow in the requester added.
-#
-# Revision 1.11  1997/02/09 18:12:23  lcs
-# userdoc: and support:
-#
-# Revision 1.8  1997/02/02 22:35:50  lcs
-# Localized it
-#
-# Revision 1.7  1997/02/01 19:44:18  lcs
-# Added dspecho.a
-#
-# Revision 1.5  1997/01/21 22:20:08  lcs
-# Tried to make "makdedepend" work (both the ADE and Meixner's
-# version), but none of them accepted assembler sources (quite
-# understanable, but still unfortunate).
-#
-# Revision 1.4  1997/01/15 14:59:50  lcs
-# Added include support for StormC
-#
-# Revision 1.2  1996/12/21 13:38:17  lcs
-# Added default rules
-#
-# Revision 1.1  1996/12/21 13:05:12  lcs
-# Initial revision
-#
+
 
 ##
 ## Definitions
@@ -80,59 +16,87 @@
 ###############################################################################
 
 CPU	= 68030
-OPTIMIZE= #OPTIMIZE OPTTIME OPTSCHED
-DEBUG   = DEBUG=FULL
+OPTIMIZE= OPTIMIZE OPTTIME OPTSCHED
+DEBUG	= DEBUG=FULL
 TARGET	= AHI:User/Devs/ahi.device
 
-SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c debug.c devcommands.c\
-device.c devsupp.a dspecho.a effectinit.c footer.a header.a\
-requester.c ahi.cd C_c_AHI.sd C_h_AHI.sd
+SRCCOMMON = asmfuncs.a audioctrl.c database.c debug.c devcommands.c device.c\
+devsupp.a effectinit.c footer.a header.a modeinfo.c requester.c sound.c
 
-RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h smakefile
+SRC68K	= dspecho_68k.a mixer_68k.a
 
-OBJECTS = header.o addroutines.o effectinit.o dspecho.o cfuncs.o asmfuncs.o \
-debug.o database.o requester.o devcommands.o device.o devsupp.o localize.o\
-footer.o
+SRCPPC	= dspecho_generic.c mixer_generic.c
+
+SOURCES = $(SRCCOMMON) $(SRC68K) $(SRCPPC)
+
+
+PROTOS = CSOURCE asmfuncs.a debug.c CSOURCE devsupp.a requester.c device.c\
+audioctrl.c mixer_generic.c CSOURCE mixer_68k.a modeinfo.c database.c\
+effectinit.c devcommands.c sound.c
+
+
+OBJCOMMON = header.o device.o devcommands.o devsupp.o\
+localize.o modeinfo.o requester.o database.o debug.o\
+asmfuncs.o audioctrl.o effectinit.o sound.o footer.o
+
+OBJ68K	= dspecho_68k.o mixer_68k.o
+
+OBJPPC	= dspecho_generic.o mixer_generic.o
+
+OBJECTS68k = $(OBJCOMMON) $(OBJ68K)
+OBJECTSPPC = $(OBJCOMMON) $(OBJPPC)
+
+OBJECTS	= $(OBJCOMMON) $(OBJ68K) $(OBJPPC)
+
+RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h dsp.i dsp.h\
+ahi.cd C_c_AHI.sd C_h_AHI.sd smakefile
+
 
 CCOMP	= SC:c/sc
 CFLAGS = $(DEBUG) CODE=FAR DATA=FARONLY ABSFUNCPOINTER PARAMETERS=REGISTERS\
 NOSTACKCHECK UNSIGNEDCHARS COMMENTNEST NOVERSION UTILITYLIBRARY NOICONS\
-MEMORYSIZE=HUGE STRINGSECTION=CODE GST=include:all.gst CPU=$(CPU)\
-$(OPTIMIZE)
+MEMORYSIZE=HUGE STRINGSECTION=CODE GST=gst CPU=$(CPU) $(OPTIMIZE)
 
 ASM	= Programmering:PhxAss/Bin/PhxAss
 AFLAGS	= I INCLUDE: SYMDEBUG LINEDEBUG QUIET NOEXE OPT NRQBPSMD MACHINE $(CPU)
 
 LINKER	= SC:c/slink
-LFLAGS	= ADDSYM NOALVS NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy\
-          MAP ahi.map
+LFLAGS	= ADDSYM NOICONS SMALLDATA SMALLCODE DEFINE @__chkabort=@__dummy\
+          MAP ahi.map NOALVS LIB LIB:scnb.lib
 LDEBUG	= LIB:debug.lib LIB:amiga.lib
 
 
 ##
-## Target
+## Targets
 ##	
 ###############################################################################
 
-$(TARGET): $(OBJECTS)
-	$(LINKER) $(LFLAGS) TO Devs:ahi.device FROM $(OBJECTS) LIB LIB:sc.lib $(LDEBUG)
-	slink FROM Devs:ahi.device to $(TARGET) ND NOICONS
+$(TARGET): $(OBJECTS68K)
+	$(LINKER) $(LFLAGS) $(LDEBUG) TO Devs:ahi.device FROM $(OBJECTS68K)
+	$(LINKER) FROM Devs:ahi.device to $(TARGET) ND NOICONS
+
+$(TARGET).PPC: $(OBJECTSPPC)
+	$(LINKER) $(LFLAGS) $(LDEBUG) TO Devs:ahi.device FROM $(OBJECTSPPC)
+	$(LINKER) FROM Devs:ahi.device to $(TARGET) ND NOICONS
 
 
 ##
-## CPU=68000 and CPU=68030 versions
+## CPU=68000, CPU=68030 and CPU=68060 versions
 ##
 ###############################################################################
 
-cpu:
-	smake clean
-	smake CPU=68000
+device:
+	smake allclean
+	smake protos
+	--copy mixer_68k_protos.h mixer_protos.h
+	--copy dspecho_68k_protos.h dspecho_protos.h
+	smake $(TARGET) CPU=68000
 	move $(TARGET) $(TARGET).000
 	smake clean
-	smake CPU=68060
+	smake $(TARGET) CPU=68060
 	move $(TARGET) $(TARGET).060
 	smake clean
-	smake
+	smake $(TARGET) CPU=68030
 
 
 ##
@@ -148,7 +112,7 @@ support: includes autodocs catalogs
 ##
 ###############################################################################
 
-dist:	protos cpu support
+dist:	device support
 
 
 ##
@@ -161,36 +125,34 @@ ahi.device_rev.i: $(SOURCES)
 
 
 ##
-## All objects
+## Depend
 ##
 ###############################################################################
 
-.a.o:
-	$(ASM) $(AFLAGS) $*.a
+depend:
+	makedepend -f smakefile $(SOURCES)
 
-.c.o:
-	$(CCOMP) $(CFLAGS) $*.c
 
-localize.c:	ahi.cd C_c_AHI.sd
-	FlexCat ahi.cd localize.c=C_c_AHI.sd 
+##
+## Check in all files
+##
+###############################################################################
 
-localize.h:	ahi.cd C_c_AHI.sd
-	FlexCat ahi.cd localize.h=C_h_AHI.sd
+ci:
+	ci -l4 $(RCSFILES)
 
-addroutines.o:	addroutines.a ahi_def.i dsp.i
-asmfuncs.o:	asmfuncs.a ahi_def.i
-cfuncs.o:	cfuncs.c localize.h ahi_def.h
-database.o:	database.c ahi_def.h
-debug.o:	debug.c
-devcommands.o:	devcommands.c ahi_def.h ahi_device.h
-device.o:	device.c localize.h ahi_def.h ahi_device.h
-devsupp.o:	devsupp.a
-effectinit.o:	effectinit.c ahi_def.h dsp.h
-dspecho.o:	dspecho.a ahi_def.i dsp.i
-footer.o:	footer.a
-header.o:	header.a ahi_def.i ahi.device_rev.i
-localize.o:	localize.c
-requester.o:	requester.c localize.h ahi_def.h
+
+##
+## Remove all objects
+##
+###############################################################################
+
+clean:
+	--delete \#?.(o|lnk|info|map|lst|bak) localize.c localize.h gst QUIET
+
+allclean:
+	smake clean
+	--delete $(TARGET) $(TARGET).000 $(TARGET).060 \#?protos.h
 
 
 ##
@@ -198,32 +160,22 @@ requester.o:	requester.c localize.h ahi_def.h
 ##
 ###############################################################################
 
-protos: device_protos.h cfuncs_protos.h database_protos.h requester_protos.h\
-	devcommands_protos.h devsupp_protos.h effectinit_protos.h debug_protos.h
+protos:
+	$(CCOMP) GPROTO $(CFLAGS) $(PROTOS)
+	--copy mixer_68k_protos.h mixer_protos.h
+	--copy dspecho_68k_protos.h dspecho_protos.h
 
-device_protos.h: device.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
 
-devcommands_protos.h: devcommands.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
+##
+## GST
+##
+###############################################################################
 
-devsupp_protos.h: devsupp.a
-	$(CCOMP) GPROTO $(CFLAGS) CSOURCE $<
 
-cfuncs_protos.h: cfuncs.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
-
-database_protos.h: database.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
-
-requester_protos.h: requester.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
-
-effectinit_protos.h: effectinit.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
-
-debug_protos.h: debug.c
-	$(CCOMP) GPROTO $(CFLAGS) $<
+gst:	ahi_def.h ahi_device.h dsp.h localize.h
+	grep -h \#include *.c > gst.c
+	$(CCOMP) NOOBJNAME $(CFLAGS) MGST=gst gst.c
+	delete gst.c QUIET
 
 ##
 ## Build include files
@@ -311,22 +263,80 @@ catalogs:
 
 
 ##
-## Check in all files
+## All objects
 ##
 ###############################################################################
 
-ci:
-	ci -l $(RCSFILES)
+.a.o:
+	$(ASM) $(AFLAGS) $*.a
 
+.c.o:
+	$(CCOMP) $(CFLAGS) $*.c
+
+localize.c:	ahi.cd C_c_AHI.sd
+	FlexCat ahi.cd localize.c=C_c_AHI.sd 
+
+localize.h:	ahi.cd C_c_AHI.sd
+	FlexCat ahi.cd localize.h=C_h_AHI.sd
+
+localize.o:	localize.c ahi_def.h
+
+# Asm dependencies
+
+asmfuncs.o:	asmfuncs.a ahi_def.i
+devsupp.o:	devsupp.a
+dspecho_68k.o:	dspecho_68k.a ahi_def.i dsp.i
+footer.o:	footer.a
+header.o:	header.a ahi_def.i ahi.device_rev.i
+	$(ASM) $(AFLAGS) header.a
+
+mixer_68k.o:	mixer_68k.a ahi_def.i dsp.i
+	
 
 ##
-## Remove all objects
+## Dependencies (do not edit after this line, it's autogenerated data!)
 ##
 ###############################################################################
 
-clean:
-	--delete \#?.(o|lnk|info|map|lst) localize.c localize.h QUIET
+#DEPENDENCIES
 
-allclean:
-	smake clean
-	--delete $(TARGET) $(TARGET).000 $(TARGET).060
+asmfuncs.o: asmfuncs.a
+
+audioctrl.o: audioctrl.c ahi_def.h ahi_device.h dsp.h\
+	 audioctrl_protos.h database_protos.h debug_protos.h
+
+database.o: database.c ahi_def.h ahi_device.h dsp.h database_protos.h\
+	 debug_protos.h
+
+debug.o: debug.c ahi_def.h ahi_device.h dsp.h debug_protos.h
+
+devcommands.o: devcommands.c ahi_def.h ahi_device.h dsp.h\
+	 devcommands_protos.h device_protos.h devsupp_protos.h
+
+device.o: device.c ahi_def.h ahi_device.h dsp.h localize.h\
+	 device_protos.h devcommands_protos.h
+
+devsupp.o: devsupp.a
+
+effectinit.o: effectinit.c ahi_def.h ahi_device.h dsp.h\
+	 effectinit_protos.h
+
+footer.o: footer.a
+
+modeinfo.o: modeinfo.c ahi_def.h ahi_device.h dsp.h localize.h\
+	 modeinfo_protos.h audioctrl_protos.h debug_protos.h
+
+requester.o: requester.c ahi_def.h ahi_device.h dsp.h localize.h\
+	 requester_protos.h modeinfo_protos.h
+
+sound.o: sound.c ahi_def.h ahi_device.h dsp.h sound_protos.h\
+	 effectinit_protos.h mixer_protos.h
+
+dspecho_68k.o: dspecho_68k.a
+
+mixer_68k.o: mixer_68k.a
+
+dspecho_generic.o: dspecho_generic.c
+
+mixer_generic.o: mixer_generic.c
+
