@@ -726,10 +726,12 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
 
     AHIsub_Update( AHISF_PLAY, AudioCtrl );
     
-    /* Allocate a new mixing buffer */
+    /* Allocate a new mixing buffer. Note: The buffer must be cleared, since
+       it might not be filled by the mixer software interrupt because of
+       pretimer/posttimer! */
 
     dd->mixbuffer = AllocVec( AudioCtrl->ahiac_BuffSize,
-			      MEMF_ANY | MEMF_PUBLIC );
+			      MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR );
 
     if( dd->mixbuffer == NULL )
     {
@@ -857,7 +859,7 @@ intAHIsub_Start( REG( d0, ULONG Flags ),
     emu10k1_writefn0( &dd->card, TIMER_RATE, 48000 / 1000 );
     emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
     
-    emu10k1_voices_start( &dd->voice, 1, 0 );
+    emu10k1_voices_start( &dd->voice, 1, 0 );    
   }
 
   if( Flags & AHISF_RECORD )
