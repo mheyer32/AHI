@@ -31,10 +31,11 @@
 #include "ahi_def.h"
 #include "mixer.h"
 
+
 int
-entry( struct Hook *Hook, 
-       void *dst, 
-       struct AHIPrivAudioCtrl *audioctrl );
+CallMixroutine( struct Hook *Hook, 
+                void *dst, 
+                struct AHIPrivAudioCtrl *audioctrl );
 
 void
 FlushCache( void* address, unsigned long length );
@@ -48,8 +49,34 @@ InvalidateCache( void* address, unsigned long length );
 ULONG
 InternalSampleFrameSize( ULONG sampletype );
 
+
+asm( "
+        .align  2
+        .globl  KernelObject
+      	.type   KernelObject,@function
+
+KernelObject:
+        stwu    1,-24(1)
+        mflr    0
+        stw     0,28(1)
+        stw     11,8(1)
+        stw     12,12(1)
+        stw     13,16(1)
+
+        bl      CallMixroutine
+
+        lwz     11,8(1)
+        lwz     12,12(1)
+        lwz     13,16(1)
+        lwz     0,28(1)
+        mtlr    0
+        addi    1,1,24
+        blr
+");
+
+
 int
-entry( struct Hook *Hook, 
+CallMixroutine( struct Hook *Hook, 
        void *dst, 
        struct AHIPrivAudioCtrl *audioctrl )
 {
@@ -61,8 +88,7 @@ entry( struct Hook *Hook,
   audioctrl->ahiac_PPCCommand = AHIAC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
-
-  // Invalidate dynamic sample sounds.
+  // Invalidate dynamic sample sounds (which is faster than flushing).
   // Currently, the PPC is assumed not to modify dynamic samples.
   // It makes sense as long as no PPC hooks can be called from AHI.
   // Anyway, each dynamic sample is flushed on the m68k side before
@@ -79,7 +105,7 @@ entry( struct Hook *Hook,
     {
       if( sd->sd_Addr == NULL )
       {
-        // *Flush* all and exit
+        // *Flush* all and exit (add an L2 cache and listen to random noise!)
 
         FlushCacheAll();
         break;
@@ -95,14 +121,13 @@ entry( struct Hook *Hook,
     sd++;
   }
 
-
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
 /*
-  for( i = 0; i < 15000; i++ )
+  for( i = 0; i < 150; i++ )
   {
     audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
-    *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+//    *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
     while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
   }
 */
@@ -112,7 +137,7 @@ entry( struct Hook *Hook,
   FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_QUIT;
-  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
@@ -132,6 +157,7 @@ asm( "
  *     assumes cache block granule is 32 bytes
  */
 
+        .align  2
         .globl  FlushCache
       	.type   FlushCache,@function
 
@@ -140,15 +166,16 @@ FlushCache:
         srwi    4,4,5           /* convert to cache blocks to flush */
         mtctr   4
         li      4,0
-fc_loop:
+1:
         dcbf    3,4             /* flush data cache block to mem */
         addi    4,4,32
-        bdnz    fc_loop
+        bdnz    1b
 
         sync                    /* force mem transactions to complete */
         blr                     /* return to calling routine */
 
 
+        .align  2
         .globl  FlushCacheAll
       	.type   FlushCacheAll,@function
 
@@ -157,17 +184,17 @@ FlushCacheAll:
         li      3,-16           /* Start at address 0 */
         li      4,2*256         /* 2 ways, 256 sets per way */
         mtctr   4               /* (use CTR register to save an instruction) */
-fca_l1:
+1:
         lwzu    5,16(3)         /* load a cache line if it's not already present */
-        bdnz    fca_l1
+        bdnz    1b
 
 /* Flush those known contents from the cache. */
         li      3,0             /* Read 2*128*16 bytes at address 0 */
         mtctr   4               /* (use CTR register to save an instruction) */
-fca_l2:
+2:
         dcbf    0,3             /* flush a cache line */
         addi    3,3,16          /* next line: assumes cache lines are 16 bytes */
-        bdnz    fca_l2
+        bdnz    2b
         sync
         blr
 
@@ -176,6 +203,7 @@ fca_l2:
  *     r4 = size of data block to flush (in bytes)
  *     assumes cache block granule is 32 bytes
  */
+        .align  2
         .globl  InvalidateCache
       	.type   InvalidateCache,@function
 
@@ -184,10 +212,10 @@ InvalidateCache:
         srwi    4,4,5           /* convert to cache blocks to invalidate */
         mtctr   4
         li      4,0
-ic_loop:
+1:
         dcbi    3,4             /* invalidate data cache block */
         addi    4,4,32
-        bdnz    ic_loop
+        bdnz    1b
 
         sync                    /* force mem transactions to complete */
         blr                     /* return to calling routine */

@@ -231,6 +231,10 @@ addtest:	addtest.o addroutines.o
 	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
 	chmod 777 $@
 
+addtest_68k:	addtest.o addroutines_68k.o
+	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
+	chmod 777 $@
+
 localize.c:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd localize.c=$(srcdir)/C_c_AHI.sd 
 

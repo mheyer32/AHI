@@ -40,7 +40,6 @@
 # include <proto/powerpc.h> 
 # include <clib/ahi_protos.h>
 # include <pragmas/ahi_pragmas.h>
-# include <proto/ahi_sub.h>
 #endif
 
 #include <string.h>
@@ -126,7 +125,7 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
 {
   audioctrl->ahiac_PPCCommand  = AHIAC_COM_SOUNDFUNC;
   audioctrl->ahiac_PPCArgument = arg;
-  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
@@ -135,7 +134,7 @@ CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
   audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
   audioctrl->ahiac_PPCArgument = (void*) value;
-  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+//  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
@@ -172,22 +171,21 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
   {
     BOOL running = TRUE;
 
-//kprintf( "Interrupt\n" );
-    audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
-
     while( running )
     {
       switch( audioctrl->ahiac_PPCCommand )
       {
         case AHIAC_COM_INIT:
-        case AHIAC_COM_ACK:
-//kprintf( "AHIAC_COM_INITACK\n" );
           // Keep looping
-          asm( "stop #(1<<13) | (2<<8)" : );
+          audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
+          break;
+
+        case AHIAC_COM_ACK:
+          // Keep looping
+//          asm( "stop #(1<<13) | (2<<8)" : );
           break;
 
         case AHIAC_COM_SOUNDFUNC:
-//kprintf( "AHIAC_COM_SOUNDFUNC\n" );
           CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                        (struct AHIPrivAudioCtrl*) audioctrl,
                        (APTR) audioctrl->ahiac_PPCArgument );
@@ -200,7 +198,6 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
           break;
 
         case AHIAC_COM_QUIT:
-//kprintf( "AHIAC_COM_QUIT\n" );
           running = FALSE;
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
@@ -214,7 +211,6 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
       }
     }
 
-//kprintf( "Exiting\n" );
     /* End chain! */
     return 1;
   }
@@ -238,8 +234,6 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     0, 0, 0, 0, 0,
     0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
   };
-
-//kprintf( "MixPowerUp\n" );
 
   // Flush all DYNAMICSAMPLE's
 
@@ -298,13 +292,8 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     CausePPCInterrupt();
   }
 
-//kprintf( "Ran KernelObject\n" );
-
   audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
-//kprintf( "2: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
-//kprintf( "Waited\n" );
-//kprintf( "3: audioctrl->ahiac_PPCCommand = %ld\n", audioctrl->ahiac_PPCCommand );
 
   // The PPC mix buffer is not m68k-cachable (or cleared); just read from it.
 
@@ -317,6 +306,8 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   /*** AHIET_CHANNELINFO ***/
 
   DoChannelInfo(audioctrl);
+
+  return;
 }
 
 #endif /* defined( VERSIONPPC ) */
@@ -335,7 +326,6 @@ BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 {
   BOOL rc = FALSE;
-//kprintf( "InitMixroutine\n" );
 
   // Allocate and initialize the AHIChannelData structures
   // This structure could be accessed from from interrupts!
@@ -351,7 +341,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       audioctrl->ac.ahiac_Sounds * sizeof(struct AHISoundData),
       MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
-//kprintf( "InitMixroutine #2\n" );
   // Allocate structures specific to the PPC version
 
   if( PPCObject != NULL )
@@ -365,7 +354,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
         MEMF_PUBLIC | MEMF_CLEAR );
   }
 
-//kprintf( "InitMixroutine #3\n" );
   // Now link the list and fill in the channel number for each structure.
 
   if( audioctrl->ahiac_ChannelDatas != NULL &&
@@ -407,7 +395,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       sd++;
     }
 
-//kprintf( "InitMixroutine #4\n" );
     if( PPCObject != NULL )
     {
       int r = ~0;
@@ -420,7 +407,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
       AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
 
-//kprintf( "InitMixroutine #5\n" );
 #define GetSymbol( name ) r &= AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
       GetSymbol( AddByteMono     );
@@ -442,7 +428,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
 #undef GetSymbol
 
-//kprintf( "InitMixroutine #6\n" );
       // Sucess?
 
       if( r != 0 )
@@ -465,11 +450,11 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
             { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
             { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
           };
-//kprintf( "finding WarpInit..." );
+
           if( AHIGetELFSymbol( "WarpInit", args.PP_Code ) )
           {
             int status;
-//kprintf( "%08lx\n", args.PP_Code );
+
             status = RunPPC( &args );
             
             if( status == PPERR_SUCCESS )
@@ -785,7 +770,7 @@ MixGeneric ( struct Hook *Hook,
   struct AHIChannelData	*cd;
   void                  *dstptr;
   LONG                   samplesleft;
-//kprintf(".");
+
   /* Clear the buffer */
 
   memset( dst, 0, audioctrl->ahiac_BuffSizeNow );
