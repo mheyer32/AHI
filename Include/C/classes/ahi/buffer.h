@@ -54,8 +54,20 @@ namespace AHI {
 								   OM_GET,
 								   OM_NOTIFY */
 
-      /* Buffer data pointer. */
-	_AHIA(_P, Data,		(_AHIA_Dummy+15)),		/* OM_GET */
+      /* Current offset (unit is sample frames). */
+      _AHIA(_P, Offset,	(_AHIA_Dummy+97)),			/* OM_NEW,
+								   OM_SET,
+								   OM_GET,
+								   OM_NOTIFY */
+      
+      /* Buffer data pointer (AHIA_Buffer_Offset adjusted). */
+	_AHIA(_P, Data,		(_AHIA_Dummy+15)),		/* OM_GET,
+								   OM_NOTIFY */
+
+
+      /* Real buffer data pointer. */
+	_AHIA(_P, RealData,	(_AHIA_Dummy+98)),		/* OM_GET */
+
 
       /* High part of buffer timestamp (unit is sample frames <<
        * 32). */
@@ -90,7 +102,10 @@ namespace AHI {
        _AHIM(_P, Load,			(_AHIM_Dummy+45)),
 
        /* Create a clone of this buffer object */
-       _AHIM(_P, Clone,			(_AHIM_Dummy+46))
+       _AHIM(_P, Clone,			(_AHIM_Dummy+46)),
+
+       /* Shift last part of buffer into the pre-offset area */
+       _AHIM(_P, Shift,			(_AHIM_Dummy+47))
        
      };
 
