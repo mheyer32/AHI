@@ -719,7 +719,7 @@ Mix( struct Hook*             unused_Hook,
             /* What we do now is to calculate how much futher we have
                advanced. */
 
-              cd->cd_Offset -= cd->cd_LastOffset;
+              cd->cd_Offset -= cd->cd_LastOffset + 1;
 
             /*
             ** Offset should now be added to the NEXT Offset. Offset

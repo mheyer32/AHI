@@ -474,12 +474,18 @@ SetSound ( UWORD                    channel,
     {
       cd->cd_NextType         |= AHIST_BW;
       cd->cd_NextLastOffset    = (Fixed64) ( offset + length + 1 ) << 32;
-      cd->cd_NextOffset       |= 0xffffffffLL;
+//      cd->cd_NextOffset       |= 0xffffffffLL;
+      *(ULONG*) ((char*) (&cd->cd_NextOffset)+4) = 0xffffffffUL;
     }
     else
     {
-      cd->cd_NextLastOffset    = ( (Fixed64) ( offset + length - 1 ) << 32 )
-                                 | 0xffffffffLL;
+//      cd->cd_NextLastOffset    = ( (Fixed64) ( offset + length - 1 ) << 32 )
+//                                 | (Fixed64) 0xffffffffLL;
+
+      // Fix for m68k compiler bug! :-(
+      *(ULONG*) &cd->cd_NextLastOffset = offset + length - 1;
+      *(ULONG*) ((char*) (&cd->cd_NextLastOffset)+4) = 0xffffffffUL;
+
       /* Low cd->cd_NextOffset already 0 */
     }
 
