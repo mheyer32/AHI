@@ -1640,8 +1640,6 @@ UpdateMonitorMixer( struct DriverData* dd )
   UWORD mm = AC97_MUTE | 0x0008;
   UWORD sm = AC97_MUTE | 0x0808;
   
-  KPrintF( "i=%ld m=%04lx s=%04lx\n", i, m, s );
-
   if( i == AC97_RECMUX_STEREO_MIX ||
       i == AC97_RECMUX_MONO_MIX )
   {
