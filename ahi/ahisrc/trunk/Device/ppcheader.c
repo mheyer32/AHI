@@ -56,6 +56,38 @@ void WarpUpInt( void );
 ** First address **************************************************************
 ******************************************************************************/
 
+#ifdef POWERUP_USE_MIXTASK
+void main( void )
+{  
+  struct AHIPrivAudioCtrl* audioctrl;
+  ULONG                    signals;
+
+  audioctrl = (struct AHIPrivAudioCtrl*) 
+      PPCGetTaskAttr( PPCTASKTAG_STARTUP_MSGDATA );
+
+  PPCkprintf( "Got here.... 0x%08lx\n", audioctrl );
+  
+  while( TRUE )
+  {
+    signals = PPCWait( SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F );
+
+//    PPCkprintf( "Got signal!\n" );
+
+    if( signals & SIGBREAKF_CTRL_C )
+    {
+      PPCkprintf( "***Break\n" );
+      break;
+    }
+    else if( signals & SIGBREAKF_CTRL_F )
+    {
+//      PPCkprintf( "***Mix\n" );
+      CallMixroutine( audioctrl->ahiac_PowerPCContext );
+    }
+  }
+}
+
+#else
+
 // This must be the first code in the ELF object due to a bug in
 // ppc.library < 46.26
 
@@ -87,6 +119,7 @@ KernelObject:
 
 ");
 
+#endif
 
 /******************************************************************************
 ** Function used to call the actual mixing routine ****************************
@@ -134,15 +167,26 @@ CallMixroutine( struct PowerPCContext* context )
       {
         // *Flush* all and exit (add an L2 cache and watch this code break!)
 
+#ifdef POWERUP_USE_MIXTASK
+        PPCCacheFlushAll();
+#else
         FlushCacheAll();
+#endif
         break;
       }
       else
       {
+#ifdef POWERUP_USE_MIXTASK
+        // Flushing the block block is the best we can do as a task....
+
+        PPCCacheFlush( sd->sd_Addr,
+                       sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+#else
         // *Invalidate* block
 
         InvalidateCache( sd->sd_Addr,
                          sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+#endif
       }
     }
     sd++;

@@ -119,6 +119,50 @@ PPCHandler( void )
         {
           rc = FALSE;
         }
+#ifdef POWERUP_USE_MIXTASK
+        else
+        {
+          audioctrl->ahiac_PowerPCContext->Port = 
+              PPCCreatePortTags( TAG_DONE );
+              
+          if( audioctrl->ahiac_PowerPCContext->Port != NULL )
+          {
+            audioctrl->ahiac_PowerPCContext->Msg = 
+                PPCCreateMessage( audioctrl->ahiac_PowerPCContext->Port,
+                                  0 );
+                                  
+            if( audioctrl->ahiac_PowerPCContext->Msg != NULL )
+            {
+              audioctrl->ahiac_PowerPCContext->Task =
+                  PPCCreateTaskTags( 
+                      PPCObject,
+                      PPCTASKTAG_NAME,              (ULONG) DevName,
+                      PPCTASKTAG_PRIORITY,          127,
+                      PPCTASKTAG_STARTUP_MSG,       (ULONG) audioctrl->ahiac_PowerPCContext->Msg,
+                      PPCTASKTAG_STARTUP_MSGDATA,   (ULONG) audioctrl,
+                      PPCTASKTAG_STARTUP_MSGLENGTH, 0,
+                      PPCTASKTAG_STARTUP_MSGID,     0,
+                      TAG_DONE );
+                      
+              if( audioctrl->ahiac_PowerPCContext->Task == NULL )
+              {
+                rc = FALSE;
+                Req( "Unable to create PPC task." );
+              }
+            }
+            else
+            {
+              rc = FALSE;
+              Req( "Unable to allocate PPC message." );
+            }
+          }
+          else
+          {
+            rc = FALSE;
+            Req( "Unable to allocate PPC port." );
+          }
+        }
+#endif
         break;
     
       case MB_WARPUP:
@@ -236,6 +280,39 @@ PPCHandler( void )
       break;
 
     case MB_POWERUP:
+#ifdef POWERUP_USE_MIXTASK
+      if( audioctrl->ahiac_PowerPCContext->Task != NULL )
+      {
+        void* msg;
+
+        PPCSignalTask( audioctrl->ahiac_PowerPCContext->Task,
+                       SIGBREAKF_CTRL_C );
+        
+        while( TRUE )
+        {
+          msg = PPCGetMessage( audioctrl->ahiac_PowerPCContext->Port );
+          
+          if( msg == audioctrl->ahiac_PowerPCContext->Msg )
+          {
+            break;
+          }
+          else
+          {
+            PPCWaitPort( audioctrl->ahiac_PowerPCContext->Port );
+          }
+        }
+      }
+      
+      if( audioctrl->ahiac_PowerPCContext->Msg != NULL )
+      {
+        PPCDeleteMessage( audioctrl->ahiac_PowerPCContext->Msg );
+      }
+      
+      if( audioctrl->ahiac_PowerPCContext->Port != NULL )
+      {
+        PPCDeletePort( audioctrl->ahiac_PowerPCContext->Port );
+      }
+#endif
       break;
 
     case MB_WARPUP:
@@ -397,6 +474,10 @@ MixBuffer( void*                     mixbuffer,
   {
     case MB_POWERUP:
     {
+#ifdef POWERUP_USE_MIXTASK
+      PPCSignalTask( audioctrl->ahiac_PowerPCContext->Task,
+                     SIGBREAKF_CTRL_F );
+#else
       struct ModuleArgs mod =
       {
         IF_CACHEFLUSHNO, 0, 0,
@@ -411,6 +492,7 @@ MixBuffer( void*                     mixbuffer,
 //kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
 //kprintf("k");
+#endif
       break;
     }
 

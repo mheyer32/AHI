@@ -27,6 +27,8 @@
 
 #include "ahi_def.h"
 
+#define POWERUP_USE_MIXTASK
+
 struct PowerPCContext
 {
   volatile int              Command;
@@ -41,6 +43,12 @@ struct PowerPCContext
   struct Hook*              Hook;
   void*	                    Dst;
   void*                     XLock;
+
+#ifdef POWERUP_USE_MIXTASK
+  void*                     Port;
+  void*                     Msg;
+  void*                     Task;
+#endif
 
   struct AHIPrivAudioCtrl*  AudioCtrl;
   struct Library*           PowerPCBase;
