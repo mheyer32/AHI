@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.3  1997/01/04 13:26:41  lcs
+* Doc for CMD_WRITE updated
+*
 * Revision 1.2  1996/12/21 23:06:35  lcs
 * Updated doc for CMD_WRITE
 *
@@ -2712,7 +2715,7 @@ UnloadSound_nodebug
 *       io_Data         Pointer to the buffer of samples to be played.
 *       io_Length       Number of bytes to play, must be a multiple of the
 *                       sample frame size (see ahir_Type).
-*       io_Offset       Must be NULL.
+*       io_Offset       Must be 0.
 *       ahir_Type       The desired sample format, see <ahi/devices.h>.
 *       ahir_Frequency  The desired sample frequency in Herz.
 *       ahir_Volume     The desired volume. The range is 0 to 0x10000, where
