@@ -26,9 +26,151 @@
 #include "ahi_def.h"
 #include "dsp.h"
 
-
-/* See dspecho_68k.a för more information */
-
+/**************
+* Inputs: ahiede_Delay, ahiede_Feedback, ahiede_Mix, ahiede_Cross
+*
+* Delay      = ahide_Delay
+* MixN       = 1-ahide_Mix
+* MixD       = ahide_Mix
+* FeedbackDO = ahide_Feedback*ahide_Cross
+* FeedbackDS = ahide_Feedback*(1-ahide_Cross)
+* FeedbackNO = (1-ahide_Feedback)*ahide_Cross
+* FeedbackNS = (1-ahide_Feedback)*(1-ahide_Cross)
+*
+*                                               |\
+* left in ->---+----------+---------------------| >---->(+)----> left out
+*              |          |                MixN |/       ^
+*  FeedbackNO \¯/        \¯/ FeedbackNS                  |
+*              v          v                              |
+*              |          |                              |
+*              |          v    |¯¯¯|            |\       |
+*              |    +--->(+)-->| T |----+-------| >------+
+*              |    |     ^    |___|    |  MixD |/
+*              |    |     |    Delay    |
+*              |    |     |             |
+*              |    |     |      /|     |
+*              |    |     +-----< |-----+
+*              |    | FeedbackDS \|     |
+*              |    |                   |
+*              |    |            /|     |
+*             (+)<--(-----------< |-----+
+*              |    |            \| FeedbackDO
+*              |    |
+*              |    |
+*              |    |
+*              |    |            /| FeedbackDO
+*              |   (+)<---------< |-----+
+*              |    |            \|     |
+*              |    |                   |
+*              |    | FeedbackDS /|     |
+*              |    |     +-----< |-----+
+*              |    |     |      \|     |
+*              |    |     |             |
+*              |    |     v    |¯¯¯|    |       |\
+*              +----(--->(+)-->| T |----+-------| >------+
+*                   |     ^    |___|       MixD |/       |
+*                   |     |    Delay                     |
+*                   ^     ^                              |
+*       FeedbackNO /_\   /_\ FeedbackNS                  |
+*                   |     |                     |\       v
+* right in ->-------+-----+---------------------| >---->(+)----> right out
+*                                          MixN |/
+*
+*
+**************
+*
+* The delay buffer: (BuffSamples = 5, Delay = 8 Total size = 13
+*
+*  1) Delay times
+*
+*  +---------+
+*  |         |
+*  v         ^
+* |_|_|_|_|_|_|_|_|_|_|_|_|_|
+* *---------*
+*
+*  2) BuffSamples times
+*
+*  +-Mix-----------+
+*  |               |
+*  ^               v
+* |_|_|_|_|_|_|_|_|_|_|_|_|_|
+* *---------*
+*
+* Or optimized using a circular buffer:
+*
+*
+* Offset<BuffSamples => BuffSamples-Offset times:
+*
+*  +-Mix-----------+
+*  |               |
+*  ^               v
+* |_|_|_|_|_|_|_|_|_|_|_|_|_|
+* *---------*
+*
+* BuffSamples<=Offset<=Delay => BuffSamples times:
+*
+*  +-Mix-----+
+*  |         |
+*  v         ^
+* |_|_|_|_|_|_|_|_|_|_|_|_|_|
+*           *---------*
+*
+* Offset>Delay => BuffSamples+Delay-Offset times:
+*
+*          +-Mix-----+
+*          |         |
+*          v         ^
+* |_|_|_|_|_|_|_|_|_|_|_|_|_|
+* --*               *--------
+*
+* The delay buffer: (BuffSamples = 5, Delay = 3 Total size = 8
+*
+* Offset<BuffSamples => BuffSamples-Offset times:
+*
+*  +-Mix-+
+*  |     |
+*  ^     v
+* |_|_|_|_|_|_|_|_|
+* *---------*
+*
+* Offset>=BuffSamples => BuffSamples+Delay-Offset times:
+*
+*  +-----Mix-+
+*  |         |
+*  v         ^
+* |_|_|_|_|_|_|_|_|
+* ----*     *------
+*
+*
+*
+* Algoritm:
+*
+*   LoopsLeft=BuffSamples
+*   Offset=0
+*   Src=E
+*   Dst=E+Delay
+* Loop:
+*   If LoopsLeft <= 0 GOTO Exit
+*   IF Src >= (E + MaxBuffSamples + Delay) THEN Src = Src - (MaxBuffSamples + Delay)
+*   IF Dst >= (E + MaxBuffSamples + Delay) THEN Dst = Dst - (MaxBuffSamples + Delay)
+*   IF Offset >= (MaxBuffSamples + Delay) THEN Offset = Offset - (MaxBuffSamples + Delay)
+*
+*   IF Offset < MaxBuffSamples THEN LoopTimes = MaxBuffSamples-Offset : GOTO Echo
+*   IF Offset <= Delay THEN LoopTimes = MaxBuffSamples : GOTO Echo 
+*   LoopTimes = MaxBuffSamples+Delay-Offset
+* Echo:
+*   LoopTimes = min(LoopTimes,LoopsLeft)
+*   Echo LoopTimes samples
+*
+*   Src = Src + LoopTimes
+*   Dst = Dst + LoopTimes
+*   Offset = Offset + LoopTimes
+*   LoopsLeft = LoopsLeft - LoopTimes
+*   GOTO Loop
+* Exit:
+*
+*/
 
 
 static void
