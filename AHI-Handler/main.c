@@ -118,11 +118,9 @@ KPrintFArgs( UBYTE* fmt,
 
 static const char ID[] = "$VER: AHI-Handler " VERS "\r\n";
 
-struct List        HanList;
-struct DeviceNode *DevNode;
 struct MsgPort    *PktPort;
+struct DeviceNode *DevNode;
 int                AllocCnt;
-BOOL               Running;
 
 struct MsgPort    *AHImp     = NULL;
 struct AHIRequest *AHIio     = NULL;
@@ -162,14 +160,18 @@ struct AIFFHeader AIFFHeader = {
 **** Entry ********************************************************************
 ******************************************************************************/
 
-// Disable WB startup message handling -- requires libnix 2.1/lcs !!
-long __nowbmsg=1;
+// Disable command line processing
 long __nocommandline=1;
+
+// We (mis)use this one directly instead
+extern struct Message *_WBenchMsg;
 
 int main(void)
 {
   struct DosPacket *packet;
   struct Process *proc;
+
+  BOOL Running;
 
 #ifdef DEBUG
   kprintf("The very first call...\n");
@@ -178,7 +180,6 @@ int main(void)
   proc = (struct Process *) FindTask (NULL);
 
   PktPort = &proc->pr_MsgPort;
-  NewList (&HanList);
   Initialize ();
 
   Running = TRUE;
@@ -1132,15 +1133,7 @@ void Initialize () {
    *        Handle initial message.
    */
   
-  struct Message *msg;
-
-#ifdef DEBUG
-  kprintf("Waiting for startup message ...\n");
-#endif
-
-  WaitPort (PktPort);
-  msg = GetMsg (PktPort);
-  packet = (struct DosPacket *) msg->mn_Node.ln_Name;
+  packet = (struct DosPacket *) _WBenchMsg->mn_Node.ln_Name;
 
   DevNode = dn = BTOC (packet->dp_Arg3);
   dn->dn_Task = NULL;
@@ -1149,6 +1142,9 @@ void Initialize () {
   kprintf("Replying it ...\n");
 #endif
 
+  // Make sure startup code does not reply the message on exit
+  _WBenchMsg = NULL;
+  
   packet->dp_Res1 = DOS_TRUE;
   packet->dp_Res2 = 0;
   returnpacket (packet);
