@@ -80,6 +80,14 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     return AHISF_ERROR;
   }
 
+  // 32 fragments times 256 bytes each
+    
+  if( ! OSS_SetFragmentSize( 32, 8 ) )
+  {
+    Req( "OSS device does not support a fragment size of 1024." );
+    return AHIE_UNKNOWN;
+  }
+  
   if( ! OSS_FormatSupported_S16LE() || ! OSS_SetFormat_S16LE() )
   {
     Req( "OSS device does not support 16 bit little endian samples!" );
@@ -217,6 +225,14 @@ _AHIsub_Start( ULONG                   flags,
     if( ! OSS_Open( "/dev/dsp", FALSE, TRUE, FALSE ) )
     {
       Req( "OSS device would not reopen." );
+      return AHIE_UNKNOWN;
+    }
+
+    // 32 fragments times 256 bytes each
+    
+    if( ! OSS_SetFragmentSize( 32, 8 ) )
+    {
+      Req( "OSS device does not support a fragment size of 1024." );
       return AHIE_UNKNOWN;
     }
 
