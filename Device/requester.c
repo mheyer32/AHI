@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.11  1997/02/10 10:36:48  lcs
+* Really, I fixed it! Trust me.
+*
 * Revision 1.10  1997/02/10 10:32:28  lcs
 * Fixed a bug in the mode list building code (unterminated taglist)
 *
@@ -969,7 +972,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
       Sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
-          AHIDB_Name,node->node.ln_Name
+          AHIDB_Name,node->node.ln_Name,
           TAG_DONE);
       // Insert node alphabetically
       for(node2=(struct IDnode *)req->list->mlh_Head;node2->node.ln_Succ;node2=(struct IDnode *) node2->node.ln_Succ)
