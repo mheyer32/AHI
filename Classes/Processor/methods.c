@@ -24,6 +24,7 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
   NewList((struct List*) &AHIClassData->members);
+  NewList((struct List*) &AHIClassData->buffers);
 
   AHIClassData->ic = NewObject(NULL, ICCLASS,
 			       ICA_TARGET, (ULONG) object,
@@ -92,18 +93,58 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	  { TAG_DONE,                    0            }
 	};
 
+	ULONG use_child_buffers = FALSE;
+	ULONG history_samples = 0;
+
 	Object* ostate = (Object*) AHIClassData->members.mlh_Head;
 	Object* member;
 
-	// Propagate AHIA_Processor_Buffer to our children, if they were
-	// operating on our current buffer too.
+	if (AHIClassData->busy) {
+	  SetSuperAttrs(class, object,
+			AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+	  break;
+	}
+	
+	GetAttr(AHIA_Processor_UseChildBuffers, object, &use_child_buffers);	
+	GetAttr(AHIA_Processor_HistorySamples, object, &history_samples);
+
+	// Propagate AHIA_Processor_Buffer to our children, if they
+	// were operating on our current buffer too. Else, check if we
+	// should create clone buffers.
 	while ((member = NextObject(&ostate)) != NULL) {
 	  Object* member_buffer = NULL;
 	  
 	  GetAttr(AHIA_Processor_Buffer, member, (ULONG*) &member_buffer);
 
 	  if (member_buffer == AHIClassData->buffer) {
-	    SetAttrs(member_buffer, AHIA_Processor_Buffer, tag->ti_Data, TAG_DONE);
+	    SetAttrs(member, AHIA_Processor_Buffer, tag->ti_Data, TAG_DONE);
+	  }
+	  else if (use_child_buffers) {
+	    Object* buffer = NULL;
+
+	    if ((Object*) tag->ti_Data != NULL) {
+	      buffer = (Object*) DoMethod((Object*) tag->ti_Data,
+					  AHIM_Buffer_Clone, history_samples);
+
+	      if (buffer == NULL) {
+		ULONG error = 0;
+      
+		GetAttr(AHIA_Error, (Object*) tag->ti_Data, &error);
+
+		SetSuperAttrs(class, object, AHIA_Error, error, TAG_DONE);
+	      }
+	      else {
+		// TODO: Add notification from new->cloned buffer?
+		DoMethod(buffer, OM_ADDTAIL, &AHIClassData->buffers);
+	      }
+	    }
+	    
+	    // Unlink old Buffer object from our buffer list and dispose
+	    DoMethod(member_buffer, OM_REMOVE);
+	    DisposeObject(member_buffer);
+
+	    // Install cloned buffer
+	    SetAttrs(member, AHIA_Processor_Buffer, (ULONG) buffer, TAG_DONE);
 	  }
 	}
 
@@ -138,7 +179,13 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
       }
 
       case AHIA_Processor_Parent:
-	AHIClassData->parent = (Object*) tag->ti_Data;
+	if (AHIClassData->busy) {
+	  SetSuperAttrs(class, object,
+			AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+	}
+	else {
+	  AHIClassData->parent = (Object*) tag->ti_Data;
+	}
 	break;
 
       case AHIA_Processor_Disabled:
@@ -146,10 +193,15 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
 	break;
 	
-      case AHIA_Processor_AddChild: {
-	DoMethod(object, OM_ADDMEMBER, tag->ti_Data);
+      case AHIA_Processor_AddChild:
+	if (msg->MethodID == OM_NEW) {
+	  DoMethod(object, OM_ADDMEMBER, tag->ti_Data);
+	}
+	else {
+	  SetSuperAttrs(class, object,
+			AHIA_Error, AHIE_AttributeNotApplicable, TAG_DONE);
+	}
 	break;
-      }
 
       case AHIA_Processor_Busy:
 	AHIClassData->busy = tag->ti_Data;
@@ -159,6 +211,15 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 	AHIClassData->ready = tag->ti_Data;
 	break;
 
+      case AHIA_Processor_MaxChildren:
+      case AHIA_Processor_NumChildren:
+      case AHIA_Processor_UseChildBuffers:
+      case AHIA_Processor_HistorySamples:
+      case AHIA_Processor_ChildBuffers:
+	SetSuperAttrs(class, object,
+		      AHIA_Error, AHIE_AttributeNotApplicable, TAG_DONE);
+	break;
+	
       default:
 	break;
     }
@@ -219,6 +280,11 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       *msg->opg_Storage = AHIClassData->disabled;
       break;
 	
+    case AHIA_Processor_AddChild:
+      SetSuperAttrs(class, object,
+		    AHIA_Error, AHIE_AttributeNotApplicable, TAG_DONE);
+      return FALSE;
+
     case AHIA_Processor_Busy:
       *msg->opg_Storage = AHIClassData->busy;
       break;
@@ -229,6 +295,21 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
 
     case AHIA_Processor_MaxChildren:
       *msg->opg_Storage = 1;
+      break;
+
+    case AHIA_Processor_NumChildren:
+      *msg->opg_Storage = AHIClassData->num_members;
+
+    case AHIA_Processor_UseChildBuffers:
+      *msg->opg_Storage = FALSE;
+      break;
+
+    case AHIA_Processor_HistorySamples:
+      *msg->opg_Storage = 0;
+      break;
+      
+    case AHIA_Processor_ChildBuffers:
+      *msg->opg_Storage = (ULONG) &AHIClassData->buffers;
       break;
 
     default:
@@ -309,10 +390,12 @@ BOOL
 MethodAddMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-  ULONG max_children = 0;
-  ULONG parent       = 0;
-  ULONG owner        = 0;
-  ULONG my_owner     = 0;
+  ULONG   max_children      = 0;
+  ULONG   parent            = 0;
+  ULONG   owner             = 0;
+  ULONG   my_owner          = 0;
+  Object* buffer            = NULL;
+  ULONG   use_child_buffers = FALSE;
 
   if (msg->opam_Object == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NullMember, TAG_DONE);
@@ -345,10 +428,36 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_DifferentOwner, TAG_DONE);
     return FALSE;
   }
+
+  GetAttr(AHIA_Processor_UseChildBuffers, object, &use_child_buffers);
+
+  if (use_child_buffers && AHIClassData->buffer != NULL) {
+    ULONG history_samples = 0;
+
+    GetAttr(AHIA_Processor_HistorySamples, object, &history_samples);
+
+    buffer = (Object*) DoMethod(AHIClassData->buffer, AHIM_Buffer_Clone, history_samples);
+
+    if (buffer == NULL) {
+      ULONG error = 0;
+      
+      GetAttr(AHIA_Error, AHIClassData->buffer, &error);
+
+      SetSuperAttrs(class, object, AHIA_Error, error, TAG_DONE);
+      return FALSE;
+    }
+    else { 
+      // TODO: Add notification from new->cloned buffer?
+      DoMethod(buffer, OM_ADDTAIL, &AHIClassData->buffers);
+    }
+  }
+  else {
+    buffer = AHIClassData->buffer;
+  }
   
   SetAttrs(msg->opam_Object,
 	   AHIA_Processor_Parent, (ULONG) object,
-	   AHIA_Processor_Buffer, (ULONG) AHIClassData->buffer,
+	   AHIA_Processor_Buffer, (ULONG) buffer,
 	   TAG_DONE);
   
   ++AHIClassData->num_members;
@@ -366,6 +475,8 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
   Object* parent = NULL;
+  Object* buffer = NULL;
+  ULONG   use_child_buffers = FALSE;
 
   if (msg->opam_Object == NULL) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NullMember, TAG_DONE);
@@ -384,6 +495,8 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
     return FALSE;
   }
 
+  GetAttr(AHIA_Processor_Buffer, msg->opam_Object, (ULONG*) &buffer);
+  
   SetAttrs(msg->opam_Object,
 	   AHIA_Processor_Parent, (ULONG) NULL,
 	   AHIA_Processor_Buffer, (ULONG) NULL,
@@ -391,5 +504,14 @@ MethodRemMember(Class* class, Object* object, struct opMember* msg) {
 
   --AHIClassData->num_members;
   DoMethod(msg->opam_Object, OM_REMOVE);
+
+  GetAttr(AHIA_Processor_UseChildBuffers, object, &use_child_buffers);
+
+  if (use_child_buffers && buffer != NULL) {
+    // Unlink Buffer object from our buffer list
+    DoMethod(buffer, OM_REMOVE);
+    DisposeObject(buffer);
+  }
+  
   return TRUE;
 }
