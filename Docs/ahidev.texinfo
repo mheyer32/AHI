@@ -20,7 +20,7 @@
 
 @ifinfo
 
-This file documents AHI version @value{ahiver}, a hardware independent
+This file documents AHI release @value{ahiver}, a hardware independent
 audio subsystem for Amiga. The version number of this document is
 @value{docver}.
 
@@ -64,6 +64,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.13  1999/09/19 13:34:30  lcs
+*** empty log message ***
+
 Revision 4.12  1999/09/19 13:10:18  lcs
 Fixed some typos.
 Changes license.
@@ -114,7 +117,7 @@ Initial revision.
 @titlepage
 @title AHI
 @subtitle Hardware independent audio for Amiga
-@subtitle AHI Developer's Guide for AHI version @value{ahiver}
+@subtitle AHI Developer's Guide for AHI release @value{ahiver}
 @subtitle Document version @value{docver}
 @author Martin 'Leviticus' Blom
 
@@ -163,7 +166,7 @@ publication, even if advised of the possibility of such damage.}
 
 @majorheading @sc{Ahi} Developer's Guide
 
-For @sc{Ahi} version @value{ahiver}. Document version @value{docver}.
+For @sc{Ahi} release @value{ahiver}. Document version @value{docver}.
 
 Copyright @copyright{} 1994-1999 Martin Blom
 
@@ -180,13 +183,15 @@ The latest release of @sc{Ahi} can always be found at
 * Device Interface::            The high-level API
 * Data Types And Structures::   The structures explained
 
-* GNU Library General Public License::   The device license
+* GPL::                         The main license
+* LGPL::                        The @code{ahi.device} license
 
 * Concept Index::               Concept Index
 * Data Type Index::             Data Type Index
 * Function Index::              Function Index
 * Variable Index::              Variable Index
 
+@detailmenu
  --- The Detailed Node Listing ---
 
 Function Interface
@@ -207,6 +212,8 @@ Data Types And Structures
 
 * Data Types::                  
 * Structures::                  
+
+@end detailmenu
 @end menu
 
 @end ifinfo
@@ -248,7 +255,7 @@ Not everything about @sc{Ahi} is documented here; for more information, see
 @c **** Distribution *****************************************************
 @c ***********************************************************************
 
-@node  Distribution, GNU Library General Public License, Overview, Top
+@node  Distribution, The Author, Overview, Top
 @comment  node-name,  next,  previous,  up
 @chapter Distribution
 
@@ -261,24 +268,16 @@ Not everything about @sc{Ahi} is documented here; for more information, see
 
 Copyright @copyright{} 1994-1999 Martin Blom
 
-@sc{Ahi} is available under a dual license. The device itself is
-under the ``@xref{GNU Library General Public License}''.
-
-
- as @dfn{freeware}.  That is, it may be freely
-distributed in unmodified form with no changes what so ever, but you may
-not charge more than a nominal fee covering distribution costs. However,
-donations are welcome (see @cite{@sc{Ahi} User's Guide}).
+@sc{Ahi} is available under a dual license. The device itself is under
+the ``GNU Library General Public License'' (@pxref{LGPL}), while the
+utility programs and the @sc{AUDIO} device is covered by the ``GNU
+General Public License'' (@pxref{GPL}).
 
 If you use this software in a commercial or shareware product, please
 consider giving the author (@pxref{The Author})---and preferably each one
 of the contributors too (see @cite{@sc{Ahi} User's Guide})---an original or
 registered version of your work.  Should you want to distribute the @sc{Ahi}
 software with your own product, there is really nothing to consider, is it?
-
-If you wish to distribute this software with a hardware product, contact
-the author (@pxref{The Author}).  Distribution of @sc{Ahi} with hardware
-products is @emph{not} free.
 
 @sc{This software is provided by the author and contributors ``as is'' and
 any express or implied warranties, including, but not limited to, the
@@ -296,7 +295,7 @@ damage.}
 @c **** The Author *******************************************************
 @c ***********************************************************************
 
-@node  The Author, Definitions, GNU Library General Public License, Top
+@node  The Author, Definitions, Distribution, Top
 @comment  node-name,  next,  previous,  up
 @chapter The Author
 
@@ -1284,7 +1283,7 @@ to free in @sc{Ahi} since they are dynamically allocated by the device.
 @c ***********************************************************************
 @c ***********************************************************************
 
-@node Data Types And Structures, Concept Index, Device Interface, Top
+@node Data Types And Structures, GPL, Device Interface, Top
 @comment  node-name,  next,  previous,  up
 @chapter Data Types And Structures
 
@@ -1294,15 +1293,15 @@ to free in @sc{Ahi} since they are dynamically allocated by the device.
 explained.  For more information, please consult the autodocs and the
 include files.
 
-
-@c ***********************************************************************
-@c **** Data Types *******************************************************
-@c ***********************************************************************
-
 @menu
 * Data Types::                  
 * Structures::                  
 @end menu
+
+
+@c ***********************************************************************
+@c **** Data Types *******************************************************
+@c ***********************************************************************
 
 @node Data Types, Structures, Data Types And Structures, Data Types And Structures
 @comment  node-name,  next,  previous,  up
@@ -1348,7 +1347,7 @@ represent the stereo position of a sound.  0 is far left, 0.5 is center and
 @c **** Structures *******************************************************
 @c ***********************************************************************
 
-@node Structures, GNU Library General Public License , Data Types, Data Types And Structures
+@node Structures,  , Data Types, Data Types And Structures
 @comment  node-name,  next,  previous,  up
 @section Structures
 
@@ -1378,13 +1377,21 @@ redirected to a console window or a file with tools like @dfn{Sushi}
 
 
 @c ***********************************************************************
+@c **** GNU General Public License ***************************************
+@c ***********************************************************************
+
+@node  GPL, LGPL, Data Types And Structures, Top
+@comment  node-name,  next,  previous,  up
+@unnumbered GNU LIBRARY GENERAL PUBLIC LICENSE
+
+@c ***********************************************************************
 @c **** GNU Library General Public License *******************************
 @c ***********************************************************************
 
-@node  GNU Library General Public License, , Data Types, Top
+@node  LGPL, Concept Index, GPL, Top
 @comment  node-name,  next,  previous,  up
+@unnumbered GNU LIBRARY GENERAL PUBLIC LICENSE
 
-@appendix GNU LIBRARY GENERAL PUBLIC LICENSE
 @center Version 2, June 1991
 
 @display
@@ -1930,7 +1937,8 @@ That's all there is to it!
 @c **** Concept Index ****************************************************
 @c ***********************************************************************
 
-@node Concept Index, Data Type Index, Data Types And Structures, Top
+@node Concept Index, Data Type Index, LGPL, Top
+@comment  node-name,  next,  previous,  up
 @unnumbered Concept Index
 
 @cindex Recursion
