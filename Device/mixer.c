@@ -196,18 +196,20 @@ MixerFunc( struct Hook*             hook,
            struct AHIPrivAudioCtrl* audioctrl,
            void*                    dst )
 {
-  Mix( hook, audioctrl, dst );
-
-  /*** AHIET_MASTERVOLUME ***/
-
-  DoMasterVolume( dst, audioctrl );
-
-  /*** AHIET_OUTPUTBUFFER ***/
+  switch( MixBackend )
+  {
+    case NATIVE:
+    case MORPHOS:
+      Mix( hook, audioctrl, dst );
+      DoMasterVolume( dst, audioctrl );
+      break;
+      
+    case WARPUP:
+      WarpUpCallMixer( audioctrl, dst );
+      break;
+  }
 
   DoOutputBuffer( dst, audioctrl );
-
-  /*** AHIET_CHANNELINFO ***/
-
   DoChannelInfo( audioctrl );
 }
 
