@@ -152,13 +152,17 @@ struct AHIDevUnit
         BOOL                     FullDuplex;    // Mode is full duplex
         UWORD                    StopCnt;       // CMD_STOP count
 
-        struct SignalSemaphore   ListLock;
+	/* Lock is used to serialize access to StopCnt, ReadList, PlayingList,
+	   SilentList, WaitingList and RequestQueue */
+
+        struct SignalSemaphore   Lock;
+
         struct MinList           ReadList;
         struct MinList           PlayingList;
         struct MinList           SilentList;
         struct MinList           WaitingList;
 
-        struct MinList           RequestQueue;  // Not locked by ListLock!
+        struct MinList           RequestQueue;
 
         struct Voice            *Voices;
 

@@ -133,7 +133,7 @@ DevAbortIO( struct AHIRequest* ioreq,
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
   
-  ObtainSemaphore(&iounit->ListLock);
+  ObtainSemaphore(&iounit->Lock);
   if(ioreq->ahir_Std.io_Message.mn_Node.ln_Type != NT_REPLYMSG)
   {
     switch(ioreq->ahir_Std.io_Command)
@@ -165,11 +165,16 @@ DevAbortIO( struct AHIRequest* ioreq,
               iounit->Voices[GetExtras(ioreq)->Channel].PlayingRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].NextRequest = NULL;
-              iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = MUTE;
+  
               if(iounit->AudioCtrl)
               {
+                iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = MUTE;
                 AHI_SetSound(GetExtras(ioreq)->Channel,AHI_NOSOUND,0,0,
                     iounit->AudioCtrl,AHISF_IMM);
+              }
+              else
+              {
+                iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = FREE;
               }
             }
 
@@ -186,7 +191,7 @@ DevAbortIO( struct AHIRequest* ioreq,
         break;
     }
   }
-  ReleaseSemaphore(&iounit->ListLock);
+  ReleaseSemaphore(&iounit->Lock);
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -263,13 +268,18 @@ PerformIO ( struct AHIRequest *ioreq,
     case NSCMD_DEVICEQUERY:
       Devicequery(ioreq, AHIBase);
       break;
+
     case CMD_RESET:
       ResetCmd(ioreq, AHIBase);
       break;
+
     case CMD_READ:
       ReadCmd(ioreq, AHIBase);
       break;
+
     case CMD_WRITE:
+      ObtainSemaphore(&iounit->Lock);
+
       if(iounit->StopCnt)
       {
         AddTail((struct List *) &iounit->RequestQueue,(struct Node *) ioreq);
@@ -278,16 +288,23 @@ PerformIO ( struct AHIRequest *ioreq,
       {
         WriteCmd(ioreq, AHIBase);
       }
+
+      ReleaseSemaphore(&iounit->Lock);
+
       break;
+
     case CMD_STOP:
       StopCmd(ioreq, AHIBase);
       break;
+
     case CMD_START:
       StartCmd(ioreq, AHIBase);
       break;
+
     case CMD_FLUSH:
       FlushCmd(ioreq, AHIBase);
       break;
+
     default:
       ioreq->ahir_Std.io_Error = IOERR_NOCMD;
       TermIO(ioreq, AHIBase);
@@ -436,9 +453,17 @@ StopCmd ( struct AHIRequest *ioreq,
 {
   struct AHIDevUnit *iounit;
 
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("CMD_STOP\n");
+  }
+
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
+  ObtainSemaphore(&iounit->Lock);
   iounit->StopCnt++;
+  ReleaseSemaphore(&iounit->Lock);
+
   TermIO(ioreq,AHIBase);
 }
 
@@ -491,6 +516,11 @@ FlushCmd ( struct AHIRequest *ioreq,
 {
   struct AHIDevUnit *iounit;
   struct AHIRequest *ior;
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("CMD_FLUSH\n");
+  }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
@@ -572,6 +602,11 @@ ResetCmd ( struct AHIRequest *ioreq,
            struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
+
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("CMD_RESET\n");
+  }
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
 
@@ -682,7 +717,7 @@ ReadCmd ( struct AHIRequest *ioreq,
     else
       ioreq->ahir_Frequency = 0x00010000;       // Fixed 1.0
 
-    ObtainSemaphore(&iounit->ListLock);
+    ObtainSemaphore(&iounit->Lock);
 
     /* Add the request to the list of readers */
     AddTail((struct List *) &iounit->ReadList,(struct Node *) ioreq);
@@ -690,7 +725,7 @@ ReadCmd ( struct AHIRequest *ioreq,
     /* Copy the current buffer contents */
     FillReadBuffer(ioreq, iounit, AHIBase);
 
-    ReleaseSemaphore(&iounit->ListLock);
+    ReleaseSemaphore(&iounit->Lock);
   }
   else
   {
@@ -888,22 +923,37 @@ StartCmd ( struct AHIRequest *ioreq,
   struct AHIPrivAudioCtrl *audioctrl;
   struct Library *AHIsubBase;
 
+  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
+  {
+    KPrintF("CMD_START\n");
+  }
+
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
   audioctrl = (struct AHIPrivAudioCtrl *) iounit->AudioCtrl;
+
+  ObtainSemaphore(&iounit->Lock);
 
   if(iounit->StopCnt)
   {
     iounit->StopCnt--;
+
     if((AHIsubBase = audioctrl->ahiac_SubLib))
     {
       if(iounit->StopCnt == 0)
       {
-        struct AHIRequest *ior;
+        struct AHIRequest* ior;
+        LONG               old_pri;
 
-// FIXIT! Cannot disable, since PlayRequest() doesn't exit until the sound
-// is actually started. Sigh. I hate this mess.
+        // Boost us some, so we don't spend too much time in 
+        // audio disabled state (we could miss an interrupt!)
+        // and disable audio interrupts.
 
-//        AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
+        old_pri = SetTaskPri( FindTask( NULL ), 128 );
+        AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
+//Disable();
+
+        // Now "start" all sounds (they won't really start until 
+        // the audio interrupts are enabled).
 
         while((ior = (struct AHIRequest *) RemHead(
             (struct List *) &iounit->RequestQueue)))
@@ -911,7 +961,9 @@ StartCmd ( struct AHIRequest *ioreq,
           WriteCmd(ior, AHIBase);
         }
 
-//        AHIsub_Enable((struct AHIAudioCtrlDrv *) audioctrl);
+//Enable();
+        AHIsub_Enable((struct AHIAudioCtrlDrv *) audioctrl);
+        SetTaskPri( FindTask( NULL ), old_pri );
       }
     }
   }
@@ -919,6 +971,9 @@ StartCmd ( struct AHIRequest *ioreq,
   {
     ioreq->ahir_Std.io_Error = AHIE_UNKNOWN;
   }
+
+  ReleaseSemaphore(&iounit->Lock);
+
   TermIO(ioreq,AHIBase);
 
 }
@@ -938,7 +993,8 @@ FeedReaders ( struct AHIDevUnit *iounit,
 {
   struct AHIRequest *ioreq;
 
-  ObtainSemaphore(&iounit->ListLock);
+  ObtainSemaphore(&iounit->Lock);
+
   for(ioreq = (struct AHIRequest *)iounit->ReadList.mlh_Head;
       ioreq->ahir_Std.io_Message.mn_Node.ln_Succ;
       ioreq = (struct AHIRequest *)ioreq->ahir_Std.io_Message.mn_Node.ln_Succ)
@@ -963,7 +1019,7 @@ FeedReaders ( struct AHIDevUnit *iounit,
     iounit->RecordOffDelay = 2;
   }
 
-  ReleaseSemaphore(&iounit->ListLock);
+  ReleaseSemaphore(&iounit->Lock);
 }
 
 
@@ -1108,7 +1164,7 @@ NewWriter ( struct AHIRequest *ioreq,
 
     GetExtras(ioreq)->Sound = sound;
 
-    ObtainSemaphore(&iounit->ListLock);
+    ObtainSemaphore(&iounit->Lock);
   
     if(ioreq->ahir_Link)
     {
@@ -1141,7 +1197,7 @@ NewWriter ( struct AHIRequest *ioreq,
       {
         struct AHIRequest *otherioreq = ioreq->ahir_Link;
       
-        channel = GetExtras(ioreq->ahir_Link)->Channel;
+        channel = GetExtras( otherioreq )->Channel;
         GetExtras(ioreq)->Channel = NOCHANNEL;
   
         otherioreq->ahir_Link = ioreq;
@@ -1151,7 +1207,7 @@ NewWriter ( struct AHIRequest *ioreq,
         if(channel != NOCHANNEL)
         {
           // Attach the request to the currently playing one
-  
+
           AHIsub_Disable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
           // Make SURE the current sound isn't already finished!
@@ -1168,22 +1224,45 @@ NewWriter ( struct AHIRequest *ioreq,
           }
           else
           {
-            iounit->Voices[channel].QueuedRequest = ioreq;
-            iounit->Voices[channel].NextOffset  = PLAY;
-            iounit->Voices[channel].NextRequest = NULL;
-            AHI_Play(iounit->AudioCtrl,
-                AHIP_BeginChannel,  channel,
-                AHIP_LoopFreq,      ioreq->ahir_Frequency,
-                AHIP_LoopVol,       ioreq->ahir_Volume,
-                AHIP_LoopPan,       ioreq->ahir_Position,
-                AHIP_LoopSound,     GetExtras(ioreq)->Sound,
-                AHIP_LoopOffset,    ioreq->ahir_Std.io_Actual,
-                AHIP_LoopLength,    ioreq->ahir_Std.io_Length - ioreq->ahir_Std.io_Actual,
-                AHIP_EndChannel,    NULL,
-                TAG_DONE);
+            if( iounit->Voices[channel].Flags & VF_STARTED )
+            {
+              // There is a sound already playing. Attach this sound
+              // after the current.
+
+              iounit->Voices[channel].QueuedRequest = ioreq;
+              iounit->Voices[channel].NextOffset    = PLAY;
+              iounit->Voices[channel].NextRequest   = NULL;
+
+              AHI_Play(iounit->AudioCtrl,
+                  AHIP_BeginChannel,  channel,
+                  AHIP_LoopFreq,      ioreq->ahir_Frequency,
+                  AHIP_LoopVol,       ioreq->ahir_Volume,
+                  AHIP_LoopPan,       ioreq->ahir_Position,
+                  AHIP_LoopSound,     GetExtras(ioreq)->Sound,
+                  AHIP_LoopOffset,    ioreq->ahir_Std.io_Actual,
+                  AHIP_LoopLength,    ioreq->ahir_Std.io_Length - 
+                                      ioreq->ahir_Std.io_Actual,
+                  AHIP_EndChannel,    NULL,
+                  TAG_DONE);
+            }
+            else
+            {
+              // The current sound has not yet been started, and the loop
+              // part is not set either. Let the SoundFunc() handle the
+              // attaching.
+
+              iounit->Voices[channel].NextSound     = GetExtras( ioreq )->Sound;
+              iounit->Voices[channel].NextVolume    = ioreq->ahir_Volume;
+              iounit->Voices[channel].NextPan       = ioreq->ahir_Position;
+              iounit->Voices[channel].NextFrequency = ioreq->ahir_Frequency;
+              iounit->Voices[channel].NextOffset    = ioreq->ahir_Std.io_Actual;
+              iounit->Voices[channel].NextLength    = ioreq->ahir_Std.io_Length -
+                                                      ioreq->ahir_Std.io_Actual;
+              iounit->Voices[channel].NextRequest   = ioreq;
+            }
+
             AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
           }
-
         }
       }
       else // She tried to add more than one request to another one
@@ -1198,7 +1277,7 @@ NewWriter ( struct AHIRequest *ioreq,
       AddWriter(ioreq, iounit, AHIBase);
     }
 
-    ReleaseSemaphore(&iounit->ListLock);
+    ReleaseSemaphore(&iounit->Lock);
   }
   else // No free sound found, or sound failed to load
   {
@@ -1326,6 +1405,7 @@ PlayRequest ( int channel,
 
   AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
+#if 0
   // This is a workaround for a race condition.
   // The problem can occur if a delayed request follows immediately after
   // this one, before the sample interrupt routine has been called, and
@@ -1339,6 +1419,7 @@ PlayRequest ( int channel,
   Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
   
 //  while(((volatile UBYTE) (iounit->Voices[channel].Flags) & VF_STARTED) == 0);
+#endif
 }
 
 
@@ -1360,7 +1441,7 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
 
   NewList((struct List *) &templist);
 
-  ObtainSemaphore(&iounit->ListLock);
+  ObtainSemaphore(&iounit->Lock);
 
   RemPlayers((struct List *) &iounit->PlayingList, iounit, AHIBase);
   RemPlayers((struct List *) &iounit->SilentList, iounit, AHIBase);
@@ -1378,7 +1459,7 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
     AddWriter(ioreq, iounit, AHIBase);
   }
 
-  ReleaseSemaphore(&iounit->ListLock);
+  ReleaseSemaphore(&iounit->Lock);
 }
 
 
