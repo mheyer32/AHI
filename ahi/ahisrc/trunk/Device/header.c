@@ -656,13 +656,13 @@ OpenLibs ( void )
 
   OpenahiCatalog(NULL, NULL);
 
-#if defined( __amithlon__ )
-  Req( "This is a *beta* release of AHI/x86,\n"
-       "using the generic 'C' mixing routines.\n"
-       "\n"
-       "Detailed bug reports and patches are welcome.\n"
-	 "/Martin Blom <martin@blom.org>\n" );
-#endif
+/* #if defined( __amithlon__ ) */
+/*   Req( "This is a *beta* release of AHI/x86,\n" */
+/*        "using the generic 'C' mixing routines.\n" */
+/*        "\n" */
+/*        "Detailed bug reports and patches are welcome.\n" */
+/* 	 "/Martin Blom <martin@blom.org>\n" ); */
+/* #endif */
 
   return TRUE;
 }
