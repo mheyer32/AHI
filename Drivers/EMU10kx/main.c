@@ -88,6 +88,8 @@
 
 #ifdef AHI
 
+#include <config.h>
+
 #include <errno.h>
 #include <string.h>
 #include "linuxsupport.h"
@@ -561,6 +563,15 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	int i;
 	u32 pc = 0;
 	u32 patch_n=0;
+
+	u32 base, zero, half, two;
+	u32 analog_front_l, analog_front_r, analog_rear_l, analog_rear_r;
+	u32 analog_surround_l, analog_surround_r, analog_center, analog_lfe;
+	u32 spdif_front_l, spdif_front_r, spdif_rear_l, spdif_rear_r;
+	u32 spdif_surround_l, spdif_surround_r, spdif_center, spdif_lfe;
+	u32 spdif_cd_l, spdif_cd_r, spdif_in_l, spdif_in_r;
+	u32 adc_rec_l, adc_rec_r, ac97_in_l, ac97_in_r;
+
 	struct emu_efx_info_t emu_efx_info[2]=
 		{{ 20, 10, 0x400, 0x100, 0x20 },
 		 { 24, 12, 0x600, 0x400, 0x60 },
@@ -589,13 +600,13 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		memset(mgr->patch[i], 0, PAGE_SIZE);
 	}
 
+#ifndef AHI
 	if (card->is_audigy) {
 		for (i = 0; i < 1024; i++)
 			OP(0xf, 0x0c0, 0x0c0, 0x0cf, 0x0c0);
 
 		for (i = 0; i < 512 ; i++)
 			sblive_writeptr(card, A_GPR_BASE+i,0,0);
-
 		pc=0;
 
 		//Pcm input volume
@@ -758,7 +769,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		OP(6, 0x102, AC97_IN_L, 0x40, 0x40);
 		OP(6, 0x103, AC97_IN_R, 0x40, 0x40);
 
-
+		
 		/* Digital In + PCM + MULTI_FRONT-> AC97 out (front speakers)*/
 		OP(6, AC97_FRONT_L, 0x100, 0x10c, 0x113);
 
@@ -772,7 +783,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		CONNECT(PCM_IN_R, AC97_FRONT_R);
 		CONNECT(SPDIF_CD_R, AC97_FRONT_R);
 
-		/* Digital In + PCM + AC97 In + PCM1 + MULTI_REAR --> Rear Channel */ 
+		/* Digital In + PCM + AC97 In + PCM1 + MULTI_REAR --> Rear Channel */
 		OP(6, 0x104, PCM1_IN_L, 0x100, 0x115);
 		OP(6, 0x104, 0x104, 0x10c, 0x102);
 
@@ -816,7 +827,6 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		OP(6, ADC_REC_R, 0x103, 0x40, 0x40);
 
 		CONNECT(AC97_IN_R, ADC_REC_R);
-
 
 		/* fx12:Analog-Center */
 		OP(6, ANALOG_CENTER, 0x117, 0x40, 0x40);
@@ -869,7 +879,6 @@ static int __devinit fx_init(struct emu10k1_card *card)
 		OP(0, DIGITAL_OUT_R, 0x040, 0x10b, 0x109);
 		OUTPUT_PATCH_END(patch);
 
-
 		/* delimiter patch */
 		patch = PATCH(mgr, patch_n);
 		patch->code_size = 0;
@@ -877,10 +886,229 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	
 		sblive_writeptr(card, DBG, 0, 0);
 	}
-
-#ifndef AHI
-	mgr->lock = SPIN_LOCK_UNLOCKED;
 #endif
+
+#ifdef AHI
+	if (card->is_audigy) {
+	  for (i = 0; i < 1024; i++)
+	    OP(0xf, 0x0c0, 0x0c0, 0x0cf, 0x0c0);
+	  
+	  for (i = 0; i < 512 ; i++)
+	    sblive_writeptr(card, A_GPR_BASE+i,0,0);
+
+	   base              = A_GPR_BASE;
+	   zero              = 0xc0;
+	   half              = 0xcd;
+	   two               = 0xc2;
+	   analog_front_l    = A_ANALOG_FRONT_L;
+	   analog_front_r    = A_ANALOG_FRONT_R;
+	   analog_rear_l     = A_ANALOG_REAR_L;
+	   analog_rear_r     = A_ANALOG_REAR_R;
+	   analog_surround_l = A_ANALOG_SURROUND_L;
+	   analog_surround_r = A_ANALOG_SURROUND_R;
+	   analog_center     = A_ANALOG_CENTER;
+	   analog_lfe        = A_ANALOG_LFE;
+	   spdif_front_l     = A_SPDIF_FRONT_L;
+	   spdif_front_r     = A_SPDIF_FRONT_R;
+	   spdif_rear_l      = A_SPDIF_REAR_L;
+	   spdif_rear_r      = A_SPDIF_REAR_R;
+	   spdif_surround_l  = A_SPDIF_SURROUND_L;
+	   spdif_surround_r  = A_SPDIF_SURROUND_R;
+	   spdif_center      = A_SPDIF_CENTER;
+	   spdif_lfe         = A_SPDIF_LFE;
+	   spdif_cd_l        = A_SPDIF_CD_L;
+	   spdif_cd_r        = A_SPDIF_CD_R;
+	   spdif_in_l        = A_SPDIF_IN_L;
+	   spdif_in_r        = A_SPDIF_IN_R;
+	   adc_rec_l         = A_ADC_REC_L;
+	   adc_rec_r         = A_ADC_REC_R;
+	   ac97_in_l         = A_AC97_IN_L;
+	   ac97_in_r         = A_AC97_IN_R;
+	}
+	else {
+	  for (i = 0; i < 512 ; i++)
+	    OP(6, 0x40, 0x40, 0x40, 0x40);
+
+	  for (i = 0; i < 256; i++)
+	    sblive_writeptr_tag(card, 0,
+				FXGPREGBASE + i, 0,
+				TANKMEMADDRREGBASE + i, 0,
+				TAGLIST_END);
+	   base              = GPR_BASE;
+	   zero              = 0x40;
+	   half              = 0x4d;
+	   two               = 0x42;
+	   analog_front_l    = L_ANALOG_FRONT_L;
+	   analog_front_r    = L_ANALOG_FRONT_R;
+	   analog_rear_l     = L_ANALOG_REAR_L;
+	   analog_rear_r     = L_ANALOG_REAR_R;
+	   analog_surround_l = GPR_BASE + RES_JUNK;
+	   analog_surround_r = GPR_BASE + RES_JUNK;
+	   analog_center     = L_ANALOG_CENTER;
+	   analog_lfe        = L_ANALOG_LFE;
+	   spdif_front_l     = L_SPDIF_FRONT_L;
+	   spdif_front_r     = L_SPDIF_FRONT_R;
+	   spdif_rear_l      = GPR_BASE + RES_JUNK;
+	   spdif_rear_r      = GPR_BASE + RES_JUNK;
+	   spdif_surround_l  = L_SPDIF_SURROUND_L;
+	   spdif_surround_r  = L_SPDIF_SURROUND_R;
+	   spdif_center      = L_SPDIF_CENTER;
+	   spdif_lfe         = L_SPDIF_LFE;
+	   spdif_cd_l        = L_SPDIF_CD_L;
+	   spdif_cd_r        = L_SPDIF_CD_R;
+	   spdif_in_l        = L_SPDIF_IN_L;
+	   spdif_in_r        = L_SPDIF_IN_R;
+	   adc_rec_l         = L_ADC_REC_L;
+	   adc_rec_r         = L_ADC_REC_R;
+	   ac97_in_l         = L_AC97_IN_L;
+	   ac97_in_r         = L_AC97_IN_R;
+	}
+
+	pc = 0;
+	
+	/* Scale AHI streams */
+	OP(0, RES_AHI_FRONT_L+base,    zero, AHI_FRONT_L,    VOL_AHI_FRONT_L+base);
+	OP(0, RES_AHI_FRONT_R+base,    zero, AHI_FRONT_R,    VOL_AHI_FRONT_R+base);
+	OP(0, RES_AHI_REAR_L+base,     zero, AHI_REAR_L,     VOL_AHI_REAR_L+base);
+	OP(0, RES_AHI_REAR_R+base,     zero, AHI_REAR_R,     VOL_AHI_REAR_R+base);
+	OP(0, RES_AHI_SURROUND_L+base, zero, AHI_SURROUND_L, VOL_AHI_SURROUND_L+base);
+	OP(0, RES_AHI_SURROUND_R+base, zero, AHI_SURROUND_R, VOL_AHI_SURROUND_R+base);
+	OP(0, RES_AHI_CENTER+base,     zero, AHI_CENTER,     VOL_AHI_CENTER+base);
+	OP(0, RES_AHI_LFE+base,        zero, AHI_LFE,        VOL_AHI_LFE+base);
+
+	/* +6 dB volume correction, to make the streams use the full
+	 * dynamic range (Why, oh why?) */
+	OP(4, RES_AHI_FRONT_L+base,    zero, RES_AHI_FRONT_L+base,    two);
+	OP(4, RES_AHI_FRONT_R+base,    zero, RES_AHI_FRONT_R+base,    two);
+	OP(4, RES_AHI_REAR_L+base,     zero, RES_AHI_REAR_L+base,     two);
+	OP(4, RES_AHI_REAR_R+base,     zero, RES_AHI_REAR_R+base,     two);
+	OP(4, RES_AHI_SURROUND_L+base, zero, RES_AHI_SURROUND_L+base, two);
+	OP(4, RES_AHI_SURROUND_R+base, zero, RES_AHI_SURROUND_R+base, two);
+	OP(4, RES_AHI_CENTER+base,     zero, RES_AHI_CENTER+base,     two);
+	OP(4, RES_AHI_LFE+base,        zero, RES_AHI_LFE+base,        two);
+	
+	/* Scale digital CD in */
+	OP(0, RES_SPDIF_CD_L+base, zero, spdif_cd_l, VOL_SPDIF_CD_L+base);
+	OP(0, RES_SPDIF_CD_R+base, zero, spdif_cd_r, VOL_SPDIF_CD_R+base);
+
+	/* Scale S/PDIF in */
+	OP(0, RES_SPDIF_IN_L+base, zero, spdif_in_l, VOL_SPDIF_IN_L+base);
+	OP(0, RES_SPDIF_IN_R+base, zero, spdif_in_r, VOL_SPDIF_IN_R+base);
+
+	/* Scale AHI_FRONT to rear */
+	OP(0, RES_FRONT_REAR_L+base, zero, RES_AHI_FRONT_L+base, VOL_FRONT_REAR_L+base);
+	OP(0, RES_FRONT_REAR_R+base, zero, RES_AHI_FRONT_R+base, VOL_FRONT_REAR_R+base);
+
+	/* Scale AHI_SURROUND to rear */
+	OP(0, RES_SURROUND_REAR_L+base, zero, RES_AHI_SURROUND_L+base, VOL_SURROUND_REAR_L+base);
+	OP(0, RES_SURROUND_REAR_R+base, zero, RES_AHI_SURROUND_R+base, VOL_SURROUND_REAR_R+base);
+
+	/* Scale AHI_FRONT to center/LFE */
+	OP(0xe, RES_FRONT_MONO+base, RES_AHI_FRONT_L+base, half, RES_AHI_FRONT_R+base); // Left/2 + Right/2
+	OP(0, RES_FRONT_CENTER+base, zero, RES_FRONT_MONO+base, VOL_FRONT_CENTER+base);
+	OP(0, RES_FRONT_LFE+base,    zero, RES_FRONT_MONO+base, VOL_FRONT_LFE+base);
+
+	/* Sum RES_AHI_FRONT + RES_SPDIF_CD + RES_SPDIF_IN */
+	OP(6, SUM_FRONT_L+base, RES_AHI_FRONT_L+base, RES_SPDIF_CD_L+base, RES_SPDIF_CD_L+base);
+	OP(6, SUM_FRONT_R+base, RES_AHI_FRONT_R+base, RES_SPDIF_CD_R+base, RES_SPDIF_CD_R+base);
+
+	/* Sum RES_AHI_REAR + RES_FRONT_REAR + RES_SURROUND_REAR */
+	OP(6, SUM_REAR_L+base, RES_AHI_REAR_L+base, RES_FRONT_REAR_L+base, RES_SURROUND_REAR_L+base);
+	OP(6, SUM_REAR_R+base, RES_AHI_REAR_R+base, RES_FRONT_REAR_R+base, RES_SURROUND_REAR_R+base);
+
+	/* "Sum" RES_AHI_SURROUND */
+	OP(6, SUM_SURROUND_L+base, RES_AHI_SURROUND_L+base, zero, zero);
+	OP(6, SUM_SURROUND_R+base, RES_AHI_SURROUND_R+base, zero, zero);
+
+	/* Sum RES_AHI_CENTER/RES_AHI_LFE + AHI_FRONT mix-in */
+	OP(6, SUM_CENTER+base, RES_AHI_CENTER+base, RES_FRONT_CENTER+base, zero);
+	OP(6, SUM_LFE+base,    RES_AHI_LFE+base,    RES_FRONT_LFE+base,    zero);
+
+		
+	/* Analog output */
+	OP(0, analog_front_l,    zero, SUM_FRONT_L+base,    VOL_ANALOG_FRONT_L+base);
+	OP(0, analog_front_r,    zero, SUM_FRONT_R+base,    VOL_ANALOG_FRONT_R+base);
+	OP(0, analog_rear_l,     zero, SUM_REAR_L+base,     VOL_ANALOG_REAR_L+base);
+	OP(0, analog_rear_r,     zero, SUM_REAR_R+base,     VOL_ANALOG_REAR_R+base);
+	OP(0, analog_surround_l, zero, SUM_SURROUND_L+base, VOL_ANALOG_SURROUND_L+base);
+	OP(0, analog_surround_r, zero, SUM_SURROUND_R+base, VOL_ANALOG_SURROUND_R+base);
+	OP(0, analog_center,     zero, SUM_CENTER+base,     VOL_ANALOG_CENTER+base);
+	OP(0, analog_lfe,        zero, SUM_LFE+base,        VOL_ANALOG_LFE+base);
+
+	/* Digital SPDIF output */
+	OP(0, spdif_front_l,    zero, SUM_FRONT_L+base,    VOL_SPDIF_FRONT_L+base);
+	OP(0, spdif_front_r,    zero, SUM_FRONT_R+base,    VOL_SPDIF_FRONT_R+base);
+	OP(0, spdif_rear_l,     zero, SUM_REAR_L+base,     VOL_SPDIF_REAR_L+base);
+	OP(0, spdif_rear_r,     zero, SUM_REAR_R+base,     VOL_SPDIF_REAR_R+base);
+	OP(0, spdif_surround_l, zero, SUM_SURROUND_L+base, VOL_SPDIF_SURROUND_L+base);
+	OP(0, spdif_surround_r, zero, SUM_SURROUND_R+base, VOL_SPDIF_SURROUND_R+base);
+	OP(0, spdif_center,     zero, SUM_CENTER+base,     VOL_SPDIF_CENTER+base);
+	OP(0, spdif_lfe,        zero, SUM_LFE+base,        VOL_SPDIF_LFE+base);
+
+
+	/* Connect AC97 to ADC */
+	OP(6, adc_rec_l, ac97_in_l, zero, zero);
+	OP(6, adc_rec_r, ac97_in_r, zero, zero);
+
+
+	/* delimiter patch */
+	patch = PATCH(mgr, patch_n);
+	patch->code_size = 0;
+	
+	if (card->is_audigy) {
+	  sblive_writeptr(card, 0x53, 0, 0);
+	}
+	else {
+	  sblive_writeptr(card, DBG, 0, 0);
+	}
+	
+	/* Set the AHI stream volume controls to full volume */
+	emu10k1_set_volume_gpr(card, VOL_AHI_FRONT_L,    100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_FRONT_R,    100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_REAR_L,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_REAR_R,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_SURROUND_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_SURROUND_R, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_CENTER,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_AHI_LFE,        100, VOL_5BIT);
+
+	/* Enable surround-to-rear routing */
+	emu10k1_set_volume_gpr(card, VOL_SURROUND_REAR_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SURROUND_REAR_R, 100, VOL_5BIT);
+
+	/* Enable front-to-center/LFE routing */
+	emu10k1_set_volume_gpr(card, VOL_FRONT_CENTER, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_FRONT_LFE,    100, VOL_5BIT);
+	
+	/* Set the digital input volume controls to full volume */
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_CD_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_CD_R, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_IN_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_IN_R, 100, VOL_5BIT);
+	
+	/* Set the analog output volume controls to full volume */
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_FRONT_L,    100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_FRONT_R,    100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_REAR_L,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_REAR_R,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_SURROUND_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_SURROUND_R, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_CENTER,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_ANALOG_LFE,        100, VOL_5BIT);
+
+	/* Set the digital output volume controls to full volume */
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_FRONT_L,    100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_FRONT_R,    100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_REAR_L,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_REAR_R,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_SURROUND_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_SURROUND_R, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_CENTER,     100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_SPDIF_LFE,        100, VOL_5BIT);
+
+#else
+
+	mgr->lock = SPIN_LOCK_UNLOCKED;
 
 	// Set up Volume controls, try to keep this the same for both Audigy and Live
 
@@ -888,30 +1116,22 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_VOLUME][0] = 8;
 	mgr->ctrl_gpr[SOUND_MIXER_VOLUME][1] = 9;
 
-#ifdef AHI
-	left = right = 100;
-
-	emu10k1_set_volume_gpr(card, 8, left, 1 << 5);
-	emu10k1_set_volume_gpr(card, 9, right, 1 << 5);
-#else
 	left = card->ac97.mixer_state[SOUND_MIXER_VOLUME] & 0xff;
 	right = (card->ac97.mixer_state[SOUND_MIXER_VOLUME] >> 8) & 0xff;
 
 	emu10k1_set_volume_gpr(card, 8, left, 1 << card->ac97.bit_resolution);
 	emu10k1_set_volume_gpr(card, 9, right, 1 << card->ac97.bit_resolution);
-#endif
 
 	//Rear volume
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][0] = 0x19;
 	mgr->ctrl_gpr[ SOUND_MIXER_OGAIN ][1] = 0x1a;
 
 	left = right = 67;
-#ifndef AHI
+
 	card->ac97.mixer_state[SOUND_MIXER_OGAIN] = (right << 8) | left;
 
 	card->ac97.supported_mixers |= SOUND_MASK_OGAIN;
 	card->ac97.stereo_mixers |= SOUND_MASK_OGAIN;
-#endif
 
 	emu10k1_set_volume_gpr(card, 0x19, left, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, 0x1a, right, VOL_5BIT);
@@ -920,12 +1140,8 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_PCM][0] = 6;
 	mgr->ctrl_gpr[SOUND_MIXER_PCM][1] = 7;
 
-#ifdef AHI
-	left = right = 100;
-#else
 	left = card->ac97.mixer_state[SOUND_MIXER_PCM] & 0xff;
 	right = (card->ac97.mixer_state[SOUND_MIXER_PCM] >> 8) & 0xff;
-#endif
 
 	emu10k1_set_volume_gpr(card, 6, left, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, 7, right, VOL_5BIT);
@@ -935,17 +1151,14 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	mgr->ctrl_gpr[SOUND_MIXER_DIGITAL1][1] = 0xf;
 
 	left = right = 67;
-#ifndef AHI
 	card->ac97.mixer_state[SOUND_MIXER_DIGITAL1] = (right << 8) | left; 
 
 	card->ac97.supported_mixers |= SOUND_MASK_DIGITAL1;
 	card->ac97.stereo_mixers |= SOUND_MASK_DIGITAL1;
-#endif
 	
 	emu10k1_set_volume_gpr(card, 0xd, left, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, 0xf, right, VOL_5BIT);
 
-#ifndef AHI
 	//hard wire the ac97's pcm, pcm volume is done above using dsp code.
 	if (card->is_audigy)
 		//for Audigy, we mute it and use the philips 6 channel DAC instead
@@ -962,7 +1175,6 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	emu10k1_ac97_write(&card->ac97, AC97_RECORD_GAIN, 0x0000);
 	card->ac97.mixer_state[SOUND_MIXER_IGAIN] = 0x101;
 #endif
-
 	return 0;
 }
 
