@@ -63,6 +63,10 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.23  1999/09/20 21:08:52  lcs
+Minor rearrengment of the Acknowledgements chapter.
+Added Frank Wille to Contributors.
+
 Revision 4.22  1999/09/19 14:05:28  lcs
 Changed the license text.
 Some polishing.
@@ -199,6 +203,7 @@ The latest release of @sc{Ahi} can always be found at
 @menu
 * Overview::                    Brief introduction
 * Distribution::                What you are allowed to do and not
+
 * System description::          The components of @sc{Ahi}
 
 * The Author::                  Who designed it?
@@ -1249,6 +1254,25 @@ This concept won't make you rich, but are rich people really happier?
 
 @cindex Acknowledgments
 
+There are quite a few people that have helped with the development of
+@sc{Ahi}. Where would be a better place to thank them than in the
+acknowledgments chapter? You tell me.
+
+@menu
+* Thanks::                      
+* Contributors::                
+@end menu
+
+@c ***********************************************************************
+@c **** Special thanks ***************************************************
+@c ***********************************************************************
+
+@node Thanks, Contributors, Acknowledgments, Acknowledgments
+@comment  node-name,  next,  previous,  up
+@section Special thanks
+
+@cindex Special thanks
+
 The author wish to give special thanks to the following persons
 (in alphabetical order):
 
@@ -1310,16 +1334,12 @@ Michel Vissers,
 Ondrej Zima,
 me, myself and I@enddots{}
 
-@menu
-* Contributors::                Who has contributed to the @sc{Ahi} project?
-@end menu
-
 
 @c ***********************************************************************
 @c **** Contributors *****************************************************
 @c ***********************************************************************
 
-@node Contributors,  , Acknowledgments, Acknowledgments
+@node Contributors,  , Thanks, Acknowledgments
 @comment  node-name,  next,  previous,  up
 @section Contributors
 
@@ -1352,10 +1372,13 @@ The first version of the preferences program.  Too bad things didn't work
 out as planned.
 
 @item Teemu Suikki @email{tsuikki@@lut.fi}
-The Delfina driver.
+The Delfina driver and the first PPC port.
 
 @item Thomas Wenzel @email{wenzel@@unixserv.rz.fh-hannover.de}
 The Prelude driver.
+
+@item Frank Wille @email{frank@@phoenix.owl.de}
+The ELF loader.
 
 @end table
 
