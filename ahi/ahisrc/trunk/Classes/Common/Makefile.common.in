@@ -24,7 +24,9 @@ STRIP		= @STRIP@ @STRIPFLAGS@
 OBJCOPY		= @OBJCOPY@
 
 CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${common_srcdir} -I${srcdir} \
-		  -D_AHI_CLASS_NAME="\"${AHI_CLASS_NAME}\""
+		  -D_AHI_CLASS_NAME="\"${AHI_CLASS_NAME}\"" \
+		  -D_AHI_SUPER_NAME="\"${AHI_SUPER_NAME}\"" \
+		  -D_AHI_SUPER_VERS="${AHI_SUPER_VERS}"
 CFLAGS		= @CFLAGS@
 ASFLAGS		= @ASFLAGS@
 LDFLAGS		= @LDFLAGS@ -nostartfiles

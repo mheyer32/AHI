@@ -7,8 +7,7 @@
 #include "boopsi.h"
 
 struct AHIClassBase {
-    struct CommonBase    common;
-    struct ClassLibrary* super;
+    struct CommonBase common;
 };
 
 #define MAX_CHILDREN 64
