@@ -1,3 +1,17 @@
+2002-05-13  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 4.9.
+
+	* emu10kx.audio: Reordered the recording sources so the "Mixer"
+	comes first (ProStation Audio workaround).
+
+	* emu10kx.audio: The microphone was unmuted by accident when the
+	playback was stopped.
+
+2002-05-12  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 4.8.
+
 2002-05-11  Martin Blom  <martin@blom.org>
 
 	* AHI-Handler: Imported into CVS.
