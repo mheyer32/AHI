@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace Userchain {
 #else
-# define _P _Processor_Userchain
+# define _P _UserchainProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
@@ -47,4 +47,4 @@ namespace AHI {
 # undef _P
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
-#endif /* CLASSES_AHI_PROCESSOR_GAIN_H */
+#endif /* CLASSES_AHI_PROCESSOR_USERCHAIN_H */

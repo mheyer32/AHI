@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace FFT {
 #else
-# define _P _Processor_FFT
+# define _P _FFTProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

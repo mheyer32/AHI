@@ -26,7 +26,7 @@ namespace AHI {
   namespace Sound {
     namespace Datatype {
 #else
-# define _P _Sound_Datatype
+# define _P _DatatypeSound
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

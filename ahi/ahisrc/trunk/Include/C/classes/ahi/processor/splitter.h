@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace Splitter {
 #else
-# define _P _Processor_Splitter
+# define _P _SplitterProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

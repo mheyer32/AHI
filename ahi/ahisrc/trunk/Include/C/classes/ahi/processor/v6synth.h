@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace Synth {
 #else
-# define _P _Processor_Synth
+# define _P _SynthProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

@@ -28,7 +28,7 @@ namespace AHI {
   namespace Processor {
     namespace Dither {
 #else
-# define _P _Processor_Dither
+# define _P _DitherProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/

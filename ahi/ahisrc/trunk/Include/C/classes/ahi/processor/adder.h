@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace Adder {
 #else
-# define _P _Processor_Adder
+# define _P _AdderProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
