@@ -1,5 +1,10 @@
 * $Id$
 * $Log$
+* Revision 1.7  1997/01/31 19:27:14  lcs
+* Added stereo samples to AHI_LoadSound()
+* Moved the DSPEcho intialization and deintialization routines
+* to a separate file
+*
 * Revision 1.6  1997/01/15 18:35:07  lcs
 * AHIB_Dizzy has a better implementation and definition now.
 * (Was BOOL, now pointer to a second tag list)
@@ -64,10 +69,8 @@
 	XREF	calcUnsignedTable
 	XREF	_Mix
 	XREF	CalcSamples
-	XREF	do_DSPEchoMono16
-	XREF	do_DSPEchoStereo16
-	XREF	do_DSPEchoMono32
-	XREF	do_DSPEchoStereo32
+	XREF	update_DSPEcho
+	XREF	free_DSPEcho
 
 	XREF	_UtilityBase
 
@@ -656,11 +659,6 @@ SetVol_nodebug
 	and.l	#1,d2
 	swap.w	d2				;pan=0 or $10000
 .pan
-;	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
-;	bne	.stereo
-;	moveq	#0,d2				;pan=0
-;.stereo
-
 	mulu.w	#AHIChannelData_SIZEOF,d0
 	move.l	ahiac_ChannelDatas(a2),a0
 	add.l	d0,a0
@@ -1400,155 +1398,6 @@ clear_DSPMask:
 	call	AHIsub_Enable			;a2 ok
 	rts
 
-***
-*** DSPECHO
-***
-	XDEF	update_DSPEcho
-update_DSPEcho:
-	pushm	d2-d7/a3-a6
-	move.l	a0,a3
-	bsr	free_DSPEcho
-	move.l	ahiac_BuffType(a2),d0
-	moveq	#0,d1
-	move.b	.type2shift(pc,d0),d1
-	move.l	ahiede_Delay(a3),d0
-	move.l	d0,d3
-	lsl.l	d1,d3
-	add.l	ahiac_MaxBuffSamples(a2),d0
-	lsl.l	d1,d0
-	move.l	d0,d2
-	add.l	#AHIEcho_SIZEOF,d0
-	move.l	#MEMF_PUBLIC|MEMF_CLEAR,d1
-	move.l	ahib_SysLib(a5),a6
-	call	AllocVec
-	move.l	d0,a1
-	tst.l	d0
-	beq	.exit
-
-	lea	ahiecho_Buffer(a1),a0
-	move.l	d2,ahiecho_BufferSize(a1)
-	add.l	a0,d2
-	move.l	d2,ahiecho_EndPtr(a1)
-	move.l	a0,ahiecho_SrcPtr(a1)
-	add.l	a0,d3
-	move.l	d3,ahiecho_DstPtr(a1)
-
-	move.l	ahiac_BuffType(a2),d0
-	lea	do_DSPEchoMono16(pc),a0
-	cmp.l	#AHIST_M16S,d0
-	beq	.save_mono
-	lea	do_DSPEchoMono32(pc),a0
-	cmp.l	#AHIST_M32S,d0
-	beq	.save_mono
-	lea	do_DSPEchoStereo16(pc),a0
-	cmp.l	#AHIST_S16S,d0
-	beq	.save
-	lea	do_DSPEchoStereo32(pc),a0
-	cmp.l	#AHIST_S32S,d0
-	beq	.save
-	bra	.exit					;ERROR, unknown buffer!
-.save_mono
-	clr.l	ahiede_Cross(a3)
-.save
-	move.l	a0,ahiecho_Code(a1)
-
-* Delay      = ahiede_Delay
-	move.l	ahiede_Delay(a3),ahiecho_Delay(a1)
-* MixD       = ahiede_Mix
-	move.l	ahiede_Mix(a3),d0
-	lsr.w	#1,d0
-	bpl.b	.0a
-	subq.w	#1,d0
-.0a
-	move.w	d0,ahiecho_MixD(a1)
-* MixN       = $10000-ahiede_Mix
-	move.l	#$10000,d0
-	sub.l	ahiede_Mix(a3),d0
-	lsr.w	#1,d0
-	bpl.b	.0b
-	subq.w	#1,d0
-.0b
-	move.w	d0,ahiecho_MixN(a1)
-
-
-* FeedbackDS = ahide_Feedback*($10000-ahide_Cross)
-	move.l	ahiede_Feedback(a3),d0
-	move.l	#$10000,d1
-	sub.l	ahiede_Cross(a3),d1
-	mulu.l	d1,d0
-	bvc	.1
-	moveq	#$ffffffff,d0
-.1
-	clr.w	d0
-	swap.w	d0
-	lsr.w	#1,d0
-	move.w	d0,ahiecho_FeedbackDS(a1)
-
-* FeedbackDO = ahide_Feedback*ahide_Cross
-	move.l	ahiede_Feedback(a3),d0
-	mulu.l	ahiede_Cross(a3),d0
-	bvc	.2
-	moveq	#$ffffffff,d0
-.2
-	clr.w	d0
-	swap.w	d0
-	lsr.l	#1,d0
-	move.w	d0,ahiecho_FeedbackDO(a1)
-
-* FeedbackNS = ($10000-ahide_Feedback)*($10000-ahide_Cross)
-	move.l	#$10000,d0
-	sub.l	ahiede_Cross(a3),d0
-	move.l	#$10000,d1
-	sub.l	ahiede_Feedback(a3),d1
-	mulu.l	d1,d0
-	bvc	.3
-	moveq	#$ffffffff,d0
-.3
-	clr.w	d0
-	swap.w	d0
-	lsr.w	#1,d0
-	move.w	d0,ahiecho_FeedbackNS(a1)
-
-* FeedbackNO = ($10000-ahide_Feedback)*ahide_Cross
-	move.l	ahiede_Cross(a3),d0
-	mulu.l	d1,d0
-	bvc	.4
-	moveq	#$ffffffff,d0
-.4
-	clr.w	d0
-	swap.w	d0
-	lsr.l	#1,d0
-	move.w	d0,ahiecho_FeedbackNO(a1)
-
-	move.l	a1,ahiac_EffDSPEchoStruct(a2)
-.exit
-	popm	d2-d7/a3-a6
-	rts
-.type2shift
-	dc.b	0	;AHIST_M8S  (0)
-	dc.b	1	;AHIST_M16S (1)
-	dc.b	1	;AHIST_S8S  (2)
-	dc.b	2	;AHIST_S16S (3)
-	dc.b	0	;AHIST_M8U  (4)
-	dc.b	0
-	dc.b	0
-	dc.b	0
-	dc.b	2	;AHIST_M32S (8)
-	dc.b	0
-	dc.b	3	;AHIST_S32S (10)
-
-	even
-
-	XDEF	free_DSPEcho
-free_DSPEcho:
-	push	a6
-	move.l	ahib_SysLib(a5),a6
-	move.l	ahiac_EffDSPEchoStruct(a2),a1
-	clr.l	ahiac_EffDSPEchoStruct(a2)
-	call	FreeVec
-	pop	a6
-	rts
-
  ENDC * MC020
 
 
@@ -1679,21 +1528,27 @@ LoadSound_nodebug1
 	beq	.typeok_signed
 	cmp.l	#AHIST_M16S,d1
 	beq	.typeok_signed
-;	cmp.l	#AHIST_M8U,d1
-;	beq	.typeok_unsigned
+ IFGE	__CPU-68020
+	cmp.l	#AHIST_S8S,d1
+	beq	.typeok_signed
+	cmp.l	#AHIST_S16S,d1
+	beq	.typeok_signed
+ ENDC
+	cmp.l	#AHIST_M8U,d1
+	beq	.typeok_unsigned
 	moveq	#AHIE_BADSAMPLETYPE,d0
 	bra	.exit
 .typeok_signed
 	move.l	d0,d1
 	bsr	initSignedTable
-;	tst.l	d0
-;	beq	.error_nomem
+	tst.l	d0
+	beq	.error_nomem
 	bra	.typeok
 .typeok_unsigned
 	move.l	d0,d1
 	bsr	initUnsignedTable
-;	tst.l	d0
-;	beq	.error_nomem
+	tst.l	d0
+	beq	.error_nomem
 .typeok
 	move.l	ahisi_Type(a0),sd_Type(a3,d1.l)
 	move.l	ahisi_Address(a0),sd_Addr(a3,d1.l)
@@ -2746,6 +2601,8 @@ UnloadSound_nodebug
 *   NOTES
 *
 *   BUGS
+*       io_Data must be an even multiple of the sample frame size.
+*       32 bit samples is not allowed yet.
 *
 *   SEE ALSO
 *       <ahi/devices.h>, <exec/errors.h>
