@@ -1,8 +1,10 @@
 /*
  * $Id$
  * $Log$
- * Revision 1.1  1997/06/25 19:45:09  lcs
- * Initial revision
+ * Revision 1.2  1997/06/25 19:55:04  lcs
+ * Modified to make the library base compatible with the public
+ * part of ToccataBase.
+ * Added __UserLibOpen() and __UserLibClose().
  *
  *
  */
@@ -29,6 +31,9 @@ ULONG __asm _LibInit   ( register __a0 APTR seglist,
 int  __saveds __asm __UserLibInit   (register __a6 struct MyLibrary *libbase);
 void __saveds __asm __UserLibCleanup(register __a6 struct MyLibrary *libbase);
 
+int  __saveds __asm __UserLibOpen   (register __a6 struct MyLibrary *libbase);
+void __saveds __asm __UserLibClose  (register __a6 struct MyLibrary *libbase);
+
 int  __saveds __asm __UserDevInit   (register __d0 long unit,
                                      register __a0 struct IORequest *ior,
                                      register __a6 struct MyLibrary *libbase);
@@ -40,6 +45,8 @@ void __saveds __asm __libfpterm     (register __a6 struct MyLibrary *libbase);
 
 struct MyLibrary {
         struct             Library ml_Lib;
+        APTR               ml_BoardAddress;   /* Toccata */
+        APTR               ml_HardInfo;       /* Toccata */
         ULONG              ml_SegList;
         ULONG              ml_Flags;
         APTR               ml_ExecBase; /* pointer to exec base  */
@@ -224,7 +231,8 @@ LONG __asm _LibOpen(
 #ifdef DEVICE
         __UserDevInit(unit, ior, libbase) != 0
 #else
-        __UserLibInit(libbase) != 0
+        (__UserLibInit(libbase) != 0) ||
+        __UserLibOpen(libbase) != 0)
 #endif
        )
     {
@@ -244,6 +252,11 @@ error:
         return NULL;
     }    
 #endif
+    if (__UserLibOpen(libbase) != 0)
+    {
+        libbase->ml_Lib.lib_OpenCnt--;
+        return NULL;
+    }    
 #endif
 
     return ( (LONG) libbase );
@@ -265,6 +278,7 @@ ULONG __asm _LibClose(
 #ifdef DEVICE
        __UserDevCleanup(ior, libbase);
 #else
+       __UserLibClose(libbase);
        __UserLibCleanup(libbase);
 #endif
        __libfpterm(libbase);
@@ -274,6 +288,7 @@ ULONG __asm _LibClose(
        libbase = origbase;
     }
 #else
+    __UserLibClose(libbase);
 #ifdef DEVICE
     __UserDevCleanup(ior, libbase);
 #endif
