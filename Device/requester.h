@@ -38,4 +38,9 @@ void
 FreeAudioRequest( struct AHIAudioModeRequester* req,
                   struct AHIBase*               AHIBase);
 
+struct Gadget;
+
+LONG
+IndexToFrequency( struct Gadget *gad, WORD level );
+
 #endif /* ahi_requester_h */

@@ -24,6 +24,7 @@
 #define ahi_debug_h
 
 #include <devices/ahi.h>
+#include <proto/exec.h>
 
 void
 Debug_AllocAudioA( struct TagItem *tags );

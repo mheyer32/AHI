@@ -57,11 +57,11 @@ DEBUG_DETAIL	SET	2
 	APTR	ahiac_WetList
 	APTR	ahiac_DryList
 	UBYTE	ahiac_WetOrDry
-	UBYTE	ahiac_MaxCPU
+	UBYTE	ahiac_Pad
 	UWORD	ahiac_Channels2
 	STRUCT	ahiac_Timer,Timer_SIZEOF
 	UWORD	ahiac_UsedCPU
-	UWORD	ahiac_Pad;
+	UWORD	ahiac_MaxCPU;
 	APTR	ahiac_PowerPCContext
 	STRUCT	ahiac_DriverName,256
 	LABEL	AHIPrivAudioCtrl_SIZEOF

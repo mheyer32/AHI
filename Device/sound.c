@@ -184,7 +184,8 @@ SetVol ( UWORD                    channel,
 
     /* Enable anti-click routine */
     cd->cd_AntiClickCount = audioctrl->ac.ahiac_AntiClickSamples;
-      if( ( flags & AHISF_NODELAY ) || 
+
+    if( ( flags & AHISF_NODELAY ) || 
           ( cd->cd_AntiClickCount == 0 ) ||
            !cd->cd_FreqOK || !cd->cd_SoundOK )
     {
@@ -1125,9 +1126,9 @@ UnloadSound( UWORD                    sound,
 */
 
 ULONG
-PlayA( struct AHIAudioCtrl* audioctrl,
-       struct TagItem*      tags,
-       struct AHIBase*      AHIBase )
+PlayA( struct AHIPrivAudioCtrl* audioctrl,
+       struct TagItem*          tags,
+       struct AHIBase*          AHIBase )
 {
   struct TagItem *tag,*tstate=tags;
   struct Library *AHIsubBase;
@@ -1211,17 +1212,17 @@ PlayA( struct AHIAudioCtrl* audioctrl,
       break;
     case AHIP_EndChannel:
       if(setfreq)
-        AHI_SetFreq(channel,freq,audioctrl,AHISF_IMM);
+        AHI_SetFreq( channel, freq, (struct AHIAudioCtrl*) audioctrl, AHISF_IMM );
       if(loopsetfreq)
-        AHI_SetFreq(channel,loopfreq,audioctrl,NULL);
+        AHI_SetFreq( channel, loopfreq, (struct AHIAudioCtrl*) audioctrl, AHISF_NONE );
       if(setvol)
-        AHI_SetVol(channel,vol,pan,audioctrl,AHISF_IMM);
+        AHI_SetVol( channel, vol, pan, (struct AHIAudioCtrl*) audioctrl, AHISF_IMM );
       if(loopsetvol)
-        AHI_SetVol(channel,loopvol,looppan,audioctrl,NULL);
+        AHI_SetVol( channel, loopvol, looppan, (struct AHIAudioCtrl*) audioctrl, AHISF_NONE );
       if(setsound)
-        AHI_SetSound(channel,sound,offset,length,audioctrl,AHISF_IMM);
+        AHI_SetSound( channel, sound, offset, length, (struct AHIAudioCtrl*) audioctrl, AHISF_IMM );
       if(loopsetsound)
-        AHI_SetSound(channel,loopsound,loopoffset,looplength,audioctrl,NULL);
+        AHI_SetSound( channel, loopsound, loopoffset, looplength, (struct AHIAudioCtrl*) audioctrl, NULL);
       break;
     }
   }

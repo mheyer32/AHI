@@ -107,63 +107,8 @@ PPCHandler( void )
     switch( MixBackend )
     {
       case MB_NATIVE:
+      case MB_MORPHOS:
         Req( "Internal error: Illegal MixBackend in PPCHandler()" );
-        break;
-    
-      case MB_POWERUP:
-        mixbuffer1 = AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                                  MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEM68K );
-        mixbuffer2 = AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                                  MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEM68K );
-                                  
-        if( mixbuffer1 == NULL || mixbuffer2 == NULL )
-        {
-          rc = FALSE;
-        }
-#ifdef POWERUP_USE_MIXTASK
-        else
-        {
-          audioctrl->ahiac_PowerPCContext->Port = 
-              PPCCreatePortTags( TAG_DONE );
-              
-          if( audioctrl->ahiac_PowerPCContext->Port != NULL )
-          {
-            audioctrl->ahiac_PowerPCContext->Msg = 
-                PPCCreateMessage( audioctrl->ahiac_PowerPCContext->Port,
-                                  0 );
-                                  
-            if( audioctrl->ahiac_PowerPCContext->Msg != NULL )
-            {
-              audioctrl->ahiac_PowerPCContext->Task =
-                  PPCCreateTaskTags( 
-                      PPCObject,
-                      PPCTASKTAG_NAME,              (ULONG) DevName,
-                      PPCTASKTAG_PRIORITY,          127,
-                      PPCTASKTAG_STARTUP_MSG,       (ULONG) audioctrl->ahiac_PowerPCContext->Msg,
-                      PPCTASKTAG_STARTUP_MSGDATA,   (ULONG) audioctrl,
-                      PPCTASKTAG_STARTUP_MSGLENGTH, 0,
-                      PPCTASKTAG_STARTUP_MSGID,     0,
-                      TAG_DONE );
-                      
-              if( audioctrl->ahiac_PowerPCContext->Task == NULL )
-              {
-                rc = FALSE;
-                Req( "Unable to create PPC task." );
-              }
-            }
-            else
-            {
-              rc = FALSE;
-              Req( "Unable to allocate PPC message." );
-            }
-          }
-          else
-          {
-            rc = FALSE;
-            Req( "Unable to allocate PPC port." );
-          }
-        }
-#endif
         break;
     
       case MB_WARPUP:
@@ -278,42 +223,7 @@ PPCHandler( void )
   switch( MixBackend )
   {
     case MB_NATIVE:
-      break;
-
-    case MB_POWERUP:
-#ifdef POWERUP_USE_MIXTASK
-      if( audioctrl->ahiac_PowerPCContext->Task != NULL )
-      {
-        void* msg;
-
-        PPCSignalTask( audioctrl->ahiac_PowerPCContext->Task,
-                       SIGBREAKF_CTRL_C );
-        
-        while( TRUE )
-        {
-          msg = PPCGetMessage( audioctrl->ahiac_PowerPCContext->Port );
-          
-          if( msg == audioctrl->ahiac_PowerPCContext->Msg )
-          {
-            break;
-          }
-          else
-          {
-            PPCWaitPort( audioctrl->ahiac_PowerPCContext->Port );
-          }
-        }
-      }
-      
-      if( audioctrl->ahiac_PowerPCContext->Msg != NULL )
-      {
-        PPCDeleteMessage( audioctrl->ahiac_PowerPCContext->Msg );
-      }
-      
-      if( audioctrl->ahiac_PowerPCContext->Port != NULL )
-      {
-        PPCDeletePort( audioctrl->ahiac_PowerPCContext->Port );
-      }
-#endif
+    case MB_MORPHOS:
       break;
 
     case MB_WARPUP:
@@ -433,12 +343,6 @@ MixBuffer( void*                     mixbuffer,
 //kprintf("b");
         switch( MixBackend )
         {
-          case MB_POWERUP:
-            PPCCacheClearE( sd->sd_Addr,
-                            sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ),
-                            CACRF_ClearD );
-            break;
-
           case MB_WARPUP:
             SetCache68K( CACHE_DCACHEFLUSH,
                          sd->sd_Addr,
@@ -446,6 +350,7 @@ MixBuffer( void*                     mixbuffer,
             break;
 
           case MB_NATIVE:
+          case MB_MORPHOS:
             // Ugh!
             break;
         }
@@ -474,30 +379,6 @@ MixBuffer( void*                     mixbuffer,
 
   switch( MixBackend )
   {
-    case MB_POWERUP:
-    {
-#ifdef POWERUP_USE_MIXTASK
-      PPCSignalTask( audioctrl->ahiac_PowerPCContext->Task,
-                     SIGBREAKF_CTRL_F );
-#else
-      struct ModuleArgs mod =
-      {
-        IF_CACHEFLUSHNO, 0, 0,
-        IF_CACHEFLUSHNO, 0, 0,
-
-        (ULONG) audioctrl->ahiac_PowerPCContext,
-        TRUE,                                  // Flush buffer afterwards!
-        0, 0, 0, 0, 0, 0,
-        0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-      };
-
-//kprintf("K");
-      PPCRunKernelObject( PPCObject, &mod );
-//kprintf("k");
-#endif
-      break;
-    }
-
     case MB_WARPUP:
 //kprintf("C");
       CausePPCInterrupt();
@@ -505,6 +386,7 @@ MixBuffer( void*                     mixbuffer,
       break;
 
     case MB_NATIVE:
+    case MB_MORPHOS:
       // Ugh!
       break;
   }
@@ -554,7 +436,7 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
 
         case PPCC_COM_DEBUG:
 //kprintf("4");
-          kprintf( "%lx ", (ULONG) audioctrl->ahiac_PowerPCContext->Argument );
+          KPrintF( "%lx ", (ULONG) audioctrl->ahiac_PowerPCContext->Argument );
           audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
           break;
 

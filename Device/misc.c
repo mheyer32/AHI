@@ -35,12 +35,13 @@
 #include <intuition/intuition.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
-#include <proto/ppc.h>
+#include <proto/timer.h>
 #include <proto/powerpc.h>
 
 #include "ahi_def.h"
 #include "header.h"
 #include "elfloader.h"
+#include "misc.h"
 
 
 /******************************************************************************
@@ -91,11 +92,11 @@ Fixed2Shift( Fixed f )
 }
 
 /******************************************************************************
-** Req ************************************************************************
+** ReqA ***********************************************************************
 ******************************************************************************/
 
 void
-Req( const char* text, ... )
+ReqA( const char* text, APTR args )
 {
   struct EasyStruct es = 
   {
@@ -106,13 +107,26 @@ Req( const char* text, ... )
     "OK"
   };
 
-  va_list ap;
+  EasyRequestArgs( NULL, &es, NULL, args );
+}
 
-  va_start( ap, text );
+/******************************************************************************
+** SprintfA *******************************************************************
+******************************************************************************/
 
-  EasyRequestArgs( NULL, &es, NULL, ap );
-  
-  va_end( ap );
+static UWORD struffChar[] =
+{
+  0x16c0,     // moveb %d0,%a3@+
+  0x4e75      // rts
+};
+
+char*
+SprintfA( char *dst, const char *fmt, ULONG* args )
+{
+  return RawDoFmt( (UBYTE*) fmt,
+                   args, 
+                   (void(*)(void)) &struffChar, 
+                   dst );
 }
 
 /******************************************************************************
@@ -125,10 +139,8 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
   switch( MixBackend )
   {
     case MB_NATIVE:
+    case MB_MORPHOS:
       return AllocVec( byteSize, requirements & ~MEMF_PPCMASK );
-
-    case MB_POWERUP:
-      return PPCAllocVec( byteSize, requirements );
 
     case MB_WARPUP:
     {
@@ -169,11 +181,8 @@ AHIFreeVec( APTR memoryBlock )
   switch( MixBackend )
   {
     case MB_NATIVE:
+    case MB_MORPHOS:
       FreeVec( memoryBlock );
-      return;
-
-    case MB_POWERUP:
-      PPCFreeVec( memoryBlock );
       return;
 
     case MB_WARPUP:
@@ -195,11 +204,9 @@ AHILoadObject( const char* objname )
   switch( MixBackend )
   {
     case MB_NATIVE:
+    case MB_MORPHOS:
       Req( "Internal error: Illegal MixBackend in AHILoadObject()" );
       return NULL;
-
-    case MB_POWERUP:
-      return PPCLoadObject( (char*) objname );
 
     case MB_WARPUP:
     {
@@ -226,11 +233,8 @@ AHIUnloadObject( void* obj )
   switch( MixBackend )
   {
     case MB_NATIVE:
+    case MB_MORPHOS:
       Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
-      return;
-
-    case MB_POWERUP:
-      PPCUnLoadObject( obj );
       return;
 
     case MB_WARPUP:
@@ -252,34 +256,9 @@ AHIGetELFSymbol( const char* name,
   switch( MixBackend )
   {
     case MB_NATIVE:
+    case MB_MORPHOS:
       Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
       return FALSE;
-
-    case MB_POWERUP:
-    {
-      struct PPCObjectInfo oi =
-      {
-        0,
-        NULL,
-        PPCELFINFOTYPE_SYMBOL,
-        STT_SECTION,
-        STB_GLOBAL,
-        0
-      };
-      
-      struct TagItem tag_done =
-      {
-        TAG_DONE, 0
-      };
-
-      BOOL rc;
-
-      oi.Name = (char*) name;
-      rc = PPCGetObjectAttrs( PPCObject, &oi, &tag_done );
-      *ptr = (void*) oi.Address;
-
-      return rc;
-    }
 
     case MB_WARPUP:
       return ELFGetSymbol( PPCObject, name, ptr );
@@ -287,4 +266,41 @@ AHIGetELFSymbol( const char* name,
 
   Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
   return FALSE;
+}
+
+/******************************************************************************
+** PreTimer  ******************************************************************
+******************************************************************************/
+
+BOOL
+PreTimer( struct AHIPrivAudioCtrl* audioctrl )
+{
+  ULONG pretimer_period;  // Clocks between PreTimer calls
+  ULONG mixer_time;       // Clocks spent in mixer
+
+  pretimer_period = audioctrl->ahiac_Timer.EntryTime.ev_lo;
+
+  ReadEClock( &audioctrl->ahiac_Timer.EntryTime );
+
+  pretimer_period = audioctrl->ahiac_Timer.EntryTime.ev_lo - pretimer_period;
+
+  mixer_time = pretimer_period - ( audioctrl->ahiac_Timer.ExitTime.ev_lo
+                                   - audioctrl->ahiac_Timer.EntryTime.ev_lo );
+
+  if( pretimer_period != 0 )
+  {
+    audioctrl->ahiac_UsedCPU = ( mixer_time << 8 ) / pretimer_period;
+  }
+  
+  return ( audioctrl->ahiac_UsedCPU <= audioctrl->ahiac_MaxCPU );
+}
+
+/******************************************************************************
+** PostTimer  *****************************************************************
+******************************************************************************/
+
+void
+PostTimer( struct AHIPrivAudioCtrl* audioctrl )
+{
+  ReadEClock( &audioctrl->ahiac_Timer.ExitTime );
 }
