@@ -1,3 +1,15 @@
+2001-12-21  Martin Blom  <martin@blom.org>
+
+	* Added alpha support for Amithlon/native x86. Go ahead, try it,
+	but do save your work first ... Then enjoy the fireworks!
+
+	* Fixed some minor stuff in the AHI preferences so I can build
+	native MorphOS/Amithlon versions of it. Why? Because I can.
+
+	* The change in the mode file handling on 2001-07-29 seems to have
+	made AHI_LoadModeFile() return failure if the argument was a
+	directory. Now it always returns success in that case.
+
 2001-12-19  Martin Blom  <martin@blom.org>
 
 	* If the device's init routine failed, the device memory was not
