@@ -25,4 +25,7 @@ MethodLoad(Class* class, Object* object, struct AHIP_Buffer_Load* msg);
 Object*
 MethodClone(Class* class, Object* object, Msg msg);
 
+BOOL
+MethodShift(Class* class, Object* object, Msg msg);
+
 #endif /* AHI_Classes_Buffer_methods_h */

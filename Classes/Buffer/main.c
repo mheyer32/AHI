@@ -102,6 +102,10 @@ AHIClassDispatch(Class*  class,
       result = (ULONG) MethodClone(class, object, msg);
       break;
       
+    case AHIM_Buffer_Shift:
+      result = (ULONG) MethodShift(class, object, msg);
+      break;
+      
     default:
       result = DoSuperMethodA(class, object, msg);
       break;

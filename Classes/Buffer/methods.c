@@ -6,6 +6,8 @@
 #include <proto/dos.h>
 #include <proto/intuition.h>
 
+#include <string.h>
+
 #include "ahiclass.h"
 #include "methods.h"
 #include "util.h"
@@ -63,7 +65,7 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
   }
   
   if (AHIClassData->length == 0) {
-    AHIClassData->length = AHIClassData->capacity;
+    AHIClassData->length = AHIClassData->capacity - AHIClassData->offset;
   }
 
   if (AHIClassData->capacity == 0) {
@@ -111,22 +113,27 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
+  ULONG length = AHIClassData->length;
+  ULONG offset = AHIClassData->offset;
+  
+  BOOL check_length = FALSE;
+  BOOL check_offset = FALSE;
+
   struct TagItem* tstate = msg->opu_AttrList;
   struct TagItem* tag;
 
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
       case AHIA_Buffer_Length:
-	if (tag->ti_Data < AHIClassData->capacity) {
-	  AHIClassData->length = tag->ti_Data;
-	  NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data, TAG_DONE);
-	}
-	else {
-//	  SetAttrs(object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
-	  SetSuperAttrs(class, object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
-	}
+	length = tag->ti_Data;
+	check_length = TRUE;
 	break;
 
+      case AHIA_Buffer_Offset:
+	offset = tag->ti_Data;
+	check_offset = TRUE;
+	break;
+	
       case AHIA_Buffer_TimestampHigh:
 	AHIClassData->timestamp_hi = tag->ti_Data;
 	break;
@@ -148,6 +155,30 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
     }
   }
 
+  if (check_length || check_offset) {
+    if (offset + length < AHIClassData->capacity) {
+      AHIClassData->length = length;
+      AHIClassData->offset = offset;
+      
+      AHIClassData->offset_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
+					   AHIClassData->sample_type, offset, NULL);
+      
+      AHIClassData->buffer_size = DoMethod(object, AHIM_Buffer_SampleFrameSize,
+					   AHIClassData->sample_type, length, NULL);
+
+      NotifySuper(class, object, msg,
+		  check_length ? AHIA_Buffer_Length : TAG_IGNORE, length,
+		  check_offset ? AHIA_Buffer_Offset : TAG_IGNORE, offset,
+		  check_offset ? AHIA_Buffer_Data   : TAG_IGNORE, ((ULONG) AHIClassData->data +
+								   AHIClassData->offset_size),
+		  TAG_DONE);
+    }
+    else {
+      SetSuperAttrs(class, object, AHIA_Error, AHIE_Buffer_InvalidLength, TAG_DONE);
+    }
+
+  }
+  
   return 0;
 }
 
@@ -212,9 +243,14 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       *msg->opg_Storage = AHIClassData->length;
       break;
 
-    case AHIA_Buffer_Data:
-      *msg->opg_Storage = (ULONG) AHIClassData->data;
+    case AHIA_Buffer_Offset:
+      *msg->opg_Storage = (ULONG) AHIClassData->offset;
       break;
+
+    case AHIA_Buffer_Data: {
+      *msg->opg_Storage = (ULONG) AHIClassData->data + AHIClassData->offset_size;
+      break;
+    }
       
     case AHIA_Buffer_TimestampHigh:
       *msg->opg_Storage = AHIClassData->timestamp_hi;
@@ -250,6 +286,10 @@ MethodSampleFrameSize(Class* class, Object* object,
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
   ULONG cnt = 0;
+
+  if (msg->SampleType == AHIST_NOTYPE) {
+    return 0;
+  }
   
   switch (msg->SampleType & AHIST_T_MASK) {
     case AHIST_T_BYTE:
@@ -302,7 +342,7 @@ MethodSampleFrameSize(Class* class, Object* object,
       break;
 
     case AHIST_D_COMPRESSED:
-      // TODO: Fix later
+#warning TODO: Fix later
       cnt = 0;
       break;
 
@@ -348,6 +388,7 @@ MethodClone(Class* class, Object* object, Msg msg) {
 		AHIA_Buffer_SampleFreqFract, AHIClassData->sample_freq_fract,
 		AHIA_Buffer_Capacity,        AHIClassData->capacity,
 		AHIA_Buffer_Length,          AHIClassData->length,
+		AHIA_Buffer_Offset,          AHIClassData->offset,
 		AHIA_Buffer_TimestampHigh,   AHIClassData->timestamp_hi,
 		AHIA_Buffer_TimestampLow,    AHIClassData->timestamp_lo,
 		AHIA_Buffer_AgeHigh,         AHIClassData->age_hi,
@@ -359,4 +400,34 @@ MethodClone(Class* class, Object* object, Msg msg) {
   }
 
   return r;
+}
+
+
+/******************************************************************************
+** MethodShift ****************************************************************
+******************************************************************************/
+
+BOOL
+MethodShift(Class* class, Object* object, Msg msg) {
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  char* addr = AHIClassData->data;
+
+  if (addr == NULL) {
+    SetSuperAttrs(class, object, AHIA_Error, ERROR_NO_FREE_STORE, TAG_DONE);
+    return FALSE;
+  }
+  
+  if (AHIClassData->offset_size > AHIClassData->buffer_size) {
+    // Old: ooooOOOOOOBBBB
+    // New: OOOOOOBBBBxxxx
+    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->offset_size);
+  }
+  else {
+    // Old: oooobbbbbbBBBB
+    // New: BBBBxxxxxxxxxx
+    bcopy(addr + AHIClassData->buffer_size, addr, AHIClassData->offset_size); // Deja vu!
+  }
+
+  return TRUE;
 }
