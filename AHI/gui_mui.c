@@ -280,7 +280,7 @@ static void GUINewUnit(void)
 
 static void GUINewMode(void)
 {
-  int Max, Sel;
+  int Max, Sel, Dis;
   char* buffer;
   char* arg1 = getRecord();
   char* arg2 = getAuthor();
@@ -313,51 +313,79 @@ static void GUINewMode(void)
 
   Max = max(state.Frequencies -1, 0);
   Sel = min(Max, state.FreqSelected);
-  set(MUIFreq, MUIA_Disabled, Max==0);
-  set(MUIFreq, MUIA_Numeric_Max, Max);
-  set(MUIFreq, MUIA_Numeric_Value, Sel);
+  Dis = Max==0;
+  set(MUIFreq, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIFreq, MUIA_Numeric_Max, Max);
+    set(MUIFreq, MUIA_Numeric_Value, Sel);
+  }
   set(MUILFreq, MUIA_Text_Contents, (ULONG) getFreq());
 
   Max = max(state.Channels, 0);
   Sel = min(Max, state.ChannelsSelected);
-  set(MUIChannels, MUIA_Disabled, (Max == 1) || state.ChannelsDisabled);
-  set(MUIChannels, MUIA_Numeric_Max, Max);
-  set(MUIChannels, MUIA_Numeric_Value, Sel);
+  Dis = (Max == 0 || Max == 1) || state.ChannelsDisabled;
+  set(MUIChannels, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIChannels, MUIA_Numeric_Max, Max);
+    set(MUIChannels, MUIA_Numeric_Value, Sel);
+  }
   set(MUILChannels, MUIA_Text_Contents, (ULONG) getChannels());
 
   Max = max(state.OutVols -1, 0);
   Sel = min(Max, state.OutVolSelected);
-  set(MUIOutvol, MUIA_Disabled, Max==0);
-  set(MUIOutvol, MUIA_Numeric_Max, Max);
-  set(MUIOutvol, MUIA_Numeric_Value, Sel);
+  Dis = Max==0;
+  set(MUIOutvol, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIOutvol, MUIA_Numeric_Max, Max);
+    set(MUIOutvol, MUIA_Numeric_Value, Sel);
+  }
   set(MUILOutvol, MUIA_Text_Contents, (ULONG) getOutVol());
 
   Max = max(state.MonVols -1, 0);
   Sel = min(Max, state.MonVolSelected);
-  set(MUIMonvol, MUIA_Disabled, Max==0);
-  set(MUIMonvol, MUIA_Numeric_Max, Max);
-  set(MUIMonvol, MUIA_Numeric_Value, Sel);
+  Dis = Max==0;
+  set(MUIMonvol, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIMonvol, MUIA_Numeric_Max, Max);
+    set(MUIMonvol, MUIA_Numeric_Value, Sel);
+  }
   set(MUILMonvol, MUIA_Text_Contents, (ULONG) getMonVol());
 
   Max = max(state.Gains -1, 0);
   Sel = min(Max, state.GainSelected);
-  set(MUIGain, MUIA_Disabled, Max==0);
-  set(MUIGain, MUIA_Numeric_Max, Max);
-  set(MUIGain, MUIA_Numeric_Value, Sel);
+  Dis = Max==0;
+  set(MUIGain, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIGain, MUIA_Numeric_Max, Max);
+    set(MUIGain, MUIA_Numeric_Value, Sel);
+  }
   set(MUILGain, MUIA_Text_Contents, (ULONG) getGain());
 
   Max = max(state.Inputs -1, 0);
   Sel = min(Max, state.InputSelected);
-  set(MUIInput, MUIA_Disabled, Max==0);
-  set(MUIInput, MUIA_Numeric_Max, Max);
-  set(MUIInput, MUIA_Numeric_Value, Sel);
+  Dis = Max==0;
+  set(MUIInput, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIInput, MUIA_Numeric_Max, Max);
+    set(MUIInput, MUIA_Numeric_Value, Sel);
+  }
   set(MUILInput, MUIA_Text_Contents, (ULONG) getInput());
 
   Max = max(state.Outputs -1, 0);
   Sel = min(Max, state.OutputSelected);
-  set(MUIOutput, MUIA_Disabled, Max==0);
-  set(MUIOutput, MUIA_Numeric_Max, Max);
-  set(MUIOutput, MUIA_Numeric_Value, Sel);
+  Dis = Max==0;
+  set(MUIOutput, MUIA_Disabled, Dis);
+  if( !Dis )
+  {
+    set(MUIOutput, MUIA_Numeric_Max, Max);
+    set(MUIOutput, MUIA_Numeric_Value, Sel);
+  }
   set(MUILOutput, MUIA_Text_Contents, (ULONG) getOutput());
 }
 
@@ -466,12 +494,12 @@ static Object* SpecialButton(STRPTR label)
 static Object* SpecialSlider(LONG min, LONG max, LONG value)
 {
   return(SliderObject,
-      MUIA_CycleChain, 1,
-      MUIA_Slider_Quiet, TRUE,
-      MUIA_Numeric_Min, min,
-      MUIA_Numeric_Max,max,
-      MUIA_Numeric_Value,value,
-      MUIA_Numeric_Format, "",
+	 MUIA_CycleChain,     1,
+	 MUIA_Slider_Quiet,   TRUE,
+	 MUIA_Numeric_Min,    min,
+	 MUIA_Numeric_Max,    max >= min ? max : min,
+	 MUIA_Numeric_Value,  value >= min && value <=max ? value : min,
+	 MUIA_Numeric_Format, "",
     End);
 }
 
