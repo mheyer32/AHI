@@ -1,5 +1,9 @@
 2003-09-30  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.46.
+
+	* Obviously, I left a KPrintF in the code ...
+
 	* Released ahi.device 5.45.
 
 	* ahi.device: Test: Don't increase volume of playing requests
