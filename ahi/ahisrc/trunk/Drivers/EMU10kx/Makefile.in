@@ -1,0 +1,139 @@
+#  $Id$
+#
+#  Makefile.in for EMU10k1 sound card driver
+#
+
+
+#
+# Autoconfig stuff
+########################################
+
+@SET_MAKE@
+
+VPATH		= @srcdir@
+
+top_srcdir	= @top_srcdir@
+srcdir		= @srcdir@
+prefix		= @prefix@
+DISTDIR		= @DISTDIR@
+DRIVERDIR	= ${DISTDIR}/User/Devs/AHI
+MODEFILEDIR	= ${DISTDIR}/User/Devs/AudioModes
+
+build_os	= @build_os@
+host_cpu	= @host_cpu@
+
+CC		= @CC@
+AS		= @AS@
+AR              = @AR@
+RANLIB          = @RANLIB@
+STRIP		= @STRIP@
+
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${srcdir}
+CFLAGS		= @CFLAGS@
+ASFLAGS		= @ASFLAGS@
+LDFLAGS		= @LDFLAGS@ #-nostartfiles
+ARFLAGS         = @ARFLAGS@
+
+LIBS		= @LIBS@
+
+DRIVER		= emu10k1.audio
+MODEFILE	= EMU10K1
+
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
+
+#
+# Files
+########################################
+
+OBJECTS		= main.o
+
+
+#
+# Targets
+########################################
+
+.PHONY:		all mostlyclean clean distclean maintainer-clean\
+		install revup bindist bindist-install
+
+
+all:		$(DRIVER) #$(MODEFILE)
+
+mostlyclean:
+	$(RM) $(DRIVER) $(MODEFILE) *.o *.a *.bak *~ \#*\# core Makefile.dep
+
+clean:		mostlyclean
+	$(RM) version.h
+
+distclean:	clean
+	$(RM) Makefile
+
+maintainer-clean: distclean
+
+install:	all
+	$(INSTALL_PROGRAM) $(DRIVER) $(PREFIX)/Devs/AHI/$(DRIVER)
+	$(INSTALL_DATA) $(MODEFILE) $(PREFIX)/Devs/AudioModes/$(MODEFILE)
+
+revup:
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%d.%m.%y > $(srcdir)/version.date
+	@echo -n "New revision: "
+	@cat $(srcdir)/version.rev
+
+bindist:	all
+	$(INSTALL) --directory $(DRIVERDIR) $(MODEFILEDIR)
+
+	$(INSTALL_PROGRAM) $(DRIVER) $(DRIVERDIR)/$(DRIVER)
+	$(STRIP) $(DRIVERDIR)/$(DRIVER)
+	$(INSTALL_DATA) $(MODEFILE) $(MODEFILEDIR)/$(MODEFILE)
+
+
+#
+# Auto-remake autoconf stuff
+########################################
+
+Makefile: Makefile.in ../../config.status
+	(cd ../.. && ./config.status)
+
+
+#
+# Rules
+########################################
+
+%.o:	%.s
+	gasp $< | $(AS) $(ASFLAGS) -o $@
+
+$(DRIVER):		$(OBJECTS)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+version.h:	version.rev version.date
+	@echo Creating $@
+	@ver=`cat $(top_srcdir)/version.ver` \
+	 rev=`cat $(srcdir)/version.rev` \
+	 date=`cat $(srcdir)/version.date` && \
+	 echo "#define VERSION $$ver" > $@ && \
+	 echo "#define REVISION $$rev" >> $@ && \
+	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
+
+
+#
+# Dependencies
+########################################
+
+SOURCES		= $(wildcard $(srcdir)/*.c)
+HEADERS		= $(wildcard $(srcdir)/*.h)
+
+#DEPENDENCIES	= $(SOURCES) $(HEADERS)
+
+.PHONY:	depend
+
+depend:
+	$(RM) Makefile.dep
+	$(MAKE) Makefile.dep
+
+Makefile.dep:	$(DEPENDENCIES) version.h
+	@echo Making $@
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+
+include Makefile.dep
