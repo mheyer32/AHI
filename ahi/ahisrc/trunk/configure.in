@@ -13,7 +13,7 @@ dnl General
 AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
-: ${CFLAGS='-noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
+: ${CFLAGS='-g -O2 -W -Wall -Wstrict-prototypes'}
 : ${LDFLAGS='-noixemul'}
 AC_PREFIX_DEFAULT( /tmp/ahi ) 
 
