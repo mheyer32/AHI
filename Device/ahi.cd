@@ -1,5 +1,8 @@
 ; $Id$
 ; $Log$
+; Revision 1.3  1997/02/10 02:23:06  lcs
+; Infowindow in the requester added.
+;
 ; Revision 1.2  1997/02/04 22:14:27  lcs
 ; The users preffered audio mode can now be selected in the requester
 ;
@@ -10,29 +13,85 @@
 #language english
 #version 0
 ;
+; Input and Output connector name
+;
 msgDefault (//)
 Default
+;
+; The requesters menu
 msgMenuControl (//)
 \000\000Control
+;
 msgMenuLastMode (//)
 L\000Last Mode
+;
 msgMenuNextMode (//)
 N\000Next Mode
+;
 msgMenuPropertyList (//)
 ?\000Property List...
+;
 msgMenuRestore (//)
 R\000Restore
+;
 msgMenuOK (//)
 O\000OK
+;
 msgMenuCancel (//)
 C\000Cancel
+;
+; Mode name in requester whose driver cannot be opened
+;
 msgUnknown (//)
 UNKNOWN:Audio ID 0x%08lx
+;
+; The requester gadgets
+;
 msgReqOK (//)
 OK
+;
 msgReqCancel (//)
 Cancel
+;
 msgReqFrequency (//)
 Frequency
+;
+; Name of default mode in requester
+;
 msgDefaultMode (//)
 Default audio mode
+;
+; The requester's info-winodow
+;
+msgReqInfoTitle (//)
+Mode Properties
+;
+msgReqInfoAudioID (//)
+Audio mode ID: 0x%08lx
+;
+msgReqInfoResolution (//)
+Resolution: %ld bit %s
+;
+msgReqInfoMono (//)
+mono
+;
+msgReqInfoStereo (//)
+stereo
+;
+msgReqInfoStereoPan (//)
+stereo with panning
+;
+msgReqInfoChannels (//)
+Channels: %ld
+;
+msgReqInfoMixrate (//)
+Mixing rates: %ld-%ld Hz
+;
+msgReqInfoHiFi (//)
+HiFi mixing
+;
+msgReqInfoRecordHalf (//)
+Record in half duplex
+;
+msgReqInfoRecordFull (//)
+Record in full duplex

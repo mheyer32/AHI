@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.11  1997/02/10 02:23:06  lcs
+* Infowindow in the requester added.
+*
 * Revision 1.10  1997/02/04 15:44:30  lcs
 * AHIDB_MaxChannels didn't work in AHI_BestAudioID()
 *
@@ -742,12 +745,12 @@ __asm BOOL GetAudioAttrsA( register __d0 ULONG id,
             case AHIDB_Input:
               stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,
                   GetTagData(AHIDB_InputArg,0,tags),
-                  (ULONG) GetAHIString(msgDefault),dbtags,audioctrl),stringlen);
+                  (ULONG) GetahiString(msgDefault),dbtags,audioctrl),stringlen);
               break;
             case AHIDB_Output:
               stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,
                   GetTagData(AHIDB_OutputArg,0,tags),
-                  (ULONG) GetAHIString(msgDefault),dbtags,audioctrl),stringlen);
+                  (ULONG) GetahiString(msgDefault),dbtags,audioctrl),stringlen);
               break;
 // Other
             case AHIDB_Bits:

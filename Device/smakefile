@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 1.12  1997/02/10 02:23:06  lcs
+# Infowindow in the requester added.
+#
 # Revision 1.11  1997/02/09 18:12:23  lcs
 # userdoc: and support:
 #
@@ -35,7 +38,7 @@ TARGET	= AHI:User/Devs/ahi.device
 
 SOURCES = addroutines.a asmfuncs.a cfuncs.c database.c devcommands.c\
 device.c devsupp.a dspecho.a footer.a header.a requester.c\
-AHI.cd C_c_AHI.sd C_h_AHI.sd
+ahi.cd C_c_AHI.sd C_h_AHI.sd
 
 RCSFILES= $(SOURCES) ahi_def.h ahi_def.i ahi_device.h smakefile
 
@@ -92,11 +95,11 @@ ahi_rev.i: $(SOURCES)
 .c.o:
 	$(CCOMP) $(CFLAGS) $*.c
 
-localize.c:	AHI.cd C_c_AHI.sd
-	FlexCat AHI.cd localize.c=C_c_AHI.sd 
+localize.c:	ahi.cd C_c_AHI.sd
+	FlexCat ahi.cd localize.c=C_c_AHI.sd 
 
-localize.h:	AHI.cd C_c_AHI.sd
-	FlexCat AHI.cd localize.h=C_h_AHI.sd
+localize.h:	ahi.cd C_c_AHI.sd
+	FlexCat ahi.cd localize.h=C_h_AHI.sd
 
 addroutines.o:	addroutines.a ahi_def.i
 asmfuncs.o:	asmfuncs.a ahi_def.i
@@ -117,7 +120,7 @@ requester.o:	requester.c localize.h ahi_def.h
 ###############################################################################
 
 protos: device_protos.h cfuncs_protos.h database_protos.h requester_protos.h\
-	devcommands_protos.h devsupp_protos.h localize_protos.h
+	devcommands_protos.h devsupp_protos.h
 
 device_protos.h: device.c
 	$(CCOMP) GPROTO $(CFLAGS) device.c
@@ -195,7 +198,7 @@ autodocs:
 ###############################################################################
 
 catalogs:
-	FlexCat AHI.cd Svenska.ct CATALOG AHI:User/Catalogs/Svenska/AHI.catalog
+	FlexCat ahi.cd Svenska.ct CATALOG AHI:User/Catalogs/Svenska/ahi.catalog
 
 ##
 ## Update catalog files
@@ -203,8 +206,8 @@ catalogs:
 ###############################################################################
 
 newcatalogs:
-	FlexCat AHI.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
-	FlexCat AHI.cd Svenska.ct NEWCTFILE Svenska.ct
+	FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
+	FlexCat ahi.cd Svenska.ct NEWCTFILE Svenska.ct
 
 ##
 ## Build user documentation

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.9  1997/02/10 02:23:06  lcs
+* Infowindow in the requester added.
+*
 * Revision 1.8  1997/02/09 18:12:23  lcs
 * Default audio mode added? Don't remember...
 *
@@ -52,11 +55,16 @@
 #include "cfuncs_protos.h"
 #endif
 
+static void OpenInfoWindow( struct AHIAudioModeRequesterExt * );
+static void CloseInfoWindow( struct AHIAudioModeRequesterExt * );
+static void UpdateInfoWindow( struct AHIAudioModeRequesterExt * );
+
 /******************************************************************************
 ** Audio mode requester  ******************************************************
 ******************************************************************************/
 
 #define MY_IDCMPS (LISTVIEWIDCMP|SLIDERIDCMP|BUTTONIDCMP|IDCMP_SIZEVERIFY|IDCMP_NEWSIZE|IDCMP_REFRESHWINDOW|IDCMP_CLOSEWINDOW|IDCMP_MENUPICK|IDCMP_VANILLAKEY|IDCMP_RAWKEY)
+#define MY_INFOIDCMPS (LISTVIEWIDCMP|IDCMP_REFRESHWINDOW|IDCMP_CLOSEWINDOW)
 
 #define haveIDCMP 0x0001
 #define lockwin   0x0002
@@ -87,6 +95,16 @@ struct IDnode
   char        name[80];
 };
 
+/* The attribues list */
+
+#define ATTRNODES 6
+
+struct Attrnode
+{
+  struct Node node;
+  UBYTE       text[80];
+};
+
  /* AHIAudioModeRequester extension */
 struct AHIAudioModeRequesterExt
 {
@@ -108,14 +126,20 @@ struct AHIAudioModeRequesterExt
 
   struct Screen                *PubScreen;
   struct Window                *Window;
+  struct Window                *InfoWindow;
   WORD                          gx,gy,gw,gh;
   APTR                          vi;
   struct Gadget                *Gadgets;
+  struct Gadget                *InfoGadgets;
+  struct Gadget                *InfoListViewGadget;
   struct Gadget                *listviewgadget;
   struct Gadget                *slidergadget;
   struct MinList               *list;
+  struct MinList                InfoList;
   struct Menu                  *Menu;
   struct Catalog               *Catalog;
+
+  struct Attrnode               AttrNodes[ATTRNODES];
 };
 
 
@@ -171,8 +195,8 @@ static void FillReqStruct(struct AHIAudioModeRequesterExt *req, struct TagItem *
   req->Req.ahiam_InfoOpened=GetTagData(AHIR_InitialInfoOpened,req->Req.ahiam_InfoOpened,tags);
   req->Req.ahiam_InfoLeftEdge=GetTagData(AHIR_InitialInfoLeftEdge,req->Req.ahiam_InfoLeftEdge,tags);
   req->Req.ahiam_InfoTopEdge=GetTagData(AHIR_InitialInfoTopEdge,req->Req.ahiam_InfoTopEdge,tags);
-  req->Req.ahiam_InfoWidth=GetTagData(AHIR_InitialInfoWidth,req->Req.ahiam_InfoWidth,tags);
-  req->Req.ahiam_InfoHeight=GetTagData(AHIR_InitialInfoHeight,req->Req.ahiam_InfoHeight,tags);
+//  req->Req.ahiam_InfoWidth=GetTagData(AHIR_InitialInfoWidth,req->Req.ahiam_InfoWidth,tags);
+//  req->Req.ahiam_InfoHeight=GetTagData(AHIR_InitialInfoHeight,req->Req.ahiam_InfoHeight,tags);
   req->FilterTags=(struct TagItem *)GetTagData(AHIR_FilterTags,(ULONG)req->FilterTags,tags);
   req->FilterFunc=(struct Hook *)GetTagData(AHIR_FilterFunc,(ULONG)req->FilterFunc,tags);
   req->Flags=PackBoolTags(req->Flags,tags,reqboolmap);
@@ -252,6 +276,8 @@ static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
       GTSL_Level,sliderlevel,
       GA_Disabled,!sliderlevels,
       TAG_DONE);
+
+  UpdateInfoWindow(req);
 }
 
 
@@ -475,9 +501,29 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
   while(!done)
   {
     Wait(1L << req->Window->UserPort->mp_SigBit);
+
     while ((imsg=GT_GetIMsg(req->Window->UserPort)) != NULL )
     {
-      if(imsg->IDCMPWindow != req->Window) // Not my window!
+
+      if(imsg->IDCMPWindow == req->InfoWindow)
+      {
+        class = imsg->Class;
+        GT_ReplyIMsg(imsg);
+
+        switch(class)
+        {
+        case IDCMP_CLOSEWINDOW:
+          CloseInfoWindow(req);
+          break;
+        case IDCMP_REFRESHWINDOW :
+          GT_BeginRefresh(req->InfoWindow);
+          GT_EndRefresh(req->InfoWindow,TRUE);
+          break;
+        }
+        continue; // Get next IntuiMessage
+      }
+
+      else if(imsg->IDCMPWindow != req->Window) // Not my window!
       {
         if(req->IntuiMsgFunc)
           CallHookPkt(req->IntuiMsgFunc,req,imsg);
@@ -624,6 +670,9 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
             req->tempAudioID=idnode->ID;
             SetSelected(req,TRUE);
             break;
+          case PROPERTYITEM:
+            OpenInfoWindow(req);
+            break;
           case RESTOREITEM:
             req->tempAudioID=req->Req.ahiam_AudioID;
             req->tempFrequency=req->Req.ahiam_MixFreq;
@@ -653,6 +702,166 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
     req->Req.ahiam_MixFreq = AHI_DEFAULT_FREQ;
   }
   return rc;
+}
+
+
+static void OpenInfoWindow( struct AHIAudioModeRequesterExt *req )
+{
+  struct Gadget *gad;
+  struct NewGadget ng;
+
+
+  if(req->InfoWindow == NULL)
+  {
+    req->InfoWindow=OpenWindowTags(NULL,
+      WA_Left,              req->Req.ahiam_InfoLeftEdge,
+      WA_Top,               req->Req.ahiam_InfoTopEdge,
+      WA_Width,             req->Req.ahiam_InfoWidth,
+      WA_Height,            req->Req.ahiam_InfoHeight,
+      WA_Title,             GetString(msgReqInfoTitle, req->Catalog),
+      WA_CustomScreen,      req->Window->WScreen,
+      WA_PubScreenFallBack, TRUE,
+      WA_DragBar,           TRUE,
+      WA_DepthGadget,       TRUE,
+      WA_CloseGadget,       TRUE,
+      WA_Activate,          FALSE,
+      WA_SimpleRefresh,     TRUE,
+      WA_AutoAdjust,        TRUE,
+      WA_IDCMP,             0,
+      WA_NewLookMenus,      TRUE,
+      TAG_DONE);
+
+    if(req->InfoWindow)
+    {
+      req->InfoWindow->UserPort = req->Window->UserPort;
+      ModifyIDCMP(req->InfoWindow, MY_INFOIDCMPS);
+
+      if(gad = CreateContext(&req->InfoGadgets))
+      {
+        ng.ng_TextAttr    = req->TextAttr;
+        ng.ng_VisualInfo  = req->vi;
+        ng.ng_LeftEdge    = req->InfoWindow->BorderLeft+4;
+        ng.ng_TopEdge     = req->InfoWindow->BorderTop+2;
+        ng.ng_Width       = req->InfoWindow->Width
+                          - (req->InfoWindow->BorderLeft+4)
+                          - (req->InfoWindow->BorderRight+4);
+        ng.ng_Height      = req->InfoWindow->Height
+                          - (req->InfoWindow->BorderTop+2)
+                          - (req->InfoWindow->BorderBottom+2);
+    
+        ng.ng_GadgetText  = NULL;
+        ng.ng_GadgetID    = 0;
+        ng.ng_Flags       = PLACETEXT_ABOVE;
+        gad = CreateGadget(LISTVIEW_KIND, gad, &ng,
+            GTLV_ReadOnly,  TRUE,
+            TAG_DONE);
+        req->InfoListViewGadget = gad;
+
+        if(gad)
+        {
+          AddGList(req->InfoWindow, req->InfoGadgets, ~0, -1, NULL);
+          RefreshGList(req->InfoGadgets, req->InfoWindow, NULL, -1);
+          GT_RefreshWindow(req->InfoWindow, NULL);
+          UpdateInfoWindow(req);
+        }
+      }
+    }
+  }
+}
+
+
+static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
+{
+  LONG id=0, bits=0, stereo=0, pan=0, hifi=0, channels=0, minmix=0, maxmix=0,
+       record=0, fullduplex=0;
+  int i;
+
+  id = req->tempAudioID;
+  if(id == AHI_DEFAULT_ID)
+  {
+    id = AHIBase->ahib_AudioMode;
+  }
+  if(req->InfoWindow)
+  {
+    AHI_GetAudioAttrs(id, NULL,
+      AHIDB_Stereo,       &stereo,
+      AHIDB_Panning,      &pan,
+      AHIDB_HiFi,         &hifi,
+      AHIDB_Record,       &record,
+      AHIDB_FullDuplex,   &fullduplex,
+      AHIDB_Bits,         &bits,
+      AHIDB_MaxChannels,  &channels,
+      AHIDB_MinMixFreq,   &minmix,
+      AHIDB_MaxMixFreq,   &maxmix,
+      TAG_DONE);
+
+    GT_SetGadgetAttrs(req->InfoListViewGadget, req->InfoWindow, NULL,
+        GTLV_Labels, ~0,
+        TAG_DONE);
+
+    NewList((struct List *) &req->InfoList);
+    for(i=0; i<ATTRNODES; i++)
+    {
+      req->AttrNodes[i].node.ln_Name = req->AttrNodes[i].text;
+      req->AttrNodes[i].text[0]      = '\0';
+      req->AttrNodes[i].node.ln_Type = NT_USER;
+      req->AttrNodes[i].node.ln_Pri  = 0;
+    }
+
+    i = 0;
+    AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoAudioID, req->Catalog),
+        id);
+    AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
+        bits, GetString((stereo ?
+          (pan ? msgReqInfoStereoPan : msgReqInfoStereo) :
+          msgReqInfoMono), req->Catalog));
+    AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoChannels, req->Catalog),
+        channels);
+    AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoMixrate, req->Catalog),
+        minmix, maxmix);
+    if(hifi)
+    {
+      AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
+      Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoHiFi, req->Catalog));
+    }
+    if(record)
+    {
+      AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
+      Sprintf(req->AttrNodes[i++].text, GetString(
+          fullduplex ? msgReqInfoRecordFull : msgReqInfoRecordHalf, req->Catalog));
+    }
+
+    GT_SetGadgetAttrs(req->InfoListViewGadget, req->InfoWindow, NULL,
+        GTLV_Labels, &req->InfoList,
+        TAG_DONE);
+  }
+}
+
+static void CloseInfoWindow( struct AHIAudioModeRequesterExt *req )
+{
+  if(req->InfoWindow)
+  {
+    req->Req.ahiam_InfoOpened   = TRUE;
+    req->Req.ahiam_InfoLeftEdge = req->InfoWindow->LeftEdge;
+    req->Req.ahiam_InfoTopEdge  = req->InfoWindow->TopEdge;
+    req->Req.ahiam_InfoWidth    = req->InfoWindow->Width;
+    req->Req.ahiam_InfoHeight   = req->InfoWindow->Height;
+    CloseWindowSafely(req->InfoWindow);
+    req->InfoWindow = NULL;
+
+  }
+  else
+  {
+    req->Req.ahiam_InfoOpened   = TRUE;
+
+  }
+
+  FreeGadgets(req->InfoGadgets);
+  req->InfoGadgets = NULL;
 }
 
 
@@ -877,7 +1086,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
           {  NM_ITEM, NULL        , 0 ,0,0,(APTR) LASTMODEITEM, },
           {  NM_ITEM, NULL        , 0 ,0,0,(APTR) NEXTMODEITEM, },
           {  NM_ITEM, NM_BARLABEL , 0 ,0,0,(APTR) 0,            },
-        //{  NM_ITEM, NULL        , 0 ,0,0,(APTR) PROPERTYITEM, },
+          {  NM_ITEM, NULL        , 0 ,0,0,(APTR) PROPERTYITEM, },
           {  NM_ITEM, NULL        , 0 ,0,0,(APTR) RESTOREITEM , },
           {  NM_ITEM, NM_BARLABEL , 0 ,0,0,(APTR) 0,            },
           {  NM_ITEM, NULL        , 0 ,0,0,(APTR) OKITEM,       },
@@ -889,6 +1098,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
           msgMenuControl,
           msgMenuLastMode,
           msgMenuNextMode,
+          msgMenuPropertyList,
           msgMenuRestore,
           msgMenuOK,
           msgMenuCancel,
@@ -937,7 +1147,14 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
           {
             if(SetMenuStrip(req->Window, req->Menu))
             {
+              if(req->Req.ahiam_InfoOpened)
+              {
+                OpenInfoWindow(req);
+              }
+
               rc=HandleReq(req);
+
+              CloseInfoWindow(req);
               ClearMenuStrip(req->Window);
             }
           } // else LayoutMenus failed
@@ -956,10 +1173,10 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
                 TAG_DONE);
         }
 
-        req->Req.ahiam_LeftEdge=req->Window->LeftEdge;
-        req->Req.ahiam_TopEdge=req->Window->TopEdge;
-        req->Req.ahiam_Width=req->Window->Width;
-        req->Req.ahiam_Height=req->Window->Height;
+        req->Req.ahiam_LeftEdge = req->Window->LeftEdge;
+        req->Req.ahiam_TopEdge  = req->Window->TopEdge;
+        req->Req.ahiam_Width    = req->Window->Width;
+        req->Req.ahiam_Height   = req->Window->Height;
       } // else LayOutReq failed
     }
     else // no vi
