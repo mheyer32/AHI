@@ -455,6 +455,10 @@ SetSound ( REG(d0, UWORD channel),
 
   AHIsub_Disable(&audioctrl->ac);
 
+//kprintf( "A: 0x%08lx-0x%08lx (%ld) [0x%08lx-0x%08lx]\n",
+//         (ULONG) (cd->cd_Offset >> 32), (ULONG) (cd->cd_LastOffset >> 32), cd->cd_Samples,
+//         (ULONG) (cd->cd_NextOffset >> 32), (ULONG) (cd->cd_NextLastOffset >> 32) );
+
   if(sound == AHI_NOSOUND)
   {
     cd->cd_NextSoundOK    = FALSE;
@@ -545,6 +549,10 @@ SetSound ( REG(d0, UWORD channel),
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
     }
   }
+
+//kprintf( "B: 0x%08lx-0x%08lx (%ld) [0x%08lx-0x%08lx]\n",
+//         (ULONG) (cd->cd_Offset >> 32), (ULONG) (cd->cd_LastOffset >> 32), cd->cd_Samples,
+//         (ULONG) (cd->cd_NextOffset >> 32), (ULONG) (cd->cd_NextLastOffset >> 32) );
 
   AHIsub_Enable(&audioctrl->ac);
 

@@ -27,6 +27,8 @@
 
 #include "ahi_def.h"
 
+#define WARPUP_INVALIDATE_CACHE
+
 struct WarpUpContext
 {
   int                 Active;
@@ -35,8 +37,10 @@ struct WarpUpContext
   void*               XLock;
   struct Hook*        Hook;
   void*	              Dst;
+#ifndef WARPUP_INVALIDATE_CACHE
   void*               MixBuffer;
   int                 MixLongWords;
+#endif
 };
 
 #endif /* _PPCHEADER_H_ */
