@@ -1,7 +1,11 @@
 #language english
-#version 0
+#version 4
+;
 ; $Id$
 ; $Log$
+; Revision 4.2  1997/05/03 19:59:56  lcs
+; Set version to 4
+;
 ; Revision 4.1  1997/04/02 22:29:53  lcs
 ; Bumped to version 4
 ;
