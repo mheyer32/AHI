@@ -139,14 +139,20 @@ Slave( struct ExecBase* SysBase )
 	// Now Delay() until there are at least 'bytes' bytes available
 	// again.
 	
+	while( TRUE )
 	{
 	  int frag_avail, frag_alloc, frag_size, bytes_avail;
 
 	  OSS_GetOutputInfo( &frag_avail, &frag_alloc, &frag_size,
 			     &bytes_avail );
+
 	  if( bytes_avail < bytes )
 	  {
 	    Delay( 1 );
+	  }
+	  else
+	  {
+	    break;
 	  }
 	  
 //	  KPrintF( "%ld fragments available, %ld alloced (%ld bytes each). %ld bytes total\n", frag_avail, frag_alloc, frag_size, bytes_avail );
