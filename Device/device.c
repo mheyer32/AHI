@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 4.5  1997/05/08 23:59:58  lcs
+* Fixed problem with IO/Requests that didn't get replied, and
+* lockup problem with CMD_START.
+*
 * Revision 4.4  1997/05/03 19:59:56  lcs
 * Fixed a race condition (happened with small CMD_WRITE's).
 *
@@ -1042,17 +1046,21 @@ static __asm __interrupt void SoundFunc(
   switch(voice->NextOffset)
   {
     case FREE:
+      KPrintF("Ch %ld FREE\n",sndmsg->ahism_Channel);
       break;
     case MUTE:
+      KPrintF("Ch %ld MUTE->FREE\n",sndmsg->ahism_Channel);
       /* A AHI_NOSOUND is done, channel is silent */
       voice->NextOffset = FREE;
       break;
     case PLAY:
+      KPrintF("Ch %ld PLAT->MUTE\n",sndmsg->ahism_Channel);
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,NULL);
       voice->NextOffset = MUTE;
       break;
     default:
+      KPrintF("Ch %ld 0x%08lx->PLAY\n",sndmsg->ahism_Channel,voice->NextOffset);
       /* A normal sound is done, and another is waiting */
       AHI_SetSound(sndmsg->ahism_Channel,
           voice->NextSound,
