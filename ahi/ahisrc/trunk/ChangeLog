@@ -1,3 +1,7 @@
+2004-06-01  Martin Blom  <martin@blom.org>
+
+	* Added the good old ScanAudioModes to the example collection.
+
 2004-02-19  Martin Blom  <martin@blom.org>
 
 	* Docs: Added note about AddAudioModes and sound card/AC97

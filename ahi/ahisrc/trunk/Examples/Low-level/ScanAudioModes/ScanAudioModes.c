@@ -1,13 +1,12 @@
 
 /* Shows the current Audio database in memory */
 
-#include <utility/tagitem.h>
 #include <dos/dos.h>
 #include <devices/ahi.h>
+#include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/ahi.h>
-#include <stdlib.h>
 
 #define LEN 80
 
@@ -29,7 +28,7 @@ void cleanup(LONG rc)
   exit(rc);
 }
 
-LONG main(void)
+int main(void)
 {
   ULONG id=AHI_INVALID_ID;
   LONG volume,stereo,panning,hifi,pingpong,record,realtime,fullduplex,
@@ -39,14 +38,14 @@ LONG main(void)
         inputdesc[LEN],outputdesc[LEN];
   LONG i;
 
-  if(AHImp=CreateMsgPort())
-    if(AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest))) {
+  if((AHImp=CreateMsgPort()))
+    if((AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest)))) {
       AHIio->ahir_Version=1;
       AHIDevice=OpenDevice(AHINAME,AHI_NO_UNIT,(struct IORequest *)AHIio,NULL);
       }
 
   if(AHIDevice) {
-    Printf("Unable to open %s version 1\n",AHINAME);
+    Printf("Unable to open %s version 1\n",(ULONG) AHINAME);
     cleanup(RETURN_FAIL);
   }
   AHIBase=(struct Library *)AHIio->ahir_Std.io_Device;
@@ -67,46 +66,47 @@ LONG main(void)
     Printf("\x1b[2mMode 0x%08lx\x1b[0m\n",id);
     AHI_GetAudioAttrs(id, NULL,
                           AHIDB_BufferLen,LEN,
-                          AHIDB_Frequencies,&freqs,
-                          AHIDB_Volume, &volume,
-                          AHIDB_Stereo, &stereo,
-                          AHIDB_Panning, &panning,
-                          AHIDB_HiFi,&hifi,
-                          AHIDB_PingPong,&pingpong,
-                          AHIDB_Record,&record,
-                          AHIDB_FullDuplex,&fullduplex,
-                          AHIDB_Realtime,&realtime,
-                          AHIDB_Name,&name,
-                          AHIDB_Driver,&driver,
-                          AHIDB_Bits,&bits,
-                          AHIDB_MaxChannels,&channels,
-                          AHIDB_MinMixFreq,&minmix,
-                          AHIDB_MaxMixFreq,&maxmix,
-                          AHIDB_Author,&author,
-                          AHIDB_Copyright,&copyright,
-                          AHIDB_Version,&version,
-                          AHIDB_Annotation,&anno,
-                          AHIDB_MinMonitorVolume,&minmon,
-                          AHIDB_MaxMonitorVolume,&maxmon,
-                          AHIDB_MinInputGain,&mingain,
-                          AHIDB_MaxInputGain,&maxgain,
-                          AHIDB_MinOutputVolume,&minout,
-                          AHIDB_MaxOutputVolume,&maxout,
-                          AHIDB_Inputs,&inputs,
-                          AHIDB_Outputs,&outputs,
+                          AHIDB_Frequencies,(ULONG) &freqs,
+                          AHIDB_Volume, (ULONG) &volume,
+                          AHIDB_Stereo, (ULONG) &stereo,
+                          AHIDB_Panning, (ULONG) &panning,
+                          AHIDB_HiFi,(ULONG) &hifi,
+                          AHIDB_PingPong,(ULONG) &pingpong,
+                          AHIDB_Record,(ULONG) &record,
+                          AHIDB_FullDuplex,(ULONG) &fullduplex,
+                          AHIDB_Realtime,(ULONG) &realtime,
+                          AHIDB_Name,(ULONG) &name,
+                          AHIDB_Driver,(ULONG) &driver,
+                          AHIDB_Bits,(ULONG) &bits,
+                          AHIDB_MaxChannels,(ULONG) &channels,
+                          AHIDB_MinMixFreq,(ULONG) &minmix,
+                          AHIDB_MaxMixFreq,(ULONG) &maxmix,
+                          AHIDB_Author,(ULONG) &author,
+                          AHIDB_Copyright,(ULONG) &copyright,
+                          AHIDB_Version,(ULONG) &version,
+                          AHIDB_Annotation,(ULONG) &anno,
+                          AHIDB_MinMonitorVolume,(ULONG) &minmon,
+                          AHIDB_MaxMonitorVolume,(ULONG) &maxmon,
+                          AHIDB_MinInputGain,(ULONG) &mingain,
+                          AHIDB_MaxInputGain,(ULONG) &maxgain,
+                          AHIDB_MinOutputVolume,(ULONG) &minout,
+                          AHIDB_MaxOutputVolume,(ULONG) &maxout,
+                          AHIDB_Inputs,(ULONG) &inputs,
+                          AHIDB_Outputs,(ULONG) &outputs,
                           TAG_DONE);
-    Printf(" Name: \"%s\"   Driver: \"DEVS:AHI/%s.audio\"\n",name,driver);
+    Printf(" Name: \"%s\"   Driver: \"DEVS:AHI/%s.audio\"\n",
+	   (ULONG) name, (ULONG) driver);
     if(author[0])
-      Printf(" Driver programmed by: %s\n",author);
+      Printf(" Driver programmed by: %s\n",(ULONG) author);
     if(copyright[0])
-      Printf(" Copyright: %s\n",copyright);
+      Printf(" Copyright: %s\n",(ULONG) copyright);
     for(i=0;i<LEN;i++)
       if(version[i]=='\n' || version[i]=='\r')
         version[i]='\0';
     if(version[0])
-      Printf(" Version: %s\n",version);
+      Printf(" Version: %s\n",(ULONG) version);
     if(anno[0])
-      Printf(" %s\n",anno);
+      Printf(" %s\n",(ULONG) anno);
     Printf(" The hardware has %ld output(s)",outputs);
     if(outputs>0)
     {
@@ -116,8 +116,8 @@ LONG main(void)
         AHI_GetAudioAttrs(id, NULL,
             AHIDB_BufferLen,LEN,
             AHIDB_OutputArg,i,
-            AHIDB_Output,&outputdesc);
-        Printf(" %s",&outputdesc);
+            AHIDB_Output,(ULONG) &outputdesc);
+        Printf(" %s",(ULONG) &outputdesc);
       }
     }
     Printf("\n and %ld input(s)",inputs);
@@ -129,8 +129,8 @@ LONG main(void)
         AHI_GetAudioAttrs(id, NULL,
             AHIDB_BufferLen,LEN,
             AHIDB_InputArg,i,
-            AHIDB_Input,&inputdesc);
-        Printf(" %s",&inputdesc);
+            AHIDB_Input,(ULONG) &inputdesc);
+        Printf(" %s",(ULONG) &inputdesc);
       }
     }
     Printf(".\n");
@@ -147,23 +147,24 @@ LONG main(void)
     else
       Printf(" Output volume range: %ld-%ld%%.\n",minout*100>>16,maxout*100>>16);
 
-    Printf("\n %s output%s in %ld bits.\n", stereo ? "Stereo" : "Mono",
-              stereo ? (panning ? " (with panning)" : "" ) : "",
+    Printf("\n %s output%s in %ld bits.\n", (ULONG) (stereo ? "Stereo" : "Mono"),
+              (ULONG) (stereo ? (panning ? " (with panning)" : "" ) : ""),
               bits);
     Printf(" Can play samples on max %ld channels at %s, %s.\n", channels,
-              volume ? "any volume" : "full volume only",
-              pingpong ? "both forwards and backwards" : "forwards only");
-    Printf(" The mixing %sdestructive.\n", hifi ? "is non-" : "may be ");
+              (ULONG) (volume ? "any volume" : "full volume only"),
+              (ULONG) (pingpong ? "both forwards and backwards" : "forwards only"));
+    Printf(" The mixing %sdestructive.\n", (ULONG) (hifi ? "is non-" : "may be "));
     Printf(" %ld mixing frequencies between %ld and %ld are available.\n",freqs,minmix,maxmix);
-    Printf(" Recording is %ssupported", record ? "" : "not ");
+    Printf(" Recording is %ssupported", (ULONG) (record ? "" : "not "));
     if(record)
-      Printf(" (%s duplex)", fullduplex ? "Full" : "Half");
+      Printf(" (%s duplex)", (ULONG) (fullduplex ? "Full" : "Half"));
     Printf(".\n");
-    Printf(" This is a %srealtime mode.\n", realtime ? "" : "non-");
+    Printf(" This is a %srealtime mode.\n", (ULONG) (realtime ? "" : "non-"));
    
     Printf("\n");
   }
 
   Printf("No more modes in the audio database.\n");
   cleanup(RETURN_OK);
+  return RETURN_OK; // Make compiler happy
 }
