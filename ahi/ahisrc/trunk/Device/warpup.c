@@ -3,17 +3,17 @@
 /*
      AHI - Hardware independent audio subsystem
      Copyright (C) 1996-2000 Martin Blom <martin@blom.org>
-     
+
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
      License as published by the Free Software Foundation; either
      version 2 of the License, or (at your option) any later version.
-     
+
      This library is distributed in the hope that it will be useful,
      but WITHOUT ANY WARRANTY; without even the implied warranty of
      MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
      Library General Public License for more details.
-     
+
      You should have received a copy of the GNU Library General Public
      License along with this library; if not, write to the
      Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
@@ -23,46 +23,43 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-#include <exec/types.h>
-#include <hardware/intbits.h>
-#include <powerpc/powerpc.h>
-
-#include "ahi_def.h"
-#include "mixer.h"
-
-
-/******************************************************************************
-** Prototypes *****************************************************************
-******************************************************************************/
-
 #ifdef __PPC__
-
-int
-CallMixroutine( struct PowerPCContext*   context );
-
-void
-FlushCache( void* address, unsigned long length );
-
-void
-FlushCacheAll( void  );
-
-void
-InvalidateCache( void* address, unsigned long length );
-
-void WarpUpInt( void );
-
+# include <exec/types.h>
+# include <hardware/intbits.h>
 #else
-
+# include <powerpc/powerpc.h>
 #endif
 
+#include "ahi_def.h"
+
+#ifdef __PPC__
+# include "mixer.h"
+#endif
 
 #ifdef __PPC__
 
 /******************************************************************************
-** Function used to call the actual mixing routine ****************************
+** PPC prototypes *************************************************************
 ******************************************************************************/
 
-int
+static int
+CallMixroutine( struct PowerPCContext*   context );
+
+static void
+FlushCache( void* address, unsigned long length );
+
+static void
+FlushCacheAll( void  );
+
+static void
+InvalidateCache( void* address, unsigned long length );
+
+
+/******************************************************************************
+** PPC function used to call the actual mixing routine ************************
+******************************************************************************/
+
+static int
 CallMixroutine( struct PowerPCContext* context )
 {
   struct AHIPrivAudioCtrl* audioctrl;
@@ -121,6 +118,10 @@ CallMixroutine( struct PowerPCContext* context )
 
   Mix( context->Hook, context->Dst, audioctrl );
 
+  /*** AHIET_MASTERVOLUME ***/
+
+  DoMasterVolume( dst, audioctrl );
+
   // Flush mixed samples to memory
 
   FlushCache( context->Dst, audioctrl->ahiac_BuffSizeNow );
@@ -138,12 +139,15 @@ CallMixroutine( struct PowerPCContext* context )
   return 0;
 }
 
+
 /******************************************************************************
-** Cache manipulation routines ************************************************
+** PPC cache manipulation routines ********************************************
 ******************************************************************************/
 
 asm( "
         .text
+
+/* FlushCache ****************************************************************/
 
 /*     r3 = beginning address of data block to flush
  *     r4 = size of data block to flush (in bytes)
@@ -151,7 +155,7 @@ asm( "
  */
 
         .align  2
-        .globl  FlushCache
+;       .globl  FlushCache
       	.type   FlushCache,@function
 
 FlushCache:
@@ -168,8 +172,10 @@ FlushCache:
         blr                     /* return to calling routine */
 
 
+/* FlushCacheAll *************************************************************/
+
         .align  2
-        .globl  FlushCacheAll
+;       .globl  FlushCacheAll
       	.type   FlushCacheAll,@function
 
 FlushCacheAll:
@@ -192,13 +198,14 @@ FlushCacheAll:
         sync
         blr
 
+/* InvalidateCache ***********************************************************/
 
 /*     r3 = beginning address of data block to flush
  *     r4 = size of data block to flush (in bytes)
  *     assumes cache block granule is 32 bytes
  */
         .align  2
-        .globl  InvalidateCache
+;       .globl  InvalidateCache
       	.type   InvalidateCache,@function
 
 InvalidateCache:
@@ -221,11 +228,13 @@ InvalidateCache:
 ** WarpUp stuff ***************************************************************
 ******************************************************************************/
 
+void WarpUpInterrupt( void );
+
 struct TagItem InitTags[] =
 {
   { EXCATTR_CODE,  (ULONG) &WarpUpInt,                    },
   { EXCATTR_DATA,  0,                                     },
-  { EXCATTR_NAME,  (ULONG) "AHI/WarpUp Exception Handler" },
+  { EXCATTR_NAME,  (ULONG) AHINAME " Exception Handler"   },
   { EXCATTR_PRI,   32,                                    },
   { EXCATTR_EXCID, EXCF_INTERRUPT,                        },
   { EXCATTR_FLAGS, EXCF_GLOBAL | EXCF_LARGECONTEXT,       },
@@ -246,26 +255,27 @@ EXCRETURN_ABORT   = 1
 
 ppcc_Command          = 0*4
 ppcc_Argument         = 1*4
-ppcc_SlaveProcess     = 2*4
-ppcc_MainProcess      = 3*4
-ppcc_CurrentMixBuffer = 4*4
-ppcc_Active           = 5*4
-ppcc_Hook             = 6*4
-ppcc_Dst              = 7*4
-ppcc_XLock            = 8*4
-ppcc_AudioCtrl        = 9*4
-ppcc_PowerPCBase      = 10*4
+ppcc_CurrentMixBuffer = 2*4
+ppcc_Active           = 3*4
+ppcc_Hook             = 4*4
+ppcc_Dst              = 5*4
+ppcc_XLock            = 6*4
+ppcc_AudioCtrl        = 7*4
+ppcc_PowerPCBase      = 8*4
+ppcc_MixInterrupt     = 9*4
+ppcc_MixBuffer1       = 10*4
+ppcc_MixBuffer2       = 11*4
 
-/* InitWarpUp ****************************************************************/
+/* WarpUpRegisterExcHandler **************************************************/
 
         .align  2
-        .globl  InitWarpUp
-        .type   InitWarpUp,@function
+        .globl  WarpUpRegisterExcHandler
+        .type   WarpUpRegisterExcHandler,@function
 
-/*     r3 = struct WarpUpContext*
+/*     r3 = struct PowerPCContext*
  */
 
-InitWarpUp:
+WarpUpRegisterExcHandler:
         mflr    0
         stw     0,8(1)
         mfcr    0
@@ -276,7 +286,7 @@ InitWarpUp:
 
         stw     14,-4(13)
 
-        mr      14,3                        # Save WarpUpContext in r14
+        mr      14,3                        # Save PowerPCContext in r14
 
 # Build the tag list on the stack
 
@@ -293,7 +303,7 @@ InitWarpUp:
         stwu    6,4(5)
         bne     1b
 
-        stw     14,28+3*4(1)                # Store WarpUpContext in tag list
+        stw     14,28+3*4(1)                # Store PowerPCContext in tag list
 
 # Register the exception handler
 
@@ -316,13 +326,13 @@ InitWarpUp:
         blr
 
 
-/* WarpUpInt *****************************************************************/
+/* WarpUpInterrupt ***********************************************************/
 
         .align  2
-        .globl  WarpUpInt
-        .type   WarpUpInt,@function
+        .globl  WarpUpInterrupt
+        .type   WarpUpInterrupt,@function
 
-WarpUpInt:
+WarpUpInterrupt:
         mflr    0
         stw     0,8(1)
         mfcr    0
@@ -387,16 +397,16 @@ WarpUpInt:
         mtlr    0
         blr
 
-/* CleanUpWarpUp *************************************************************/
+/* WarpUpRemoveExcHandler ****************************************************/
 
         .align  2
-        .globl  CleanUpWarpUp
-        .type   CleanUpWarpUp,@function
+        .globl  WarpUpRemoveExcHandler
+        .type   WarpUpRemoveExcHandler,@function
 
-/*     r3 = struct WarpUpContext*
+/*     r3 = struct PowerPCContext*
  */
 
-CleanUpWarpUp:
+WarpUpRemoveExcHandler:
         mflr    0
         stw     0,8(1)
         mfcr    0
@@ -422,7 +432,293 @@ CleanUpWarpUp:
         blr
 ");
 
+
 #else /* __PPC__ */
+
+
+/******************************************************************************
+** m68k/native client code ****************************************************
+******************************************************************************/
+
+
+/* Interrupt *****************************************************************/
+
+static INTERRUPT SAVEDS int
+Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
+{
+  if( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_INIT )
+  {
+    /* Not for us, continue */
+    return 0;
+  }
+  else
+  {
+    BOOL running = TRUE;
+//kprintf("I");
+    while( running )
+    {
+//kprintf("0");
+      switch( audioctrl->ahiac_PowerPCContext->Command )
+      {
+        case PPCC_COM_INIT:
+//kprintf("1");
+          // Keep looping
+          audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
+          break;
+
+        case PPCC_COM_ACK:
+//kprintf("2");
+          // Keep looping, try not to waste to much memory bandwidth...
+          asm( "stop #(1<<13) | (2<<8)" : );
+          break;
+
+        case PPCC_COM_SOUNDFUNC:
+//kprintf("3");
+          CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
+                       audioctrl,
+                       (APTR) audioctrl->ahiac_PowerPCContext->Argument );
+          audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
+          break;
+
+        case PPCC_COM_DEBUG:
+//kprintf("4");
+          KPrintF( "%lx ", (ULONG) audioctrl->ahiac_PowerPCContext->Argument );
+          audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
+          break;
+
+        case PPCC_COM_QUIT:
+//kprintf("5");
+          running = FALSE;
+          audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
+          break;
+        
+        case PPCC_COM_NONE:
+        default:
+//kprintf("6");
+          // Error
+          running  = FALSE;
+          audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_ACK;
+          break;
+      }
+    }
+//kprintf("i");
+
+    /* End chain! */
+    return 1;
+  }
+};
+
+
+/* WarpUpInit ****************************************************************/
+
+BOOL
+WarpUpInit( struct AHIPrivAudioCtrl* audioctrl )
+{
+  BOOL rc = FALSE;
+
+  audioctrl->ahiac_PowerPCContext = 
+    AllocVec32( sizeof( struct PowerPCContext ), 
+                        MEMF_PUBLIC | MEMF_CHIP | MEMF_CLEAR );
+
+  if( audioctrl->ahiac_PowerPCContext == NULL )
+  {
+    Req( "Out of memory." );
+  }
+  else
+  {
+    audioctrl->ahiac_PowerPCContext->Command      = PPCC_COM_NONE;
+    audioctrl->ahiac_PowerPCContext->Active       = FALSE;
+
+    audioctrl->ahiac_PowerPCContext->AudioCtrl    = audioctrl;
+    audioctrl->ahiac_PowerPCContext->PowerPCBase  = PowerPCBase;
+
+    audioctrl->ahiac_PowerPCContext->MixBuffer1 =
+        AllocVec32( audioctrl->ac.ahiac_BuffSize,
+                    MEMF_PUBLIC | MEMF_CLEAR );
+
+    audioctrl->ahiac_PowerPCContext->MixBuffer2 =
+        AllocVec32( audioctrl->ac.ahiac_BuffSize,
+                    MEMF_PUBLIC | MEMF_CLEAR );
+    
+    audioctrl->ahiac_PowerPCContext->CurrentMixBuffer = 
+        audioctrl->ahiac_PowerPCContext->MixBuffer1;
+
+    if( mixbuffer1 == NULL || mixbuffer2 == NULL )
+    {
+      Req( "Out of memory." );
+    }
+    else
+    {
+      // Initialize the WarpUp side
+      
+      struct PPCArgs args = 
+      {
+        NULL,
+        0,
+        0,
+        NULL,
+        0,
+        { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+        { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+      };
+    
+      args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PowerPCContext;
+
+      if( ! AHIGetELFSymbol( "WarpUpRegisterExcHandler", &args.PP_Code ) )
+      {
+        Req( "Unable to fetch symbol 'WarpUpRegisterExcHandler'." );
+      }
+      else
+      {
+        if( RunPPC( &args ) != PPERR_SUCCESS )
+        {
+          Req( "Call to WarpUpRegisterExcHandler() failed." );
+        }
+        else
+        {
+          audioctrl->ahiac_PowerPCContext->MixInterrupt = 
+              AllocVec( sizeof( struct Interrupt ),
+                                MEMF_PUBLIC | MEMF_CLEAR );
+
+          if( audioctrl->ahiac_PowerPCContext->MixInterrupt == NULL )
+          {
+            Req( "Out of memory." );
+          }
+          else
+          {
+            struct Interrupt* mi = audioctrl->ahiac_PowerPCContext->MixInterrupt;
+
+            mi->is_Node.ln_Type = NT_INTERRUPT;
+            mi->is_Node.ln_Pri  = 127;
+            mi->is_Node.ln_Name = AHINAME " PPC Handler Interrupt";
+            mi->is_Data         = audioctrl;
+            mi->is_Code         = (void(*)(void)) Interrupt;
+
+            AddIntServer( INTB_PORTS, mi );
+            
+            rc = TRUE;
+          }
+        }
+      }
+    }
+  }
+
+  return rc;
+}
+
+
+/* WarpUpCallMixer ***********************************************************/
+
+void
+WarpUpCallMixer( struct AHIPrivAudioCtrl* audioctrl,
+                 void* dst )
+{
+  // Calls the PPC mixing code to fill a buffer with mixed samples
+
+  struct AHISoundData *sd;
+  int                  i;
+  BOOL                 flushed = FALSE;
+
+//kprintf("M");
+  // Flush all DYNAMICSAMPLE's
+
+  sd = audioctrl->ahiac_SoundDatas;
+
+  for( i = 0; i < audioctrl->ac.ahiac_Sounds; i++)
+  {
+    if( sd->sd_Type == AHIST_DYNAMICSAMPLE )
+    {
+      if( sd->sd_Addr == NULL )
+      {
+//kprintf("a");
+        // Flush all and exit
+        CacheClearU();
+        flushed = TRUE;
+        break;
+      }
+      else
+      {
+//kprintf("b");
+        SetCache68K( CACHE_DCACHEFLUSH,
+                     sd->sd_Addr,
+                     sd->sd_Length * AHI_SampleFrameSize( sd->sd_Type ) );
+      }
+//kprintf("c");
+    }
+    sd++;
+  }
+
+//kprintf("d");
+  if( ! flushed )
+  {
+    /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
+       flush, or better, *invalidate* the cache before mixing starts. */
+
+    SetCache68K( CACHE_DCACHEFLUSH,
+                 mixbuffer,
+                 audioctrl->ahiac_BuffSizeNow );
+  }
+//kprintf("e");
+
+  audioctrl->ahiac_PowerPCContext->Hook         = audioctrl->ac.ahiac_MixerFunc;
+  audioctrl->ahiac_PowerPCContext->Dst          = dst;
+  audioctrl->ahiac_PowerPCContext->Active       = TRUE;
+  audioctrl->ahiac_PowerPCContext->Command      = PPCC_COM_START;
+
+  CausePPCInterrupt();
+
+//kprintf("f");
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
+//kprintf("g");
+
+}
+
+
+/* WarpUpCleanUp *************************************************************/
+
+void
+WarpUpCleanUp( struct AHIPrivAudioCtrl* audioctrl )
+{
+  if( audioctrl->ahiac_PowerPCContext != NULL )
+  {
+    if( audioctrl->ahiac_PowerPCContext->MixInterrupt != NULL )
+    {
+      RemIntServer( INTB_PORTS, mixinterrupt );
+    }
+
+    // Clean up the WarpUp side
+
+    struct PPCArgs args = 
+    {
+      NULL,
+      0,
+      0,
+      NULL,
+      0,
+      { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+      { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+    };
+
+    args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PowerPCContext;
+       
+    if( ! AHIGetELFSymbol( "WarpUpRemoveExcHandler", &args.PP_Code ) )
+    {
+      Req( "Unable to fetch symbol 'WarpUpRemoveExcHandler'." );
+    }
+    else
+    {
+      RunPPC( &args );
+    }
+  }
+
+  FreeVec( audioctrl->ahiac_PowerPCContext->MixInterrupt );
+
+  AHIFreeVec( audioctrl->ahiac_PowerPCContext->MixBuffer1 );
+  AHIFreeVec( audioctrl->ahiac_PowerPCContext->MixBuffer2 );
+
+  AHIFreeVec( audioctrl->ahiac_PowerPCContext );
+  audioctrl->ahiac_PowerPCContext = NULL;
+}
 
 
 #endif /* __PPC__ */

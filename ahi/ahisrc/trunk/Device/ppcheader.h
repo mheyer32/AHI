@@ -27,15 +27,10 @@
 
 #include "ahi_def.h"
 
-//#define POWERUP_USE_MIXTASK
-
 struct PowerPCContext
 {
   volatile int              Command;
   volatile void*            Argument;
-
-  struct Process*           SlaveProcess;
-  struct Process*           MainProcess;
 
   void*                     CurrentMixBuffer;
 
@@ -46,13 +41,10 @@ struct PowerPCContext
 
   struct AHIPrivAudioCtrl*  AudioCtrl;
   struct Library*           PowerPCBase;
-
-#ifdef POWERUP_USE_MIXTASK
-  void*                     Port;
-  void*                     Msg;
-  void*                     Task;
-#endif
-
+  
+  struct Interrupt*         MixInterrupt;
+  void*                     MixBuffer1;
+  void*                     MixBuffer2;
 };
 
 struct PPCHandlerMessage

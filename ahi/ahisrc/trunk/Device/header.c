@@ -521,7 +521,22 @@ OpenLibs ( void )
 
           if( r != 0 )
           {
-            // OK, then...
+            char buffer[ 2 ] = "0";
+        
+            GetVar( "PowerPC/UseDisable", buffer, sizeof buffer, 0 );
+        
+            if( buffer[ 0 ] == '1' )
+            {
+              // OK, then...
+            }
+            else
+            {
+              Req( "The WarpUp variable 'PowerPC/UseDisable' must be '1'." );
+
+              AHIUnloadObject( PPCObject );
+              PPCObject  = NULL;
+              MixBackend = MB_NATIVE;
+            }
           }
           else
           {
