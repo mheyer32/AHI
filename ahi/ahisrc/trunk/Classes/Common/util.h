@@ -3,6 +3,7 @@
 
 #include <exec/types.h>
 #include <intuition/classusr.h>
+#include <clib/alib_protos.h>
 
 /*** Put up a requester ******************************************************/
 
