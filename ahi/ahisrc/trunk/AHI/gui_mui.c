@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.2  1997/05/04 22:13:29  lcs
+ * Keyboard shortcuts and more.
+ *
  * Revision 4.1  1997/05/04 05:30:28  lcs
  * First MUI version.
  *
@@ -14,6 +17,7 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
+#include <proto/utility.h>
 #include <math.h>
 #include <string.h>
 
@@ -190,10 +194,10 @@ static void UpdateStrings(void) {
 }
 
 
-Object *MUIWindow,*MUIList,*MUIInfos,*MUIUnit;
-Object *MUIFreq,*MUIChannels,*MUIOutvol,*MUIMonvol,*MUIGain,*MUIInput,*MUIOutput;
-Object *MUILFreq,*MUILChannels,*MUILOutvol,*MUILMonvol,*MUILGain,*MUILInput,*MUILOutput;
-Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu;
+static Object *MUIWindow,*MUIList,*MUIInfos,*MUIUnit;
+static Object *MUIFreq,*MUIChannels,*MUIOutvol,*MUIMonvol,*MUIGain,*MUIInput,*MUIOutput;
+static Object *MUILFreq,*MUILChannels,*MUILOutvol,*MUILMonvol,*MUILGain,*MUILInput,*MUILOutput;
+static Object *MUIDebug,*MUIEcho,*MUISurround,*MUIClipvol,*MUICpu;
 
 LONG xget(Object * obj, ULONG attribute)
 {
@@ -247,57 +251,56 @@ static void GUINewMode(void)
 
   Max = max(state.Frequencies -1, 0);
   Sel = min(Max, state.FreqSelected);
-  set(MUIFreq, MUIA_Prop_First, Sel);
-  set(MUIFreq, MUIA_Prop_Entries, Max+1);
+  set(MUIFreq, MUIA_Numeric_Value, Sel);
+  set(MUIFreq, MUIA_Numeric_Max, Max);
   set(MUIFreq, MUIA_Disabled, Max==0);
   set(MUILFreq, MUIA_Text_Contents, getFreq());
 
   Max = max(state.Channels, 0);
   Sel = min(Max, state.ChannelsSelected);
-  set(MUIChannels, MUIA_Prop_First, Sel-1);
-  set(MUIChannels, MUIA_Prop_Entries, Max);
+  set(MUIChannels, MUIA_Numeric_Value, Sel);
+  set(MUIChannels, MUIA_Numeric_Max, Max);
   set(MUIChannels, MUIA_Disabled, (Max == 1) || state.ChannelsDisabled);
   set(MUILChannels, MUIA_Text_Contents, getChannels());
 
   Max = max(state.OutVols -1, 0);
   Sel = min(Max, state.OutVolSelected);
-  set(MUIOutvol, MUIA_Prop_First, Sel);
-  set(MUIOutvol, MUIA_Prop_Entries, Max+1);
+  set(MUIOutvol, MUIA_Numeric_Value, Sel);
+  set(MUIOutvol, MUIA_Numeric_Max, Max);
   set(MUIOutvol, MUIA_Disabled, Max==0);
   set(MUILOutvol, MUIA_Text_Contents, getOutVol());
 
   Max = max(state.MonVols -1, 0);
   Sel = min(Max, state.MonVolSelected);
-  set(MUIMonvol, MUIA_Prop_First, Sel);
-  set(MUIMonvol, MUIA_Prop_Entries, Max+1);
+  set(MUIMonvol, MUIA_Numeric_Value, Sel);
+  set(MUIMonvol, MUIA_Numeric_Max, Max);
   set(MUIMonvol, MUIA_Disabled, Max==0);
   set(MUILMonvol, MUIA_Text_Contents, getMonVol());
 
   Max = max(state.Gains -1, 0);
   Sel = min(Max, state.GainSelected);
-  set(MUIGain, MUIA_Prop_First, Sel);
-  set(MUIGain, MUIA_Prop_Entries, Max+1);
+  set(MUIGain, MUIA_Numeric_Value, Sel);
+  set(MUIGain, MUIA_Numeric_Max, Max);
   set(MUIGain, MUIA_Disabled, Max==0);
   set(MUILGain, MUIA_Text_Contents, getGain());
 
   Max = max(state.Inputs -1, 0);
   Sel = min(Max, state.InputSelected);
-  set(MUIInput, MUIA_Prop_First, Sel);
-  set(MUIInput, MUIA_Prop_Entries, Max+1);
+  set(MUIInput, MUIA_Numeric_Value, Sel);
+  set(MUIInput, MUIA_Numeric_Max, Max);
   set(MUIInput, MUIA_Disabled, Max==0);
   set(MUILInput, MUIA_Text_Contents, getInput());
 
   Max = max(state.Outputs -1, 0);
   Sel = min(Max, state.OutputSelected);
-  set(MUIOutput, MUIA_Prop_First, Sel);
-  set(MUIOutput, MUIA_Prop_Entries, Max+1);
+  set(MUIOutput, MUIA_Numeric_Value, Sel);
+  set(MUIOutput, MUIA_Numeric_Max, Max);
   set(MUIOutput, MUIA_Disabled, Max==0);
   set(MUILOutput, MUIA_Text_Contents, getOutput());
 }
 
 static __saveds __asm VOID SliderHookFunc(register __a2 Object *obj, register __a1 ULONG** arg )
 {
-  
   if(obj == MUIFreq)
   {
     state.FreqSelected = (LONG) (*arg);
@@ -305,7 +308,7 @@ static __saveds __asm VOID SliderHookFunc(register __a2 Object *obj, register __
   }
   else if(obj == MUIChannels )
   {
-    state.ChannelsSelected = (LONG) (*arg)+1;
+    state.ChannelsSelected = (LONG) (*arg);
     set(MUILChannels,MUIA_Text_Contents,getChannels());
   }
   else if(obj == MUIOutvol )
@@ -341,12 +344,69 @@ static struct Hook hookSlider = { NULL,NULL,(HOOKFUNC) SliderHookFunc,NULL,NULL 
 **** Call to open the window **************************************************
 ******************************************************************************/
 
-Object *MUIApp,*MUIMenu;
+static Object *MUIApp,*MUIMenu;
+
+static Object* SpecialLabel(STRPTR label)
+{
+  return(TextObject,
+      MUIA_HorizWeight, 75,
+      MUIA_Text_Contents, label,
+      MUIA_Text_PreParse, "\33l",
+    End);
+}
+
+static Object* SpecialButton(STRPTR label)
+{
+  Object *button = NULL;
+  STRPTR lab;
+  
+  if(lab = AllocVec(strlen(label)+1,0))
+  {
+    char ctrlchar = 0;
+    STRPTR l = lab;
+
+    while(*label)
+    {
+      *l = *label;
+      if(*label++ == '_')
+      {
+        ctrlchar = ToLower(*label);
+        *l = *label++;
+      }
+      l++;
+    }
+    *l = '\0';
+    button = TextObject,
+      MUIA_HorizWeight, 0,
+      MUIA_Text_Contents, lab,
+      MUIA_Text_PreParse, "\33r",
+      MUIA_Text_HiChar, ctrlchar,
+      MUIA_ControlChar, ctrlchar,
+      MUIA_InputMode, MUIV_InputMode_RelVerify,
+      MUIA_ShowSelState, FALSE,
+    End;
+    FreeVec(lab);
+  }
+  return button;
+}
+
+static Object* SpecialSlider(LONG min, LONG max, LONG value)
+{
+  return(SliderObject,
+      MUIA_CycleChain, 1,
+      MUIA_Slider_Quiet, TRUE,
+      MUIA_Numeric_Min, min,
+      MUIA_Numeric_Max,max,
+      MUIA_Numeric_Value,value,
+      MUIA_Numeric_Format, "",
+    End);
+}
 
 BOOL BuildGUI(char *screenname)
 {
   Object *MUISave, *MUIUse, *MUICancel;
   Object *page1,*page2;
+  Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu;
 
   UpdateStrings();
 
@@ -359,183 +419,134 @@ BOOL BuildGUI(char *screenname)
   }
 
   page1 = HGroup,
-  Child, VGroup,
-    Child, MUIUnit = CycleObject,
-    MUIA_CycleChain, 1,
-    MUIA_Cycle_Entries, Units,
-    MUIA_Cycle_Active, state.UnitSelected,
+    Child, VGroup,
+      Child, MUIUnit = CycleObject,
+        MUIA_CycleChain, 1,
+        MUIA_Cycle_Entries, Units,
+        MUIA_Cycle_Active, state.UnitSelected,
+      End,
+      Child, ListviewObject,
+        MUIA_CycleChain, 1,
+        MUIA_Listview_List, MUIList = ListObject,
+          InputListFrame,
+          MUIA_List_AutoVisible, TRUE,
+        End,
+      End,
+      Child, HGroup,
+        ReadListFrame,
+        MUIA_Background, MUII_TextBack,
+        Child, TextObject,
+          MUIA_Text_Contents, msgProperties,
+          MUIA_Text_SetMax, TRUE,
+        End,
+        Child, MUIInfos = TextObject,
+          MUIA_Text_Contents, "\n\n\n\n\n",
+          MUIA_Text_SetMin, FALSE,
+        End,
+      End,
     End,
-    Child, ListviewObject,
-    MUIA_CycleChain, 1,
-    MUIA_Listview_List, MUIList = ListObject,
-      InputListFrame,
-      MUIA_List_AutoVisible, TRUE,
+    Child, BalanceObject,
     End,
+    Child, VGroup,
+      Child, HVSpace,
+      Child, ColGroup(3),
+        GroupFrameT(msgOptions),
+        Child, MUITFreq = SpecialButton((STRPTR)msgOptFrequency),
+        Child, MUIFreq = SpecialSlider(0,state.Frequencies-1,state.FreqSelected),
+        Child, MUILFreq = SpecialLabel(getFreq()),
+        Child, MUITChannels = SpecialButton((STRPTR)msgOptChannels),
+        Child, MUIChannels = SpecialSlider(1,state.Channels,state.ChannelsSelected),
+        Child, MUILChannels = SpecialLabel(getChannels()),
+        Child, MUITOutvol = SpecialButton((STRPTR)msgOptVolume),
+        Child, MUIOutvol = SpecialSlider(0,state.OutVols-1,state.OutVolSelected),
+        Child, MUILOutvol = SpecialLabel(getOutVol()),
+        Child, MUITMonvol = SpecialButton((STRPTR)msgOptMonitor),
+        Child, MUIMonvol = SpecialSlider(0,state.MonVols-1,state.MonVolSelected),
+        Child, MUILMonvol = SpecialLabel(getMonVol()),
+        Child, MUITGain = SpecialButton((STRPTR)msgOptGain),
+        Child, MUIGain = SpecialSlider(0,state.Gains-1,state.GainSelected),
+        Child, MUILGain = SpecialLabel(getGain()),
+        Child, MUITInput = SpecialButton((STRPTR)msgOptInput),
+        Child, MUIInput = SpecialSlider(0,state.Inputs-1,state.InputSelected),
+        Child, MUILInput = SpecialLabel(getInput()),
+        Child, MUITOutput = SpecialButton((STRPTR)msgOptOutput),
+        Child, MUIOutput = SpecialSlider(0,state.Outputs-1,state.OutputSelected),
+        Child, MUILOutput = SpecialLabel(getOutput()),
+      End,
+      Child, HVSpace,
     End,
-    Child, HGroup,
-    ReadListFrame,
-    MUIA_Background, MUII_TextBack,
-    Child, TextObject,
-      MUIA_Text_Contents, msgProperties,
-      MUIA_Text_SetMax, TRUE,
-    End,
-    Child, MUIInfos = TextObject,
-      MUIA_Text_Contents, "\n\n\n\n\n",
-      MUIA_Text_SetMin, FALSE,
-    End,
-    End,
-  End,
-  Child, BalanceObject,
-  End,
-  Child, VGroup,
-    Child, HVSpace,
-    Child, ColGroup(3),
-    GroupFrameT(msgOptions),
-    Child, Label(msgOptFrequency),
-    Child, MUIFreq = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.Frequencies,
-      MUIA_Prop_First,state.FreqSelected,
-    End,
-    Child, MUILFreq = Label(getFreq()),
-    Child, Label(msgOptChannels),
-    Child, MUIChannels = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.Channels,
-      MUIA_Prop_First,state.ChannelsSelected,
-    End,
-    Child, MUILChannels = Label(getChannels()),
-    Child, Label(msgOptVolume),
-    Child, MUIOutvol = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.OutVols,
-      MUIA_Prop_First,state.OutVolSelected,
-    End,
-    Child, MUILOutvol = Label(getOutVol()),
-    Child, Label(msgOptMonitor),
-    Child, MUIMonvol = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.MonVols,
-      MUIA_Prop_First,state.MonVolSelected,
-    End,
-    Child, MUILMonvol = Label(getMonVol()),
-    Child, Label(msgOptGain),
-    Child, MUIGain = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.Gains,
-      MUIA_Prop_First,state.GainSelected,
-    End,
-    Child, MUILGain = Label(getGain()),
-    Child, Label(msgOptInput),
-    Child, MUIInput = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.Inputs,
-      MUIA_Prop_First,state.InputSelected,
-    End,
-    Child, MUILInput = Label(getInput()),
-    Child, Label(msgOptOutput),
-    Child, MUIOutput = PropObject,
-      MUIA_CycleChain, 1,
-      SliderFrame,
-      MUIA_Prop_Horiz, TRUE,
-      MUIA_Prop_Visible, 1,
-      MUIA_Prop_Entries,state.Outputs,
-      MUIA_Prop_First,state.OutputSelected,
-    End,
-    Child, MUILOutput = Label(getOutput()),
-    End,
-    Child, HVSpace,
-  End,
   End;
 
   page2 = VGroup,
-  Child, HVSpace,
-  Child, HGroup,
     Child, HVSpace,
-    Child, ColGroup(2),
-      GroupFrameT(msgGlobalOptions),
-      Child, Label(msgGlobOptDebugLevel),
-      Child, MUIDebug = CycleObject,
-      MUIA_CycleChain, 1,
-      MUIA_Cycle_Entries, DebugLabels,
-      MUIA_Cycle_Active, globalprefs.ahigp_DebugLevel,
+    Child, HGroup,
+      Child, HVSpace,
+      Child, ColGroup(2),
+        GroupFrameT(msgGlobalOptions),
+        Child, MUITDebug = SpecialButton((STRPTR)msgGlobOptDebugLevel),
+        Child, MUIDebug = CycleObject,
+          MUIA_CycleChain, 1,
+          MUIA_Cycle_Entries, DebugLabels,
+          MUIA_Cycle_Active, globalprefs.ahigp_DebugLevel,
+        End,
+        Child, MUITEcho = SpecialButton((STRPTR)msgGlobOptEcho),
+        Child, MUIEcho  = CycleObject,
+          MUIA_CycleChain, 1,
+          MUIA_Cycle_Entries, EchoLabels,
+          MUIA_Cycle_Active, (globalprefs.ahigp_DisableEcho ? 2 : 0) | (globalprefs.ahigp_FastEcho ? 1 : 0),
+        End,
+        Child, MUITSurround = SpecialButton((STRPTR)msgGlobOptSurround),
+        Child, MUISurround = CycleObject,
+          MUIA_CycleChain, 1,
+          MUIA_Cycle_Entries, SurroundLabels,
+          MUIA_Cycle_Active, globalprefs.ahigp_DisableSurround,
+        End,
+        Child, MUITClipvol = SpecialButton((STRPTR)msgGlobOptMasterVol),
+        Child, MUIClipvol = CycleObject,
+          MUIA_CycleChain, 1,
+          MUIA_Cycle_Entries, ClipMVLabels,
+          MUIA_Cycle_Active, globalprefs.ahigp_ClipMasterVolume,
+        End,
+        Child, MUITCpu = SpecialButton((STRPTR)msgGlobOptCPULimit),
+        Child, MUICpu = SliderObject,
+          MUIA_CycleChain, 1,
+          MUIA_Slider_Horiz, TRUE,
+          MUIA_Numeric_Min, 0,
+          MUIA_Numeric_Max, 100,
+          MUIA_Numeric_Value,(globalprefs.ahigp_MaxCPU * 100 + 32768) / 65536,
+          MUIA_Numeric_Format,"%ld%%",
+        End,
       End,
-      Child, Label(msgGlobOptEcho),
-      Child, MUIEcho  = CycleObject,
-      MUIA_CycleChain, 1,
-      MUIA_Cycle_Entries, EchoLabels,
-      MUIA_Cycle_Active, (globalprefs.ahigp_DisableEcho ? 2 : 0) | (globalprefs.ahigp_FastEcho    ? 1 : 0),
-      End,
-      Child, Label(msgGlobOptSurround),
-      Child, MUISurround = CycleObject,
-      MUIA_CycleChain, 1,
-      MUIA_Cycle_Entries, SurroundLabels,
-      MUIA_Cycle_Active, globalprefs.ahigp_DisableSurround,
-      End,
-      Child, Label(msgGlobOptMasterVol),
-      Child, MUIClipvol = CycleObject,
-      MUIA_CycleChain, 1,
-      MUIA_Cycle_Entries, ClipMVLabels,
-      MUIA_Cycle_Active, globalprefs.ahigp_ClipMasterVolume,
-      End,
-      Child, Label(msgGlobOptCPULimit),
-      Child, MUICpu = SliderObject,
-      MUIA_CycleChain, 1,
-      MUIA_Slider_Horiz, TRUE,
-      MUIA_Numeric_Min, 0,
-      MUIA_Numeric_Max, 100,
-      MUIA_Numeric_Value,(globalprefs.ahigp_MaxCPU * 100 + 32768) / 65536,
-      MUIA_Numeric_Format,"%ld%%",
-      End,
+      Child, HVSpace,
     End,
     Child, HVSpace,
-  End,
-  Child, HVSpace,
   End;
 
   if(MUIApp = ApplicationObject,
-  MUIA_Application_Title, (char *) msgTextProgramName,
-  MUIA_Application_Version, "$VER: AHIPrefs MUI V4.4 "__AMIGADATE__,
-  MUIA_Application_Copyright, "©1997 Martin Blom",
-  MUIA_Application_Author, "Stéphane Barbaray/Martin Blom",
-  MUIA_Application_Base, "AHI",
-  MUIA_Application_HelpFile, HELPFILE,
-  MUIA_Application_Menustrip, MUIMenu = MUI_MakeObject(MUIO_MenustripNM,Menus,0),
-  MUIA_Application_SingleTask, TRUE,
-  SubWindow, MUIWindow = WindowObject,
-    MUIA_Window_Title, (char *) msgTextProgramName,
-    MUIA_Window_ID   , MAKE_ID('M','A','I','N'),
-    MUIA_HelpNode, "AHI",
-    WindowContents, VGroup,
-    Child, RegisterGroup(PageNames),
-      Child, page1,
-      Child, page2,
+    MUIA_Application_Title, (char *) msgTextProgramName,
+    MUIA_Application_Version, Version,
+    MUIA_Application_Copyright, "©1997 Martin Blom",
+    MUIA_Application_Author, "Stéphane Barbaray/Martin Blom",
+    MUIA_Application_Base, "AHI",
+    MUIA_Application_HelpFile, HELPFILE,
+    MUIA_Application_Menustrip, MUIMenu = MUI_MakeObject(MUIO_MenustripNM,Menus,0),
+    MUIA_Application_SingleTask, TRUE,
+    SubWindow, MUIWindow = WindowObject,
+      MUIA_Window_Title, (char *) msgTextProgramName,
+      MUIA_Window_ID   , MAKE_ID('M','A','I','N'),
+      MUIA_HelpNode, "AHI",
+      WindowContents, VGroup,
+        Child, RegisterGroup(PageNames),
+          Child, page1,
+          Child, page2,
+        End,
+        Child, HGroup,
+          Child, MUISave = SimpleButton(msgButtonSave),
+          Child, MUIUse = SimpleButton(msgButtonUse),
+          Child, MUICancel = SimpleButton(msgButtonCancel),
+        End,
+      End,
     End,
-    Child, HGroup,
-      Child, MUISave = SimpleButton(msgButtonSave),
-      Child, MUIUse = SimpleButton(msgButtonUse),
-      Child, MUICancel = SimpleButton(msgButtonCancel),
-    End,
-    End,
-  End,
   End)
   {
     APTR item = (APTR)DoMethod(MUIMenu,MUIM_FindUData,ACTID_ICONS);
@@ -543,6 +554,22 @@ BOOL BuildGUI(char *screenname)
     {
       set(item, MUIA_Menuitem_Checked, SaveIcons);
     }
+    DoMethod(MUIWindow, MUIM_MultiSet, MUIA_Text_PreParse,"\033l",MUILFreq,MUILChannels,MUILOutvol,MUILMonvol,MUILGain,MUILInput,MUILOutput,NULL);
+    DoMethod(MUIWindow, MUIM_MultiSet, MUIA_CycleChain, 1, MUISave,MUIUse,MUICancel,NULL);
+
+    DoMethod(MUITFreq, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIFreq);
+    DoMethod(MUITChannels, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIChannels);
+    DoMethod(MUITOutvol, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIOutvol);
+    DoMethod(MUITMonvol, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIMonvol);
+    DoMethod(MUITGain, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIGain);
+    DoMethod(MUITInput, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIInput);
+    DoMethod(MUITOutput, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIOutput);
+    DoMethod(MUITDebug, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIDebug);
+    DoMethod(MUITEcho, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIEcho);
+    DoMethod(MUITSurround, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUISurround);
+    DoMethod(MUITClipvol, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIClipvol);
+    DoMethod(MUITCpu, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUICpu);
+
     DoMethod(MUIWindow, MUIM_Notify, MUIA_Window_CloseRequest, TRUE, MUIApp, 2, MUIM_Application_ReturnID, MUIV_Application_ReturnID_Quit);
     DoMethod(MUISave, MUIM_Notify, MUIA_Pressed, FALSE, MUIApp, 2, MUIM_Application_ReturnID, ACTID_SAVE);
     DoMethod(MUIUse, MUIM_Notify, MUIA_Pressed, FALSE, MUIApp, 2, MUIM_Application_ReturnID, ACTID_USE);
@@ -552,15 +579,15 @@ BOOL BuildGUI(char *screenname)
     DoMethod(MUIDebug, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_DEBUG);
     DoMethod(MUISurround, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_SURROUND);
     DoMethod(MUIEcho, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_ECHO);
-    DoMethod(MUICpu, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CPULIMIT);
+    DoMethod(MUICpu, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CPULIMIT);
     DoMethod(MUIClipvol, MUIM_Notify, MUIA_Cycle_Active, MUIV_EveryTime, MUIApp, 2, MUIM_Application_ReturnID,  ACTID_CLIPMV);
-    DoMethod(MUIFreq, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
-    DoMethod(MUIChannels, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
-    DoMethod(MUIOutvol, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
-    DoMethod(MUIMonvol, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
-    DoMethod(MUIGain, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
-    DoMethod(MUIInput, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
-    DoMethod(MUIOutput, MUIM_Notify, MUIA_Prop_First, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIFreq, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIChannels, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIOutvol, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIMonvol, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIGain, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIInput, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
+    DoMethod(MUIOutput, MUIM_Notify, MUIA_Numeric_Value, MUIV_EveryTime, MUIV_Notify_Self, 3, MUIM_CallHook, &hookSlider, MUIV_TriggerValue);
     set(MUIWindow, MUIA_Window_Open, TRUE);
     GUINewUnit();
     return TRUE;
