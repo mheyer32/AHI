@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.9  1997/02/18 22:26:49  lcs
+* Faster mixing routines for 16 bit samples when using tables.
+*
 * Revision 1.8  1997/02/01 21:54:53  lcs
 * Max freq. for AHI_SetFreq() uncreased to more than one million! ;)
 *
@@ -491,7 +494,7 @@ calcUnsignedTable:
 
 RIGHTVOLUME	EQU	1
 LEFTVOLUME	EQU	2
-TABLES		EQU	4
+FASTMIX		EQU	4
 STEREO		EQU	8
 HIFI		EQU	16
 
@@ -544,8 +547,25 @@ SelectAddRoutine:
 	or.l	#HIFI,d2
 .not_hifi
 
+
+; Don't use tables for negative volume!
+
+	tst.l	d0
+	bmi	.no_tables
+	tst.l	d1
+	bmi	.no_tables
+
 	tst.l	ahiac_MultTableS(a2)
-	bne	.tables
+	beq	.no_tables
+	or.l	#FASTMIX,d2
+
+; Scale volume for 16 bit /w "tables"
+	move.l	d2,d5
+	and.l	#SIXTEENBIT,d5		;check for SIXTEENBIT or SIXTEEN2BIT
+	bne	.no_tables
+
+	bra	.check_volume
+.no_tables
 
 ; Scale volume according to the master volume
 
@@ -581,11 +601,8 @@ SelectAddRoutine:
 	pop	d0
  ENDC
 	pop	d2
-	bra	.not_tables
-.tables
-	or.l	#TABLES,d2
-.not_tables
 
+.check_volume
 	tst.l	ahiac_MasterVolume(a2)
 	beq	.not_volume
 
@@ -655,7 +672,7 @@ sar_unsigned:
 	rts
 
 functionstable:
-					; Type	HiFi	Stereo	Tables	Left	Right
+					; Type	HiFi	Stereo	FastMix	Left	Right
 	dc.l	FixVolSilence		; 8	-	-	-	-	-
 	dc.l	FixVolByteMV		; 8	-	-	-	-	*
 	dc.l	FixVolByteMV		; 8	-	-	-	*	-
@@ -784,176 +801,6 @@ functionstable:
 	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	-	*
 	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	*	-
 	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	*	*
-
-
-;in:
-* d0	VolumeLeft (Fixed)
-* d1	VolumeRight (Fixed)
-* d2	SampleType
-* a2	AudioCtrl
-;out:
-* d0	ScaleLeft
-* d1	ScaleRight
-* d2	AddRoutine
-;SelectAddRoutine:
-	pushm	d3-a6
-
-	pea	sa_exit(pc)			;return address
-
-	move.l	d2,d3
-	and.l	#~AHIST_BW,d2
-	move.l	d2,d6
-	moveq	#0,d2
-	move.w	ahiac_Channels2(a2),d2
-	lsl.w	#8,d2
-	move.l	ahiac_Flags(a2),d4
-	move.l	ahiac_MasterVolume(a2),d5
-	asr.l	#8,d5
-
-* Check for volume 0
-	tst.l	ahiac_MasterVolume(a2)
-	beq	.off
-	tst.l	d0
-	bne	.not_off
-	tst.l	d1
-	bne	.not_off
-.off
-	bra	FixVolSilence
-.not_off
- IFGE	__CPU-68020
-	btst.l	#AHIACB_HIFI,d4
-	bne	sa_hifi
- ENDC
-
-	cmp.l	#AHIST_M8U,d6
-	beq	sa_unsigned
-
-sa_signed:
-	tst.l	d0
-	bmi	sa_signed_notable
-	tst.l	d1
-	bmi	sa_signed_notable
-	tst.l	ahiac_MultTableS(a2)
-	bne	sa_signed_table
-
-sa_signed_notable
- IFGE	__CPU-68020
-	muls.l	d5,d0
-	divs.l	d2,d0
-	muls.l	d5,d1
-	divs.l	d2,d1
- ELSE
-	move.l	_UtilityBase(pc),a0
-	
-	push	d1
-	move.l	d5,d1
-	jsr	_LVOSMult32(a0)
-	move.l	d2,d1
-	jsr	_LVOSDivMod32(a0)
-	pop	d1
-
-	push	d0
-	move.l	d1,d0
-	move.l	d5,d1
-	jsr	_LVOSMult32(a0)
-	move.l	d2,d1
-	jsr	_LVOSDivMod32(a0)
-	move.l	d0,d1
-	pop	d0
- ENDC
-
-	btst.l	#AHIACB_STEREO,d4
-	bne	.stereo
-	cmp.l	#AHIST_M8S,d6
-	beq	FixVolByteMV
-	bra	FixVolWordMV
-
-.stereo
-	cmp.l	#AHIST_M8S,d6
-	bne	.stereo16
-
-	tst.l	d0
-	beq	FixVolByteSVr
-	tst.l	d1
-	beq	FixVolByteSVl
-	bra	FixVolByteSVP
-
-.stereo16
-	tst.l	d0
-	beq	FixVolWordSVr
-	tst.l	d1
-	beq	FixVolWordSVl
-	bra	FixVolWordSVP
-
-
-sa_signed_table:
-	btst.l	#AHIACB_STEREO,d4
-	bne	.stereo
-	cmp.l	#AHIST_M8S,d6
-	bne	FixVolWordMVT
-	bra	FixVolByteMVT
-
-.stereo
-	cmp.l	#AHIST_M8S,d6
-	bne	.stereo16
-
-	tst.l	d0
-	beq	FixVolByteSVTr
-	tst.l	d1
-	beq	FixVolByteSVTl
-	bra	FixVolByteSVPT	
-
-.stereo16
-	tst.l	d0
-	beq	FixVolWordSVTr
-	tst.l	d1
-	beq	FixVolWordSVTl
-	bra	FixVolWordSVPT
-
-
-sa_unsigned:
-	tst.l	d0
-	bmi	FixVolSilence		;Error
-	tst.l	d1
-	bmi	FixVolSilence		;Error
-	tst.l	ahiac_MultTableU(a2)
-	beq	FixVolSilence		;Error
-
-	btst.l	#AHIACB_STEREO,d4
-	bne	.stereo
-	bra	FixVolUByteMVT
-.stereo
-	tst.l	d0
-	beq	FixVolUByteSVTr
-	tst.l	d1
-	beq	FixVolUByteSVTl
-	bra	FixVolUByteSVPT	
-
-
- IFGE	__CPU-68020
-sa_hifi:
-	muls.l	d5,d0
-	divs.l	d2,d0
-	muls.l	d5,d1
-	divs.l	d2,d1
-
-	btst.l	#AHIACB_STEREO,d4
-	bne.b	.stereo
-	cmp.l	#AHIST_M8S,d6
-	beq	FixVolByteMVH
-	bra	FixVolWordMVH
-.stereo
-	cmp.l	#AHIST_M8S,d6
-	beq	FixVolByteSVPH
-	bra	FixVolWordSVPH
- ENDC
-
-sa_exit:
-	add.w	(a0),a0
-	move.l	a0,d2
-sa_quit:
-	popm	d3-a6
-	rts
 
 
 *
@@ -1236,6 +1083,66 @@ UDivMod64:
 	movem.l	(sp)+,d3-d7
 	rts
 
+;in:
+* d0	Fixed
+;out:
+* d0	Shift value
+fixed2shift:
+	push	d1
+	moveq	#0,d1
+	cmp.l	#$8000,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$4000,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$2000,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$1000,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$800,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$400,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$200,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$100,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$80,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$40,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$20,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$10,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$8,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$4,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$2,d0
+	bgt	.exit
+	addq.l	#1,d1
+	cmp.l	#$1,d0
+	bgt	.exit
+	addq.l	#1,d1
+.exit
+	move.l	d1,d0
+	pop	d1
+	rts
+
 
 * ALL FIXVOL RUTINES:
 ;in:
@@ -1449,10 +1356,7 @@ FixVolWordMV:
 
 FixVolWordMVT:
 	add.l	d1,d0
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
+	bsr	fixed2shift
 	lea	OffsWordMVT(pc),a0
 	rts
 
@@ -1486,29 +1390,24 @@ FixVolWordSVP:
 	rts
 
 FixVolWordSVTl:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
+	bsr	fixed2shift
 	lea	OffsWordSVTl(pc),a0
 	rts
 
 FixVolWordSVTr:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
+	move.l	d1,d0
+	bsr	fixed2shift
+	move.l	d0,d1
 	lea	OffsWordSVTr(pc),a0
 	rts
 
 FixVolWordSVPT:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
+	bsr	fixed2shift
+	push	d0
+	move.l	d1,d0
+	bsr	fixed2shift
+	move.l	d0,d1
+	pop	d0
 	lea	OffsWordSVPT(pc),a0
 	rts
 
@@ -1530,13 +1429,12 @@ FixVolWordsMV:
 	rts
 
 FixVolWordsMVT:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
+	bsr	fixed2shift
+	push	d0
+	move.l	d1,d0
+	bsr	fixed2shift
+	move.l	d0,d1
+	pop	d0
 	lea	OffsWordsMVT(pc),a0
 	rts
 
@@ -1557,29 +1455,24 @@ FixVolWordsSVP:
 	rts
 
 FixVolWordsSVTl:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
+	bsr	fixed2shift
 	lea	OffsWordsSVTl(pc),a0
 	rts
 
 FixVolWordsSVTr:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
+	move.l	d1,d0
+	bsr	fixed2shift
+	move.l	d0,d1
 	lea	OffsWordsSVTr(pc),a0
 	rts
 
 FixVolWordsSVPT:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
+	bsr	fixed2shift
+	push	d0
+	move.l	d1,d0
+	bsr	fixed2shift
+	move.l	d0,d1
+	pop	d0
 	lea	OffsWordsSVPT(pc),a0
 	rts
 
@@ -1592,6 +1485,7 @@ FixVolWordsSVPH:
 	rts
 
 ;******************************************************************************
+
 
 
 ;------------------------------------------------------------------------------
@@ -1766,8 +1660,8 @@ AlignStart:
 ; To make the backward-mixing routines, do this:
 ; 1) Copy all mixing routines.
 ; 2) Replace all occurences of ':' with 'B:' (all labels)
-; 3) Replace all occurences of 'add.w d6,d4' with 'sub.w d6,d4'
-; 4) Replace all occurences of 'addx.l d5,d3' with 'subx.l d5,d3'
+; 3) Replace all occurences of 'add.w	d6,d4' with 'sub.w	d6,d4'
+; 4) Replace all occurences of 'addx.l	d5,d3' with 'subx.l	d5,d3'
 ; 5) AddSilence uses different source registers for add/addx.
 ; 6) The HiFi routines are different.
 
@@ -3328,53 +3222,34 @@ AddWordMV:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
+* d1.l	Shift count
 AddWordMVT:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
  	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
  	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
@@ -3556,54 +3431,35 @@ AddWordSVP:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
+* d1.l	Shift count
 AddWordSVTl:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
@@ -3616,55 +3472,36 @@ AddWordSVTl:
 	cnop	0,16
 
 ;in
-* d2.l	Pointer in multiplication table
+* d2.l	Shift count
 AddWordSVTr:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d2,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
@@ -3675,84 +3512,58 @@ AddWordSVTr:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
+* d1.l	Shift count
+* d2.l	Shift count
 AddWordSVPT:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	push	a1
-	move.l	d1,a0
-	move.l	d2,a1
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-
-	move.w	0(a1,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+	move.l	d7,a0
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.l	a0,d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-
-	move.w	0(a1,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+	move.l	d7,a0
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.l	a0,d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
 .exit
-	pop	a1
 	rts
 
 
@@ -3801,52 +3612,60 @@ AddWordsMV:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
+* d1.l	Shift Count
+* d2.l	Shift Count
 AddWordsMVT:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	push	a1
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
+
 	dbf	d0,.nextsample
 .exit
-	pop	a1
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3962,34 +3781,37 @@ AddWordsSVP:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
+* d1.l	Shift count
 AddWordsSVTl:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+ ENDC
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+ ENDC
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
@@ -4002,37 +3824,41 @@ AddWordsSVTl:
 	cnop	0,16
 
 ;in
-* d2.l	Pointer in multiplication table
+* d2.l	Shift count
 AddWordsSVTr:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d2,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+ IFGE	__CPU-68020
+	move.w	2(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	2(a3,d7.l),d7
+ ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+ IFGE	__CPU-68020
+	move.w	2(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	2(a3,d7.l),d7
+ ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
+
 	dbf	d0,.nextsample
 .exit
 	rts
@@ -4041,55 +3867,60 @@ AddWordsSVTr:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
+* d1.l	Shift count
+* d2.l	Shift count
 AddWordsSVPT:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	push	a1
-	move.l	d1,a0
-	move.l	d2,a1
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
+
 	dbf	d0,.nextsample
 .exit
-	pop	a1
 	rts
 
 ;******************************************************************************
@@ -4468,7 +4299,7 @@ AddBytesMVTB:
 	move.b	0(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	move.b	1(a3,d3.l*2),d1
-	add.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	0(a1,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
@@ -4476,7 +4307,7 @@ AddBytesMVTB:
 	move.b	0(a3,d3.l*2),d1
 	move.w	0(a0,d1.w*4),d2		;signed multiplication
 	move.b	1(a3,d3.l*2),d1
-	add.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	0(a1,d1.w*4),d2		;signed multiplication
 	add.w	d2,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
@@ -4733,53 +4564,34 @@ AddWordMVB:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
+* d1.l	Shift count
 AddWordMVTB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
  	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
  	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
@@ -4961,54 +4773,35 @@ AddWordSVPB:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
+* d1.l	Shift count
 AddWordSVTlB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
-	add.w	d2,(a4)+
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
@@ -5021,12 +4814,8 @@ AddWordSVTlB:
 	cnop	0,16
 
 ;in
-* d2.l	Pointer in multiplication table
+* d2.l	Shift count
 AddWordSVTrB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d2,a0
 	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -5034,42 +4823,28 @@ AddWordSVTrB:
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+	move.w	(a3,d3.l*2),d7
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
  ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
@@ -5080,84 +4855,58 @@ AddWordSVTrB:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
+* d1.l	Shift count
+* d2.l	Shift count
 AddWordSVPTB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	push	a1
-	move.l	d1,a0
-	move.l	d2,a1
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-
-	move.w	0(a1,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+	move.l	d7,a0
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.l	a0,d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
  IFGE	__CPU-68020
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	0(a3,d3.l*2),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*2),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a3,d3.l*2),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
- 	add.l	d7,d7
-	move.b	0(a3,d7.l),d1		;high byte
-	add.w	d1,d1
-	add.w	d1,d1
-	move.w	0(a0,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-
-	move.w	0(a1,d1.w),d2		;signed multiplication
-	add.w	d2,(a4)+
-	moveq	#0,d1
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+	move.l	d7,a0
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.l	a0,d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
  ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
 .exit
-	pop	a1
 	rts
 
 
@@ -5206,52 +4955,60 @@ AddWordsMVB:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
+* d1.l	Shift Count
+* d2.l	Shift Count
 AddWordsMVTB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	push	a1
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
+
 	dbf	d0,.nextsample
 .exit
-	pop	a1
 	rts
 
 ;------------------------------------------------------------------------------
@@ -5367,34 +5124,37 @@ AddWordsSVPB:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
+* d1.l	Shift count
 AddWordsSVTlB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d1,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+ ENDC
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	(a3,d7.l),d7
+ ENDC
+	asr.w	d1,d7
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
@@ -5407,37 +5167,41 @@ AddWordsSVTlB:
 	cnop	0,16
 
 ;in
-* d2.l	Pointer in multiplication table
+* d2.l	Shift count
 AddWordsSVTrB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	move.l	d2,a0
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+ IFGE	__CPU-68020
+	move.w	2(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	2(a3,d7.l),d7
+ ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
+ IFGE	__CPU-68020
+	move.w	2(a3,d3.l*4),d7
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	move.w	2(a3,d7.l),d7
+ ENDC
+	asr.w	d2,d7
 	addq.l	#2,a4
-	add.w	d2,(a4)+
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
+
 	dbf	d0,.nextsample
 .exit
 	rts
@@ -5446,67 +5210,72 @@ AddWordsSVTrB:
 	cnop	0,16
 
 ;in
-* d1.l	Pointer in multiplication table
-* d2.l	Pointer in multiplication table
+* d1.l	Shift count
+* d2.l	Shift count
 AddWordsSVPTB:
-
-* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
-
-	push	a1
-	move.l	d1,a0
-	move.l	d2,a1
-	moveq	#0,d1
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
-	move.b	0(a3,d3.l*4),d1		;high byte
-	move.w	0(a0,d1.w*4),d2		;signed multiplication
-	move.b	1(a3,d3.l*4),d1		;low byte
-	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
-
-	move.b	2(a3,d3.l*4),d1		;high byte
-	move.w	0(a1,d1.w*4),d2		;signed multiplication
-	move.b	3(a3,d3.l*4),d1		;low byte
-	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
-	add.w	d1,d2
-	add.w	d2,(a4)+
+ IFGE	__CPU-68020
+	move.w	(a3,d3.l*4),d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	2(a3,d3.l*4),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ELSE
+	move.l	d3,d7
+	add.l	d7,d7
+	add.l	d7,d7
+	lea	(a3,d7.l),a0
+	move.w	(a0)+,d7
+	asr.w	d1,d7
+	add.w	d7,(a4)+
+	move.w	(a0),d7
+	asr.w	d2,d7
+	add.w	d7,(a4)+
+ ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
+
 	dbf	d0,.nextsample
 .exit
-	pop	a1
 	rts
 
 ;------------------------------------------------------------------------------
-AlignEndB:
+AlignEnd
 
  IFNE	DEBUG
-sampleB:
+sample
 ;	dc.b	$5,$10,$5,0,-$5,-$10,-$5,0
 	dc.b	$AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 sample_len=*-sample
 
 	blk.w	SAMPLES,$5555
-bufferB:	blk.b	BUFFER,'*'
-endB:
+buffer		blk.b	BUFFER,'*'
+end
  ENDC
