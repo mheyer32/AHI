@@ -1,5 +1,10 @@
 2005-03-26  Martin Blom  <martin@blom.org>
 
+	* ac97.audio: Bumped version number to 6.0.
+
+	* ac97.audio: Added this AROS driver to the distribution, with
+	permission from its author Michal Schulz. Thanks Michal!
+
 	* emu10kx.audio: Added small patch from Davy.
 
 2005-03-24  Martin Blom  <martin@blom.org>
