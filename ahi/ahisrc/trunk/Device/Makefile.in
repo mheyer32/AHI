@@ -4,13 +4,6 @@
 #
 
 
-# The CPU to generate code for:
-
-CPU	= 68060
-
-include Makefile.opt
-
-
 #
 # Autoconfig stuff
 ########################################
@@ -35,9 +28,8 @@ AR              = @AR@
 RANLIB          = @RANLIB@
 
 CPPFLAGS	= @CPPFLAGS@ -I${srcdir}
-CFLAGS		= @CFLAGS@ -O3 -m$(CPU) -DCPU=\"$(CPU)\"
-ASFLAGS		= @ASFLAGS@ -m$(CPU) --register-prefix-optional --bitwise-or \
-		  --defsym CPU=$(CPU)
+CFLAGS		= @CFLAGS@
+ASFLAGS		= @ASFLAGS@
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 ARFLAGS         = @ARFLAGS@
 
@@ -45,8 +37,7 @@ LIBS		= @LIBS@
 
 ASM		= @ASM@
 ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
-		  QUIET NOEXE OPT NRQBPSMD \
-		  MACHINE $(CPU)
+		  QUIET NOEXE OPT NRQBPSMD
 
 TARGET		= ahi.device.$(CPU)
 
@@ -98,10 +89,10 @@ endif
 all:		$(TARGET) $(srcdir)/ahi.ct $(CATALOGS)
 
 mostlyclean:
-	$(RM) $(TARGETS) *.o *.a *.bak *~ \#*\# core Makefile.dep Makefile.opt
+	$(RM) $(TARGETS) *.o *.a *.bak *~ \#*\# core Makefile.dep
 
 clean:		mostlyclean
-	$(RM) $(CATALOGS) localize.c localize.h version.h version.i \
+	$(RM) $(CATALOGS) localize.c localize.h version.h \
 	      ahi.device.* ahi.elf.*
 
 distclean:	clean
@@ -109,7 +100,7 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-install:	$(TARGET)
+install:	all
 	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
 
 revup:
@@ -118,7 +109,7 @@ revup:
 	@echo -n "New revision: "
 	@cat $(srcdir)/version.rev
 
-bindist:	$(srcdir)/ahi.ct $(CATALOGS)
+bindist:	all
 	$(INSTALL) --directory $(CATDIR)
 	$(INSTALL_DATA) ${srcdir}/ahi.cd $(CATDIR)
 	$(INSTALL_DATA) ${srcdir}/ahi.ct $(CATDIR)
@@ -129,29 +120,6 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 
 	$(INSTALL) --directory $(DEVSDIR)
 
-#	$(MAKE) clean
-#	$(MAKE) bindist-install CPU=68000
-
-#	$(MAKE) clean
-#	$(MAKE) bindist-install CPU=68020
-
-	$(MAKE) clean
-	$(MAKE) bindist-install CPU=68030
-
-	$(MAKE) clean
-	$(MAKE) bindist-install CPU=68040
-
-	$(MAKE) clean
-	$(MAKE) bindist-install CPU=68060
-
-	$(MAKE) clean
-	$(MAKE) bindist-install CPU=603
-
-	$(MAKE) clean
-	$(MAKE) bindist-install CPU=604
-
-
-bindist-install: $(TARGET)
 	$(INSTALL_PROGRAM) --strip $(TARGET) $(DEVSDIR)/$(TARGET)
 
 
@@ -180,13 +148,6 @@ $(TARGET):		$(OBJECTS) libaddroutines.a
 libaddroutines.a:	addroutines_hifi.o addroutines_lofi.o dspecho.o
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
-
-version.i:	version.rev
-	@echo Creating $@
-	@ver=`cat $(top_srcdir)/version.ver` \
-	 rev=`cat $(srcdir)/version.rev` && \
-	 echo "VERSION  EQU $$ver" >$@ && \
-	 echo "REVISION EQU $$rev" >>$@
 
 version.h:	version.rev version.date
 	@echo Creating $@
@@ -256,10 +217,3 @@ addroutines_ppc.o:	addroutines_ppc.s
 addroutines_68k.o:	addroutines_68k.s
 
 $(wildcard $(srcdir)/translations/*.ct) $(srcdir)/ahi.ct:	ahi.cd
-
-#
-# Options
-########################################
-
-Makefile.opt:
-	echo CPU = $(CPU) > $@
