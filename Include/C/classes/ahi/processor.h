@@ -74,14 +74,16 @@ namespace AHI {
 	 AHIM_Processor_Process methods cannot be called
 	 (ahi-processor will return AHIV_Processor_FailProc). This
 	 attribute should not be set by the user or subclasses. */
-      _AHIA(_P, Busy,		(_AHIA_Dummy+24)),	/* OM_SET,
+      _AHIA(_P, Busy,		(_AHIA_Dummy+24)),	/* OM_NEW,
+							   OM_SET,
 							   OM_GET */
 
       /* This attribute should be set to TRUE by the subclass when
 	 it's ready to handle AHIM_Processor_Prepare/
 	 AHIM_Processor_Process calls. If FALSE, ahi-processor will
 	 return AHIV_Processor_FailProc. */
-      _AHIA(_P, Ready,		(_AHIA_Dummy+81))	/* OM_SET,
+      _AHIA(_P, Ready,		(_AHIA_Dummy+81))	/* OM_NEW,
+							   OM_SET,
 							   OM_GET */
     };
 
