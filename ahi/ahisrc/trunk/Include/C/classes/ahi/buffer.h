@@ -44,7 +44,7 @@ namespace AHI {
       _AHIA(_P, SampleFreqFract,(_AHIA_Dummy+12)),		/* OM_NEW,
 								   OM_GET */
 
-      /* Maximum length (unit is sample frames). */
+      /* Total buffer capacity (unit is sample frames). */
       _AHIA(_P, Capacity,	(_AHIA_Dummy+13)),		/* OM_NEW,
 								   OM_GET */
 
@@ -53,21 +53,17 @@ namespace AHI {
 								   OM_SET,
 								   OM_GET,
 								   OM_NOTIFY */
-
-      /* Current offset (unit is sample frames). */
-      _AHIA(_P, Offset,	(_AHIA_Dummy+97)),			/* OM_NEW,
-								   OM_SET,
-								   OM_GET,
-								   OM_NOTIFY */
       
-      /* Buffer data pointer (AHIA_Buffer_Offset adjusted). */
-	_AHIA(_P, Data,		(_AHIA_Dummy+15)),		/* OM_GET,
-								   OM_NOTIFY */
+      /* Buffer data pointer. */
+      _AHIA(_P, Data,		(_AHIA_Dummy+15)),		/* OM_GET */
 
+      /* Number of samples before the first sample (unit is sample
+       * frames). */
+      _AHIA(_P, PreLength,	(_AHIA_Dummy+98)),		/* OM_NEW,
+								   OM_GET */
 
-      /* Real buffer data pointer. */
-	_AHIA(_P, RealData,	(_AHIA_Dummy+98)),		/* OM_GET */
-
+      /* Real buffer data pointer (PreLength adjusted). */
+	_AHIA(_P, RealData,	(_AHIA_Dummy+97)),		/* OM_GET */
 
       /* High part of buffer timestamp (unit is sample frames <<
        * 32). */
@@ -104,7 +100,7 @@ namespace AHI {
        /* Create a clone of this buffer object */
        _AHIM(_P, Clone,			(_AHIM_Dummy+46)),
 
-       /* Shift last part of buffer into the pre-offset area */
+       /* Shift last part of buffer into the history area */
        _AHIM(_P, Shift,			(_AHIM_Dummy+47))
        
      };
@@ -120,11 +116,17 @@ namespace AHI {
      };
 
 
-     /* AHIM_Buffer_load */
+     /* AHIM_Buffer_Load */
      struct _AHIP(_P, Load) {
        ULONG		MethodID;
        APTR		Data;
        ULONG		SampleType;
+     };
+
+     /* AHIM_Buffer_Clone */
+     struct _AHIP(_P, Clone) {
+       ULONG		MethodID;
+       ULONG		PreLength;
      };
      
 /*****************************************************************************/
