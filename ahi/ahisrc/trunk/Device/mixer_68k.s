@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.5  1997/01/27 00:27:02  lcs
+* Fixed a bug in the 16 bit routines (was lsr instead of asr)
+*
 * Revision 1.4  1997/01/15 14:59:50  lcs
 * Removed most of the unsigned addroutines
 *
@@ -1445,7 +1448,8 @@ UDivMod64:
 	roxr.l	#1,d4
 	bcc	.2
 
-	move.l	d5,d1
+;	move.l	d5,d1			;waste upper 32 bits!
+	move.l	d0,d1
 	move.l	d6,d0
 	movem.l	(sp)+,d3-d7
 	rts
@@ -2424,7 +2428,7 @@ AddWordSVr:
  IFGE	__CPU-68020
 	move.w	(a3,d3.l*2),d7
 	muls.w	d2,d7
-	lsr.l	d1,d7
+	asr.l	d1,d7
  ELSE
 	move.l	d3,d7
 	add.l	d7,d7
@@ -2442,7 +2446,7 @@ AddWordSVr:
  IFGE	__CPU-68020
 	move.w	(a3,d3.l*2),d7
 	muls.w	d2,d7
-	lsr.l	d1,d7
+	asr.l	d1,d7
  ELSE
 	move.l	d3,d7
 	add.l	d7,d7
@@ -2477,14 +2481,14 @@ AddWordSVP:
 	move.w	(a3,d3.l*2),d7
 	move.l	d7,a0
 	muls.w	d1,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
 
 	move.l	a0,d7
 	muls.w	d2,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
@@ -2506,14 +2510,14 @@ AddWordSVP:
 	move.w	(a3,d3.l*2),d7
 	move.l	d7,a0
 	muls.w	d1,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
 
 	move.l	a0,d7
 	muls.w	d2,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
