@@ -42,6 +42,11 @@
 #include "device.h"
 #endif
 
+#ifdef __amithlon__
+# define RTF_NATIVE (1<<3)
+# define FUNCARRAY_32BIT_NATIVE 0xfffefffe
+#endif
+
 static BOOL
 OpenLibs ( void );
 
@@ -55,9 +60,9 @@ CloseLibs ( void );
 ******************************************************************************/
 
 #if defined( __amithlon__ )
-__asm( "\
-         .text;\
-         .byte 0x4e, 0xfa, 0x00, 0x03\
+__asm( "\n\
+         .text;\n\
+         .byte 0x4e, 0xfa, 0x00, 0x03\n\
          jmp _start" );
 #endif
 
@@ -94,7 +99,7 @@ static const struct Resident RomTag =
 #if defined( __MORPHOS__ ) 
   RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
 #elif defined( __amithlon__ )
-  RTF_PPC | RTF_AUTOINIT,
+  RTF_NATIVE | RTF_AUTOINIT,
 #elif defined( __AMIGAOS4__ )
   RTF_NATIVE | RTF_AUTOINIT,
 #else
@@ -935,13 +940,13 @@ OpenLibs ( void )
 
   OpenahiCatalog(NULL, NULL);
 
-/* #if defined( __amithlon__ ) */
-/*   Req( "This is a *beta* release of AHI/x86,\n" */
-/*        "using the generic 'C' mixing routines.\n" */
-/*        "\n" */
-/*        "Detailed bug reports and patches are welcome.\n" */
-/* 	 "/Martin Blom <martin@blom.org>\n" ); */
-/* #endif */
+#if defined( __amithlon__ )
+  Req( "This is a *beta* release of AHI/x86,\n"
+       "using the generic 'C' mixing routines.\n"
+       "\n"
+       "Detailed bug reports and patches are welcome.\n"
+	 "/Martin Blom <martin@blom.org>\n" );
+#endif
 
   return TRUE;
 }

@@ -1,3 +1,12 @@
+2005-01-09  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.15b (ix86be only).
+
+	* Released ahi.device 5.55.
+
+	* ahi.device: Minor modifications to make the ix86be version build
+	again, this time using a non-broken version of the compiler. :-)
+
 2005-01-08  Martin Blom  <martin@blom.org>
 
 	* Released AHI 5.15.
