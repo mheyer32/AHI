@@ -671,11 +671,16 @@ void __asm __saveds SlaveProcess(register __a2 struct AHIAudioCtrlDrv *AudioCtrl
       {
         PreTimer_proto*  pretimer  = (PreTimer_proto*)  AudioCtrl->ahiac_PreTimer;
         PostTimer_proto* posttimer = (PostTimer_proto*) AudioCtrl->ahiac_PostTimer;
+	BOOL pretimer_rc;
 
+	pretimer_rc = pretimer(AudioCtrl);
+	
         CallHookPkt(AudioCtrl->ahiac_PlayerFunc, AudioCtrl, NULL);
-        if(! pretimer(AudioCtrl) ) {
+	
+        if(! pretimer_rc ) {
           CallHookPkt(AudioCtrl->ahiac_MixerFunc, AudioCtrl, dd->t_MixBuffer3);
         }
+	
         posttimer(AudioCtrl);
       }
     }
