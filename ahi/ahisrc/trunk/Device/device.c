@@ -308,6 +308,8 @@ DevOpen ( ULONG              unit,
 
   if(!error)
   {
+/*     KPrintF( "Tagging %08lx on task %08lx\n", ioreq, FindTask(0)); */
+    ioreq->ahir_Private[1] = (ULONG) ioreq;
     ioreq->ahir_Std.io_Unit=(struct Unit *) iounit;
     if(iounit)    // Is NULL for AHI_NO_UNIT
       iounit->Unit.unit_OpenCnt++;
@@ -389,6 +391,12 @@ DevClose ( struct AHIRequest* ioreq,
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
     KPrintF("CloseDevice(0x%08lx)\n", (ULONG) ioreq);
+
+    if( ioreq->ahir_Private[1] != (ULONG) ioreq )
+    {
+      KPrintF( "Warning: Expected I/O request 0x%08lx.\n",
+	       ioreq->ahir_Private[1] );
+    }
   }
 
   ObtainSemaphore(&AHIBase->ahib_Lock);

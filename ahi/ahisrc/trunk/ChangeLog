@@ -1,3 +1,19 @@
+2003-07-07  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.6.
+
+	* The EMU10kx CAMD driver is now part of the m68 build.
+
+2003-07-06  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.41.
+
+	* ahi.device: Reworked the dynamic volume so that the master
+	volume is scaled based on the number of device openers. Then, for
+	each opener, each request is individually scaled based on the
+	number of active requests. This way, different programs will not
+	affect each other.
+	
 2003-07-05  Martin Blom  <martin@blom.org>
 
 	* emu10kx.audio: The newly added CAMD init code would crash the
