@@ -88,7 +88,8 @@ AHIClassDispatch(Class*  class,
       break;
 
     case AHIM_Buffer_SampleFrameSize:
-      result = MethodSampleFrameSize(class, object, (struct AHIP_SampleFrameSize*) msg);
+      result = MethodSampleFrameSize(class, object,
+				     (struct AHIP_Buffer_SampleFrameSize*) msg);
       break;
       
     default:
