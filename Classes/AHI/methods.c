@@ -37,12 +37,12 @@ get_error_message(struct AHIClassData* AHIClassData) {
     case AHIE_Processor_ObjectBusy:
       return "Object is busy";
 
+    case AHIE_Processor_InvalidSampleType:
+      return "Invalid buffer sample type";
+      
     case AHIE_GainProcessor_TooManyChannels:
       return "Too many channels";
 
-    case AHIE_GainProcessor_InvalidSampleType:
-      return "Invalid buffer sample type";
-      
     default:
       if (Fault(AHIClassData->error,
 		NULL,
