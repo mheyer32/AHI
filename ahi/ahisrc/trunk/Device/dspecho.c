@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1999/01/12 02:22:06  lcs
+* Began the move to GNU make.
+*
 * Revision 4.3  1998/01/13 20:24:04  lcs
 * Generic c version of the mixer finished.
 *

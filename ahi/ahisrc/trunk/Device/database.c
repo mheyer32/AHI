@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.8  1999/01/12 02:22:02  lcs
+* Began the move to GNU make.
+*
 * Revision 4.7  1998/03/13 10:16:48  lcs
 * Ingen aning..
 *
@@ -39,23 +42,11 @@
 
 #endif
 
+static ULONG AddModeFile ( UBYTE *filename );
+
 /******************************************************************************
 ** Audio Database *************************************************************
 ******************************************************************************/
-
-/* Current implementation of the database (Version 0):
-   Use FreeVec() to free the structure. */
-
-#define ADB_NAME  "Audio Mode Database"
-
-struct AHI_AudioDatabase
-{
-  struct SignalSemaphore  ahidb_Semaphore;      /* The Semaphore */
-  struct MinList          ahidb_AudioModes;     /* The Audio Database */
-  UBYTE                   ahidb_Version;        /* Version number (0) */
-  UBYTE                   ahidb_Name[sizeof(ADB_NAME)]; /* Name */
-
-};
 
 struct AHI_AudioMode
 {
@@ -615,7 +606,8 @@ LoadModeFile( REG(a0, UBYTE *name),
 
 /* AddModeFile **********************************************************/
 
-ULONG AddModeFile ( UBYTE *filename )
+static ULONG
+AddModeFile ( UBYTE *filename )
 {
   struct IFFHandle *iff;
   struct StoredProperty *name,*data;

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1999/01/12 02:22:11  lcs
+* Began the move to GNU make.
+*
 * Revision 4.4  1998/01/29 23:09:47  lcs
 * Playing with anticlick
 *

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.7  1999/01/12 02:22:09  lcs
+* Began the move to GNU make.
+*
 * Revision 4.6  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -10,93 +13,11 @@
 * This is the second bugfix release of AHI 4.
 *
 
-
-****** ahi.device/--background-- *******************************************
-*
-*   PURPOSE
-*
-*       The 'ahi.device' was first created because the lack of standards
-*       when it comes to sound cards on the Amiga. Another reason was to
-*       make it easier to write multi-channel music programs.
-*
-*       This device is by no means the final and perfect solution. But
-*       hopefully, it can evolve into something useful until AT brings you
-*       The Real Thing (TM).
-*
-*   OVERVIEW
-*
-*       Please see the document "AHI Developer's Guide" for more
-*       information.
-*
-*
-*       * Driver based
-*
-*       Each supported sound card is controlled by a library-based audio
-*       driver. For a 'dumb' sound card, a new driver could be written in
-*       a few hours. For a 'smart' sound card, it is possible to utilize an
-*       on-board DSP, for example, to maximize performance and sound quality.
-*       For sound cards with own DSP but little or no memory, it is possible
-*       to use the main CPU to mix channels and do the post-processing
-*       with the DSP. Drivers are available for most popular sound cards,
-*       as well as an 8SVX (mono) and AIFF/AIFC (mono & stereo) sample render
-*       driver.
-*  
-*       * Fast, powerful mixing routines (yeah, right... haha)
-*  
-*       The device's mixing routines mix 8- or 16-bit signed samples, both
-*       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
-*       (with stereo panning if desired) data, using any number of channels
-*       (as long as 'any' means less than 128).  Tables can be used speed
-*       the mixing up (especially when using 8-bit samples).  The samples can
-*       have any length (including odd) and can have any number of loops.
-*       There are also so-called HiFi mixing routines that can be used, that
-*       use linear interpolation and gives 32 bit output.
-*       
-*       * Support for non-realtime mixing
-*  
-*       By providing a timing feature, it is possible to create high-
-*       quality output even if the processing power is lacking, by saving
-*       the output to disk, for example as an IFF AIFF or 8SXV file.
-*  
-*       * Audio database
-*  
-*       Uses ID codes, much like Screenmode IDs, to select the many
-*       parameters that can be set. The functions to access the audio
-*       database are not too different from those in 'graphics.library'.
-*       The device also features a requester to get an ID code from the
-*       user.
-*  
-*       * Both high- and low-level protocol
-*  
-*       By acting both like a device and a library, AHI gives the programmer
-*       a choice between full control and simplicity. The device API allows
-*       several programs to use the audio hardware at the same time, and
-*       the AUDIO: dos-device driver makes playing and recording sound very
-*       simple for both the programmer and user.
-*  
-*       * Future Compatible
-*  
-*       When AmigaOS gets device-independent audio worth it's name, it should
-*       not be too difficult to write a driver for AHI, allowing applications
-*       using 'ahi.device' to automatically use the new OS interface. At
-*       least I hope it wont.
-*
-*
-****************************************************************************
-*
-*
-
-
-;	include	devices/timer.i
 	include	exec/exec.i
-;	include dos/dos.i
-;	include	graphics/gfxbase.i
-;	include	utility/utility.i
-
 	include	lvo/exec_lib.i
 
 	include ahi_def.i
-	include ahi.device_rev.i
+	include version.i
 
 	include	macros.i
 
@@ -110,11 +31,14 @@ Start:
 	moveq	#-1,d0
 	rts
 
+
 *******************************************************************************
 ** RomTag *********************************************************************
 *******************************************************************************
 
 	XREF	EndCode
+	XREF	_DevName
+	XREF	_IDString
 
 RomTag:
 	DC.W	RTC_MATCHWORD
@@ -128,45 +52,6 @@ RomTag:
 	DC.L	_IDString
 	DC.L	InitTable
 
-	XDEF	_DevName
-	XDEF	_IDString
-
-_DevName:	AHINAME
-_IDString:	VSTRING
-
-VERSIONXXX	MACRO	
-
- IFD	VERSIONPPC
-	dc.b	"/PPC"
- ENDC
-
- IFD	VERSIONGEN
-	dc.b	"/Generic"
- ENDC
-
-	ENDM
-
-	dc.b	"$VER: "
-	VERS
-	dc.b	" ("
-	DATE
-	dc.b	") "
-	dc.b	"©1994-1998 Martin Blom. "
- IFGE	__CPU-68020
-  IFGE	__CPU-68060
-	dc.b	"68060"
-	VERSIONXXX
-	dc.b	" version.",0
-  ELSE
-	dc.b	"68020+"
-	VERSIONXXX
-	dc.b	" version.",0
-  ENDC
- ELSE
-	dc.b	"68000"
-	VERSIONXXX
-	dc.b	" version.",0
- ENDC
 
 *******************************************************************************
 ** Init & function tables *****************************************************
@@ -249,50 +134,11 @@ dataTable:
 	DC.L		0
 
 
-
-*******************************************************************************
-** Globals ********************************************************************
-*******************************************************************************
-
-	XDEF	_AHIBase
-	XDEF	_DOSBase
-	XDEF	_GadToolsBase
-	XDEF	_GfxBase
-	XDEF	_IFFParseBase
-	XDEF	_IntuitionBase
-	XDEF	_LocaleBase
-	XDEF	_TimerBase
-	XDEF	_UtilityBase
-
-_AHIBase:	dc.l	0
-_DOSBase:	dc.l	0
-_GadToolsBase:	dc.l	0
-_GfxBase:	dc.l	0
-_IFFParseBase:	dc.l	0
-_IntuitionBase:	dc.l	0
-_LocaleBase:	dc.l	0
-_TimerBase:	dc.l	0
-_UtilityBase:	dc.l	0
-
-	XDEF	_DriverVersion
-	XDEF	_Version
-	XDEF	_Revision
-
-_DriverVersion:	dc.l	2
-_Version:	dc.l	VERSION
-_Revision:	dc.l	REVISION
-
-	XDEF	_TimerIO
-	XDEF	_timeval
-
-_TimerIO:	dc.l	0
-_timeval:	dc.l	0
-
-
 *******************************************************************************
 ** initRoutine ****************************************************************
 *******************************************************************************
 
+	XREF	_AHIBase
 	XREF	_OpenLibs
 
 initRoutine:
@@ -375,7 +221,7 @@ Null:
 	XDEF	_DevProcEntry
 
 _DevProcEntry:
-	move.l	_AHIBase(pc),a6
+	move.l	_AHIBase,a6
 	jmp	_DevProc
 
 
