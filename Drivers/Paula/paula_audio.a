@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.22  1998/11/12 22:38:53  lcs
-* Much improved timing! No more make-buffer-size-divisible-by-4 anymore...
+* Revision 4.23  1998/12/06 11:43:39  lcs
+* Clean-up.
 *
+*
+* Revision 4.20  1998/06/28 09:26:04  lcs
+* The low pass filter state is now restored when the audio is deallocated.
 *
 * Revision 4.19  1998/02/16 02:38:15  lcs
 * Recording didn't work in all modes!
@@ -144,6 +147,7 @@ AHIDB_PaulaDMA		EQU	AHIDB_UserBase+2	* Boolean
 
  * channel (private) used in DMA mode
 
+	STRUCTURE channel,0
 	UWORD	ch_IntMask			;This channels interrupt bit
 	UWORD	ch_DMAMask			;This channels DMA bit
 	UWORD	ch_Stereo			;0 = Left, 1 = Right
@@ -214,7 +218,6 @@ AHIDB_PaulaDMA		EQU	AHIDB_UserBase+2	* Boolean
 
 	UWORD	p_MixTaskPri
 	APTR	p_MixTask
-	ULONG	p_AudioFreq			;PAL/NTSC clock constant
 	UWORD	p_SwapChannels			;TRUE if left/right should be swapped
 	UWORD	p_ScreenIsDouble		;TRUE if screen mode allows >28kHz
 
@@ -433,6 +436,15 @@ initRoutine:
 	move.w	gb_DisplayFlags(a0),d0
 	btst	#REALLY_PALn,d0
 	bne.b	.1
+	move.l	#NTSCFREQ,d1			;NTSC
+.1
+	move.l	d1,pb_AudioFreq(a5)
+
+	move.l	a5,d0
+.exit
+	movem.l	(sp)+,d1/a0/a1/a5/a6
+	rts
+
 .miscFail
 	move.l	pb_IntuiLib(a5),a1
 	call	CloseLibrary
@@ -506,6 +518,39 @@ BeginIO:
 * a0	Environment variable to get
 * a5	paulaBase
 GetVarInt:
+	pushm	std
+
+	move.l	d0,d5				;Default
+
+	move.l	pb_DosLib(a5),a6
+	subq.l	#8,sp				;local label
+	move.w	#("0"<<8)|0,(sp)		;Initialize as "0"
+
+	move.l	a0,d1
+	move.l	sp,d2
+	moveq	#8,d3
+	moveq	#0,d4
+	call	GetVar
+
+	addq.l	#1,d0				;cmp.l	#-1,d0
+	moveq.l	#8,d3
+	moveq.l	#0,d4
+	clr.l	-(sp)
+	move.l	sp,d2
+	cmp.l	#-1,d0
+	move.l	(sp)+,d5
+.gotvar
+	pea.l	0.w
+
+; d5 is now the integer value
+	move.l	d5,d0
+	popm	std
+	rts
+
+; d5 is now the integer valie
+*
+*   OVERVIEW
+*
 *       GENERAL PROGRAMMING GUIDLINES
 *
 *       The driver must be able to be OpenLibrary()'ed even if the
@@ -715,14 +760,6 @@ AHIsub_AllocAudio:
 
 * Check if a table should be used (14 bit calibration)
 	move.l	#AHIDB_PaulaTable,d0
-	move.l	#PALFREQ,d2			;PAL
-	move.l	pb_GfxLib(a5),a0
-	move.w	gb_DisplayFlags(a0),d0
-	btst	#REALLY_PALn,d0
-	bne.b	.1
-	move.l	#NTSCFREQ,d2			;NTSC
-.1
-	move.l	d2,p_AudioFreq(a3)
 	moveq	#0,d1
 	move.w	d0,p_ScreenIsDouble(a3)
 	call	GetTagData
@@ -777,50 +814,16 @@ AHIsub_AllocAudio:
 	bsr	GetVarInt
 	move.l	d0,p_MinBufferLength(a3)
 
-	moveq	#0,d5				;Default
-	move.l	pb_DosLib(a5),a6
-	subq.l	#8,sp				;local label
-	move.w	#("0"<<8)|0,(sp)		;Initialize as "0"
+* Check if we should swap left & right channels
 	moveq	#0,d0				;Default
-	move.l	a0,d1
-	move.l	sp,d2
-	moveq.l	#8,d3
-	moveq.l	#0,d4
-	call	GetVar
-	cmp.l	#-1,d0
-	beq	.gotlength
-	move.l	sp,d1
-	pea.l	0.w
-	move.l	sp,d2
-	call	StrToLong
-	move.l	(sp)+,d5
-.gotlength
-	addq.l	#8,sp
-; d5 is now the buffer length
-	move.l	d5,p_MinBufferLength(a3)
+	lea	swapVar(pc),a0
+	bsr	GetVarInt
 	move.b	d0,p_SwapChannels(a3)
 
-	moveq	#0,d5				;Default
-	move.l	pb_DosLib(a5),a6
-	subq.l	#8,sp				;local label
-	move.w	#("0"<<8)|0,(sp)		;Initialize as "0"
+* Check if we should use a task instead of a software interrupt
 	move.l	#128,d0				;Default (softint)
-	move.l	a0,d1
-	move.l	sp,d2
-	moveq.l	#8,d3
-	moveq.l	#0,d4
-	call	GetVar
-	cmp.l	#-1,d0
-	beq	.gotswap
-	move.l	sp,d1
-	pea.l	0.w
-	move.l	sp,d2
-	call	StrToLong
-	move.l	(sp)+,d5
-.gotswap
-	addq.l	#8,sp
-; d5 is now the buffer length
-	move.w	d5,p_SwapChannels(a3)
+	lea	taskVar(pc),a0
+	move.w	d0,p_SwapChannels(a3)
 	beq	.error_noport
 	moveq	#ioa_SIZEOF,d0
 	move.l	#MEMF_PUBLIC|MEMF_CLEAR,d1
@@ -966,29 +969,12 @@ AHIsub_AllocAudio:
 	bsr	GetVarInt
 	tst.l	d0
 	bne	.skipfrequpdate
-	moveq	#0,d5				;Default
-	move.l	pb_DosLib(a5),a6
-	subq.l	#8,sp				;local label
-	move.w	#("0"<<8)|0,(sp)		;Initialize as "0"
+	move.l	ahiac_MixFreq(a2),d0
 	bsr	calcperiod
-	move.l	a0,d1
-	move.l	sp,d2
-	moveq.l	#8,d3
-	moveq.l	#0,d4
-	call	GetVar
-	cmp.l	#-1,d0
-	beq	.gotfakefreq
-	move.l	sp,d1
-	pea.l	0.w
-	move.l	sp,d2
-	call	StrToLong
-	move.l	(sp)+,d5
-.gotfakefreq
-	addq.l	#8,sp
-; d5 is now the result
-	tst.l	d5
+	move.l	d0,ahiac_MixFreq(a2)		;store actual freq
+.skipfrequpdate
 
-	move.l	ahiac_MixFreq(a2),d1
+* Save the filter state
 	btst	#1,$bfe001
 	seq	p_Filter(a3)
 
@@ -1000,28 +986,10 @@ AHIsub_AllocAudio:
 	bsr	GetVarInt
 	cmp.l	ahiac_MixFreq(a2),d0
 	bls	.no_filter
-	moveq	#0,d5				;Default freq
-	move.l	pb_DosLib(a5),a6
-	subq.l	#8,sp				;local label
-	move.w	#("0"<<8)|0,(sp)		;Initialize as "0"
+	bclr	#1,$bfe001			;turn audio filter on
 	bra	.filter_set
-	move.l	a0,d1
-	move.l	sp,d2
-	moveq.l	#8,d3
-	moveq.l	#0,d4
-	call	GetVar
-	cmp.l	#-1,d0
-	beq	.gotfreq
-	move.l	sp,d1
-	pea.l	0.w
-	move.l	sp,d2
-	call	StrToLong
-	move.l	(sp)+,d5
-.gotfreq
-	addq.l	#8,sp
-; d5 is now the freq
-
-	cmp.l	ahiac_MixFreq(a2),d5
+.no_filter
+	bset	#1,$bfe001			;turn audio filter off
 .filter_set
 
 	btst.b	#PB_DMA,p_Flags(a3)
@@ -1035,7 +1003,7 @@ AHIsub_AllocAudio:
 	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*0+ch_Type(a3)
 	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*1+ch_Type(a3)
 	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*2+ch_Type(a3)
-	move.l	p_AudioFreq(a3),ahiac_MixFreq(a2)	;store actual freq
+	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*3+ch_Type(a3)
 	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*0+ch_NextType(a3)
 	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*1+ch_NextType(a3)
 	move.l	#AHIST_NOTYPE,p_Channels+channel_SIZEOF*2+ch_NextType(a3)
@@ -1141,8 +1109,7 @@ AHIsub_AllocAudio:
 ;out:
 * d0	New MixFreq
 * d1.w	Period
-* d1	MixFreq
-* a3	paula
+;description:
 *	Calculate and return the best period and the actual frequency.
 calcperiod:
 	PRINTF	2,"calcperiod()"
@@ -1152,7 +1119,8 @@ calcperiod:
 	move.l	d2,d0
 	move.l	d1,d3
 	move.l	pb_UtilLib(a5),a1
-	move.l	p_AudioFreq(a3),d2
+	jsr	_LVOUDivMod32(a1)
+	lsl.l	#1,d1
 	cmp.l	d3,d1
 	bmi.b	.3
 	addq.l	#1,d0
@@ -1908,7 +1876,7 @@ AHIsub_Start:
 	move.w	d1,p_AudPer(a3)
 
 * The init*bit?  routines allocates p_DMAbuffer, sets up
-	move.l	ahiac_MixFreq(a2),d1
+* p_AudPtr, sets the volume, stores the correct interrupt routines in
 * p_PlayInt's and p_PlaySoftInt's IS_CODE.
 
 	pea	.1(pc)
@@ -1974,7 +1942,7 @@ AHIsub_Start:
 	lsr.w	#1,d1				;Period/2 => Frequency·2
 	move.w	d1,AUD2PER(a4)
 	move.w	d1,AUD3PER(a4)
-	move.l	ahiac_MixFreq(a2),d1
+	move.w	p_MonitorVolume(a3),d0
 	move.w	d0,AUD2VOL(a4)
 	move.w	d0,AUD3VOL(a4)
 
@@ -2806,7 +2774,18 @@ ga_Frequency:
 ;	moveq	#0,d0				;Default
 ;	lea	fakefreqVar(pc),a0
 ;	bsr	GetVarInt
-	move.l	(a0,d1.w),d0
+;	tst.l	d0
+;	bne	.skipfrequpdate
+;	move.l	d2,d0
+;	bsr	calcperiod
+;	rts
+;.skipfrequpdate
+	move.l	d2,d0
+	rts
+
+ga_Author:
+	lea	.author(pc),a0
+	move.l	a0,d0
 	rts
 .author		dc.b	"Martin 'Leviticus' Blom",0
 	even
@@ -4640,7 +4619,7 @@ AHIsub_SetFreq:
  IFGE	__CPU-68020
 	divu.l	d1,d0
  ELSE
-	move.l	p_AudioFreq(a3),d0
+	move.l	pb_UtilLib(a6),a1
 	jsr	_LVOUDivMod32(a1)
  ENDIF
 
