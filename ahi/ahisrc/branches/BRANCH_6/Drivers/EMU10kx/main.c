@@ -562,7 +562,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	u32 pc = 0;
 	u32 patch_n=0;
 
-	u32 base, zero;
+	u32 base, zero, half;
 	u32 analog_front_l, analog_front_r, analog_rear_l, analog_rear_r;
 	u32 analog_surround_l, analog_surround_r, analog_center, analog_lfe;
 	u32 spdif_front_l, spdif_front_r, spdif_rear_l, spdif_rear_r;
@@ -896,6 +896,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 
 	   base              = A_GPR_BASE;
 	   zero              = 0xc0;
+	   half              = 0xcd;
 	   analog_front_l    = A_ANALOG_FRONT_L;
 	   analog_front_r    = A_ANALOG_FRONT_R;
 	   analog_rear_l     = A_ANALOG_REAR_L;
@@ -932,6 +933,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 				TAGLIST_END);
 	   base              = GPR_BASE;
 	   zero              = 0x40;
+	   half              = 0x4d;
 	   analog_front_l    = L_ANALOG_FRONT_L;
 	   analog_front_r    = L_ANALOG_FRONT_R;
 	   analog_rear_l     = L_ANALOG_REAR_L;
@@ -974,7 +976,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	 * dynamic range (Why, oh why?) */
 	OP(4, RES_AHI_FRONT_L+base,    zero, RES_AHI_FRONT_L+base,    0x44);
 	OP(4, RES_AHI_FRONT_R+base,    zero, RES_AHI_FRONT_R+base,    0x44);
-	OP(4, RES_AHI_REAR_L+base,     zero, RES_AHI_REAR_L,          0x44);
+	OP(4, RES_AHI_REAR_L+base,     zero, RES_AHI_REAR_L+base,     0x44);
 	OP(4, RES_AHI_REAR_R+base,     zero, RES_AHI_REAR_R+base,     0x44);
 	OP(4, RES_AHI_SURROUND_L+base, zero, RES_AHI_SURROUND_L+base, 0x44);
 	OP(4, RES_AHI_SURROUND_R+base, zero, RES_AHI_SURROUND_R+base, 0x44);
@@ -998,7 +1000,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	OP(0, RES_SURROUND_REAR_R+base, zero, RES_AHI_SURROUND_R+base, VOL_SURROUND_REAR_R+base);
 
 	/* Scale AHI_FRONT to center/LFE */
-	OP(0xe, RES_FRONT_MONO+base, RES_AHI_FRONT_L+base, 0xcd, RES_AHI_FRONT_R+base); // Left/2 + Right/2
+	OP(0xe, RES_FRONT_MONO+base, RES_AHI_FRONT_L+base, half, RES_AHI_FRONT_R+base); // Left/2 + Right/2
 	OP(0, RES_FRONT_CENTER+base, zero, RES_FRONT_MONO+base, VOL_FRONT_CENTER+base);
 	OP(0, RES_FRONT_LFE+base,    zero, RES_FRONT_MONO+base, VOL_FRONT_LFE+base);
 
