@@ -3,7 +3,6 @@
 #  Makefile.in for the user and developer documentation
 #
 
-
 #
 # Autoconfig stuff
 ########################################
@@ -33,7 +32,8 @@ VPATH		= @srcdir@
 TARGETS		= ahidev.readme ahiusr.readme \
 		  ahidev.guide ahiusr.guide \
 		  ahidev.dvi ahiusr.dvi \
-		  ahidev.ps ahiusr.ps
+		  ahidev.ps ahiusr.ps \
+		  ahidev.html ahiusr.html
 
 
 #
@@ -45,8 +45,10 @@ TARGETS		= ahidev.readme ahiusr.readme \
 all:		$(TARGETS)
 
 clean:
-	$(RM) -r $(TARGETS) ahidev.ver ahiusr.ver tmp \
-	      *.tmp *.log *.bak *~ \#*\# core Makefile.dep
+	$(RM) $(TARGETS) ahidev.ver ahiusr.ver \
+	      ahidev.texinfo-exp ahiusr.texinfo-exp \
+	      *.cps *.fns *.tps *.vrs *.ky *.pg *.log *.aux *.cp *.fn *.vr *.tp *.toc \
+	      *.tmp *.bak *~ \#*\# core
 
 distclean:	clean
 	$(RM) Makefile
@@ -66,6 +68,7 @@ changes:
 
 Makefile: Makefile.in ../config.status
 	(cd .. && ./config.status)
+	chmod a-w $@
 
 
 #
@@ -86,19 +89,19 @@ ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
 
 # AmigaGuide® files
 
-ahidev.guide: ahidev.texinfo ahidev.ver
+ahidev.guide:	ahidev.texinfo ahidev.ver
 	makeinfo --amiga --output ahidev.guide ahidev.texinfo
 
-ahiusr.guide: ahiusr.texinfo ahiusr.ver
+ahiusr.guide:	ahiusr.texinfo ahiusr.ver
 	makeinfo --amiga --output ahiusr.guide ahiusr.texinfo
 
 
 # DVI files
 
-ahidev.dvi:	ahidev.texinfo.tmp
+ahidev.dvi:	ahidev.texinfo-exp
 	texi2dvi $<
 
-ahiusr.dvi:	ahiusr.texinfo.tmp
+ahiusr.dvi:	ahiusr.texinfo-exp
 	texi2dvi $<
 
 
@@ -111,21 +114,30 @@ ahiusr.ps:	ahiusr.dvi
 	dvips -o $@ $<
 
 
+# HTML files
+
+ahidev.html:	ahidev.texinfo ahidev.ver
+	texi2html -glossary -monolithic -verbose ahidev.texinfo
+
+ahiusr.html:	ahiusr.texinfo ahiusr.ver
+	texi2html -glossary -monolithic -verbose ahiusr.texinfo
+
+
 # Macro-expanded files
 
-ahidev.texinfo.tmp:	ahidev.texinfo ahidev.ver
-	makeinfo -E $@ --output tmp/null.tmp ahidev.texinfo
+ahidev.texinfo-exp:	ahidev.texinfo ahidev.ver
+	makeinfo -E $@ --output null.tmp ahidev.texinfo
 
-ahiusr.texinfo.tmp:	ahiusr.texinfo ahiusr.ver
-	makeinfo -E $@ --output tmp/null.tmp ahiusr.texinfo
+ahiusr.texinfo-exp:	ahiusr.texinfo ahiusr.ver
+	makeinfo -E $@ --output null.tmp ahiusr.texinfo
 
 
 # Auto-generated version files
 
 ahidev.ver:	ahidev.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	echo "@set ahiver `cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" > $@
-	grep '$$Id' ahidev.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\5.\4.\3)/' >> $@
+	grep '$$Id' ahidev.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) \(....\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\3-\4-\5)/' >> $@
 
 ahiusr.ver:	ahiusr.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	echo "@set ahiver `cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" > $@
-	grep '$$Id' ahiusr.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\5.\4.\3)/' >> $@
+	grep '$$Id' ahiusr.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) \(....\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\3-\4-\5)/' >> $@

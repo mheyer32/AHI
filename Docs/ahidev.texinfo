@@ -1,19 +1,13 @@
 \input iso.sty
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
-@setfilename devguide.guide
+@setfilename ahidev.info
 @settitle @sc{Ahi} Developers's Guide
 @setchapternewpage odd
 @iftex
 @afourpaper
 @end iftex
 @c %***end of header
-
-@c *** Macros  ***
-
-@macro ahi
-@sc{Ahi}
-@end macro
 
 @c *** Variables ***
 
@@ -29,7 +23,7 @@ This file documents AHI version @value{ahiver}, a hardware independent
 audio subsystem for Amiga. The version number of this document is
 @value{docver}.
 
-Copyright @copyright{} 1994-1998 Martin Blom. This publication may not
+Copyright @copyright{} 1994-1999 Martin Blom. This publication may not
 be modified in any way, including translation, without prior consent, in
 writing, by the author.
 
@@ -53,6 +47,9 @@ possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.10  1999/01/10 19:27:46  lcs
+The move to GNU make is done.
+
 Revision 4.9  1999/01/10 16:07:56  lcs
 Moved to GNU make (still moving...)
 
@@ -66,7 +63,7 @@ Revision 4.6  1997/08/21 01:11:30  lcs
 Added description of the samle formats AHI_LoadSound() understands
 
 Revision 4.5  1997/08/10 15:38:57  lcs
-Added @ahi macro!
+Added @@ahi macro!
 Added note about LoadSound:ing the most important sounds first
 
 Revision 4.4  1997/07/27 00:13:32  lcs
@@ -91,14 +88,15 @@ Initial revision.
 @titlepage
 @title AHI
 @subtitle Hardware independent audio for Amiga
-@subtitle AHI Developer's Guide v@value{docver}, for AHI version @value{ahiver}
+@subtitle AHI Developer's Guide for AHI version @value{ahiver}
+@subtitle Document version @value{docver}
 @author Martin 'Leviticus' Blom
 
 @page
 
 @vskip 0pt plus 1filll
 
-Copyright @copyright{} 1994-1998 Martin Blom. This publication may not
+Copyright @copyright{} 1994-1999 Martin Blom. This publication may not
 be modified in any way, including translation, without prior consent, in
 writing, by the author.
 
@@ -128,9 +126,11 @@ possibility of such damage.}
 
 @ifinfo
 
-@majorheading @sc{Ahi} Developer's Guide v@value{docver}, for AHI version @value{ahiver}
+@majorheading @sc{Ahi} Developer's Guide
 
-Copyright @copyright{} 1994-1998 Martin Blom
+For @sc{Ahi} version @value{ahiver}. Document version @value{docver}.
+
+Copyright @copyright{} 1994-1999 Martin Blom
 
 The latest release of @sc{Ahi} can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
@@ -222,7 +222,7 @@ Not everything about @sc{Ahi} is documented here; for more information, see
 @cindex Software license
 @cindex Copyright
 
-Copyright @copyright{} 1994-1998 Martin Blom
+Copyright @copyright{} 1994-1999 Martin Blom
 
 @sc{Ahi} is available as @dfn{freeware}.  That is, it may be freely
 distributed in unmodified form with no changes what so ever, but you may

@@ -1,19 +1,13 @@
 \input iso.sty
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
-@setfilename ahi.guide
+@setfilename ahiusr.info
 @settitle @sc{Ahi} User's Guide
 @setchapternewpage odd
 @iftex
 @afourpaper
 @end iftex
 @c %***end of header
-
-@c *** Macros  ***
-
-@macro ahi
-@sc{Ahi}
-@end macro
 
 @c *** Variables ***
 
@@ -29,7 +23,7 @@ This file documents AHI version @value{ahiver}, a hardware independent
 audio subsystem for Amiga. The version number of this document is
 @value{docver}.
 
-Copyright @copyright{} 1994-1998 Martin Blom. This publication may not
+Copyright @copyright{} 1994-1999 Martin Blom. This publication may not
 be modified in any way, including translation, without prior consent, in
 writing, by the author.
 
@@ -53,6 +47,9 @@ possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.20  1999/01/10 19:27:48  lcs
+The move to GNU make is done.
+
 Revision 4.19  1999/01/10 16:07:58  lcs
 Moved to GNU make (still moving...)
 
@@ -92,7 +89,7 @@ Revision 4.8  1997/09/18 00:51:00  lcs
 Added Maestro Pro stuff.
 
 Revision 4.7  1997/08/10 15:38:57  lcs
-Minor changes. added @ahi macro!
+Minor changes. added @@ahi macro!
 
 Revision 4.6  1997/08/03 22:48:26  lcs
 Added Concierto to list of supported sound cards.
@@ -118,14 +115,15 @@ Initial revision.
 @titlepage
 @title AHI
 @subtitle Hardware independent audio for Amiga
-@subtitle AHI User's Guide v@value{docver}, for AHI version @value{ahiver}
+@subtitle AHI User's Guide for AHI version @value{ahiver}
+@subtitle Document version @value{docver}
 @author Martin 'Leviticus' Blom
 
 @page
 
 @vskip 0pt plus 1filll
 
-Copyright @copyright{} 1994-1998 Martin Blom. This publication may not
+Copyright @copyright{} 1994-1999 Martin Blom. This publication may not
 be modified in any way, including translation, without prior consent, in
 writing, by the author.
 
@@ -155,9 +153,11 @@ possibility of such damage.}
 
 @ifinfo
 
-@majorheading @sc{Ahi} User's Guide v@value{docver}, for AHI version @value{ahiver}
+@majorheading @sc{Ahi} User's Guide
 
-Copyright @copyright{} 1994-1998 Martin Blom
+For @sc{Ahi} version @value{ahiver}. Document version @value{docver}.
+
+Copyright @copyright{} 1994-1999 Martin Blom
 
 The latest release of @sc{Ahi} can always be found at
 @url{http://www.lysator.liu.se/~lcs/ahi.html}. 
@@ -167,7 +167,7 @@ The latest release of @sc{Ahi} can always be found at
 * Distribution::                What you are allowed to do and not
 * Donations::                   How to show your gratitude
 
-* System description::          The components of @ahi
+* System description::          The components of @sc{Ahi}
 
 * The Author::                  Who designed it?
 * Acknowledgments::             Thanks, guys!
@@ -254,7 +254,7 @@ ever get.
 @cindex Software license
 @cindex Copyright
 
-Copyright @copyright{} 1994-1998 Martin Blom
+Copyright @copyright{} 1994-1999 Martin Blom
 
 @sc{Ahi} is available as @dfn{freeware}.  That is, it may be freely
 distributed in unmodified form with no changes what so ever, but you may
@@ -407,7 +407,7 @@ SYS:Prefs/AHI
 @sc{Ahi} preferences editor.  The @samp{FROM} argument lets you specify a
 file to open.  This must be a file that was previously saved with the
 @samp{Save As@dots{}} menu item of the @sc{Ahi} preferences editor.  For
-example, if you have saved a special configuration of the @ahi
+example, if you have saved a special configuration of the @sc{Ahi}
 preferences editor to a file in the @file{Presets} drawer, you can use the
 @samp{FROM} argument to open that file.  If the @samp{USE} switch is also
 given, the editor will not be opened, but the settings in the @samp{FROM}
