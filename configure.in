@@ -89,6 +89,7 @@ AC_PROG_INSTALL
 #AC_PROG_CC
 AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
+AC_CHECK_PROG( ROBODOC, robodoc, robodoc )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
 AC_CHECK_PROG( FD2INLINE, fd2inline, fd2inline )
 AC_CHECK_PROG( FD2PRAGMA, fd2pragma, fd2pragma )
@@ -108,6 +109,10 @@ fi
 
 if test -z "$LHA"; then
  AC_MSG_WARN( lha missing. )
+fi
+
+if test -z "$ROBODOC"; then
+ AC_MSG_WARN( robodoc missing. )
 fi
 
 dnl Checks for libraries.
