@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.8  1997/10/11 15:58:13  lcs
+* Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
+*
 * Revision 4.7  1997/07/27 01:38:17  lcs
 * AHI_SetEffect() would return 0 even if the driver overloaded
 * the function.
@@ -1329,6 +1332,7 @@ _PreTimer:
 	jsr	_LVOUDivMod32(a1)
 	move.l	d0,d1
  ENDC
+ 	move.w	d1,ahiac_UsedCPU(a2)
 ;	bsr	printd1
 	cmp.b	ahiac_MaxCPU(a2),d1
 	bls	.ok

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/10/11 15:58:13  lcs
+* Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
+*
 * Revision 4.3  1997/07/15 00:52:05  lcs
 * This is the second bugfix release of AHI 4.
 *
@@ -186,6 +189,8 @@ struct AHIPrivAudioCtrl
 	UBYTE			 ahiac_MaxCPU;
 	UWORD			 ahiac_Channels2;	/* Max virtual channels/hw channel */
 	struct Timer		 ahiac_Timer;
+	UWORD			 ahiac_UsedCPU;
+	UWORD			 ahiac_Pad;
 	char			 ahiac_DriverName[DRIVERNAME_SIZEOF];
 };
 
