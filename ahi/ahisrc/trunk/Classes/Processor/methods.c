@@ -232,7 +232,6 @@ MethodPrepare(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
   BOOL result = FALSE;
 
   if (!AHIClassData->busy || !AHIClassData->ready) {
-//    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
     return FALSE;
   }
@@ -260,7 +259,6 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
   ULONG result = AHIV_Processor_PerformProc;
   
   if (!AHIClassData->busy || !AHIClassData->ready) {
-//    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
     return AHIV_Processor_FailProc;
   }
@@ -290,9 +288,16 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
   ULONG max_children = 0;
-  
+  ULONG parent       = 0;
+  ULONG owner        = 0;
+  ULONG my_owner     = 0;
+
+  if (msg->opam_Object == NULL) {
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NullMember, TAG_DONE);
+    return FALSE;
+  }
+
   if (AHIClassData->busy) {
-//    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
     return FALSE;
   }
@@ -300,10 +305,29 @@ MethodAddMember(Class* class, Object* object, struct opMember* msg) {
   GetAttr(AHIA_Processor_MaxChildren, object, &max_children);
 
   if (AHIClassData->num_members >= max_children) {
-//    SetAttrs(object, AHIA_Error, AHIE_Processor_TooManyChildren, TAG_DONE);
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_TooManyChildren, TAG_DONE);
     return FALSE;
   }
+
+  GetAttr(AHIA_Processor_Parent, msg->opam_Object, &parent);
+
+  if (parent != 0) {
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_MultipleParents, TAG_DONE);
+    return FALSE;
+  }
+
+  GetAttr(AHIA_Owner, msg->opam_Object, &owner);
+  GetAttr(AHIA_Owner, object, &my_owner);
+
+  if (owner != my_owner) {
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_DifferentOwner, TAG_DONE);
+    return FALSE;
+  }
+  
+  SetAttrs(msg->opam_Object,
+	   AHIA_Processor_Parent, (ULONG) object,
+	   AHIA_Processor_Buffer, (ULONG) AHIClassData->buffer,
+	   TAG_DONE);
   
   ++AHIClassData->num_members;
   DoMethod(msg->opam_Object, OM_ADDTAIL, &AHIClassData->members);
@@ -319,15 +343,31 @@ BOOL
 MethodRemMember(Class* class, Object* object, struct opMember* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  ULONG parent = 0;
 
-  if (!AHIClassData->busy) {
-    --AHIClassData->num_members;
-    DoMethod(msg->opam_Object, OM_REMOVE);
-    return TRUE;
+  if (msg->opam_Object == NULL) {
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NullMember, TAG_DONE);
+    return FALSE;
   }
-  else {
-//    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+
+  if (AHIClassData->busy) {
     SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
     return FALSE;
   }
+
+  GetAttr(AHIA_Processor_Parent, msg->opam_Object, &parent);
+
+  if (parent != object) {
+    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_NotMember, TAG_DONE);
+    return FALSE;
+  }
+
+  SetAttrs(msg->opam_Object,
+	   AHIA_Processor_Parent, (ULONG) NULL,
+	   AHIA_Processor_Buffer, (ULONG) NULL,
+	   TAG_DONE);
+
+  --AHIClassData->num_members;
+  DoMethod(msg->opam_Object, OM_REMOVE);
+  return TRUE;
 }
