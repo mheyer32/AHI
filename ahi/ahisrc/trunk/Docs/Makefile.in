@@ -11,13 +11,13 @@
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
-prefix		= @prefix@
+DISTDIR		= @DISTDIR@
 
-devdir		= ${prefix}/Developer
-usrdir		= ${prefix}/User
+DEVDIR		= ${DISTDIR}/Developer
+USRDIR		= ${DISTDIR}/User
 
-devdocdir	= ${devdir}/Docs
-usrdocdir	= ${usrdir}/Docs
+DEVDOCDIR	= ${DEVDIR}/Docs
+USRDOCDIR	= ${USRDIR}/Docs
 
 build_os	= @build_os@
 
@@ -42,7 +42,7 @@ TARGETS		= ahidev.readme ahiusr.readme \
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean install changes
+.PHONY:		all clean distclean maintainer-clean bindist changes
 
 all:		$(TARGETS)
 
@@ -57,17 +57,17 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-install:	$(TARGETS)
-	$(INSTALL) --directory $(usrdocdir) $(devdocdir)
-	$(INSTALL_DATA) ahidev.readme $(prefix)
-	$(INSTALL_DATA) ahidev.readme.info $(prefix)
-	$(INSTALL_DATA) ahiusr.readme $(prefix)
-	$(INSTALL_DATA) ahiusr.readme.info $(prefix)
+bindist:	$(TARGETS)
+	$(INSTALL) --directory $(USRDOCDIR) $(DEVDOCDIR)
+	$(INSTALL_DATA) ahidev.readme $(DISTDIR)
+	$(INSTALL_DATA) ahidev.readme.info $(DISTDIR)
+	$(INSTALL_DATA) ahiusr.readme $(DISTDIR)
+	$(INSTALL_DATA) ahiusr.readme.info $(DISTDIR)
 	for i in ahidev.guide ahidev.dvi ahidev.ps ahidev.html; do \
-	  $(INSTALL_DATA) $$i $(devdocdir); \
+	  $(INSTALL_DATA) $$i $(DEVDOCDIR); \
 	done
 	for i in ahiusr.guide ahiusr.dvi ahiusr.ps ahiusr.html; do \
-	  $(INSTALL_DATA) $$i $(usrdocdir); \
+	  $(INSTALL_DATA) $$i $(USRDOCDIR); \
 	done
 
 changes:

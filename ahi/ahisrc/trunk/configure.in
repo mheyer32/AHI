@@ -13,9 +13,11 @@ dnl General
 AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
-: ${CFLAGS='-g -O2 -W -Wall -Wstrict-prototypes'}
+: ${CFLAGS='-g -O2 -ffast-math -W -Wall -Wstrict-prototypes'}
 : ${LDFLAGS='-noixemul'}
-AC_PREFIX_DEFAULT( /tmp/ahi ) 
+
+: ${DISTDIR='/tmp/ahi'}
+AC_SUBST(DISTDIR)
 
 dnl Checks for programs.
 
@@ -23,6 +25,7 @@ AC_PROG_INSTALL
 AC_PROG_CC
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
+AC_CHECK_PROG( ASM, PhxAss, PhxAss )
 
 dnl Checks for libraries.
 
@@ -47,5 +50,6 @@ dnl Checks for library functions.
 AC_OUTPUT(Makefile
           AHI/Makefile
           AddAudioModes/Makefile
+          Device/Makefile
           Docs/Makefile,
           echo timestamp > stamp-h)

@@ -18,9 +18,9 @@ endif
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
-prefix		= @prefix@
-bindir		= ${prefix}/User/Prefs
-catdir		= ${prefix}/User/Catalogs
+DISTDIR		= @DISTDIR@
+PREFSDIR	= ${DISTDIR}/User/Prefs
+CATDIR		= ${DISTDIR}/User/Catalogs
 
 build_os	= @build_os@
 
@@ -58,7 +58,7 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean install revup
+.PHONY:		all clean distclean maintainer-clean bindist revup
 
 all:		$(TARGETS) ahiprefs.ct $(CATALOGS)
 
@@ -71,23 +71,26 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-install:	all
-	$(INSTALL) --directory $(bindir)
+bindist:	all
+	$(INSTALL) --directory $(PREFSDIR)
 	for i in $(TARGETS); do \
-	  $(INSTALL_PROGRAM) --strip $$i $(bindir)/$$i; \
+	  $(INSTALL_PROGRAM) --strip $$i $(PREFSDIR)/$$i; \
 	done
-	$(INSTALL_DATA) AHI.info $(bindir)
-	$(INSTALL_DATA) AHI.MWB.info $(bindir)
+	$(INSTALL_DATA) AHI.info $(PREFSDIR)
+	$(INSTALL_DATA) AHI.MWB.info $(PREFSDIR)
 	for i in $(LANGUAGES); do \
-	  $(INSTALL) --directory $(catdir)/$$i; \
-	  $(INSTALL_DATA) $$i.catalog $(catdir)/$$i/ahiprefs.catalog; \
+	  $(INSTALL) --directory $(CATDIR)/$$i; \
+	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
 	done
-	$(INSTALL_DATA) ahiprefs.cd $(catdir)
-	$(INSTALL_DATA) ahiprefs.ct $(catdir)
+	$(INSTALL_DATA) ahiprefs.cd $(CATDIR)
+	$(INSTALL_DATA) ahiprefs.ct $(CATDIR)
 
 version.h:	version.rev version.date
-	@echo "#define VERS \"4.`cat version.rev` (`cat version.date`)\"" >> $@
 	@echo Creating $@
+	@ver=`cat $(top_srcdir)/version.ver` \
+	 rev=`cat version.rev` \
+	 date=`cat version.date` && \
+	 echo "#define VERS \"$$ver.$$rev ($$date)\"" > $@
 
 revup:
 	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
@@ -128,40 +131,6 @@ ahiprefs_Cat.h:	ahiprefs.cd
 
 %.ct:
 	$(FLEXCAT) ahiprefs.cd $@ NEWCTFILE $@
-
-
-
-##
-## The catalogs
-##
-########################################
-
-#catalogs:
-#ifneq ($(strip $(FLEXCAT)),)
-#	for i in $(notdir $(basename $(wildcard translations/*.ct))); do \
-#	  $(FLEXCAT) ahiprefs.cd translations/$$i.ct NEWCTFILE translations/$$i.ct;\
-#	  $(FLEXCAT) ahiprefs.cd translations/$$i.ct CATALOG $$i.catalog; \
-#	done
-#	$(FLEXCAT) ahiprefs.cd ahiprefs.ct NEWCTFILE ahiprefs.ct
-#
-#	# Make sure the directories exist
-#	echo >> T:catscript "FailAt 11"
-#	list >> T:catscript translations lformat\
-#	  "MakeDir >NIL: AHI:User/Catalogs/%m"
-#	echo >> T:catscript "FailAt 10"
-#
-#	# Make catalogs
-#	list >> T:catscript translations lformat\
-#	  "FlexCat ahiprefs.cd %p%n CATALOG AHI:User/Catalogs/%m/ahiprefs.catalog"
-#
-#	FlexCat ahiprefs.cd ahiprefs.ct NEWCTFILE ahiprefs.ct
-#	copy ahiprefs.(cd|ct) AHI:User/Catalogs/
-#	--execute T:catscript
-#	delete T:catscript
-#else
-#	@echo FlexCat not found!
-#	@false
-#endif
 
 
 #

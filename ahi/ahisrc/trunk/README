@@ -6,4 +6,49 @@ sh configure --host=m68k-unknown-amigaos
 
 To configure on a PC running Linux:
 
-CC=m68k-amigaos-gcc ./configure --host=m68k-unknown-amigaos --build=i686-pc-linux-gnu
+CC=m68k-amigaos-gcc ./configure --host=m68k-unknown-amigaos 
+--build=i686-pc-linux-gnu
+
+
+
+The following targets are available:
+
+all:
+	Makes all binaries, but only one version of the device.
+
+clean:
+	Removes all binaries and temporary files.
+
+distclean:
+	Like clean, but also removes files created by 'configure'.
+
+maintainer-clean:
+	Removes all machine-generated files, including the autoconf files.
+
+bindist:
+	Builds the binary distribution.  You can change the directory in
+	which the binary distribution will be created, by setting the
+	variable DISTDIR. The default is '/tmp/ahi'. This will build all
+	possible versions of the device, including the PowerUp version.
+
+revup:
+	Increases the revision of the distribution.
+
+
+Required programs/packages that I'm aware of:
+
+From GeekGadgets
+~~~~~~~~~~~~~~~~
+autoconf
+m68k-amigaos-gcc
+make
+ppc-amigaos-gcc
+tex
+texinfo
+
+Other tools
+~~~~~~~~~~~
+FD2Pragma
+FlexCat
+PhxAss
+RoboDoc
