@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.10  1997/02/01 19:44:18  lcs
+* Added stereo samples
+*
 * Revision 1.9  1997/01/31 20:22:24  lcs
 * Enabled stereo samples
 *
@@ -576,11 +579,6 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 #ifdef DEBUG
     KPrintF("Testing freq\n");
 #endif
-
-    if(ioreq->ahir_Frequency >= 262144)
-    {
-      error = AHIE_UNKNOWN;
-    }
 
     // Address to sample offset and length in bytes to length in samples
 

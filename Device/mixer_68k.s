@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.7  1997/02/01 19:44:18  lcs
+* Added stereo samples
+*
 * Revision 1.6  1997/01/27 01:37:17  lcs
 * Even more bugs in the 16 bit routines found (68k version this time).
 *
@@ -52,11 +55,6 @@ ALIGN	EQU	0	;set to 0 when using the source level debugger, and 1 when timing
 	XDEF	CalcSamples
 
 	XDEF	UDivMod64
-
-	XDEF	do_DSPEchoMono16
-	XDEF	do_DSPEchoStereo16
-	XDEF	do_DSPEchoMono32
-	XDEF	do_DSPEchoStereo32
 
 TABLEMAXVOL	EQU	32
 TABLESHIFT	EQU	11	(TABLEMAXVOL<<TABLESHIFT == 0x10000)
@@ -227,7 +225,10 @@ channeldatas:
 	dc.l	0		;ULONG	cd_LAddress
 	dc.l	0		;ULONG	cd_Samples
 	dc.l	0		;ULONG	cd_FirstOffsetI
-	dc.w	0		;WORD	cd_LastSample
+	dc.w	0		;WORD	cd_LastSampleL
+	dc.w	0		;WORD	cd_TempLastSampleL
+	dc.w	0		;WORD	cd_LastSampleR
+	dc.w	0		;WORD	cd_TempLastSampleR
  ELSE
 	dc.w	0		;UWORD	cd_EOS
 	dc.b	$ff		;UBYTE	cd_FreqOK
@@ -273,7 +274,10 @@ channeldatas:
 	dc.l	0		;ULONG	cd_LAddress
 	dc.l	0		;ULONG	cd_Samples
 	dc.l	0		;ULONG	cd_FirstOffsetI
-	dc.w	0		;WORD	cd_LastSample
+	dc.w	0		;WORD	cd_LastSampleL
+	dc.w	0		;WORD	cd_TempLastSampleL
+	dc.w	0		;WORD	cd_LastSampleR
+	dc.w	0		;WORD	cd_TempLastSampleR
  ENDC * BACK 
  ENDC
 
@@ -480,7 +484,315 @@ calcUnsignedTable:
 * d0	ScaleLeft
 * d1	ScaleRight
 * d2	AddRoutine
+
+
+RIGHTVOLUME	EQU	1
+LEFTVOLUME	EQU	2
+TABLES		EQU	4
+STEREO		EQU	8
+HIFI		EQU	16
+
+EIGHTBIT	EQU	0
+EIGHT2BIT	EQU	32
+SIXTEENBIT	EQU	64
+SIXTEEN2BIT	EQU	96
+
+typeconversion:
+	dc.l	EIGHTBIT	;AHIST_M8S  (0)
+	dc.l	SIXTEENBIT	;AHIST_M16S (1)
+	dc.l	EIGHT2BIT	;AHIST_S8S  (2)
+	dc.l	SIXTEEN2BIT	;AHIST_S16S (3)
+	dc.l	-1		;AHIST_M8U  (4) << OBSOLETE >>
+	dc.l	-1
+	dc.l	-1
+	dc.l	-1
+	dc.l	-1		;AHIST_M32S (8)
+	dc.l	-1
+	dc.l	-1		;AHIST_S32S (10)
+	dc.l	-1
+	dc.l	-1
+	dc.l	-1
+	dc.l	-1
+	dc.l	-1
+
 SelectAddRoutine:
+	pushm	d3-a6
+
+	move.l	d2,d3
+	move.l	ahiac_Flags(a2),d4
+
+	and.l	#~AHIST_BW,d2
+
+;FIXIT  -- Unsigned samples are obosolete, and should be removed!
+	cmp.l	#AHIST_M8U,d6
+	beq	sar_unsigned
+
+	lsl.l	#2,d2
+	move.l	(typeconversion,pc,d2.l),d2
+	bmi	.error
+
+	btst.l	#AHIACB_STEREO,d4
+	beq	.not_stereo
+	or.l	#STEREO,d2
+.not_stereo
+
+	btst.l	#AHIACB_HIFI,d4
+	beq	.not_hifi
+	or.l	#HIFI,d2
+.not_hifi
+
+	tst.l	ahiac_MultTableS(a2)
+	bne	.tables
+
+; Scale volume according to the master volume
+
+	push	d2
+	moveq	#0,d2
+	move.w	ahiac_Channels2(a2),d2
+	lsl.w	#8,d2
+	move.l	ahiac_MasterVolume(a2),d5
+	asr.l	#8,d5
+
+ IFGE	__CPU-68020
+	muls.l	d5,d0
+	divs.l	d2,d0
+	muls.l	d5,d1
+	divs.l	d2,d1
+ ELSE
+	move.l	_UtilityBase(pc),a0
+	
+	push	d1
+	move.l	d5,d1
+	jsr	_LVOSMult32(a0)
+	move.l	d2,d1
+	jsr	_LVOSDivMod32(a0)
+	pop	d1
+
+	push	d0
+	move.l	d1,d0
+	move.l	d5,d1
+	jsr	_LVOSMult32(a0)
+	move.l	d2,d1
+	jsr	_LVOSDivMod32(a0)
+	move.l	d0,d1
+	pop	d0
+ ENDC
+	pop	d2
+	bra	.not_tables
+.tables
+	or.l	#TABLES,d2
+.not_tables
+
+	tst.l	ahiac_MasterVolume(a2)
+	beq	.not_volume
+
+	tst.l	d0
+	beq	.not_left_volume
+	or.l	#LEFTVOLUME,d2
+.not_left_volume
+
+	tst.l	d1
+	beq	.not_right_volume
+	or.l	#RIGHTVOLUME,d2
+.not_right_volume
+
+.not_volume
+	lsl.l	#2,d2
+	move.l	(functionstable,pc,d2.l),a0
+	jsr	(a0)		;returns d0, d1 and a0
+
+	and.l	#AHIST_BW,d3
+	beq	.fw
+	add.w	#OffsetBackward,a0
+.fw
+
+	add.w	(a0),a0
+.exit:
+	move.l	a0,d2
+	popm	d3-a6
+	rts
+.error
+	lea	.dummy(pc),a0
+	bra	.exit
+.dummy
+	rts
+
+;FIXIT -- OBSOLETE!
+
+sar_unsigned:
+	pea	.exit(pc)
+	tst.l	d0
+	bmi	FixVolSilence		;Error
+	tst.l	d1
+	bmi	FixVolSilence		;Error
+	tst.l	ahiac_MultTableU(a2)
+	beq	FixVolSilence		;Error
+
+	btst.l	#AHIACB_STEREO,d4
+	bne	.stereo
+	bra	FixVolUByteMVT
+.stereo
+	tst.l	d0
+	beq	FixVolUByteSVTr
+	tst.l	d1
+	beq	FixVolUByteSVTl
+	bra	FixVolUByteSVPT	
+
+.exit:
+	and.l	#AHIST_BW,d3
+	beq	.fw
+	add.w	#OffsetBackward,a0
+.fw
+
+	add.w	(a0),a0
+
+
+	move.l	a0,d2
+	popm	d3-a6
+	rts
+
+functionstable:
+					; Type	HiFi	Stereo	Tables	Left	Right
+	dc.l	FixVolSilence		; 8	-	-	-	-	-
+	dc.l	FixVolByteMV		; 8	-	-	-	-	*
+	dc.l	FixVolByteMV		; 8	-	-	-	*	-
+	dc.l	FixVolByteMV		; 8	-	-	-	*	*
+	dc.l	FixVolSilence		; 8	-	-	*	-	-
+	dc.l	FixVolByteMVT		; 8	-	-	*	-	*
+	dc.l	FixVolByteMVT		; 8	-	-	*	*	-
+	dc.l	FixVolByteMVT		; 8	-	-	*	*	*
+	dc.l	FixVolSilence		; 8	-	*	-	-	-
+	dc.l	FixVolByteSVr		; 8	-	*	-	-	*
+	dc.l	FixVolByteSVl		; 8	-	*	-	*	-
+	dc.l	FixVolByteSVP		; 8	-	*	-	*	*
+	dc.l	FixVolSilence		; 8	-	*	*	-	-
+	dc.l	FixVolByteSVTr		; 8	-	*	*	-	*
+	dc.l	FixVolByteSVTl		; 8	-	*	*	*	-
+	dc.l	FixVolByteSVPT		; 8	-	*	*	*	*
+	dc.l	FixVolSilence		; 8	*	-	-	-	-
+	dc.l	FixVolByteMVH		; 8	*	-	-	-	*
+	dc.l	FixVolByteMVH		; 8	*	-	-	*	-
+	dc.l	FixVolByteMVH		; 8	*	-	-	*	*
+	dc.l	FixVolSilence		; 8	*	-	*	-	-
+	dc.l	FixVolByteMVH		; 8	*	-	*	-	*
+	dc.l	FixVolByteMVH		; 8	*	-	*	*	-
+	dc.l	FixVolByteMVH		; 8	*	-	*	*	*
+	dc.l	FixVolSilence		; 8	*	*	-	-	-
+	dc.l	FixVolByteSVPH		; 8	*	*	-	-	*
+	dc.l	FixVolByteSVPH		; 8	*	*	-	*	-
+	dc.l	FixVolByteSVPH		; 8	*	*	-	*	*
+	dc.l	FixVolSilence		; 8	*	*	*	-	-
+	dc.l	FixVolByteSVPH		; 8	*	*	*	-	*
+	dc.l	FixVolByteSVPH		; 8	*	*	*	*	-
+	dc.l	FixVolByteSVPH		; 8	*	*	*	*	*
+	dc.l	FixVolSilence		; 8×2	-	-	-	-	-
+	dc.l	FixVolBytesMV		; 8×2	-	-	-	-	*
+	dc.l	FixVolBytesMV		; 8×2	-	-	-	*	-
+	dc.l	FixVolBytesMV		; 8×2	-	-	-	*	*
+	dc.l	FixVolSilence		; 8×2	-	-	*	-	-
+	dc.l	FixVolBytesMVT		; 8×2	-	-	*	-	*
+	dc.l	FixVolBytesMVT		; 8×2	-	-	*	*	-
+	dc.l	FixVolBytesMVT		; 8×2	-	-	*	*	*
+	dc.l	FixVolSilence		; 8×2	-	*	-	-	-
+	dc.l	FixVolBytesSVr		; 8×2	-	*	-	-	*
+	dc.l	FixVolBytesSVl		; 8×2	-	*	-	*	-
+	dc.l	FixVolBytesSVP		; 8×2	-	*	-	*	*
+	dc.l	FixVolSilence		; 8×2	-	*	*	-	-
+	dc.l	FixVolBytesSVTr		; 8×2	-	*	*	-	*
+	dc.l	FixVolBytesSVTl		; 8×2	-	*	*	*	-
+	dc.l	FixVolBytesSVPT		; 8×2	-	*	*	*	*
+	dc.l	FixVolSilence		; 8×2	*	-	-	-	-
+	dc.l	FixVolBytesMVH		; 8×2	*	-	-	-	*
+	dc.l	FixVolBytesMVH		; 8×2	*	-	-	*	-
+	dc.l	FixVolBytesMVH		; 8×2	*	-	-	*	*
+	dc.l	FixVolSilence		; 8×2	*	-	*	-	-
+	dc.l	FixVolBytesMVH		; 8×2	*	-	*	-	*
+	dc.l	FixVolBytesMVH		; 8×2	*	-	*	*	-
+	dc.l	FixVolBytesMVH		; 8×2	*	-	*	*	*
+	dc.l	FixVolSilence		; 8×2	*	*	-	-	-
+	dc.l	FixVolBytesSVPH		; 8×2	*	*	-	-	*
+	dc.l	FixVolBytesSVPH		; 8×2	*	*	-	*	-
+	dc.l	FixVolBytesSVPH		; 8×2	*	*	-	*	*
+	dc.l	FixVolSilence		; 8×2	*	*	*	-	-
+	dc.l	FixVolBytesSVPH		; 8×2	*	*	*	-	*
+	dc.l	FixVolBytesSVPH		; 8×2	*	*	*	*	-
+	dc.l	FixVolBytesSVPH		; 8×2	*	*	*	*	*
+	dc.l	FixVolSilence		; 16	-	-	-	-	-
+	dc.l	FixVolWordMV		; 16	-	-	-	-	*
+	dc.l	FixVolWordMV		; 16	-	-	-	*	-
+	dc.l	FixVolWordMV		; 16	-	-	-	*	*
+	dc.l	FixVolSilence		; 16	-	-	*	-	-
+	dc.l	FixVolWordMVT		; 16	-	-	*	-	*
+	dc.l	FixVolWordMVT		; 16	-	-	*	*	-
+	dc.l	FixVolWordMVT		; 16	-	-	*	*	*
+	dc.l	FixVolSilence		; 16	-	*	-	-	-
+	dc.l	FixVolWordSVr		; 16	-	*	-	-	*
+	dc.l	FixVolWordSVl		; 16	-	*	-	*	-
+	dc.l	FixVolWordSVP		; 16	-	*	-	*	*
+	dc.l	FixVolSilence		; 16	-	*	*	-	-
+	dc.l	FixVolWordSVTr		; 16	-	*	*	-	*
+	dc.l	FixVolWordSVTl		; 16	-	*	*	*	-
+	dc.l	FixVolWordSVPT		; 16	-	*	*	*	*
+	dc.l	FixVolSilence		; 16	*	-	-	-	-
+	dc.l	FixVolWordMVH		; 16	*	-	-	-	*
+	dc.l	FixVolWordMVH		; 16	*	-	-	*	-
+	dc.l	FixVolWordMVH		; 16	*	-	-	*	*
+	dc.l	FixVolSilence		; 16	*	-	*	-	-
+	dc.l	FixVolWordMVH		; 16	*	-	*	-	*
+	dc.l	FixVolWordMVH		; 16	*	-	*	*	-
+	dc.l	FixVolWordMVH		; 16	*	-	*	*	*
+	dc.l	FixVolSilence		; 16	*	*	-	-	-
+	dc.l	FixVolWordSVPH		; 16	*	*	-	-	*
+	dc.l	FixVolWordSVPH		; 16	*	*	-	*	-
+	dc.l	FixVolWordSVPH		; 16	*	*	-	*	*
+	dc.l	FixVolSilence		; 16	*	*	*	-	-
+	dc.l	FixVolWordSVPH		; 16	*	*	*	-	*
+	dc.l	FixVolWordSVPH		; 16	*	*	*	*	-
+	dc.l	FixVolWordSVPH		; 16	*	*	*	*	*
+	dc.l	FixVolSilence		; 16×2	-	-	-	-	-
+	dc.l	FixVolWordsMV		; 16×2	-	-	-	-	*
+	dc.l	FixVolWordsMV		; 16×2	-	-	-	*	-
+	dc.l	FixVolWordsMV		; 16×2	-	-	-	*	*
+	dc.l	FixVolSilence		; 16×2	-	-	*	-	-
+	dc.l	FixVolWordsMVT		; 16×2	-	-	*	-	*
+	dc.l	FixVolWordsMVT		; 16×2	-	-	*	*	-
+	dc.l	FixVolWordsMVT		; 16×2	-	-	*	*	*
+	dc.l	FixVolSilence		; 16×2	-	*	-	-	-
+	dc.l	FixVolWordsSVr		; 16×2	-	*	-	-	*
+	dc.l	FixVolWordsSVl		; 16×2	-	*	-	*	-
+	dc.l	FixVolWordsSVP		; 16×2	-	*	-	*	*
+	dc.l	FixVolSilence		; 16×2	-	*	*	-	-
+	dc.l	FixVolWordsSVTr		; 16×2	-	*	*	-	*
+	dc.l	FixVolWordsSVTl		; 16×2	-	*	*	*	-
+	dc.l	FixVolWordsSVPT		; 16×2	-	*	*	*	*
+	dc.l	FixVolSilence		; 16×2	*	-	-	-	-
+	dc.l	FixVolWordsMVH		; 16×2	*	-	-	-	*
+	dc.l	FixVolWordsMVH		; 16×2	*	-	-	*	-
+	dc.l	FixVolWordsMVH		; 16×2	*	-	-	*	*
+	dc.l	FixVolSilence		; 16×2	*	-	*	-	-
+	dc.l	FixVolWordsMVH		; 16×2	*	-	*	-	*
+	dc.l	FixVolWordsMVH		; 16×2	*	-	*	*	-
+	dc.l	FixVolWordsMVH		; 16×2	*	-	*	*	*
+	dc.l	FixVolSilence		; 16×2	*	*	-	-	-
+	dc.l	FixVolWordsSVPH		; 16×2	*	*	-	-	*
+	dc.l	FixVolWordsSVPH		; 16×2	*	*	-	*	-
+	dc.l	FixVolWordsSVPH		; 16×2	*	*	-	*	*
+	dc.l	FixVolSilence		; 16×2	*	*	*	-	-
+	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	-	*
+	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	*	-
+	dc.l	FixVolWordsSVPH		; 16×2	*	*	*	*	*
+
+
+;in:
+* d0	VolumeLeft (Fixed)
+* d1	VolumeRight (Fixed)
+* d2	SampleType
+* a2	AudioCtrl
+;out:
+* d0	ScaleLeft
+* d1	ScaleRight
+* d2	AddRoutine
+;SelectAddRoutine:
 	pushm	d3-a6
 
 	pea	sa_exit(pc)			;return address
@@ -624,14 +936,10 @@ sa_hifi:
 
 	btst.l	#AHIACB_STEREO,d4
 	bne.b	.stereo
-	cmp.l	#AHIST_M8U,d6
-	beq	FixVolUByteMVH
 	cmp.l	#AHIST_M8S,d6
 	beq	FixVolByteMVH
 	bra	FixVolWordMVH
 .stereo
-	cmp.l	#AHIST_M8U,d6
-	beq	FixVolUByteSVPH
 	cmp.l	#AHIST_M8S,d6
 	beq	FixVolByteSVPH
 	bra	FixVolWordSVPH
@@ -709,7 +1017,8 @@ _Mix:
 
 	movem.l	cd_ScaleLeft(a5),d1/d2/a0
 	jsr	(a0)
-	move.l	cd_TempLastSample(a5),cd_LastSample(a5)	;linear interpol. stuff
+	move.l	cd_TempLastSampleL(a5),cd_LastSampleL(a5) ;linear interpol. stuff
+	move.l	cd_TempLastSampleR(a5),cd_LastSampleR(a5) ;linear interpol. stuff
 
 ; d3:d4 always points OUTSIDE the sample after this call. Ie, if we read a
 ; sample at offset d3 now, it does not belong to the sample just played.
@@ -836,539 +1145,6 @@ _Mix:
 	rts
 
 
- IFGE	__CPU-68020
-
-**************
-* Inputs: ahiede_Delay, ahiede_Feedback, ahiede_Mix, ahiede_Cross
-*
-* Delay      = ahide_Delay
-* MixN       = $10000-ahide_Mix
-* MixD       = ahide_Mix
-* FeedbackDS = (ahide_Feedback*($10000-ahide_Cross))/2
-* FeedbackDO = (ahide_Feedback*ahide_Cross)/2
-* FeedbackNS = (($10000-ahide_Feedback)*($10000-ahide_Cross))/2
-* FeedbackNO = (($10000-ahide_Feedback)*ahide_Cross)/2
-*
-*                                               |\
-* left in ->---+----------+---------------------| >---->(+)----> left out
-*              |          |                MixN |/       ^
-*  FeedbackNO \¯/        \¯/ FeedbackNS                  |
-*              v          v                              |
-*              |          |                              |
-*              |          v    |¯¯¯|            |\       |
-*              |    +--->(+)-->| T |----+-------| >------+
-*              |    |     ^    |___|    |  MixD |/
-*              |    |     |    Delay    |
-*              |    |     |             |
-*              |    |     |      /|     |
-*              |    |     +-----< |-----+
-*              |    | FeedbackDS \|     |
-*              |    |                   |
-*              |    |            /|     |
-*             (+)<--(-----------< |-----+
-*              |    |            \| FeedbackDO
-*              |    |
-*              |    |
-*              |    |
-*              |    |            /| FeedbackDO
-*              |   (+)<---------< |-----+
-*              |    |            \|     |
-*              |    |                   |
-*              |    | FeedbackDS /|     |
-*              |    |     +-----< |-----+
-*              |    |     |      \|     |
-*              |    |     |             |
-*              |    |     v    |¯¯¯|    |       |\
-*              +----(--->(+)-->| T |----+-------| >------+
-*                   |     ^    |___|       MixD |/       |
-*                   |     |    Delay                     |
-*                   ^     ^                              |
-*       FeedbackNO /_\   /_\ FeedbackNS                  |
-*                   |     |                     |\       v
-* right in ->-------+-----+---------------------| >---->(+)----> right out
-*                                          MixN |/
-*
-*
-**************
-*
-* The delay buffer: (BuffSamples = 5, Delay = 8 Total size = 13
-*
-*  1) Delay times
-*
-*  +---------+
-*  |         |
-*  v         ^
-* |_|_|_|_|_|_|_|_|_|_|_|_|_|
-* *---------*
-*
-*  2) BuffSamples times
-*
-*  +-Mix-----------+
-*  |               |
-*  ^               v
-* |_|_|_|_|_|_|_|_|_|_|_|_|_|
-* *---------*
-*
-* Or optimized using a circular buffer:
-*
-*
-* Offset<BuffSamples => BuffSamples-Offset times:
-*
-*  +-Mix-----------+
-*  |               |
-*  ^               v
-* |_|_|_|_|_|_|_|_|_|_|_|_|_|
-* *---------*
-*
-* BuffSamples<=Offset<=Delay => BuffSamples times:
-*
-*  +-Mix-----+
-*  |         |
-*  v         ^
-* |_|_|_|_|_|_|_|_|_|_|_|_|_|
-*           *---------*
-*
-* Offset>Delay => BuffSamples+Delay-Offset times:
-*
-*          +-Mix-----+
-*          |         |
-*          v         ^
-* |_|_|_|_|_|_|_|_|_|_|_|_|_|
-* --*               *--------
-*
-* The delay buffer: (BuffSamples = 5, Delay = 3 Total size = 8
-*
-* Offset<BuffSamples => BuffSamples-Offset times:
-*
-*  +-Mix-+
-*  |     |
-*  ^     v
-* |_|_|_|_|_|_|_|_|
-* *---------*
-*
-* Offset>=BuffSamples => BuffSamples+Delay-Offset times:
-*
-*  +-----Mix-+
-*  |         |
-*  v         ^
-* |_|_|_|_|_|_|_|_|
-* ----*     *------
-*
-*
-*
-* Algoritm:
-*
-*   LoopsLeft=BuffSamples
-*   Offset=0
-*   Src=E
-*   Dst=E+Delay
-* Loop:
-*   If LoopsLeft <= 0 GOTO Exit
-*   IF Src >= (E + BuffSamples + Delay) THEN Src = Src - (BuffSamples + Delay)
-*   IF Dst >= (E + BuffSamples + Delay) THEN Dst = Dst - (BuffSamples + Delay)
-*   IF Offset >= (BuffSamples + Delay) THEN Offset = Offset - (BuffSamples + Delay)
-*
-*   IF Offset < BuffSamples THEN LoopTimes = BuffSamples-Offset : GOTO Echo
-*   IF Offset <= Delay THEN LoopTimes = BuffSamples : GOTO Echo 
-*   LoopTimes = BuffSamples+Delay-Offset
-* Echo:
-*   LoopTimes = min(LoopTimes,LoopsLeft)
-*   Echo LoopTimes samples
-*
-*   Src = Src + LoopTimes
-*   Dst = Dst + LoopTimes
-*   Offset = Offset + LoopTimes
-*   LoopsLeft = LoopsLeft - LoopTimes
-*   GOTO Loop
-* Exit:
-*
-
-;in:
-* a1	Buffer pointer
-* a2	audioctrl
-;Don't trash a2, a4 or a5
-
-*******************************************************************************
-
-test:
-	XREF	update_DSPEcho
-	XREF	free_DSPEcho
-
-	lea	.ahibase,a6
-	move.l	4.w,ahib_SysLib(a6)
-	lea	.actrl,a2
-	move.l	#AHIST_S16S,ahiac_BuffType(a2)
-	move.l	#5,ahiac_MaxBuffSamples(a2)
-	move.l	#5,ahiac_BuffSamples(a2)
-
-	lea	.echostruct(pc),a0
-	bsr	update_DSPEcho
-
-	lea	.buffer,a1
-	move.l	#$40000000,(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-	lea	.buffer,a1
-	clr.l	4*0(a1)
-	clr.l	4*1(a1)
-	clr.l	4*2(a1)
-	clr.l	4*3(a1)
-	clr.l	4*4(a1)
-	clr.l	4*5(a1)
-	bsr	do_DSPEchoStereo16
-
-
-
-	bsr	free_DSPEcho
-	rts
-
-.ahibase
-	blk.b	AHIBase_SIZEOF
-.actrl
-	blk.b	AHIPrivAudioCtrl_SIZEOF,0
-.echostruct
-	dc.l	AHIET_DSPECHO			; ahie_Effect
-	dc.l	3				; ahiede_Delay
-	dc.l	$8000				; ahiede_Feedback
-	dc.l	$10000				; ahiede_Mix
-	dc.l	$0				; ahiede_Cross
-.buffer
-	dc.w	$0000,$0000
-	blk.l	5
-
-
-*******************************************************************************
-
-DSPECHO_PRE	MACRO
-LOCALSIZE	SET	4
-	subq.l	#LOCALSIZE,sp			;Local variable
-
-	move.l	ahiac_EffDSPEchoStruct(a2),a0
-
-	move.l	ahiac_BuffSamples(a2),(sp)	;Looped
-	move.l	ahiecho_Offset(a0),d6
-	move.l	ahiecho_SrcPtr(a0),a3
-	move.l	ahiecho_DstPtr(a0),a6
-.loop
-	tst.l	(sp)
-	ble	.exit
-	cmp.l	ahiecho_EndPtr(a0),a3
-	blo	.src_ok
-	sub.l	ahiecho_BufferSize(a0),a3
-.src_ok
-	cmp.l	ahiecho_EndPtr(a0),a6
-	blo	.dst_ok
-	sub.l	ahiecho_BufferSize(a0),a6
-.dst_ok
-	move.l	ahiac_BuffSamples(a2),d0
-	add.l	ahiecho_Delay(a0),d0
-	cmp.l	d0,d6
-	blo	.offs_ok
-	sub.l	d0,d6
-.offs_ok
-	cmp.l	ahiac_BuffSamples(a2),d6
-	bhs	.hi_buffsamples
-	move.l	ahiac_BuffSamples(a2),d7
-	sub.l	d6,d7
-	bra	.echo
-.hi_buffsamples
-	cmp.l	ahiecho_Delay(a0),d6
-	bhi	.hi_delay
-	move.l	ahiac_BuffSamples(a2),d7
-	bra	.echo
-.hi_delay
-	move.l	ahiac_BuffSamples(a2),d7
-	add.l	ahiecho_Delay(a0),d7
-	sub.l	d6,d7
-
-.echo
-	sub.l	d7,(sp)
-	bpl	.loopsleft_ok
-	add.l	(sp),d7				;Gives Max((sp),d7)
-	clr.l	(sp)
-.loopsleft_ok
-	add.l	d7,d6
-	subq.l	#1,d7
-	bmi	.exit				;This is an error (should not happen)
-.echoloop
-	ENDM
-
-
-DSPECHO_POST	MACRO
-	dbf	d7,.echoloop
-	bra	.loop
-.exit
-	move.l	d6,ahiecho_Offset(a0)
-	move.l	a3,ahiecho_SrcPtr(a0)
-	move.l	a6,ahiecho_DstPtr(a0)
-
-	addq.l	#LOCALSIZE,sp
-	rts
-	ENDM
-
-
-
-do_DSPEchoMono16:
-	DSPECHO_PRE
-;in:
-* d0-d6	Scratch
-* a1	& x[n]           (Advance)
-* a3	& d[n-N]         (Advance)
-* a6	& d[n]           (Advance)
-
-	move.w	(a1),d0				;Get sample x[n]
-	move.w	d0,d1
-	muls.w	ahiecho_MixN(a0),d0
-	move.w	(a3)+,d3			;Get delayed sample d[n-N]
-	move.w	d3,d2
-	muls.w	ahiecho_MixD(a0),d3
-	add.l	d0,d3
-	asr.l	#8,d3
-	asr.l	#8-1,d3
-	move.w	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
-
-	addq.w	#1,d2				;Fix for -1
-	muls.w	ahiecho_FeedbackDS(a0),d2	;d2=FeedbackDS*d[n-N]
-
-	muls.w	ahiecho_FeedbackNS(a0),d1
-	add.l	d1,d2				;d2=...+FeedbackNS*x[n]
-
-	move.w	d2,(a6)+			;store d2
-	DSPECHO_POST
-
-
-do_DSPEchoStereo16:
-	DSPECHO_PRE
-;in:
-* d0-d6	Scratch
-* a1	& x[n]           (Advance)
-* a3	& d[n-N]         (Advance)
-* a6	& d[n]           (Advance)
-
-	move.w	(a1),d0				;Get left sample x[n]
-	move.w	d0,d1
-	muls.w	ahiecho_MixN(a0),d0
-	move.w	(a3)+,d3			;Get left delayed sample d[n-N]
-	move.w	d3,d2
-	muls.w	ahiecho_MixD(a0),d3
-	add.l	d0,d3
-	asr.l	#8,d3
-	asr.l	#8-1,d3
-	move.w	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
-
-	move.w	(a1),d0				;Get right sample x[n]
-	move.w	d0,d4
-	muls.w	ahiecho_MixN(a0),d0
-	move.w	(a3)+,d3			;Get right delayed sample d[n-N]
-	move.w	d3,d5
-	muls.w	ahiecho_MixD(a0),d3
-	add.l	d0,d3
-	asr.l	#8,d3
-	asr.l	#8-1,d3
-	move.w	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
-
-	addq.w	#1,d2				;Fix for -1
-	move.w	d2,d0
-	muls.w	ahiecho_FeedbackDS(a0),d2	;d2=FeedbackDS*d[n-N] (left)
-	muls.w	ahiecho_FeedbackDO(a0),d0
-
-	addq.w	#1,d5				;Fix for -1
-	move.w	d5,d3
-	muls.w	ahiecho_FeedbackDS(a0),d5	;d5=FeedbackDS*d[n-N] (right)
-	muls.w	ahiecho_FeedbackDO(a0),d3
-
-	add.l	d3,d2				;d2=...+FeedbackDO*d[n-N]
-	add.l	d0,d5				;d5=...+FeedbackDO*d[n-N]
-
-	move.w	d1,d0
-	muls.w	ahiecho_FeedbackNS(a0),d0
-	add.l	d0,d2				;d2=...+FeedbackNS*x[n]
-	muls.w	ahiecho_FeedbackNO(a0),d1
-	add.l	d1,d5				;d5=...+FeedbackNO*x[n]
-
-	move.w	d4,d0
-	muls.w	ahiecho_FeedbackNO(a0),d0
-	add.l	d0,d2				;d2=...+FeedbackNO*x[n]
-	muls.w	ahiecho_FeedbackNS(a0),d4
-	add.l	d4,d5				;d5=...+FeedbackNS*x[n]
-
-;	asl.l	#1,d2
-;	asr.l	#8,d5
-;	asr.l	#8-1,d5
-	swap.w	d5
-	move.w	d5,d2
-	move.l	d2,(a6)+			;store d1 and d4
-	DSPECHO_POST
-
-
-
-do_DSPEchoMono32:
-	DSPECHO_PRE
-;in:
-* d0-d6	Scratch
-* a1	& x[n]           (Advance)
-* a3	& d[n-N]         (Advance)
-* a6	& d[n]           (Advance)
-
-*** The delay buffer is only 16 bit, and only the upper word of the 32 bit
-*** input data is used!
-
-	move.w	(a1),d0				;Get sample x[n] (high word)
-	move.w	d0,d1
-	muls.w	ahiecho_MixN(a0),d0
-	move.w	(a3)+,d3			;Get delayed sample d[n-N]
-	move.w	d3,d2
-	muls.w	ahiecho_MixD(a0),d3
-	add.l	d0,d3
-	move.l	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
-
-	addq.w	#1,d2				;Fix for -1
-	muls.w	ahiecho_FeedbackDS(a0),d2	;d2=FeedbackDS*d[n-N]
-
-	muls.w	ahiecho_FeedbackNS(a0),d1
-	add.l	d1,d2				;d2=...+FeedbackNS*x[n]
-
-	move.w	d2,(a6)+			;store d2
-	DSPECHO_POST
-
-do_DSPEchoStereo32:
-	DSPECHO_PRE
-;in:
-* d0-d6	Scratch
-* a1	& x[n]           (Advance)
-* a3	& d[n-N]         (Advance)
-* a6	& d[n]           (Advance)
-
-*** The delay buffer is only 16 bit, and only the upper word of the 32 bit
-*** input data is used!
-
-	move.w	(a1),d0				;Get left sample x[n] (high word)
-	move.w	d0,d1
-	muls.w	ahiecho_MixN(a0),d0
-	move.w	(a3)+,d3			;Get left delayed sample d[n-N]
-	move.w	d3,d2
-	muls.w	ahiecho_MixD(a0),d3
-	add.l	d0,d3
-	move.l	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
-
-	move.w	(a1),d0				;Get right sample x[n] (high word)
-	move.w	d0,d4
-	muls.w	ahiecho_MixN(a0),d0
-	move.w	(a3)+,d3			;Get right delayed sample d[n-N]
-	move.w	d3,d5
-	muls.w	ahiecho_MixD(a0),d3
-	add.l	d0,d3
-	move.l	d3,(a1)+			;x[n]=MixN*x[n]+MixD*d[n-N]
-
-	addq.w	#1,d2				;Fix for -1
-	move.w	d2,d0
-	muls.w	ahiecho_FeedbackDS(a0),d2	;d2=FeedbackDS*d[n-N] (left)
-	muls.w	ahiecho_FeedbackDO(a0),d0
-
-	addq.w	#1,d5				;Fix for -1
-	move.w	d5,d3
-	muls.w	ahiecho_FeedbackDS(a0),d5	;d5=FeedbackDS*d[n-N] (right)
-	muls.w	ahiecho_FeedbackDO(a0),d3
-
-	add.l	d3,d2				;d2=...+FeedbackDO*d[n-N]
-	add.l	d0,d5				;d5=...+FeedbackDO*d[n-N]
-
-	move.w	d1,d0
-	muls.w	ahiecho_FeedbackNS(a0),d0
-	add.l	d0,d2				;d2=...+FeedbackNS*x[n]
-	muls.w	ahiecho_FeedbackNO(a0),d1
-	add.l	d1,d5				;d5=...+FeedbackNO*x[n]
-
-	move.w	d4,d0
-	muls.w	ahiecho_FeedbackNO(a0),d0
-	add.l	d0,d2				;d2=...+FeedbackNO*x[n]
-	muls.w	ahiecho_FeedbackNS(a0),d4
-	add.l	d4,d5				;d5=...+FeedbackNS*x[n]
-
-	swap.w	d5
-	move.w	d5,d2
-	move.l	d2,(a6)+			;store d1 and d4
-	DSPECHO_POST
-
-
- ENDC
 
 ;in:
 * d0	AddI
@@ -1469,54 +1245,10 @@ UDivMod64:
 * d1	ScaleRight (if needed)
 * a0	Pointer to correct Offs#? label
 
-FixVolSilence:
-	lea	OffsSilence(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
 
-FixVolByteMV:
-	add.l	d1,d0
-	lsr.l	#8,d0
-	lea	OffsByteMV(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
+;******************************************************************************
 
-FixVolByteMVH:
-	add.l	d1,d0
-	lea	OffsByteMVH(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolUByteMVH:
-	add.l	d1,d0
-	lea	OffsUByteMVH(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteMVT:
-	add.l	d1,d0
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
-	lea	OffsByteMVT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
+;FIXIT -- OBSOLETE!
 
 FixVolUByteMVT:
 	add.l	d1,d0
@@ -1525,94 +1257,6 @@ FixVolUByteMVT:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
 	lea	OffsByteMVT(pc),a0		;Reuse!
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVl:
-	lsr.l	#8,d0
-	lea	OffsByteSVl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVr:
-	lsr.l	#8,d1
-	lea	OffsByteSVr(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVP:
-	lsr.l	#8,d0
-	lsr.l	#8,d1
-	lea	OffsByteSVP(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVPH:
-	lea	OffsByteSVPH(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-
-FixVolUByteSVPH:
-	lea	OffsUByteSVPH(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVTl:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
-	lea	OffsByteSVTl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVTr:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
-	lea	OffsByteSVTr(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolByteSVPT:
-	move.l	ahiac_MultTableS(a2),a0
-	lsr.l	#TABLESHIFT-(8+2),d0
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
-	add.l	a0,d0
-	lsr.l	#TABLESHIFT-(8+2),d1
-	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
-	add.l	a0,d1
-	lea	OffsByteSVPT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolUByteSVTl:
@@ -1621,10 +1265,6 @@ FixVolUByteSVTl:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
 	lea	OffsByteSVTl(pc),a0		;Reuse!
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolUByteSVTr:
@@ -1633,10 +1273,6 @@ FixVolUByteSVTr:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
 	add.l	a0,d1
 	lea	OffsByteSVTr(pc),a0		;Reuse!
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolUByteSVPT:
@@ -1648,33 +1284,164 @@ FixVolUByteSVPT:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
 	add.l	a0,d1
 	lea	OffsByteSVPT(pc),a0		;Reuse!
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
+
+
+;******************************************************************************
+
+FixVolSilence:
+	lea	OffsSilence(pc),a0
+	rts
+
+;******************************************************************************
+
+FixVolByteMV:
+	add.l	d1,d0
+	asr.l	#8,d0
+	lea	OffsByteMV(pc),a0
+	rts
+
+FixVolByteMVT:
+	add.l	d1,d0
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lea	OffsByteMVT(pc),a0
+	rts
+
+FixVolByteSVl:
+	asr.l	#8,d0
+	lea	OffsByteSVl(pc),a0
+	rts
+
+FixVolByteSVr:
+	asr.l	#8,d1
+	lea	OffsByteSVr(pc),a0
+	rts
+
+FixVolByteSVP:
+	asr.l	#8,d0
+	asr.l	#8,d1
+	lea	OffsByteSVP(pc),a0
+	rts
+
+FixVolByteSVTl:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lea	OffsByteSVTl(pc),a0
+	rts
+
+FixVolByteSVTr:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsByteSVTr(pc),a0
+	rts
+
+FixVolByteSVPT:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsByteSVPT(pc),a0
+	rts
+
+FixVolByteMVH:
+	add.l	d1,d0
+	lea	OffsByteMVH(pc),a0
+	rts
+
+FixVolByteSVPH:
+	lea	OffsByteSVPH(pc),a0
+	rts
+
+;******************************************************************************
+
+FixVolBytesMV:
+	asr.l	#8,d0
+	asr.l	#8,d1
+	lea	OffsBytesMV(pc),a0
+	rts
+
+FixVolBytesMVT:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsBytesMVT(pc),a0
+	rts
+
+FixVolBytesSVl:
+	asr.l	#8,d0
+	lea	OffsBytesSVl(pc),a0
+	rts
+
+FixVolBytesSVr:
+	asr.l	#8,d1
+	lea	OffsBytesSVr(pc),a0
+	rts
+
+FixVolBytesSVP:
+	asr.l	#8,d0
+	asr.l	#8,d1
+	lea	OffsBytesSVP(pc),a0
+	rts
+
+FixVolBytesSVTl:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lea	OffsBytesSVTl(pc),a0
+	rts
+
+FixVolBytesSVTr:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsBytesSVTr(pc),a0
+	rts
+
+FixVolBytesSVPT:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsBytesSVPT(pc),a0
+	rts
+
+FixVolBytesMVH:
+	lea	OffsBytesMVH(pc),a0
+	rts
+
+FixVolBytesSVPH:
+	lea	OffsBytesSVPH(pc),a0
+	rts
+
+;******************************************************************************
 
 FixVolWordMV:
 	add.l	d1,d0
  IFGE	__CPU-68020
-	lsr.l	#1,d0
+	asr.l	#1,d0
  ELSE
-	lsr.l	#8,d0
+	asr.l	#8,d0
  ENDC
 	lea	OffsWordMV(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolWordMVH:
-	add.l	d1,d0
-	lea	OffsWordMVH(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordMVT:
@@ -1684,59 +1451,35 @@ FixVolWordMVT:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
 	lea	OffsWordMVT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordSVl:
  IFGE	__CPU-68020
-	lsr.l	#1,d0
+	asr.l	#1,d0
  ELSE
-	lsr.l	#8,d0
+	asr.l	#8,d0
  ENDC
 	lea	OffsWordSVl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordSVr:
  IFGE	__CPU-68020
-	lsr.l	#1,d1
+	asr.l	#1,d1
  ELSE
-	lsr.l	#8,d1
+	asr.l	#8,d1
  ENDC
 	lea	OffsWordSVr(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordSVP:
  IFGE	__CPU-68020
- 	lsr.l	#1,d0
- 	lsr.l	#1,d1
+ 	asr.l	#1,d0
+ 	asr.l	#1,d1
  ELSE
-	lsr.l	#8,d0
-	lsr.l	#8,d1
+	asr.l	#8,d0
+	asr.l	#8,d1
  ENDC
 	lea	OffsWordSVP(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
-	rts
-
-FixVolWordSVPH:
-	lea	OffsWordSVPH(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordSVTl:
@@ -1745,10 +1488,6 @@ FixVolWordSVTl:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
 	add.l	a0,d0
 	lea	OffsWordSVTl(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordSVTr:
@@ -1757,10 +1496,6 @@ FixVolWordSVTr:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
 	add.l	a0,d1
 	lea	OffsWordSVTr(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
 
 FixVolWordSVPT:
@@ -1772,11 +1507,89 @@ FixVolWordSVPT:
 	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
 	add.l	a0,d1
 	lea	OffsWordSVPT(pc),a0
-	and.w	#AHIST_BW,d3
-	beq.b	.fw
-	add.w	#OffsetBackward,a0
-.fw
 	rts
+
+FixVolWordMVH:
+	add.l	d1,d0
+	lea	OffsWordMVH(pc),a0
+	rts
+
+FixVolWordSVPH:
+	lea	OffsWordSVPH(pc),a0
+	rts
+
+;******************************************************************************
+
+FixVolWordsMV:
+	asr.l	#1,d0
+	asr.l	#1,d1
+	lea	OffsWordsMV(pc),a0
+	rts
+
+FixVolWordsMVT:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsWordsMVT(pc),a0
+	rts
+
+FixVolWordsSVl:
+	asr.l	#1,d0
+	lea	OffsWordsSVl(pc),a0
+	rts
+
+FixVolWordsSVr:
+	asr.l	#1,d1
+	lea	OffsWordsSVr(pc),a0
+	rts
+
+FixVolWordsSVP:
+ 	asr.l	#1,d0
+ 	asr.l	#1,d1
+	lea	OffsWordsSVP(pc),a0
+	rts
+
+FixVolWordsSVTl:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lea	OffsWordsSVTl(pc),a0
+	rts
+
+FixVolWordsSVTr:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsWordsSVTr(pc),a0
+	rts
+
+FixVolWordsSVPT:
+	move.l	ahiac_MultTableS(a2),a0
+	lsr.l	#TABLESHIFT-(8+2),d0
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d0
+	add.l	a0,d0
+	lsr.l	#TABLESHIFT-(8+2),d1
+	and.l	#(TABLEMAXVOL*2-1)<<(8+2),d1
+	add.l	a0,d1
+	lea	OffsWordsSVPT(pc),a0
+	rts
+
+FixVolWordsMVH:
+	lea	OffsWordsMVH(pc),a0
+	rts
+
+FixVolWordsSVPH:
+	lea	OffsWordsSVPH(pc),a0
+	rts
+
+;******************************************************************************
+
 
 ;------------------------------------------------------------------------------
 * Overview: - M=Mono S=Stereo V=Volume P=Panning T=Table H=HiFi
@@ -1796,9 +1609,6 @@ FixVolWordSVPT:
 * AddByteSVTl	327	²	5 bit ²	No (Left)
 * AddByteSVTr	324	²	5 bit ²	No (Right)
 * AddByteSVPT	384	²	5 bit ²	Yes
-*
-* AddUByteMVH		None	±16 bit	-
-* AddUByteSVPH		None	±16 bit	Yes
 *
 * AddWordMV	438	None	±15 bit	-
 * AddWordMVH		None	±16 bit	Yes
@@ -1851,65 +1661,959 @@ OffsetTable:
 OffsSilence:	dc.w	AddSilence-*
 
 OffsByteMV:	dc.w	AddByteMV-*
-OffsByteMVH:	dc.w	AddByteMVH-*
 OffsByteMVT:	dc.w	AddByteMVT-*
 OffsByteSVl:	dc.w	AddByteSVl-*
 OffsByteSVr:	dc.w	AddByteSVr-*
 OffsByteSVP:	dc.w	AddByteSVP-*
-OffsByteSVPH:	dc.w	AddByteSVPH-*
 OffsByteSVTl:	dc.w	AddByteSVTl-*
 OffsByteSVTr:	dc.w	AddByteSVTr-*
 OffsByteSVPT:	dc.w	AddByteSVPT-*
+OffsByteMVH:	dc.w	AddByteMVH-*
+OffsByteSVPH:	dc.w	AddByteSVPH-*
 
-OffsUByteMVH:	dc.w	AddUByteMVH-*
-OffsUByteSVPH:	dc.w	AddUByteSVPH-*
+OffsBytesMV:	dc.w	AddBytesMV-*
+OffsBytesMVT:	dc.w	AddBytesMVT-*
+OffsBytesSVl:	dc.w	AddBytesSVl-*
+OffsBytesSVr:	dc.w	AddBytesSVr-*
+OffsBytesSVP:	dc.w	AddBytesSVP-*
+OffsBytesSVTl:	dc.w	AddBytesSVTl-*
+OffsBytesSVTr:	dc.w	AddBytesSVTr-*
+OffsBytesSVPT:	dc.w	AddBytesSVPT-*
+OffsBytesMVH:	dc.w	AddBytesMVH-*
+OffsBytesSVPH:	dc.w	AddBytesSVPH-*
 
 OffsWordMV:	dc.w	AddWordMV-*
-OffsWordMVH:	dc.w	AddWordMVH-*
 OffsWordMVT:	dc.w	AddWordMVT-*
 OffsWordSVl:	dc.w	AddWordSVl-*
 OffsWordSVr:	dc.w	AddWordSVr-*
 OffsWordSVP:	dc.w	AddWordSVP-*
-OffsWordSVPH:	dc.w	AddWordSVPH-*
 OffsWordSVTl:	dc.w	AddWordSVTl-*
 OffsWordSVTr:	dc.w	AddWordSVTr-*
 OffsWordSVPT:	dc.w	AddWordSVPT-*
+OffsWordMVH:	dc.w	AddWordMVH-*
+OffsWordSVPH:	dc.w	AddWordSVPH-*
+
+OffsWordsMV:	dc.w	AddWordsMV-*
+OffsWordsMVT:	dc.w	AddWordsMVT-*
+OffsWordsSVl:	dc.w	AddWordsSVl-*
+OffsWordsSVr:	dc.w	AddWordsSVr-*
+OffsWordsSVP:	dc.w	AddWordsSVP-*
+OffsWordsSVTl:	dc.w	AddWordsSVTl-*
+OffsWordsSVTr:	dc.w	AddWordsSVTr-*
+OffsWordsSVPT:	dc.w	AddWordsSVPT-*
+OffsWordsMVH:	dc.w	AddWordsMVH-*
+OffsWordsSVPH:	dc.w	AddWordsSVPH-*
 
 
 OffsetBackward	EQU	*-OffsetTable
+
 OffsSilenceB:	dc.w	AddSilenceB-*
 
-OffsByteBMV:	dc.w	AddByteBMV-*
-OffsByteBMVH:	dc.w	AddByteBMVH-*
-OffsByteBMVT:	dc.w	AddByteBMVT-*
-OffsByteBSVl:	dc.w	AddByteBSVl-*
-OffsByteBSVr:	dc.w	AddByteBSVr-*
-OffsByteBSVP:	dc.w	AddByteBSVP-*
-OffsByteBSVPH:	dc.w	AddByteBSVPH-*
-OffsByteBSVTl:	dc.w	AddByteBSVTl-*
-OffsByteBSVTr:	dc.w	AddByteBSVTr-*
-OffsByteBSVPT:	dc.w	AddByteBSVPT-*
+OffsByteMVB:	dc.w	AddByteMVB-*
+OffsByteMVTB:	dc.w	AddByteMVTB-*
+OffsByteSVlB:	dc.w	AddByteSVlB-*
+OffsByteSVrB:	dc.w	AddByteSVrB-*
+OffsByteSVPB:	dc.w	AddByteSVPB-*
+OffsByteSVTlB:	dc.w	AddByteSVTlB-*
+OffsByteSVTrB:	dc.w	AddByteSVTrB-*
+OffsByteSVPTB:	dc.w	AddByteSVPTB-*
+OffsByteMVHB:	dc.w	AddByteMVHB-*
+OffsByteSVPHB:	dc.w	AddByteSVPHB-*
 
-OffsUByteBMVH:	dc.w	AddUByteBMVH-*
-OffsUByteBSVPH:	dc.w	AddUByteBSVPH-*
+OffsBytesMVB:	dc.w	AddBytesMVB-*
+OffsBytesMVTB:	dc.w	AddBytesMVTB-*
+OffsBytesSVlB:	dc.w	AddBytesSVlB-*
+OffsBytesSVrB:	dc.w	AddBytesSVrB-*
+OffsBytesSVPB:	dc.w	AddBytesSVPB-*
+OffsBytesSVTlB:	dc.w	AddBytesSVTlB-*
+OffsBytesSVTrB:	dc.w	AddBytesSVTrB-*
+OffsBytesSVPTB:	dc.w	AddBytesSVPTB-*
+OffsBytesMVHB:	dc.w	AddBytesMVHB-*
+OffsBytesSVPHB:	dc.w	AddBytesSVPHB-*
 
-OffsWordBMV:	dc.w	AddWordBMV-*
-OffsWordBMVH:	dc.w	AddWordBMVH-*
-OffsWordBMVT:	dc.w	AddWordBMVT-*
-OffsWordBSVl:	dc.w	AddWordBSVl-*
-OffsWordBSVr:	dc.w	AddWordBSVr-*
-OffsWordBSVP:	dc.w	AddWordBSVP-*
-OffsWordBSVPH:	dc.w	AddWordBSVPH-*
-OffsWordBSVTl:	dc.w	AddWordBSVTl-*
-OffsWordBSVTr:	dc.w	AddWordBSVTr-*
-OffsWordBSVPT:	dc.w	AddWordBSVPT-*
+OffsWordMVB:	dc.w	AddWordMVB-*
+OffsWordMVTB:	dc.w	AddWordMVTB-*
+OffsWordSVlB:	dc.w	AddWordSVlB-*
+OffsWordSVrB:	dc.w	AddWordSVrB-*
+OffsWordSVPB:	dc.w	AddWordSVPB-*
+OffsWordSVTlB:	dc.w	AddWordSVTlB-*
+OffsWordSVTrB:	dc.w	AddWordSVTrB-*
+OffsWordSVPTB:	dc.w	AddWordSVPTB-*
+OffsWordMVHB:	dc.w	AddWordMVHB-*
+OffsWordSVPHB:	dc.w	AddWordSVPHB-*
+
+OffsWordsMVB:	dc.w	AddWordsMVB-*
+OffsWordsMVTB:	dc.w	AddWordsMVTB-*
+OffsWordsSVlB:	dc.w	AddWordsSVlB-*
+OffsWordsSVrB:	dc.w	AddWordsSVrB-*
+OffsWordsSVPB:	dc.w	AddWordsSVPB-*
+OffsWordsSVTlB:	dc.w	AddWordsSVTlB-*
+OffsWordsSVTrB:	dc.w	AddWordsSVTrB-*
+OffsWordsSVPTB:	dc.w	AddWordsSVPTB-*
+OffsWordsMVHB:	dc.w	AddWordsMVHB-*
+OffsWordsSVPHB:	dc.w	AddWordsSVPHB-*
+
+
 		dc.w	-1
 
 	cnop	0,16
 	ds.b	16
 AlignStart:
 
+; To make the backward-mixing routines, do this:
+; 1) Copy all mixing routines.
+; 2) Replace all occurences of ':' with 'B:' (all labels)
+; 3) Replace all occurences of 'add.w d6,d4' with 'sub.w d6,d4'
+; 4) Replace all occurences of 'addx.l d5,d3' with 'subx.l d5,d3'
+; 5) AddSilence uses different source registers for add/addx.
+; 6) The HiFi routines are different.
+
+
+*******************************************************************************
+; HIFI routines (unoptimized, only 020+!)
 ;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	-65536..65536
+AddByteMVH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.b	-1(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sample
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.b	0(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddByteSVPH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.b	-1(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sample
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.b	0(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	move.l	d7,a0
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	move.l	a0,d7
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddBytesMVH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.b	-2(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleL
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.b	0(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.b	-1(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleR
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.b	1(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddBytesSVPH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.b	-2(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleL
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.b	0(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.b	-1(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleR
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.b	1(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddWordMVH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.w	-2(a3,d3.l*2),d7
+	ext.l	d7
+.got_sample
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.w	0(a3,d3.l*2),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddWordSVPH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.w	-2(a3,d3.l*2),d7
+	ext.l	d7
+.got_sample
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.w	0(a3,d3.l*2),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	move.l	d7,a0
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	move.l	a0,d7
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddWordsMVH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.w	-4(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleL
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.w	0(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.w	-2(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleR
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.w	2(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;in
+* d1.l	-65536..65536
+* d2.l	-65536..65536
+AddWordsSVPH:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.w	-4(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleL
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.w	0(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.w	-2(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleR
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	move.l	d7,a0
+	move.w	2(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	muls.l	d4,d7
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+
+;------------------------------------------------------------------------------
+
+AddByteMVHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.b	1(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sample
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.b	0(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+AddByteSVPHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.b	1(a3,d3.l),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sample
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.b	0(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	move.l	d7,a0
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	move.l	a0,d7
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+AddBytesMVHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.b	2(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleL
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.b	0(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.b	3(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleR
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.b	1(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+AddBytesSVPHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.b	2(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleL
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.b	0(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.b	3(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+.got_sampleR
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.b	1(a3,d3.l*2),d7
+	lsl.w	#8,d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+AddWordMVHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.w	2(a3,d3.l*2),d7
+	ext.l	d7
+.got_sample
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.w	0(a3,d3.l*2),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+AddWordSVPHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_first
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sample
+.not_first
+	move.w	2(a3,d3.l*2),d7
+	ext.l	d7
+.got_sample
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.w	0(a3,d3.l*2),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.null
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.null
+	move.l	d7,a0
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	move.l	a0,d7
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+
+AddWordsMVHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.w	4(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleL
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.w	0(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.w	6(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleR
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.w	2(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+AddWordsSVPHB:
+ IFGE	__CPU-68020
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstL
+	move.l	cd_LastSampleL(a5),d7
+	bra	.got_sampleL
+.not_firstL
+	move.w	4(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleL
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.w	0(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleL(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullL
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullL
+	muls.l	d1,d7
+	add.l	d7,(a4)+
+
+	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
+	bne	.not_firstR
+	move.l	cd_LastSampleR(a5),d7
+	bra	.got_sampleR
+.not_firstR
+	move.w	6(a3,d3.l*4),d7
+	ext.l	d7
+.got_sampleR
+	muls.l	d4,d7
+	move.l	d7,a0
+	move.w	2(a3,d3.l*4),d7
+	ext.l	d7
+	move.l	d7,cd_TempLastSampleR(a5)
+	neg.w	d4			;(65536-offset fraction)
+	beq.b	.nullR
+	muls.l	d4,d7
+	neg.w	d4
+	add.l	a0,d7
+	asr.l	#8,d7
+	asr.l	#8,d7
+.nullR
+	muls.l	d2,d7
+	add.l	d7,(a4)+
+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+ ENDC
+	rts
+
+;******************************************************************************
 	cnop	0,16
 
 AddSilence:
@@ -1946,11 +2650,47 @@ AddSilence:
 	add.l	d0,a4			;New buffer pointer
 	rts
 
-
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+AddSilenceB:
+ IFGE	__CPU-68020
+	move.l	d5,d1			;AddI<65535
+	swap.w	d1
+	move.w	d6,d1			;d1=Add<<16
+	mulu.l	d0,d2:d1
+	sub.w	d0,d4			;New OffsetF (X)
+	move.w	d1,d0
+	move.w	d2,d1
+	swap.w	d1			;d1=d2:d1>>16
+	subx.l	d1,d3			;New OffsetI
+ ELSE
+	move.l	d5,d1
+	mulu.w	d0,d1			;OffsI*BuffSamples
+	add.l	d1,d3			;New OffsetI (1)
+	move.l	d6,d2
+	mulu.w	d0,d2			;OffsF*BuffSamples...
+	sub.w	d2,d4			;New OffsetF (X)
+	clr.w	d2
+	swap.w	d2			;...>>16
+	subx.l	d2,d3			;New OffsetI (2)
+ ENDC
+	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
+	beq.b	.nostereo
+	lsl.l	#1,d0
+.nostereo
+	btst.b	#AHIACB_HIFI,ahiac_Flags+3(a2)
+	beq.b	.nohifi
+	lsl.l	#1,d0
+.nohifi
+	lsl.l	#1,d0
+	add.l	d0,a4			;New buffer pointer
+	rts
+
+;******************************************************************************
+	cnop	0,16
+
+;in
 * d1.w	-256..256
 AddByteMV:
 	lsr.w	#1,d0
@@ -1978,7 +2718,7 @@ AddByteMV:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	Pointer in multiplication table
 AddByteMVT:
 	move.l	d1,a0
@@ -2021,7 +2761,7 @@ AddByteMVT:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.w	-256..256
 AddByteSVl:
 	lsr.w	#1,d0
@@ -2051,7 +2791,7 @@ AddByteSVl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d2.w	-256..256
 AddByteSVr:
 	moveq	#0,d7
@@ -2064,7 +2804,7 @@ AddByteSVr:
 	addq.l	#2,a4
 	ext.w	d7
 	muls.w	d2,d7
-	add.w	d7,(a4)+		;skip and add
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
@@ -2072,7 +2812,7 @@ AddByteSVr:
 	addq.l	#2,a4
 	ext.w	d7
 	muls.w	d2,d7
-	add.w	d7,(a4)+		;skip and add
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	dbf	d0,.nextsample
@@ -2082,7 +2822,7 @@ AddByteSVr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.w	-256..256
 * d2.w	-256..256
 AddByteSVP:
@@ -2119,7 +2859,7 @@ AddByteSVP:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	Pointer in multiplication table
 AddByteSVTl:
 	move.l	d1,a0
@@ -2162,7 +2902,7 @@ AddByteSVTl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d2.l	Pointer in multiplication table
 AddByteSVTr:
 	move.l	d2,a0
@@ -2207,7 +2947,7 @@ AddByteSVTr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	Pointer in multiplication table
 * d2.l	Pointer in multiplication table
 AddByteSVPT:
@@ -2264,10 +3004,280 @@ AddByteSVPT:
 	move.l	d7,a1			;restore a1
 	rts
 
+;******************************************************************************
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+* d2.w	-256..256
+AddBytesMV:
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddBytesMVT:
+	push	a1
+	move.l	d1,a0
+	move.l	d2,a1
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*2),d1
+	add.w	0(a1,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*2),d1
+	add.w	0(a1,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+
+	dbf	d0,.nextsample
+.exit
+	pop	a1
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+AddBytesSVl:
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.w	-256..256
+AddBytesSVr:
+	moveq	#0,d7
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	1(a3,d3.l*2),d7
+	addq.l	#2,a4
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	1(a3,d3.l*2),d7
+	addq.l	#2,a4
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+* d2.w	-256..256
+AddBytesSVP:
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+AddBytesSVTl:
+	move.l	d1,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+	dbf	d0,.nextsample
+.exit
+	rts
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.l	Pointer in multiplication table
+AddBytesSVTr:
+	move.l	d2,a0
+	moveq	#0,d1
+	moveq	#0,d2
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddBytesSVPT:
+	move.l	a1,d7			;save a1
+	move.l	d1,a0
+	move.l	d2,a1
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2
+	add.w	d2,(a4)+
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a1,d1.w*4),d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2
+	add.w	d2,(a4)+
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a1,d1.w*4),d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	move.l	d7,a1			;restore a1
+	rts
+
+;******************************************************************************
+	cnop	0,16
+
+;in
 * d1.l	-32768..32767/-256..256
 AddWordMV:
 * 16/8 bit signed input (8 for '000 version)
@@ -2314,7 +3324,7 @@ AddWordMV:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	Pointer in multiplication table
 AddWordMVT:
 
@@ -2371,7 +3381,7 @@ AddWordMVT:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	-32768..32767/-256..256
 AddWordSVl:
 * 16/8 bit signed input (8 for '000 version)
@@ -2419,7 +3429,7 @@ AddWordSVl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d2.l	-32768..32767/-256..256
 AddWordSVr:
 * 16/8 bit signed input (8 for '000 version)
@@ -2468,7 +3478,7 @@ AddWordSVr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	-32768..32767/-256..256
 * d2.l	-32768..32767/-256..256
 AddWordSVP:
@@ -2542,7 +3552,7 @@ AddWordSVP:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	Pointer in multiplication table
 AddWordSVTl:
 
@@ -2602,7 +3612,7 @@ AddWordSVTl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d2.l	Pointer in multiplication table
 AddWordSVTr:
 
@@ -2661,7 +3671,7 @@ AddWordSVTr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-;in:
+;in
 * d1.l	Pointer in multiplication table
 * d2.l	Pointer in multiplication table
 AddWordSVPT:
@@ -2742,314 +3752,352 @@ AddWordSVPT:
 	pop	a1
 	rts
 
-*******************************************************************************
-; HIFI routines (unoptimized, only 020+!)
-;------------------------------------------------------------------------------
+
+;******************************************************************************
 	cnop	0,16
 
-;in:
-* d1.l	-65536..65536
-AddByteMVH:
- IFGE	__CPU-68020
+;in
+* d1.l	-32768..32767
+* d2.l	-32768..32767
+AddWordsMV:
+* 16 bit signed input
+	lsr.w	#1,d0
+	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	-1(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	move.l	d7,a0
-	move.b	0(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	muls.l	d4,d7
-	add.l	a0,d7
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
 	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)
+	move.w	1(a3,d3.l*4),d7
+	muls.w	d2,d7
 	asr.l	#8,d7
-.null
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
+	asr.l	#7,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-;in:
-* d1.l	-65536..65536
-* d2.l	-65536..65536
-AddByteSVPH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	-1(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	move.l	d7,a0
-	move.b	0(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	muls.l	d4,d7
-	add.l	a0,d7
+.1
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
 	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)
+	move.w	1(a3,d3.l*4),d7
+	muls.w	d2,d7
 	asr.l	#8,d7
-.null
-	move.l	d7,a0
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	move.l	a0,d7
-	muls.l	d2,d7
-	add.l	d7,(a4)+
-
+	asr.l	#7,d7
+	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
-	dbf	d0,.nextsample
 .exit
- ENDC
-	rts
-
-;in:
-* d1.l	-65536..65536
-* d2.l	-65536..65536
-AddUByteMVH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	-1(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	move.l	d7,a0
-	move.b	0(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-;in:
-* d1.l	-65536..65536
-* d2.l	-65536..65536
-AddUByteSVPH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	-1(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	move.l	d7,a0
-	move.b	0(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	move.l	a0,d7
-	muls.l	d2,d7
-	add.l	d7,(a4)+
-
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-;in:
-* d1.l	-65536..65536
-* d2.l	-65536..65536
-AddWordMVH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.w	-2(a3,d3.l*2),d7
-	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	move.l	d7,a0
-	move.w	0(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-;in:
-* d1.l	-65536..65536
-* d2.l	-65536..65536
-AddWordSVPH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.w	-2(a3,d3.l*2),d7
-	ext.l	d7
-.got_sample
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	move.l	d7,a0
-	move.w	0(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	muls.l	d4,d7
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	move.l	a0,d7
-	muls.l	d2,d7
-	add.l	d7,(a4)+
-
-	add.w	d6,d4
-	addx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-*******************************************************************************
-
-;------------------------------------------------------------------------------
-	cnop	0,16
-
-AddSilenceB:
- IFGE	__CPU-68020
-	move.l	d5,d1			;AddI<65535
-	swap.w	d1
-	move.w	d6,d1			;d1=Add<<16
-	mulu.l	d0,d2:d1
-	sub.w	d0,d4			;New OffsetF (X)
-	move.w	d1,d0
-	move.w	d2,d1
-	swap.w	d1			;d1=d2:d1>>16
-	subx.l	d1,d3			;New OffsetI
- ELSE
-	move.l	d5,d1
-	mulu.w	d0,d1			;OffsI*BuffSamples
-	add.l	d1,d3			;New OffsetI (1)
-	move.l	d6,d2
-	mulu.w	d0,d2			;OffsF*BuffSamples...
-	sub.w	d2,d4			;New OffsetF (X)
-	clr.w	d2
-	swap.w	d2			;...>>16
-	subx.l	d2,d3			;New OffsetI (2)
- ENDC
-	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
-	beq.b	.nostereo
-	lsl.l	#1,d0
-.nostereo
-	btst.b	#AHIACB_HIFI,ahiac_Flags+3(a2)
-	beq.b	.nohifi
-	lsl.l	#1,d0
-.nohifi
-	lsl.l	#1,d0
-	add.l	d0,a4			;New buffer pointer
 	rts
 
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBMV:
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddWordsMVT:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	push	a1
+	move.l	d1,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	pop	a1
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	-32768..32767
+AddWordsSVl:
+* 16 bit signed input
+	moveq	#15,d2
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	d2,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.l	-32768..32767/
+AddWordsSVr:
+* 16 bit signed input
+	moveq	#15,d1
+
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	d1,d7
+	addq.l	#2,a4
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	d1,d7
+	addq.l	#2,a4
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	-32768..32767/-256..256
+* d2.l	-32768..32767/-256..256
+AddWordsSVP:
+* 16/8 bit signed input (8 for '000 version)
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+AddWordsSVTl:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	move.l	d1,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	addq.l	#2,a4
+
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.l	Pointer in multiplication table
+AddWordsSVTr:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	move.l	d2,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddWordsSVPT:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	push	a1
+	move.l	d1,a0
+	move.l	d2,a1
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	add.w	d6,d4
+	addx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	pop	a1
+	rts
+
+;******************************************************************************
+;**** Backwards ***************************************************************
+;******************************************************************************
+
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+AddByteMVB:
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3075,7 +4123,9 @@ AddByteBMV:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBMVT:
+;in
+* d1.l	Pointer in multiplication table
+AddByteMVTB:
 	move.l	d1,a0
 	moveq	#0,d1
 	lsr.w	#1,d0
@@ -3116,7 +4166,9 @@ AddByteBMVT:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBSVl:
+;in
+* d1.w	-256..256
+AddByteSVlB:
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3144,7 +4196,9 @@ AddByteBSVl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBSVr:
+;in
+* d2.w	-256..256
+AddByteSVrB:
 	moveq	#0,d7
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -3155,7 +4209,7 @@ AddByteBSVr:
 	addq.l	#2,a4
 	ext.w	d7
 	muls.w	d2,d7
-	add.w	d7,(a4)+		;skip and add
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
@@ -3163,7 +4217,7 @@ AddByteBSVr:
 	addq.l	#2,a4
 	ext.w	d7
 	muls.w	d2,d7
-	add.w	d7,(a4)+		;skip and add
+	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
@@ -3173,7 +4227,10 @@ AddByteBSVr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBSVP:
+;in
+* d1.w	-256..256
+* d2.w	-256..256
+AddByteSVPB:
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3207,7 +4264,9 @@ AddByteBSVP:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBSVTl:
+;in
+* d1.l	Pointer in multiplication table
+AddByteSVTlB:
 	move.l	d1,a0
 	moveq	#0,d1
 	lsr.w	#1,d0
@@ -3248,7 +4307,9 @@ AddByteBSVTl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBSVTr:
+;in
+* d2.l	Pointer in multiplication table
+AddByteSVTrB:
 	move.l	d2,a0
 	moveq	#0,d1
 	moveq	#0,d2
@@ -3266,7 +4327,8 @@ AddByteBSVTr:
 	move.w	0(a0,d1.w),d2		;signed multiplication
 	moveq	#0,d1
  ENDC
-	add.l	d2,(a4)+
+	addq.l	#2,a4
+	add.w	d2,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
@@ -3279,7 +4341,8 @@ AddByteBSVTr:
 	move.w	0(a0,d1.w),d2		;signed multiplication
 	moveq	#0,d1
  ENDC
-	add.l	d2,(a4)+
+	addq.l	#2,a4
+	add.w	d2,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
@@ -3289,7 +4352,10 @@ AddByteBSVTr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBSVPT:
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddByteSVPTB:
 	move.l	a1,d7			;save a1
 	move.l	d1,a0
 	move.l	d2,a1
@@ -3343,10 +4409,282 @@ AddByteBSVPT:
 	move.l	d7,a1			;restore a1
 	rts
 
+;******************************************************************************
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+* d2.w	-256..256
+AddBytesMVB:
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBMV:
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddBytesMVTB:
+	push	a1
+	move.l	d1,a0
+	move.l	d2,a1
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*2),d1
+	add.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*2),d1
+	add.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+
+	dbf	d0,.nextsample
+.exit
+	pop	a1
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+AddBytesSVlB:
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.w	-256..256
+AddBytesSVrB:
+	moveq	#0,d7
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	1(a3,d3.l*2),d7
+	addq.l	#2,a4
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	1(a3,d3.l*2),d7
+	addq.l	#2,a4
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.w	-256..256
+* d2.w	-256..256
+AddBytesSVPB:
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d1,d7
+	add.w	d7,(a4)+
+	move.b	1(a3,d3.l*2),d7
+	ext.w	d7
+	muls.w	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+AddBytesSVTlB:
+	move.l	d1,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+	dbf	d0,.nextsample
+.exit
+	rts
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.l	Pointer in multiplication table
+AddBytesSVTrB:
+	move.l	d2,a0
+	moveq	#0,d1
+	moveq	#0,d2
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddBytesSVPTB:
+	move.l	a1,d7			;save a1
+	move.l	d1,a0
+	move.l	d2,a1
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2
+	add.w	d2,(a4)+
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a1,d1.w*4),d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*2),d1
+	move.w	0(a0,d1.w*4),d2
+	add.w	d2,(a4)+
+	move.b	1(a3,d3.l*2),d1
+	move.w	0(a1,d1.w*4),d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	move.l	d7,a1			;restore a1
+	rts
+
+;******************************************************************************
+	cnop	0,16
+
+;in
+* d1.l	-32768..32767/-256..256
+AddWordMVB:
 * 16/8 bit signed input (8 for '000 version)
 	moveq	#15,d2
 
@@ -3391,7 +4729,9 @@ AddWordBMV:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBMVT:
+;in
+* d1.l	Pointer in multiplication table
+AddWordMVTB:
 
 * ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
 
@@ -3446,7 +4786,9 @@ AddWordBMVT:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBSVl:
+;in
+* d1.l	-32768..32767/-256..256
+AddWordSVlB:
 * 16/8 bit signed input (8 for '000 version)
 	moveq	#15,d2
 	lsr.w	#1,d0
@@ -3492,7 +4834,9 @@ AddWordBSVl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBSVr:
+;in
+* d2.l	-32768..32767/-256..256
+AddWordSVrB:
 * 16/8 bit signed input (8 for '000 version)
 	moveq	#15,d1
 
@@ -3504,13 +4848,11 @@ AddWordBSVr:
  IFGE	__CPU-68020
 	move.w	(a3,d3.l*2),d7
 	muls.w	d2,d7
-	lsr.l	d1,d7
+	asr.l	d1,d7
  ELSE
 	move.l	d3,d7
 	add.l	d7,d7
 	move.b	0(a3,d7.l),d7		;high byte
-	sub.w	d6,d4
-	subx.l	d5,d3
 	ext.w	d7
 	muls.w	d2,d7
  ENDC
@@ -3522,13 +4864,11 @@ AddWordBSVr:
  IFGE	__CPU-68020
 	move.w	(a3,d3.l*2),d7
 	muls.w	d2,d7
-	lsr.l	d1,d7
+	asr.l	d1,d7
  ELSE
 	move.l	d3,d7
 	add.l	d7,d7
 	move.b	0(a3,d7.l),d7		;high byte
-	sub.w	d6,d4
-	subx.l	d5,d3
 	ext.w	d7
 	muls.w	d2,d7
  ENDC
@@ -3543,7 +4883,10 @@ AddWordBSVr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBSVP:
+;in
+* d1.l	-32768..32767/-256..256
+* d2.l	-32768..32767/-256..256
+AddWordSVPB:
 * 16/8 bit signed input (8 for '000 version)
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -3554,14 +4897,14 @@ AddWordBSVP:
 	move.w	(a3,d3.l*2),d7
 	move.l	d7,a0
 	muls.w	d1,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
 
 	move.l	a0,d7
 	muls.w	d2,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
@@ -3583,14 +4926,14 @@ AddWordBSVP:
 	move.w	(a3,d3.l*2),d7
 	move.l	d7,a0
 	muls.w	d1,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
 
 	move.l	a0,d7
 	muls.w	d2,d7
-	lsr.l	#8,d7
-	lsr.l	#7,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
 	add.w	d7,(a4)+
  ELSE
 	move.l	d3,d7
@@ -3614,7 +4957,9 @@ AddWordBSVP:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBSVTl:
+;in
+* d1.l	Pointer in multiplication table
+AddWordSVTlB:
 
 * ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
 
@@ -3672,13 +5017,14 @@ AddWordBSVTl:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBSVTr:
+;in
+* d2.l	Pointer in multiplication table
+AddWordSVTrB:
 
 * ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
 
 	move.l	d2,a0
 	moveq	#0,d1
-	moveq	#0,d2
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3699,7 +5045,8 @@ AddWordBSVTr:
 	move.w	0(a0,d1.w),d2		;signed multiplication
 	moveq	#0,d1
  ENDC
-	add.l	d2,(a4)+
+	addq.l	#2,a4
+	add.w	d2,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
@@ -3729,7 +5076,10 @@ AddWordBSVTr:
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddWordBSVPT:
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddWordSVPTB:
 
 * ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
 
@@ -3767,6 +5117,7 @@ AddWordBSVPT:
 
 	move.w	0(a1,d1.w),d2		;signed multiplication
 	add.w	d2,(a4)+
+	moveq	#0,d1
  ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
@@ -3796,6 +5147,7 @@ AddWordBSVPT:
 
 	move.w	0(a1,d1.w),d2		;signed multiplication
 	add.w	d2,(a4)+
+	moveq	#0,d1
  ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
@@ -3806,265 +5158,352 @@ AddWordBSVPT:
 	rts
 
 
-*******************************************************************************
-; HIFI routines (unoptimized, only 020+!)
+;******************************************************************************
+	cnop	0,16
+
+;in
+* d1.l	-32768..32767
+* d2.l	-32768..32767
+AddWordsMVB:
+* 16 bit signed input
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)
+	move.w	1(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)
+	move.w	1(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.exit
+	rts
+
 ;------------------------------------------------------------------------------
 	cnop	0,16
 
-AddByteBMVH:
- IFGE	__CPU-68020
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddWordsMVTB:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	push	a1
+	move.l	d1,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	1(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	muls.l	d4,d7
-	move.l	d7,a0
-	move.b	0(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
- ENDC
+	pop	a1
 	rts
-
-AddByteBSVPH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	1(a3,d3.l),d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	muls.l	d4,d7
-	move.l	d7,a0
-	move.b	0(a3,d3.l*2),d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	move.l	a0,d7
-	muls.l	d2,d7
-	add.l	d7,(a4)+
-
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-AddUByteBMVH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	1(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	muls.l	d4,d7
-	move.l	d7,a0
-	move.b	0(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-AddUByteBSVPH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.b	1(a3,d3.l),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-.got_sample
-	muls.l	d4,d7
-	move.l	d7,a0
-	move.b	0(a3,d3.l*2),d7
-	sub.b	#$80,d7
-	lsl.w	#8,d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	move.l	a0,d7
-	muls.l	d2,d7
-	add.l	d7,(a4)+
-
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-AddWordBMVH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.w	2(a3,d3.l*2),d7
-	ext.l	d7
-.got_sample
-	muls.l	d4,d7
-	move.l	d7,a0
-	move.w	0(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
-AddWordBSVPH:
- IFGE	__CPU-68020
-	subq.w	#1,d0
-	bmi.b	.exit
-.nextsample
-	cmp.l	cd_FirstOffsetI(a5),d3	;Is this the first sample?
-	bne	.not_first
-	move.l	cd_LastSample(a5),d7
-	bra	.got_sample
-.not_first
-	move.w	2(a3,d3.l*2),d7
-	ext.l	d7
-.got_sample
-	muls.l	d4,d7
-	move.l	d7,a0
-	move.w	0(a3,d3.l*2),d7
-	ext.l	d7
-	move.l	d7,cd_TempLastSample(a5)
-	neg.w	d4			;(65536-offset fraction)
-	beq.b	.null
-	muls.l	d4,d7
-	neg.w	d4
-	add.l	a0,d7
-	asr.l	#8,d7
-	asr.l	#8,d7
-.null
-	move.l	d7,a0
-	muls.l	d1,d7
-	add.l	d7,(a4)+
-
-	move.l	a0,d7
-	muls.l	d2,d7
-	add.l	d7,(a4)+
-
-	sub.w	d6,d4
-	subx.l	d5,d3
-	dbf	d0,.nextsample
-.exit
- ENDC
-	rts
-
 
 ;------------------------------------------------------------------------------
-AlignEnd:
+	cnop	0,16
+
+;in
+* d1.l	-32768..32767
+AddWordsSVlB:
+* 16 bit signed input
+	moveq	#15,d2
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	d2,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.l	-32768..32767/
+AddWordsSVrB:
+* 16 bit signed input
+	moveq	#15,d1
+
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	d1,d7
+	addq.l	#2,a4
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	d1,d7
+	addq.l	#2,a4
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	-32768..32767/-256..256
+* d2.l	-32768..32767/-256..256
+AddWordsSVPB:
+* 16/8 bit signed input (8 for '000 version)
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.w	0(a3,d3.l*4),d7
+	muls.w	d1,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+
+	move.w	2(a3,d3.l*4),d7
+	muls.w	d2,d7
+	asr.l	#8,d7
+	asr.l	#7,d7
+	add.w	d7,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+AddWordsSVTlB:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	move.l	d1,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+.1
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	addq.l	#2,a4
+
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d2.l	Pointer in multiplication table
+AddWordsSVTrB:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	move.l	d2,a0
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	addq.l	#2,a4
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	rts
+
+;------------------------------------------------------------------------------
+	cnop	0,16
+
+;in
+* d1.l	Pointer in multiplication table
+* d2.l	Pointer in multiplication table
+AddWordsSVPTB:
+
+* ([h*v]<<8+[l*v])>>8 == [h*v]+[l*v]>>8. The latter is used.
+
+	push	a1
+	move.l	d1,a0
+	move.l	d2,a1
+	moveq	#0,d1
+	lsr.w	#1,d0
+	bcs.b	.1
+	subq.w	#1,d0
+	bmi.b	.exit
+.nextsample
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+.1
+	move.b	0(a3,d3.l*4),d1		;high byte
+	move.w	0(a0,d1.w*4),d2		;signed multiplication
+	move.b	1(a3,d3.l*4),d1		;low byte
+	move.b	2(a0,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+
+	move.b	2(a3,d3.l*4),d1		;high byte
+	move.w	0(a1,d1.w*4),d2		;signed multiplication
+	move.b	3(a3,d3.l*4),d1		;low byte
+	move.b	2(a1,d1.w*4),d1		;unsigned multiplication / 256
+	add.w	d1,d2
+	add.w	d2,(a4)+
+	sub.w	d6,d4
+	subx.l	d5,d3
+	dbf	d0,.nextsample
+.exit
+	pop	a1
+	rts
+
+;------------------------------------------------------------------------------
+AlignEndB:
 
  IFNE	DEBUG
-sample:
+sampleB:
 ;	dc.b	$5,$10,$5,0,-$5,-$10,-$5,0
 	dc.b	$AA,$AA,$AA,$AA,$AA,$AA,$AA,$AA
 sample_len=*-sample
 
 	blk.w	SAMPLES,$5555
-buffer:	blk.b	BUFFER,'*'
-end:
+bufferB:	blk.b	BUFFER,'*'
+endB:
  ENDC

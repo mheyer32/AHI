@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.8  1997/02/01 19:44:18  lcs
+* Added stereo samples
+*
 * Revision 1.7  1997/01/31 19:27:14  lcs
 * Added stereo samples to AHI_LoadSound()
 * Moved the DSPEcho intialization and deintialization routines
@@ -8,9 +11,6 @@
 * Revision 1.6  1997/01/15 18:35:07  lcs
 * AHIB_Dizzy has a better implementation and definition now.
 * (Was BOOL, now pointer to a second tag list)
-*
-* Revision 1.5  1997/01/15 14:59:50  lcs
-* Removed most of the unsigned addroutines
 *
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
@@ -1440,7 +1440,9 @@ clear_DSPMask:
 *           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
 *               ahisi_Type - Format of samples (only two supported).
 *                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
+*                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V3). 
 *                   AHIST_M16S: Mono, 16 bit signed (WORDs).
+*                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V3).
 *               ahisi_Address - Address to the sample array.
 *               ahisi_Length - The size of the array, in samples.
 *               Don't even think of setting ahisi_Address to 0 and
@@ -1467,7 +1469,7 @@ clear_DSPMask:
 *   EXAMPLE
 *
 *   NOTES
-*       There is no need to place a sample array in Chip memory, but it 
+*       There is no need to place a sample array in Chip memory, but it
 *       MUST NOT be swapped out! Allocate your sample memory with the
 *       MEMF_PUBLIC flag set. 
 *
