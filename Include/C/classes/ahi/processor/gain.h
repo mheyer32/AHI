@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHI_GAIN_PROCESSOR_CLASS	"gain.ahi-processor"
+#define AHIC_GainProcessor	"gain.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

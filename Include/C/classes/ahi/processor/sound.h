@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHI_SOUND_PROCESSOR_CLASS	"sound.ahi-processor"
+#define AHIC_SoundProcessor	"sound.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

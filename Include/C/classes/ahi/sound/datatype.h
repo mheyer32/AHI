@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi-sound.class" */
-#define AHI_DATATYPE_SOUND_CLASS	"datatype.ahi-sound"
+#define AHIC_DatatypeSound	"datatype.ahi-sound"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHI_ADDER_PROCESSOR_CLASS	"adder.ahi-processor"
+#define AHIC_AdderProcessor	"adder.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

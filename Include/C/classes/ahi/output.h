@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi.class" */
-#define AHI_OUTPUT_CLASS	"ahi-output.class"
+#define AHIC_Output		"ahi-output.class"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

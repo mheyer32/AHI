@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHI_USERCHAIN_PROCESSOR_CLASS	"userchain.ahi-processor"
+#define AHIC_UserchainProcessor	"userchain.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {

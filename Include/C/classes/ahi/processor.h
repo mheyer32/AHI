@@ -19,7 +19,7 @@
 #endif
 
 /* This class inherits "ahi.class". */
-#define AHI_PROCESSOR_CLASS	"ahi-processor.class"
+#define AHIC_Processor	"ahi-processor.class"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {
@@ -69,10 +69,10 @@ namespace AHI {
 
      enum {
        
-       /* Prepare to process buffer. */
+       /* Prepare to process buffer. Returns TRUE if something happened. */
        _AHIM(_P, Prepare,	(_AHIM_Dummy+9)),
 
-       /* Process buffer. */
+       /* Process buffer. Returns TRUE on success. */
        _AHIM(_P, Process,	(_AHIM_Dummy+10))
      };
 
@@ -81,10 +81,10 @@ namespace AHI {
 
 	OM_ADDMEMBER Add another processor object to the process
 		     chain.  The object will be disposed when this
-		     object is disposed.
+		     object is disposed. Returns TRUE on success.
 
         OM_REMMEMBER Remove another processor object from the process
-                     chain.
+                     chain. Returns TRUE on success.
      */
 
 /*****************************************************************************/
@@ -93,6 +93,13 @@ namespace AHI {
        ULONG	MethodID;
        ULONG	Flags;			/* No flags defined yet */
        UQUAD	CurrentTime;
+     };
+
+/*****************************************************************************/
+
+     enum {
+       _AHIE(_P, ObjectNotReady,		(_AHIE_Dummy+5)),
+       _AHIE(_P, ObjectBusy,			(_AHIE_Dummy+6))
      };
 
 /*****************************************************************************/
