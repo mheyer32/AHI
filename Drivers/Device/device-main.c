@@ -161,12 +161,12 @@ _AHIsub_Start( ULONG                   flags,
 
     
     dd->mixbuffers[ 0 ] = AllocVec( AudioCtrl->ahiac_BuffSize,
-				    MEMF_ANY | MEMF_PUBLIC );
+				    MEMF_ANY | MEMF_CLEAR | MEMF_PUBLIC );
 
     if( dd->mixbuffers[ 0 ] == NULL ) return AHIE_NOMEM;
     
     dd->mixbuffers[ 1 ] = AllocVec( AudioCtrl->ahiac_BuffSize,
-				    MEMF_ANY | MEMF_PUBLIC );
+				    MEMF_ANY | MEMF_CLEAR | MEMF_PUBLIC );
     
     if( dd->mixbuffers[ 1 ] == NULL ) return AHIE_NOMEM;
     
