@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.5 (20.4.97)
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
 ## language italiano
 ## codeset 0
 ;
@@ -110,7 +110,7 @@ Unità Musica
 ; *** Properties box ***
 ;
 msgProperties
-ID Modo\nCampionamento\nAutore\nCopyright\nDriver\nVersione
+ID Modo\nCampionamento\nAutore\nCopyright\nDriver\nVersione\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull

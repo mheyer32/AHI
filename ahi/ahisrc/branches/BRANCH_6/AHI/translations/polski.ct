@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.5 (17.6.97) © Marcin Orîowski <carlos@wfmh.man.szczecin.pl>
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004) © Marcin Orîowski <carlos@wfmh.man.szczecin.pl>
 ## language polski
 ## codeset 0
 ;
@@ -115,7 +115,8 @@ Zapisywanie\n\
 Autor\n\
 Prawa autorskie\n\
 Sterownik\n\
-Wersja
+Wersja\n\
+Annotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull

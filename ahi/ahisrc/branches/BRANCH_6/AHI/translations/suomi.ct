@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.5 (2.6.97)
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
 ## language suomi
 ## codeset 0
 ;
@@ -111,7 +111,7 @@ Musiikkiyksikkö
 ; *** Properties box ***
 ;
 msgProperties
-Tilan ID\nÄänitys\nTekijä\nCopyright\nAjuri\nVersio
+Tilan ID\nÄänitys\nTekijä\nCopyright\nAjuri\nVersio\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull
