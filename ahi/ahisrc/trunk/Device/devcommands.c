@@ -76,8 +76,8 @@ static void UpdateMasterVolume( struct AHIDevUnit *, struct AHIBase * );
 // is called.
 
 void
-DevBeginIO( struct AHIRequest* ioreq,
-            struct AHIBase*    AHIBase )
+_DevBeginIO( struct AHIRequest* ioreq,
+	     struct AHIBase*    AHIBase )
 {
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -122,8 +122,8 @@ DevBeginIO( struct AHIRequest* ioreq,
 // is called.
 
 ULONG
-DevAbortIO( struct AHIRequest* ioreq,
-            struct AHIBase*    AHIBase )
+_DevAbortIO( struct AHIRequest* ioreq,
+	     struct AHIBase*    AHIBase )
 {
   ULONG rc = 0;
   struct AHIDevUnit *iounit;
@@ -562,22 +562,22 @@ FlushCmd ( struct AHIRequest *ioreq,
   // Abort all current IO-requests
   while((ior = (struct AHIRequest *) iounit->ReadList.mlh_Head))
   {
-    DevAbortIO(ior, AHIBase);
+    _DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
   while((ior = (struct AHIRequest *) iounit->PlayingList.mlh_Head))
   {
-    DevAbortIO(ior, AHIBase);
+    _DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
   while((ior = (struct AHIRequest *) iounit->SilentList.mlh_Head))
   {
-    DevAbortIO(ior, AHIBase);
+    _DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
   while((ior = (struct AHIRequest *) iounit->WaitingList.mlh_Head))
   {
-    DevAbortIO(ior, AHIBase);
+    _DevAbortIO(ior, AHIBase);
     ioreq->ahir_Std.io_Actual++;
   }
   TermIO(ioreq,AHIBase);

@@ -34,6 +34,8 @@
 
 #include "header.h"
 #include "gateway.h"
+#include "gatestubs1.h"
+#include "gatestubs2.h"
 #include "localize.h"
 #include "misc.h"
 #include "version.h"
@@ -195,9 +197,9 @@ ALIAS( __UtilityBase, UtilityBase );
 ******************************************************************************/
 
 struct AHIBase*
-initRoutine( struct AHIBase*  device,
-             APTR             seglist,
-             struct ExecBase* sysbase )
+_DevInit( struct AHIBase*  device,
+	  APTR             seglist,
+	  struct ExecBase* sysbase )
 {
   SysBase = sysbase;
   AHIBase = device;
@@ -239,7 +241,7 @@ initRoutine( struct AHIBase*  device,
 
 
 BPTR
-DevExpunge( struct AHIBase* device )
+_DevExpunge( struct AHIBase* device )
 {
   BPTR seglist = 0;
 
@@ -262,6 +264,11 @@ DevExpunge( struct AHIBase* device )
   return seglist;
 }
 
+ULONG
+_DevNull( void ) {
+  return 0;
+}
+
 static const APTR funcTable[] =
 {
 
@@ -269,35 +276,35 @@ static const APTR funcTable[] =
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
 
-  &AROS_SLIB_ENTRY( gw_DevOpen, Ahi ),
-  &AROS_SLIB_ENTRY( gw_DevClose, Ahi ),
-  &AROS_SLIB_ENTRY( gw_DevExpunge, Ahi ),
-  &AROS_SLIB_ENTRY( gw_Null, Ahi ),
+  gwDevOpen,
+  gwDevClose,
+  gwDevExpunge,
+  gwDevNull,
 
-  &AROS_SLIB_ENTRY( gw_DevBeginIO, Ahi ),
-  &AROS_SLIB_ENTRY( gw_DevAbortIO, Ahi ),
+  gwDevBeginIO,
+  gwDevAbortIO,
 
-  &AROS_SLIB_ENTRY( gw_AllocAudioA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_FreeAudio, Ahi ),
-  &AROS_SLIB_ENTRY( gw_KillAudio, Ahi ),
-  &AROS_SLIB_ENTRY( gw_ControlAudioA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_SetVol, Ahi ),
-  &AROS_SLIB_ENTRY( gw_SetFreq, Ahi ),
-  &AROS_SLIB_ENTRY( gw_SetSound, Ahi ),
-  &AROS_SLIB_ENTRY( gw_SetEffect, Ahi ),
-  &AROS_SLIB_ENTRY( gw_LoadSound, Ahi ),
-  &AROS_SLIB_ENTRY( gw_UnloadSound, Ahi ),
-  &AROS_SLIB_ENTRY( gw_NextAudioID, Ahi ),
-  &AROS_SLIB_ENTRY( gw_GetAudioAttrsA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_BestAudioIDA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_AllocAudioRequestA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_AudioRequestA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_FreeAudioRequest, Ahi ),
-  &AROS_SLIB_ENTRY( gw_PlayA, Ahi ),
-  &AROS_SLIB_ENTRY( gw_SampleFrameSize, Ahi ),
-  &AROS_SLIB_ENTRY( gw_AddAudioMode, Ahi ),
-  &AROS_SLIB_ENTRY( gw_RemoveAudioMode, Ahi ),
-  &AROS_SLIB_ENTRY( gw_LoadModeFile, Ahi ),
+  gwAHI_AllocAudioA,
+  gwAHI_FreeAudio,
+  gwAHI_KillAudio,
+  gwAHI_ControlAudioA,
+  gwAHI_SetVol,
+  gwAHI_SetFreq,
+  gwAHI_SetSound,
+  gwAHI_SetEffect,
+  gwAHI_LoadSound,
+  gwAHI_UnloadSound,
+  gwAHI_NextAudioID,
+  gwAHI_GetAudioAttrsA,
+  gwAHI_BestAudioIDA,
+  gwAHI_AllocAudioRequestA,
+  gwAHI_AudioRequestA,
+  gwAHI_FreeAudioRequest,
+  gwAHI_PlayA,
+  gwAHI_SampleFrameSize,
+  gwAHI_AddAudioMode,
+  gwAHI_RemoveAudioMode,
+  gwAHI_LoadModeFile,
   (APTR) -1
 };
 
@@ -307,7 +314,11 @@ static const APTR InitTable[4] =
   (APTR) sizeof( struct AHIBase ),
   (APTR) &funcTable,
   0,
-  (APTR) AROS_SLIB_ENTRY( gw_initRoutine, Ahi )
+#if defined( __MORPHOS__ ) || defined( __amithlon__ )
+  (APTR) _DevInit
+#else
+  (APTR) gwDevInit
+#endif
 };
 
 
