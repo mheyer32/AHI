@@ -17,22 +17,47 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#ifndef EMU10kx_DriverData_h
-#define EMU10kx_DriverData_h
+#ifndef AHI_Drivers_EMU10kx_DriverData_h
+#define AHI_Drivers_EMU10kx_DriverData_h
 
 #include <exec/types.h>
 #include <exec/interrupts.h>
+#include <devices/ahi.h>
 
 #include "hwaccess.h"
 #include "voicemgr.h"
+
+/** Make lite common library code initialize a global SysBase for us.
+    It's required for hwaccess.c */
+
+#define DRIVER_NEED_GLOBAL_EXECBASE
+
+#include "DriverBase.h"
 
 #define RECORD_BUFFER_SAMPLES     4096
 #define RECORD_BUFFER_SIZE_VALUE  ADCBS_BUFSIZE_16384
 #define TIMER_INTERRUPT_FREQUENCY 1000
 
-struct DriverData
+struct EMU10kxBase
 {
-    /*** PCI/EMU10kx initialization progress **********************************/
+    struct DriverBase driverbase;
+    struct Library*   dosbase;
+//    struct Library*   ppcibase;
+};
+
+#define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
+
+#define DOSBase           ((struct DosLibrary*)    EMU10kxBase->dosbase)
+//#define ppcibase          (EMU10kxBase->ppcibase)
+
+struct EMU10kxData
+{
+    /** Skeleton's variables *************************************************/
+
+    struct DriverData   driverdata;
+
+
+    /*** PCI/EMU10kx initialization progress *********************************/
 
     /** TRUE if I/O and interrupt resources claimed */
     BOOL                pci_requested;
@@ -46,8 +71,11 @@ struct DriverData
     /** TRUE if the EMU10kx chip has been initialized */
     BOOL                emu10k1_initialized;
 
+    /*** The driverbase ******************************************************/
+
+    struct DriverBase*  ahisubbase;
     
-    /*** Playback/recording interrupts ****************************************/
+    /*** Playback/recording interrupts ***************************************/
     
     /** TRUE when playback is enabled */
     BOOL                is_playing;
@@ -74,7 +102,7 @@ struct DriverData
     BOOL                record_interrupt_enabled;
 
     
-    /*** EMU10kx structures ***************************************************/
+    /*** EMU10kx structures **************************************************/
     
     struct emu10k1_card card;
     struct emu_voice    voice;
@@ -85,7 +113,7 @@ struct DriverData
     UWORD               pad;
 
     
-    /*** Playback interrupt variables *****************************************/
+    /*** Playback interrupt variables ****************************************/
 
     /** The mixing buffer (a cyclic buffer filled by AHI) */
     APTR                mix_buffer;
@@ -103,7 +131,7 @@ struct DriverData
     ULONG               current_position;
 
 
-    /*** Recording interrupt variables ****************************************/
+    /*** Recording interrupt variables ***************************************/
 
     /** The recording buffer (simple double buffering is used */
     APTR                record_buffer;
@@ -114,7 +142,7 @@ struct DriverData
     /** Were (inside the recording buffer) the current data is */
     APTR                current_record_buffer;
     
-    /** Analog mixer variables ************************************************/
+    /** Analog mixer variables ***********************************************/
 
     /** The currently selected input */
     UWORD               input;
@@ -159,4 +187,4 @@ struct DriverData
     UWORD               ac97_phone;
 };
 
-#endif /* EMU10kx_DriverData_h */
+#endif /* AHI_Drivers_EMU10kx_DriverData_h */
