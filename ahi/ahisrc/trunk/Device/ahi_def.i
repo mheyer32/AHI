@@ -61,15 +61,8 @@ DEBUG_DETAIL	SET	2
 	UWORD	ahiac_Channels2
 	STRUCT	ahiac_Timer,Timer_SIZEOF
 	UWORD	ahiac_UsedCPU
-	UWORD	ahiac_PPCCommand;
-	LONG	ahiac_PPCArgument;
-	APTR	ahiac_PPCMixBuffer;
-	APTR	ahiac_PPCMixInterrupt;
-	APTR	ahiac_PPCPowerUpContext;
-	APTR	ahiac_PPCWarpUpContext;
-	APTR	ahiac_M68KPort;
-	APTR	ahiac_PPCStartupMsg;
-	APTR	ahiac_PPCTask;
+	UWORD	ahiac_Pad;
+	APTR	ahiac_PowerPCContext
 	STRUCT	ahiac_DriverName,256
 	LABEL	AHIPrivAudioCtrl_SIZEOF
 

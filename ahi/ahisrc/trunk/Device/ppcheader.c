@@ -39,11 +39,7 @@
 ******************************************************************************/
 
 int
-CallMixroutine( unsigned int             magic,
-                struct Hook*             Hook, 
-                void*                    dst, 
-                struct AHIPrivAudioCtrl* audioctrl,
-                int                      flush_result );
+CallMixroutine( struct PowerPCContext*   context );
 
 void
 FlushCache( void* address, unsigned long length );
@@ -97,29 +93,24 @@ KernelObject:
 ******************************************************************************/
 
 int
-CallMixroutine( struct PowerPCContext*   context,
-                int                      flush_result )
+CallMixroutine( struct PowerPCContext* context )
 {
-  struct AHISoundData *sd;
-  int                  i;
+  struct AHIPrivAudioCtrl* audioctrl;
+  struct AHISoundData*     sd;
+  int                      i;
 
-  if( magic != 0xC0DECAFE )
-  {
-    // If the magic cookie was not correct, return error.
+  audioctrl = context->AudioCtrl;
 
-    return 20; // RETURN_FAIL
-  }
-
-//PPCkprintf( "Start?\n" );
+//PPCkprintf( "Start? %08lx, %08lx, %08lx\n", context, audioctrl, audioctrl->ahiac_PowerPCContext );
   // Wait for start signal...
 
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_START );
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_START );
 
 //PPCkprintf( "Start!\n" );
 
   // Start m68k interrupt handler
 
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_INIT;
+  audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
 //PPCkprintf( "Int trigger!\n" );
@@ -162,30 +153,27 @@ CallMixroutine( struct PowerPCContext*   context,
 
   // Wait for m68k interrupt handler to go active
 
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 
 //PPCkprintf( "Mixing...!\n" );
   // Mix
 
-  MixGeneric( Hook, dst, audioctrl );
+  Mix( context->Hook, context->Dst, audioctrl );
 
-  // Flush mixed samples to memory (PowerUp only!)
+  // Flush mixed samples to memory
 
-  if( flush_result )
-  {
-    FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
-  }
+  FlushCache( context->Dst, audioctrl->ahiac_BuffSizeNow );
 
   // Kill the m68k interrupt handler
 
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_QUIT;
+  audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_QUIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
 
   // Wait for it
 
-  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+  while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_ACK );
 
-  audioctrl->ahiac_PPCCommand = AHIAC_COM_FINISHED;
+  audioctrl->ahiac_PowerPCContext->Command = PPCC_COM_FINISHED;
   return 0;
 }
 
@@ -272,20 +260,15 @@ InvalidateCache:
 ** WarpUp stuff ***************************************************************
 ******************************************************************************/
 
-static void* blinkbase = (void*) 0xbfe001;
-static ULONG magic     = 0xC0DECAFE;
-
-static char IntName[] = "AHI/WarpUp Exception Handler";
-
 struct TagItem InitTags[] =
 {
-  { EXCATTR_CODE,  (ULONG) &WarpUpInt,                },
-  { EXCATTR_DATA,  0,                                 },
-  { EXCATTR_NAME,  (ULONG) &IntName,                  },
-  { EXCATTR_PRI,   32,                                },
-  { EXCATTR_EXCID, EXCF_INTERRUPT,                    },
-  { EXCATTR_FLAGS, EXCF_GLOBAL | EXCF_LARGECONTEXT,   },
-  { TAG_DONE,      0                                  }
+  { EXCATTR_CODE,  (ULONG) &WarpUpInt,                    },
+  { EXCATTR_DATA,  0,                                     },
+  { EXCATTR_NAME,  (ULONG) "AHI/WarpUp Exception Handler" },
+  { EXCATTR_PRI,   32,                                    },
+  { EXCATTR_EXCID, EXCF_INTERRUPT,                        },
+  { EXCATTR_FLAGS, EXCF_GLOBAL | EXCF_LARGECONTEXT,       },
+  { TAG_DONE,      0                                      }
 };
 
 asm( "
@@ -298,14 +281,19 @@ _LVOClearExcMMU   = -582
 
 EXCRETURN_ABORT   = 1
 
-# struct WarpUpContext
+# struct PowerPCContext
 
-wc_Active        = 0
-wc_AudioCtrl     = 4
-wc_PowerPCBase   = 8
-wc_XLock         = 12
-wc_Hook          = 16
-wc_Dst           = 20
+ppcc_Command          = 0*4
+ppcc_Argument         = 1*4
+ppcc_SlaveProcess     = 2*4
+ppcc_MainProcess      = 3*4
+ppcc_CurrentMixBuffer = 4*4
+ppcc_Active           = 5*4
+ppcc_Hook             = 6*4
+ppcc_Dst              = 7*4
+ppcc_XLock            = 8*4
+ppcc_AudioCtrl        = 9*4
+ppcc_PowerPCBase      = 10*4
 
 /* InitWarpUp ****************************************************************/
 
@@ -348,13 +336,13 @@ InitWarpUp:
 
 # Register the exception handler
 
-        lwz     3,wc_PowerPCBase(14)
+        lwz     3,ppcc_PowerPCBase(14)
         addi    4,1,28
         lwz     0,_LVOSetExcHandler+2(3)
         mtlr    0
         blrl
 
-        stw     3,wc_XLock(14)
+        stw     3,ppcc_XLock(14)
 
         lwz     14,-4(13)
 
@@ -388,14 +376,14 @@ WarpUpInt:
 
 # Set up MMU
 
-        lwz     3,wc_PowerPCBase(14)
+        lwz     3,ppcc_PowerPCBase(14)
         lwz     0,_LVOSetExcMMU+2(3)
         mtlr    0
         blrl
 
 # Test and clear activation flag (is this out interrupt or somebody elses?)
 
-        addi    3,14,wc_Active
+        addi    3,14,ppcc_Active
         li      4,0
 1:
         lwarx   5,0,3
@@ -411,14 +399,7 @@ WarpUpInt:
         stw     2,8(1)
         stw     13,12(1)
 
-        lis     3,magic@ha
-        addi    3,3,magic@l
-        lwz     3,0(3)
-        lwz     4,wc_Hook(14)
-        lwz     6,wc_AudioCtrl(14)
-
-        lwz     5,wc_Dst(14)
-        li      7,1                          # Do flush the buffer!
+        mr      3,14
         bl      CallMixroutine
 
         lwz     2,8(1)
@@ -428,7 +409,7 @@ WarpUpInt:
 
 # Restore MMU
 
-        lwz     3,wc_PowerPCBase(14)
+        lwz     3,ppcc_PowerPCBase(14)
         lwz     0,_LVOClearExcMMU+2(3)
         mtlr    0
         blrl
@@ -465,8 +446,8 @@ CleanUpWarpUp:
 
 # Unregister the exception handler
 
-        lwz     4,wc_XLock(3)
-        lwz     3,wc_PowerPCBase(3)
+        lwz     4,ppcc_XLock(3)
+        lwz     3,ppcc_PowerPCBase(3)
         lwz     0,_LVORemExcHandler+2(3)
         mtlr    0
         blrl
