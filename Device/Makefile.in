@@ -75,9 +75,9 @@ ifeq ($(host_cpu),m68k)
 OBJECTS		+= addroutines_68k.o dspechofuncs_68k.o
 endif
 
-ifeq ($(host_cpu),powerpc)
-OBJECTS		+= addroutines_ppc.o
-endif
+#ifeq ($(host_cpu),powerpc)
+#OBJECTS		+= addroutines_ppc.o
+#endif
 
 GENERATED	= version.h \
 		  gatestubs1.c gatestubs1.h gatestubs2.c gatestubs2.h
