@@ -1,5 +1,8 @@
 2005-04-03  Martin Blom  <martin@blom.org>
 
+	* ahi.device: The copyright year accidentally went back to 2004
+	when merging Gunther's patch. Fixed.
+
 	* Released AHI 6.0rc3.
 
 	* Released ahi.device 6.2.

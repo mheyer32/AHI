@@ -137,7 +137,7 @@ const ULONG  Revision       = REVISION;
 
 const char DevName[]  = AHINAME;
 const char IDString[] = "$VER: " AHINAME " " VERS
-                        " ©1994-2004 Martin Blom. " CPU " version.\r\n";
+                        " ©1994-2005 Martin Blom. " CPU " version.\r\n";
 
 
 #if !defined( __AMIGAOS4__ )
