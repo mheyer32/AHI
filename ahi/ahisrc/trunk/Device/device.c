@@ -21,7 +21,6 @@
 */
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
 #include <exec/alerts.h>
 #include <exec/errors.h>

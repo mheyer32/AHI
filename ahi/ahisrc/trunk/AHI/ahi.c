@@ -18,7 +18,6 @@
 */
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
 #include <devices/ahi.h>
 #include <workbench/startup.h>

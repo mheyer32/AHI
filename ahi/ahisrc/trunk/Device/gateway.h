@@ -24,7 +24,6 @@
 #define ahi_gateway_h
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
 void m68k_IndexToFrequency( void );
 void m68k_DevProc( void );

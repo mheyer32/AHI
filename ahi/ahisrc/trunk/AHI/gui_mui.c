@@ -18,7 +18,6 @@
 */
 
 #include <config.h>
-#include <CompilerSpecific.h>
 
 #include <exec/memory.h>
 #include <libraries/asl.h>

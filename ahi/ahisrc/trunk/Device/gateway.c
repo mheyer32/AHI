@@ -296,7 +296,7 @@ AROS_UFH1( void,
 
 /* m68k_IndexToFrequency *****************************************************/
 
-LONG STDARGS SAVEDS
+LONG __attribute__((stkparm)) __attribute__((saveds))
 m68k_IndexToFrequency( struct Gadget *gad, WORD level )
 {
   return IndexToFrequency( gad, level );
