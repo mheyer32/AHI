@@ -146,10 +146,12 @@ SetVol ( REG(d0, UWORD channel),
     cd->cd_VolumeRight = cd->cd_NextVolumeRight;
     SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
                      &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
+kprintf( "cd->cd_AddRoutine = %lx\n", cd->cd_AddRoutine );
   }
 
   SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
                    &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
+kprintf( "cd->cd_NextAddRoutine = %lx\n", cd->cd_NextAddRoutine );
 
   AHIsub_Enable(&audioctrl->ac);
 
@@ -477,6 +479,7 @@ SetSound ( REG(d0, UWORD channel),
 
       SelectAddRoutine(cd->cd_VolumeLeft, cd->cd_VolumeRight, cd->cd_Type, audioctrl,
                        &cd->cd_ScaleLeft, &cd->cd_ScaleRight, (ADDFUNC**) &cd->cd_AddRoutine);
+kprintf( "cd->cd_AddRoutine = %lx\n", cd->cd_AddRoutine );
 
 #ifdef VERSION68K
       cd->cd_Samples = CalcSamples( cd->cd_Add.I, cd->cd_Add.F,
@@ -498,6 +501,7 @@ SetSound ( REG(d0, UWORD channel),
 
     SelectAddRoutine(cd->cd_NextVolumeLeft, cd->cd_NextVolumeRight, cd->cd_NextType, audioctrl,
                      &cd->cd_NextScaleLeft, &cd->cd_NextScaleRight, (ADDFUNC**) &cd->cd_NextAddRoutine);
+kprintf( "cd->cd_NextAddRoutine = %lx\n", cd->cd_NextAddRoutine );
   }
 
   AHIsub_Enable(&audioctrl->ac);
