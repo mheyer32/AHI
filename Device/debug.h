@@ -26,6 +26,17 @@
 #include <devices/ahi.h>
 #include <proto/exec.h>
 
+
+void
+KPrintFArgs( UBYTE* fmt, 
+             ULONG* args );
+
+#define KPrintF( fmt, ... )        \
+({                                 \
+  ULONG _args[] = { __VA_ARGS__ }; \
+  KPrintFArgs( (fmt), _args );     \
+})
+
 void
 Debug_AllocAudioA( struct TagItem *tags );
 

@@ -24,6 +24,7 @@
 #include <CompilerSpecific.h>
 
 #include <utility/tagitem.h>
+#include <proto/exec.h>
 #include <proto/utility.h>
 
 #include "ahi_def.h"
@@ -467,6 +468,26 @@ PrintTagList(struct TagItem *tags)
 
     KPrintF("\n  TAG_DONE)");
   }
+}
+
+
+/******************************************************************************
+** Send debug to serial port **************************************************
+******************************************************************************/
+
+static UWORD rawputchar_m68k[] = 
+{
+  0x2C4B,             // MOVEA.L A3,A6
+  0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
+  0x4E75              // RTS
+};
+
+
+void
+KPrintFArgs( UBYTE* fmt, 
+             ULONG* args )
+{
+  RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
 }
 
 

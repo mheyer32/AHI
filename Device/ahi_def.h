@@ -27,6 +27,7 @@
 
 /*** Debug stuff ***/
 
+#if 0
 #if defined( ENABLE_MORPHOS )
 
 # include <public/proto/quark/syscall_protos.h>
@@ -36,6 +37,7 @@
 
 extern void KPrintF(char *fmt,...);
 
+#endif
 #endif
 
 /*** AHI include files ***/

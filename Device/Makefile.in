@@ -75,7 +75,7 @@ OBJECTS		+= elfloader.o warpup.o
 endif
 
 ifeq ($(host_cpu),m68k)
-OBJECTS		+= asmfuncs.o devsupp.o addroutines_68k.o
+OBJECTS		+= devsupp.o addroutines_68k.o
 endif
 
 ifeq ($(host_cpu),ppc)
