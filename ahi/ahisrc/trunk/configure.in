@@ -35,6 +35,8 @@ ENABLE_WARPUP=${enable_warpup}
 AC_SUBST(ENABLE_WARPUP)
 AC_MSG_RESULT(${enable_warpup})
 
+AC_C_BIGENDIAN
+
 case $host in
  i?86be-pc-amithlon)
   : ${CPU="i686"}
