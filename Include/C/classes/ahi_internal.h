@@ -63,9 +63,9 @@
 
 /* FIXME: Register attribute and method space! */
 
-#define _AHIM_Dummy		0x04148490
-#define _AHIA_Dummy		-2079030128 /* 0x84148490 */
-#define _AHIE_Dummy		0x04148490
+#define _AHIM_Dummy		0x4D420000
+#define _AHIA_Dummy		-851312640 /* 0xCD420000 */
+#define _AHIE_Dummy		0x4D420000
     
 /* Attribute and tag numbers are allocated sequentially in order to
    make it easier to get good hashing and to pollute the BOOPSI
