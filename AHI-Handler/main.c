@@ -1,6 +1,9 @@
 /* $Id$
  * $Log$
- * Revision 1.2  1997/01/21 23:56:21  lcs
+ * Revision 1.3  1997/01/23 19:55:50  lcs
+ * Added AIFF and AIFC saving.
+ *
+ * Revision 1.2  1997/01/21  23:56:21  lcs
  * Reading seem to work okay now.
  *
  * Revision 1.1  1997/01/17  23:34:28  lcs
@@ -13,7 +16,6 @@
 ** DosHan example source code.
 */
 
-#define min(a,b) ((a)<=(b)?(a):(b))
 
 #include <exec/types.h>
 #include <exec/nodes.h>
@@ -32,21 +34,36 @@
 #include <clib/dos_protos.h>
 #include <clib/utility_protos.h>
 
-
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
+#include "aifc.h"
+
+
+#define min(a,b) ((a)<=(b)?(a):(b))
 #define DOS_TRUE    -1
 #define DOS_FALSE   0
+#define BTOC(bptr)  ((void *)((long)(bptr) << 2))
+#define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
+
+
+void ulong2extended (ULONG, extended *);
+long AllocAudio(void);
+void FreeAudio(void);
+long InitHData(struct HandlerData *, char *);
+void FreeHData(struct HandlerData *);
+void returnpacket (struct DosPacket *);
+void Initialize (void);
+void UnInitialize (void);
 
 #define HIT(x) {char *a=NULL; *a=x;}
 void kprintf(char *, ...);
 
-#define BTOC(bptr)  ((void *)((long)(bptr) << 2))
-#define CTOB(cptr)  ((BPTR)(((long)cptr) >> 2))
-
+#define RAW          0
+#define AIFF         1
+#define AIFC         2
 
 struct HandlerData {
   UBYTE             *buffer1;        // Address of read buffer
@@ -54,22 +71,49 @@ struct HandlerData {
   LONG               length;         // Offset to first invalid sample frame
   LONG               offset;         // Current pointer
   struct AHIRequest *req;
+  UWORD              bits;
+  UWORD              channels;
   ULONG              type;
   ULONG              freq;
   Fixed              vol;
   sposition          pos;
   LONG               totallength;     // Total number of bytes to play/record
   LONG               buffersize;      // Play/record buffer size
+  UBYTE              format;
 };
 
-long AllocAudio(void);
-void FreeAudio(void);
-long InitHData(struct HandlerData *, char *);
-void FreeHData(struct HandlerData *);
+struct AIFCHeader {
+  ULONG                 FORMid;
+  ULONG                 FORMsize;
+  ULONG                 AIFCid;
 
-void returnpacket (struct DosPacket *);
-void Initialize (void);
-void UnInitialize (void);
+  ULONG                 FVERid;
+  ULONG                 FVERsize;
+  FormatVersionHeader   FVERchunk;
+
+  ULONG                 COMMid;
+  ULONG                 COMMsize;
+  ExtCommonChunk        COMMchunk;
+
+  ULONG                 SSNDid;
+  ULONG                 SSNDsize;
+  SampledSoundHeader    SSNDchunk;
+};
+
+struct AIFFHeader {
+  ULONG                 FORMid;
+  ULONG                 FORMsize;
+  ULONG                 AIFFid;
+
+  ULONG                 COMMid;
+  ULONG                 COMMsize;
+  CommonChunk           COMMchunk;
+
+  ULONG                 SSNDid;
+  ULONG                 SSNDsize;
+  SampledSoundHeader    SSNDchunk;
+};
+
 
 struct List        HanList;
 struct DeviceNode *DevNode;
@@ -80,6 +124,35 @@ BOOL               Running;
 struct MsgPort    *AHImp     = NULL;
 struct AHIRequest *AHIio     = NULL;
 BYTE               AHIDevice = -1;
+struct Library    *AHIBase;
+
+struct AIFCHeader AIFCHeader = {
+  ID_FORM, NULL, ID_AIFC,
+  ID_FVER, sizeof(FormatVersionHeader), {
+    AIFCVersion1
+  },
+  ID_COMM, sizeof(ExtCommonChunk), {
+    0,
+    0,
+    0,
+    {0},
+    NO_COMPRESSION,
+    sizeof("not compressed")-1,
+    'n','o','t',' ','c','o','m','p','r','e','s','s','e','d'
+  },
+  ID_SSND, NULL, {0,0}
+};
+
+struct AIFFHeader AIFFHeader = {
+  ID_FORM, NULL, ID_AIFF,
+  ID_COMM, sizeof(CommonChunk),{
+    0,
+    0,
+    0,
+    {0}
+  },
+  ID_SSND, NULL, {0,0}
+};
 
 /*
  *  Note that we use the _main entry point.  Also notice that we do not
@@ -145,12 +218,16 @@ void _main ()
         struct HandlerData *data;
 
         // Skip volume name and ':'
+
         while(*++base != ':')
           --len;
-        base++;
+        ++base;
 
-        { // Convert /'s to blanks
+        {
+          // Convert /'s to blanks
+
           char *p = base;
+
           while(*++p)
             if(*p == '/')
               *p = ' ';
@@ -169,7 +246,6 @@ void _main ()
           FreeAudio();
           break;
         }
-        
 
         data = AllocVec(sizeof(struct HandlerData), MEMF_PUBLIC | MEMF_CLEAR);
 
@@ -197,7 +273,7 @@ void _main ()
          *
          *  The basic idea is to feed the packets from one buffer while
          *  recording asyncroniously to the other. When we have read
-         *  the buffer, we wait until the other is filed, and switch
+         *  the buffer, we wait until the other is filled, and switch
          *  buffer pointers.
          */
 
@@ -216,6 +292,7 @@ void _main ()
         }
 
         if(data->buffer1 == NULL) {
+
           data->buffer1 = AllocVec(data->buffersize, MEMF_PUBLIC);
           data->buffer2 = AllocVec(data->buffersize, MEMF_PUBLIC);
 
@@ -226,6 +303,7 @@ void _main ()
 
           // Fill buffer 2
           // Note that io_Offset is always 0 the first time
+
           data->req->ahir_Std.io_Command                 = CMD_READ;
           data->req->ahir_Std.io_Data                    = data->buffer2;
           data->req->ahir_Std.io_Length                  = data->buffersize;
@@ -237,7 +315,50 @@ void _main ()
           SendIO((struct IORequest *) data->req);
   
           // Force buffer switch filling of the other buffer
+
           data->length = data->offset = 0;
+
+          // Check if we should write a header first
+
+          if(data->format == AIFF) {
+            if(length < sizeof(struct AIFFHeader)) {
+              packet->dp_Res1 = -1;
+              break;
+            }
+
+            AIFFHeader.FORMsize = sizeof(AIFFHeader) + data->totallength - 8;
+            AIFFHeader.COMMchunk.numChannels = data->channels;
+            AIFFHeader.COMMchunk.numSampleFrames = 
+                data->totallength / AHI_SampleFrameSize(data->type);
+            AIFFHeader.COMMchunk.sampleSize = data->bits;
+            ulong2extended(data->freq, &AIFFHeader.COMMchunk.sampleRate);
+            AIFFHeader.SSNDsize =
+                sizeof(SampledSoundHeader) + data->totallength;
+
+            CopyMem(&AIFFHeader, dest, sizeof(struct AIFFHeader)); 
+            dest              += sizeof(struct AIFFHeader);
+            length            -= sizeof(struct AIFFHeader);
+          }
+
+          else if(data->format == AIFC) {
+            if(length < sizeof(struct AIFCHeader)) {
+              packet->dp_Res1 = -1;
+              break;
+            }
+
+            AIFCHeader.FORMsize = sizeof(AIFCHeader) + data->totallength - 8;
+            AIFCHeader.COMMchunk.numChannels = data->channels;
+            AIFCHeader.COMMchunk.numSampleFrames = 
+                data->totallength / AHI_SampleFrameSize(data->type);
+            AIFCHeader.COMMchunk.sampleSize = data->bits;
+            ulong2extended(data->freq, &AIFCHeader.COMMchunk.sampleRate);
+            AIFCHeader.SSNDsize =
+                sizeof(SampledSoundHeader) + data->totallength;
+
+            CopyMem(&AIFCHeader, dest, sizeof(struct AIFCHeader)); 
+            dest              += sizeof(struct AIFCHeader);
+            length            -= sizeof(struct AIFCHeader);
+          }
         }
 
 
@@ -323,6 +444,10 @@ void _main ()
 
         FreeHData(data);
         FreeAudio();
+
+        if(AllocCnt == 0)
+          Running = FALSE;
+
         break;
       }
 
@@ -349,6 +474,23 @@ void _main ()
 
 
 /*
+ *  This function translates an ULONG to Apples SANE Extended
+ *  used in AIFF/AIFC files.
+ */
+
+void ulong2extended (ULONG in, extended *ex)
+{
+  ex->exponent=31+16383;
+  ex->mantissa[1]=0;
+  while(!(in & 0x80000000))
+  {
+    ex->exponent--;
+    in<<=1;
+  }
+  ex->mantissa[0]=in;
+}
+
+/*
  *  If the device isn't already open, open it now
  */
 
@@ -365,6 +507,9 @@ long AllocAudio(void) {
 
     if(AHIDevice) {
       rc = ERROR_OBJECT_NOT_FOUND;
+    }
+    else {
+      AHIBase=(struct Library *)AHIio->ahir_Std.io_Device;
     }
   }
   return rc;
@@ -460,6 +605,7 @@ long InitHData(struct HandlerData *data, char *initstring)
 #define Sunsignedflag  4
 
   // 8, 16 or 32 bit
+
   if(*args.bits <= 8)
     data->type = S8bitmode;
   else if(*args.bits <= 16)
@@ -470,34 +616,58 @@ long InitHData(struct HandlerData *data, char *initstring)
     rc = ERROR_OBJECT_WRONG_TYPE;
 
   // Mono or stereo
+
   if(*args.channels == 2)
     data->type |= Sstereoflag;
   else if(*args.channels != 1)
     rc = ERROR_OBJECT_WRONG_TYPE;
 
-  // Signed or unsigned
-  if(Stricmp("UNSIGNED", args.type) == 0)
+  // Signed, unsigned, aiff, aifc...
+
+  if(Stricmp("SIGNED", args.type) == 0) {
+    data->format = RAW;
+    kprintf("Signed\n");
+  }
+  else if(Stricmp("UNSIGNED", args.type) == 0) {
     data->type |= Sunsignedflag;
-  else if(Stricmp("SIGNED", args.type) != 0)
+    data->format = RAW;
+    kprintf("Unsigned\n");
+  }
+  else if(Stricmp("AIFF", args.type) == 0) {
+    data->format = AIFF;
+    kprintf("AIFF\n");
+  }
+  else if(Stricmp("AIFC", args.type) == 0) {
+    data->format = AIFC;
+    kprintf("AIFC\n");
+  }
+  else {
     rc = ERROR_OBJECT_WRONG_TYPE;
-
-  data->freq = *args.rate;
-  data->vol  = *args.volume * 0x10000 / 100;
-  data->pos  = *args.position * 0x8000 / 100 + 0x8000;
-
-  if(data->vol > 0x10000) {
-    data->vol = 0x10000;
-  }
-  if(data->pos > 0x10000) {
-    data->pos = 0x10000;
   }
 
+  data->bits     = *args.bits;
+  data->channels = *args.channels;
+  data->freq     = *args.rate;
+  data->vol      = *args.volume * 0x10000 / 100;
+  data->pos      = *args.position * 0x8000 / 100 + 0x8000;
   if(args.seconds)
-    data->totallength = *args.seconds * data->freq;
+    data->totallength = *args.seconds * data->freq 
+                        * AHI_SampleFrameSize(data->type);
   else
-    data->totallength = *args.length;
+    data->totallength = (*args.length / AHI_SampleFrameSize(data->type))
+                        * AHI_SampleFrameSize(data->type);
+
+  switch(data->format) {
+    case AIFF:
+    case AIFC:
+      data->totallength = (data->totallength + 1) & ~1;    // Make even
+      break;
+    default:
+      break;
+  }
 
   // User doesn't know about double buffering!
+
   data->buffersize = *args.buffersize >> 1;
   return rc;
 }
@@ -567,7 +737,10 @@ void Initialize () {
   packet = (struct DosPacket *) msg->mn_Node.ln_Name;
 
   DevNode = dn = BTOC (packet->dp_Arg3);
+/*
   dn->dn_Task = PktPort;
+*/
+  dn->dn_Task = NULL;
 
   packet->dp_Res1 = DOS_TRUE;
   packet->dp_Res2 = 0;
