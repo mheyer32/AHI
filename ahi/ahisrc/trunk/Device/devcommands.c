@@ -1597,7 +1597,6 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
 
   AHIsubBase = ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_SubLib;
 
-  KPrintF("Update\n");
   AHIObtainSemaphore(&iounit->Lock);
 
   for(ioreq1 = (struct AHIRequest*) iounit->PlayingList.mlh_Head;
