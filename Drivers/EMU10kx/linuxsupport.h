@@ -44,7 +44,9 @@ typedef unsigned int   dma_addr_t;
 #define KERN_NOTICE    ""
 #define printk         printf
 
+#ifndef __AMIGAOS4__
 #define PCI_ANY_ID                     0xffff
+#endif
 #define PCI_VENDOR_ID_CREATIVE         0x1102
 #define PCI_DEVICE_ID_CREATIVE_EMU10K1 0x0002
 #define PCI_DEVICE_ID_CREATIVE_AUDIGY  0x0004

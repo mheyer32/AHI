@@ -30,12 +30,20 @@
  */
 
 #ifdef AHI
-# include <proto/openpci.h>
-# include "linuxsupport.h"
+
+#ifdef __AMIGAOS4__
+#include <proto/expansion.h>
+#include <proto/exec.h>
+#else
+
+#include <proto/openpci.h>
+#include "linuxsupport.h"
+
 #endif
 
 #include "voicemgr.h"
 #include "8010.h"
+#endif
 
 #define PITCH_48000 0x00004000
 #define PITCH_96000 0x00008000
@@ -111,9 +119,16 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 #endif
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {
 #ifdef AHI
+
+#ifdef __AMIGAOS4__
+			busaddx = (u32) ( mem->addr + pagecount * PAGE_SIZE) + i * EMUPAGESIZE;
+#else
+
 			busaddx = (u32) pci_logic_to_physic_addr(
 			  mem->addr + pagecount * PAGE_SIZE, card->pci_dev )
 			  + i * EMUPAGESIZE;
+#endif
+
 #else
 			busaddx = (u32) mem->dma_handle[pagecount] + i * EMUPAGESIZE;
 #endif

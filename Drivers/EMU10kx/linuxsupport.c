@@ -19,18 +19,42 @@
 
 #include <exec/memory.h>
 
-#include <proto/exec.h>
+#ifdef __AMIGAOS4__
+#include <proto/expansion.h>
+#else
+#include <libraries/openpci.h>
 #include <proto/openpci.h>
+#endif
+
+#include <proto/exec.h>
 
 #include "linuxsupport.h"
 #include <string.h>
+
+#include "emu10kx-misc.h"
+
 
 static void*
 AllocPages( size_t size, ULONG req )
 {
   void* address;
 
-  // FIXME: This shoule be non-cachable, DMA-able memory
+#ifdef __AMIGAOS4__
+  unsigned long a;
+  // FIXME: This should be non-cachable, DMA-able memory
+  address = AllocVec( size + PAGE_SIZE, MEMF_PUBLIC );
+
+  DebugPrintF("====> AllocMem %lx size = %ld\n", address, size);
+  
+  if( address != NULL )
+  {
+    a = (unsigned long) address;
+    a = (a + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1); //(((unsigned long) (a + 4096)) / 4096) * 4096; // get a 4K-aligned memory pointer
+    DebugPrintF("====> AllocMem2 %lx\n", a);
+    address = (void *) a; // tbd: we just lost a couple of bytes
+  }
+#else
+  // FIXME: This should be non-cachable, DMA-able memory
   address = AllocMem( size + PAGE_SIZE - 1, req & ~MEMF_CLEAR );
 
   if( address != NULL )
@@ -42,6 +66,7 @@ AllocPages( size_t size, ULONG req )
 				 & ~(PAGE_SIZE-1) ) );
     Permit();
   }
+#endif
 
   if( address != NULL && ( req & MEMF_CLEAR ) )
   {
@@ -61,7 +86,9 @@ void
 free_page( unsigned long addr )
 {
 //  printf( "Freeing page at %08x\n", addr );
+#ifndef __AMIGAOS4__
   FreeMem( (void*) addr, PAGE_SIZE );
+#endif
 }
 
 void*
@@ -71,7 +98,13 @@ pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle )
 
 //  res = pci_alloc_dmamem( pci_dev, size );
   res = (void*) AllocPages( size, MEMF_PUBLIC | MEMF_CLEAR );
+
+#ifdef __AMIGAOS4__
+  *dma_handle = (dma_addr_t) res;
+#else
   *dma_handle = (dma_addr_t) pci_logic_to_physic_addr( res, pci_dev );
+#endif
+  
   return res;
 }
 
@@ -79,6 +112,14 @@ void
 pci_free_consistent( void* pci_dev, size_t size, void* addr, dma_addr_t dma_handle )
 {
 //  printf( "Freeing pages (%d bytes) at %08x\n", size, addr );
+
+#ifdef __AMIGAOS4__
+  void *pageaddr = addr - 8;
+  
+  DebugPrintF("FreeAbs %lx size = %ld\n", pageaddr, size);
+  //FreeVec( pageaddr, size + PAGE_SIZE); tbd
+#else
   FreeMem( addr, size );
 //  pci_free_dmamem( pci_dev, addr, size );
+#endif
 }

@@ -1,5 +1,8 @@
 2004-01-25  Martin Blom  <martin@blom.org>
 
+	* emu10kx.audio: Applied AmigaOS 4 patches (with minor
+	modifications) from Davy Wentzler.
+
 	* ahi.device: Removed gasp dependency. gasp is no longer required
 	for building AHI.
 
