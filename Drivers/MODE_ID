@@ -3,6 +3,7 @@ ID	Driver		Author			E-Mail
 01	Filesave	Martin Blom		<martin@blom.org>
 02	Paula		Martin Blom		<martin@blom.org>
 03	Device		Martin Blom		<martin@blom.org>
+04
 05	Siamese		Martin Blom		<martin@blom.org>
 06	Melody MPEG	Thorsten Hansen		<hansen_t@informatik.fh-hamburg.de>
 07	Concierto (PIV)	Olaf Barthel		<olsen@sourcery.han.de>
@@ -31,3 +32,4 @@ ID	Driver		Author			E-Mail
 1E	EMU10kx		Martin Blom		<martin@blom.org>
 1F      (Experimental)	You			Tell me when you want a real ID.
 20-2f	(Amithlon)	Thorsten Hansen		<hansen_t@informatik.fh-hamburg.de>
+30	FM801		Benjamin Vernoux	<bvernoux@wanadoo.fr>
