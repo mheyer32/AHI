@@ -52,6 +52,7 @@
 #include "misc.h"
 #include "header.h"
 
+#define GetSymbol( name ) AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
 /******************************************************************************
 ** Prototypes *****************************************************************
@@ -71,9 +72,6 @@ static void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
 #endif /* !defined( VERSIONPPC ) */
-
-
-#if 1
 
 ADDFUNC* AddByteMonoPtr     = NULL;
 ADDFUNC* AddByteStereoPtr   = NULL;
@@ -109,43 +107,6 @@ ADDFUNC* AddLofiWordStereoBPtr  = NULL;
 ADDFUNC* AddLofiWordsMonoBPtr   = NULL;
 ADDFUNC* AddLofiWordsStereoBPtr = NULL;
 
-#else
-
-ADDFUNC* AddByteMonoPtr     = AddByteMono;
-ADDFUNC* AddByteStereoPtr   = AddByteStereo;
-ADDFUNC* AddBytesMonoPtr    = AddBytesMono;
-ADDFUNC* AddBytesStereoPtr  = AddBytesStereo;
-ADDFUNC* AddWordMonoPtr     = AddWordMono;
-ADDFUNC* AddWordStereoPtr   = AddWordStereo;
-ADDFUNC* AddWordsMonoPtr    = AddWordsMono;
-ADDFUNC* AddWordsStereoPtr  = AddWordsStereo;
-ADDFUNC* AddByteMonoBPtr    = AddByteMonoB;
-ADDFUNC* AddByteStereoBPtr  = AddByteStereoB;
-ADDFUNC* AddBytesMonoBPtr   = AddBytesMonoB;
-ADDFUNC* AddBytesStereoBPtr = AddBytesStereoB;
-ADDFUNC* AddWordMonoBPtr    = AddWordMonoB;
-ADDFUNC* AddWordStereoBPtr  = AddWordStereoB;
-ADDFUNC* AddWordsMonoBPtr   = AddWordsMonoB;
-ADDFUNC* AddWordsStereoBPtr = AddWordsStereoB;
-
-ADDFUNC* AddLofiByteMonoPtr     = AddLofiByteMonoPtr;
-ADDFUNC* AddLofiByteStereoPtr   = AddLofiByteStereoPtr;
-ADDFUNC* AddLofiBytesMonoPtr    = AddLofiBytesMonoPtr;
-ADDFUNC* AddLofiBytesStereoPtr  = AddLofiBytesStereoPtr;
-ADDFUNC* AddLofiWordMonoPtr     = AddLofiWordMonoPtr;
-ADDFUNC* AddLofiWordStereoPtr   = AddLofiWordStereoPtr;
-ADDFUNC* AddLofiWordsMonoPtr    = AddLofiWordsMonoPtr;
-ADDFUNC* AddLofiWordsStereoPtr  = AddLofiWordsStereoPtr;
-ADDFUNC* AddLofiByteMonoBPtr    = AddLofiByteMonoBPtr;
-ADDFUNC* AddLofiByteStereoBPtr  = AddLofiByteStereoBPtr;
-ADDFUNC* AddLofiBytesMonoBPtr   = AddLofiBytesMonoBPtr;
-ADDFUNC* AddLofiBytesStereoBPtr = AddLofiBytesStereoBPtr;
-ADDFUNC* AddLofiWordMonoBPtr    = AddLofiWordMonoBPtr;
-ADDFUNC* AddLofiWordStereoBPtr  = AddLofiWordStereoBPtr;
-ADDFUNC* AddLofiWordsMonoBPtr   = AddLofiWordsMonoBPtr;
-ADDFUNC* AddLofiWordsStereoBPtr = AddLofiWordsStereoBPtr;
-
-#endif
 
 static const UBYTE type2bytes[]=
 {
@@ -480,43 +441,39 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
       AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
 
-#define GetSymbol( name ) r &= AHIGetELFSymbol( #name, (void*) &name ## Ptr )
+      r &= GetSymbol( AddByteMono     );
+      r &= GetSymbol( AddByteStereo   );
+      r &= GetSymbol( AddBytesMono    );
+      r &= GetSymbol( AddBytesStereo  );
+      r &= GetSymbol( AddWordMono     );
+      r &= GetSymbol( AddWordStereo   );
+      r &= GetSymbol( AddWordsMono    );
+      r &= GetSymbol( AddWordsStereo  );
+      r &= GetSymbol( AddByteMonoB    );
+      r &= GetSymbol( AddByteStereoB  );
+      r &= GetSymbol( AddBytesMonoB   );
+      r &= GetSymbol( AddBytesStereoB );
+      r &= GetSymbol( AddWordMonoB    );
+      r &= GetSymbol( AddWordStereoB  );
+      r &= GetSymbol( AddWordsMonoB   );
+      r &= GetSymbol( AddWordsStereoB );
 
-      GetSymbol( AddByteMono     );
-      GetSymbol( AddByteStereo   );
-      GetSymbol( AddBytesMono    );
-      GetSymbol( AddBytesStereo  );
-      GetSymbol( AddWordMono     );
-      GetSymbol( AddWordStereo   );
-      GetSymbol( AddWordsMono    );
-      GetSymbol( AddWordsStereo  );
-      GetSymbol( AddByteMonoB    );
-      GetSymbol( AddByteStereoB  );
-      GetSymbol( AddBytesMonoB   );
-      GetSymbol( AddBytesStereoB );
-      GetSymbol( AddWordMonoB    );
-      GetSymbol( AddWordStereoB  );
-      GetSymbol( AddWordsMonoB   );
-      GetSymbol( AddWordsStereoB );
-
-      GetSymbol( AddLofiByteMono     );
-      GetSymbol( AddLofiByteStereo   );
-      GetSymbol( AddLofiBytesMono    );
-      GetSymbol( AddLofiBytesStereo  );
-      GetSymbol( AddLofiWordMono     );
-      GetSymbol( AddLofiWordStereo   );
-      GetSymbol( AddLofiWordsMono    );
-      GetSymbol( AddLofiWordsStereo  );
-      GetSymbol( AddLofiByteMonoB    );
-      GetSymbol( AddLofiByteStereoB  );
-      GetSymbol( AddLofiBytesMonoB   );
-      GetSymbol( AddLofiBytesStereoB );
-      GetSymbol( AddLofiWordMonoB    );
-      GetSymbol( AddLofiWordStereoB  );
-      GetSymbol( AddLofiWordsMonoB   );
-      GetSymbol( AddLofiWordsStereoB );
-
-#undef GetSymbol
+      r &= GetSymbol( AddLofiByteMono     );
+      r &= GetSymbol( AddLofiByteStereo   );
+      r &= GetSymbol( AddLofiBytesMono    );
+      r &= GetSymbol( AddLofiBytesStereo  );
+      r &= GetSymbol( AddLofiWordMono     );
+      r &= GetSymbol( AddLofiWordStereo   );
+      r &= GetSymbol( AddLofiWordsMono    );
+      r &= GetSymbol( AddLofiWordsStereo  );
+      r &= GetSymbol( AddLofiByteMonoB    );
+      r &= GetSymbol( AddLofiByteStereoB  );
+      r &= GetSymbol( AddLofiBytesMonoB   );
+      r &= GetSymbol( AddLofiBytesStereoB );
+      r &= GetSymbol( AddLofiWordMonoB    );
+      r &= GetSymbol( AddLofiWordStereoB  );
+      r &= GetSymbol( AddLofiWordsMonoB   );
+      r &= GetSymbol( AddLofiWordsStereoB );
 
       // Sucess?
 
@@ -555,47 +512,46 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
         }
       }
+      else
+      {
+        Req( "Unable to fetch all symbols from ELF object." );
+      }
     }
     else // PPCObject
     {
+      AddByteMonoPtr         = AddByteMono;
+      AddByteStereoPtr       = AddByteStereo;
+      AddBytesMonoPtr        = AddBytesMono;
+      AddBytesStereoPtr      = AddBytesStereo;
+      AddWordMonoPtr         = AddWordMono;
+      AddWordStereoPtr       = AddWordStereo;
+      AddWordsMonoPtr        = AddWordsMono;
+      AddWordsStereoPtr      = AddWordsStereo;
+      AddByteMonoBPtr        = AddByteMonoB;
+      AddByteStereoBPtr      = AddByteStereoB;
+      AddBytesMonoBPtr       = AddBytesMonoB;
+      AddBytesStereoBPtr     = AddBytesStereoB;
+      AddWordMonoBPtr        = AddWordMonoB;
+      AddWordStereoBPtr      = AddWordStereoB;
+      AddWordsMonoBPtr       = AddWordsMonoB;
+      AddWordsStereoBPtr     = AddWordsStereoB;
 
-#define GetSymbol( name ) name ## Ptr = name;
-
-      GetSymbol( AddByteMono     );
-      GetSymbol( AddByteStereo   );
-      GetSymbol( AddBytesMono    );
-      GetSymbol( AddBytesStereo  );
-      GetSymbol( AddWordMono     );
-      GetSymbol( AddWordStereo   );
-      GetSymbol( AddWordsMono    );
-      GetSymbol( AddWordsStereo  );
-      GetSymbol( AddByteMonoB    );
-      GetSymbol( AddByteStereoB  );
-      GetSymbol( AddBytesMonoB   );
-      GetSymbol( AddBytesStereoB );
-      GetSymbol( AddWordMonoB    );
-      GetSymbol( AddWordStereoB  );
-      GetSymbol( AddWordsMonoB   );
-      GetSymbol( AddWordsStereoB );
-
-      GetSymbol( AddLofiByteMono     );
-      GetSymbol( AddLofiByteStereo   );
-      GetSymbol( AddLofiBytesMono    );
-      GetSymbol( AddLofiBytesStereo  );
-      GetSymbol( AddLofiWordMono     );
-      GetSymbol( AddLofiWordStereo   );
-      GetSymbol( AddLofiWordsMono    );
-      GetSymbol( AddLofiWordsStereo  );
-      GetSymbol( AddLofiByteMonoB    );
-      GetSymbol( AddLofiByteStereoB  );
-      GetSymbol( AddLofiBytesMonoB   );
-      GetSymbol( AddLofiBytesStereoB );
-      GetSymbol( AddLofiWordMonoB    );
-      GetSymbol( AddLofiWordStereoB  );
-      GetSymbol( AddLofiWordsMonoB   );
-      GetSymbol( AddLofiWordsStereoB );
-
-#undef GetSymbol
+      AddLofiByteMonoPtr     = AddLofiByteMono;
+      AddLofiByteStereoPtr   = AddLofiByteStereo;
+      AddLofiBytesMonoPtr    = AddLofiBytesMono;
+      AddLofiBytesStereoPtr  = AddLofiBytesStereo;
+      AddLofiWordMonoPtr     = AddLofiWordMono;
+      AddLofiWordStereoPtr   = AddLofiWordStereo;
+      AddLofiWordsMonoPtr    = AddLofiWordsMono;
+      AddLofiWordsStereoPtr  = AddLofiWordsStereo;
+      AddLofiByteMonoBPtr    = AddLofiByteMonoB;
+      AddLofiByteStereoBPtr  = AddLofiByteStereoB;
+      AddLofiBytesMonoBPtr   = AddLofiBytesMonoB;
+      AddLofiBytesStereoBPtr = AddLofiBytesStereoB;
+      AddLofiWordMonoBPtr    = AddLofiWordMonoB;
+      AddLofiWordStereoBPtr  = AddLofiWordStereoB;
+      AddLofiWordsMonoBPtr   = AddLofiWordsMonoB;
+      AddLofiWordsStereoBPtr = AddLofiWordsStereoB;
 
       // Sucess!
     

@@ -292,7 +292,7 @@ OpenLibs ( void )
 
   if( DOSBase == NULL)
   {
-    Req( "Unable to open dos.library." );
+    Req( "Unable to open 'dos.library'." );
     return FALSE;
   }
 
@@ -302,7 +302,7 @@ OpenLibs ( void )
 
   if( GfxBase == NULL)
   {
-    Req( "Unable to open graphics.library." );
+    Req( "Unable to open 'graphics.library'." );
     return FALSE;
   }
 
@@ -312,7 +312,7 @@ OpenLibs ( void )
 
   if( GadToolsBase == NULL)
   {
-    Req( "Unable to open gadtools.library." );
+    Req( "Unable to open 'gadtools.library'." );
     return FALSE;
   }
 
@@ -322,7 +322,7 @@ OpenLibs ( void )
 
   if( IFFParseBase == NULL)
   {
-    Req( "Unable to open iffparse.library." );
+    Req( "Unable to open 'iffparse.library'." );
     return FALSE;
   }
 
@@ -356,7 +356,7 @@ OpenLibs ( void )
                   TimerIO,
                   0) != 0 )
   {
-    Req( "Unable to open timer.device." );
+    Req( "Unable to open 'timer.device'." );
     return FALSE;
   }
 
@@ -368,46 +368,100 @@ OpenLibs ( void )
 
   if( UtilityBase == NULL)
   {
-    Req( "Unable to open utility.library." );
+    Req( "Unable to open 'utility.library'." );
     return FALSE;
   }
 
 
 #ifndef VERSION68K
-  /* PPC/PowerPC library */
-  /* This code preferes PowerUp, unless WarpUp is already in memory */
 
-  // Check if WarpUp already installed...
+  /* PPC/PowerPC library loading
 
-//  Forbid();
-//  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
-//                                             "powerpc.library" );
-//  Permit();
+     Strategy:
+
+      1) If WarpUp is running, use it.
+      2) If WarpUp is is not running, but PowerUp is, use it
+      3) If neither of them are running, try WarpUp.
+      4) Finally, try PowerUp.
+
+     Result:
+
+      If both kernels are running, WarpUp will be used, since the PowerUp
+      kernel is the ppc.library emulation. (This is going to work until
+      somebody writes a WarpUp emulation for ppc.library....)
+
+      If only one kernel is already running, it will be used.
+
+      WarpUp will be used if no kernel is loaded, and WarpUp exists, since
+      WarpUp was selected for OS 3.5.  If WarpUp was not found, PowerUp
+      will be used.
+
+  */
+
+  // Check if WarpUp or PowerUp are already installed...
+
+  Forbid();
+  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
+                                             "powerpc.library" );
+  PPCLibBase  = (struct Library *) FindName( &SysBase->LibList,
+                                             "ppc.library" );
+  Permit();
 
 
-//  if( PowerPCBase != NULL )
-//  {
-//    // If so, open it properly.
-//    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-//  }
-//  else
+  if( PowerPCBase != NULL 
+      || ( PowerPCBase == NULL && PPCLibBase == NULL ) )
   {
-    // If not, try PowerUp (pray it's not the emulator!).
-    PPCLibBase = OpenLibrary( "ppc.library", 46 );
+    // Open WarpUp
+    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
+    PPCLibBase  = NULL;
   }
 
-//  if( PPCLibBase == NULL )
-//  {
-//    // If WarpUp was not loaded and PowerUp could not be opened, try
-//    // WarpUp.
-//    PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-//  }
+  if( PPCLibBase != NULL 
+      || ( PPCLibBase == NULL && PowerPCBase == NULL ) )
+  {
+    // Open PoweUp
+    PPCLibBase  = OpenLibrary( "ppc.library", 46 );
+    PowerPCBase = NULL;
+  }
+
+  if( PPCLibBase != NULL 
+      && PPCLibBase->lib_Version == 46 
+      && PPCLibBase->lib_Revision < 26 )
+  {
+    Req( "Need at least version 46.26 of 'ppc.library'." );
+    return FALSE;
+  }
 
   if( PPCLibBase != NULL || PowerPCBase != NULL )
   {
+    ULONG* version = NULL;
+    ULONG* revision = NULL;
+
     /* Load our code to PPC..  */
 
     PPCObject = AHILoadObject( "DEVS:ahi.elf" );
+
+    if( PPCObject != NULL )
+    {
+      AHIGetELFSymbol( "__LIB_Version", (void*) &version );
+      AHIGetELFSymbol( "__LIB_Revision", (void*) &revision );
+    
+      if( version == NULL || revision == NULL )
+      {
+        Req( "Unable to fetch version information from 'ahi.elf'." );
+      }
+      if( *version != Version || *revision != Revision )
+      {
+        Req( "'ahi.elf' version %ld.%ld doesn't match 'ahi.device' %ld.%ld.",
+             *version, *revision, Version, Revision );
+
+        return FALSE;
+      }
+    }
+    else
+    {
+      // PPC kernel found, but no ELF object. m68k mixing will be used.
+    }
   }
 
 #endif
