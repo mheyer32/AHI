@@ -1,5 +1,5 @@
 /* $Id$ */
-
+// :ts=8
 #ifndef _AHI_DEF_H_
 #define _AHI_DEF_H_
 
@@ -58,14 +58,16 @@ struct AHIDevUnit;
 
 extern struct ExecBase		*SysBase;
 extern struct AHIBase		*AHIBase;
-extern struct DosLibrary		*DOSBase;
+extern struct DosLibrary	*DOSBase;
 extern struct Library		*GadToolsBase;
 extern struct GfxBase		*GfxBase;
 extern struct Library		*IFFParseBase;
 extern struct IntuitionBase	*IntuitionBase;
-extern struct LocaleBase		*LocaleBase;
+extern struct LocaleBase	*LocaleBase;
 extern struct Device		*TimerBase;
-extern struct UtilityBase		*UtilityBase;
+extern struct UtilityBase	*UtilityBase;
+extern struct Library           *PPCLibBase;
+extern void                     *AHIPPCObject;
 
 extern const ULONG		 DriverVersion;
 extern const ULONG		 Version;

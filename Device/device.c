@@ -28,6 +28,12 @@
 #include "device.h"
 #include "devcommands.h"
 
+#ifndef VERSION68K
+# include <powerup/ppclib/object.h>
+# include <powerup/ppclib/interface.h>
+# include <proto/ppc.h>
+#endif
+
 /*
 ** Message passed to the Unit Process at
 ** startup time.
@@ -162,7 +168,6 @@ static struct timeval     *timeval        = NULL;
 BOOL
 OpenLibs ( void )
 {
-
   /* DOS Library */
 
   DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 37);
@@ -259,6 +264,35 @@ OpenLibs ( void )
     return FALSE;
   }
 
+#ifndef VERSION68K
+  /* PPC library */
+
+  PPCLibBase = OpenLibrary( "ppc.library", 46 );
+
+  if( PPCLibBase != NULL )
+  {
+    /* No big deal if things fail. In that case, the 68K version
+       will be used instead. */
+
+    kprintf( "Loaded ppc.lib\n" );
+    /* Load our code to PPC..  */
+
+    AHIPPCObject = PPCLoadObject( "DEVS:ahi.elf" );
+
+    kprintf( "Loaded object\n" );
+
+    if( AHIPPCObject == NULL )
+    {
+      /* This, however, is a problem. */
+
+      kprintf( "Alerting\n" );
+      Alert( AN_Unknown | AG_OpenLib | AO_Unknown );
+      kprintf( "Failing\n" );
+      return FALSE;
+    }
+  }
+#endif 
+
   OpenahiCatalog(NULL, NULL);
 
   return TRUE;
@@ -276,6 +310,11 @@ void
 CloseLibs ( void )
 {
   CloseahiCatalog();
+
+#ifndef VERSION68K
+  if(AHIPPCObject != NULL ) PPCUnLoadObject( AHIPPCObject );
+  CloseLibrary( PPCLibBase );
+#endif
   CloseLibrary( (struct Library *) UtilityBase );
   if(TimerIO) CloseDevice( (struct IORequest *) TimerIO );
   FreeVec( timeval );
@@ -655,9 +694,9 @@ ReadConfig ( struct AHIDevUnit *iounit,
     iounit->Frequency       = 10000;
     iounit->Channels        = 4;
     iounit->MonitorVolume   = ~0;
- 	  iounit->InputGain       = ~0;
+    iounit->InputGain       = ~0;
     iounit->OutputVolume    = ~0;
- 	  iounit->Input           = ~0;
+    iounit->Input           = ~0;
     iounit->Output          = ~0;
   }
   else
@@ -666,9 +705,9 @@ ReadConfig ( struct AHIDevUnit *iounit,
     AHIBase->ahib_AudioMode       = AHI_INVALID_ID;
     AHIBase->ahib_Frequency       = 10000;
     AHIBase->ahib_MonitorVolume   = 0x00000;
-  	AHIBase->ahib_InputGain       = 0x10000;
+    AHIBase->ahib_InputGain       = 0x10000;
     AHIBase->ahib_OutputVolume    = 0x10000;
-  	AHIBase->ahib_Input           = 0;
+    AHIBase->ahib_Input           = 0;
     AHIBase->ahib_Output          = 0;
   }
 
@@ -744,9 +783,9 @@ ReadConfig ( struct AHIDevUnit *iounit,
                   iounit->Frequency       = unitprefs->ahiup_Frequency;
                   iounit->Channels        = unitprefs->ahiup_Channels;
                   iounit->MonitorVolume   = unitprefs->ahiup_MonitorVolume;
-                	iounit->InputGain       = unitprefs->ahiup_InputGain;
-              	  iounit->OutputVolume    = unitprefs->ahiup_OutputVolume;
-                	iounit->Input           = unitprefs->ahiup_Input;
+                  iounit->InputGain       = unitprefs->ahiup_InputGain;
+                  iounit->OutputVolume    = unitprefs->ahiup_OutputVolume;
+                  iounit->Input           = unitprefs->ahiup_Input;
                   iounit->Output          = unitprefs->ahiup_Output;
                 }
               }
@@ -757,9 +796,9 @@ ReadConfig ( struct AHIDevUnit *iounit,
                   AHIBase->ahib_AudioMode       = unitprefs->ahiup_AudioMode;
                   AHIBase->ahib_Frequency       = unitprefs->ahiup_Frequency;
                   AHIBase->ahib_MonitorVolume   = unitprefs->ahiup_MonitorVolume;
-                	AHIBase->ahib_InputGain       = unitprefs->ahiup_InputGain;
-              	  AHIBase->ahib_OutputVolume    = unitprefs->ahiup_OutputVolume;
-                	AHIBase->ahib_Input           = unitprefs->ahiup_Input;
+                  AHIBase->ahib_InputGain       = unitprefs->ahiup_InputGain;
+                  AHIBase->ahib_OutputVolume    = unitprefs->ahiup_OutputVolume;
+                  AHIBase->ahib_Input           = unitprefs->ahiup_Input;
                   AHIBase->ahib_Output          = unitprefs->ahiup_Output;
                 }
               }

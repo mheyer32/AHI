@@ -3,6 +3,7 @@
 #  Makefile.in for the AHI preferences program
 #
 
+
 # The CPU to generate code for:
 
 CPU	= 68060
@@ -10,6 +11,8 @@ CPU	= 68060
 #Can be VERSION68K, VERSIONGEN, VERSIONPOWERUP or VERSIONWARPUP:
 
 VER	= VERSION68K
+
+include Makefile.opt
 
 
 #
@@ -68,13 +71,17 @@ else
 OBJECTS		+= dspecho.o mixer.o
 endif
 
+TARGET		= ahi.device.$(CPU)
+
 ifeq ($(VER),VERSIONPOWERUP)
 CC		= ppc-amigaos-gcc
-CFLAGS		= @CFLAGS@ -mcpu=$(CPU)
+CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -mcpu=$(CPU)
+LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
+LIBS		=
 OBJECTS		= dspecho.o mixer.o
+TARGET		= ahi.elf.$(CPU)
 endif
 
-TARGET		= ahi.device.$(CPU)
 
 LANGUAGES	= $(notdir $(basename $(wildcard translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
@@ -84,13 +91,14 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean bindist revup
+.PHONY:		all mostlyclean clean distclean maintainer-clean\
+		bindist ahidev install 000 030 040 060 603 604 revup
 
 
 all:		$(TARGET) ahi.ct $(CATALOGS)
 
 mostlyclean:
-	$(RM) $(TARGETS) *.o *.bak *~ \#*\# core Makefile.dep
+	$(RM) $(TARGETS) *.o *.bak *~ \#*\# core Makefile.dep Makefile.opt
 
 clean:		mostlyclean
 	$(RM) $(LANGTARGETS) version.h version.i *.catalog
@@ -100,16 +108,25 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-device:		$(TARGET)
-
-install:	$(TARGET)
-	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
-
 bindist:
 	$(INSTALL) --directory $(DEVSDIR)
 
 	make device VER=VERSION68K CPU=68000
 	$(INSTALL_PROGRAM)  $(DEVSDIR)
+
+ahidev:		$(TARGET)
+
+install:	$(TARGET)
+	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
+
+060:
+	make ahidev VER=VERSION68K CPU=68060
+
+060PPC:
+	make ahidev VER=VERSIONGEN CPU=68060
+
+604:
+	make ahidev VER=VERSIONPOWERUP CPU=604
 
 
 version.i:	version.rev
@@ -193,3 +210,10 @@ mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
 
 $(wildcard translations/*.ct) ahi.ct:	ahi.cd
 
+#
+# Options
+########################################
+
+Makefile.opt:
+	echo CPU = $(CPU) > $@
+	echo VER = $(VER) >> $@

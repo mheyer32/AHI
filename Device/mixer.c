@@ -5,7 +5,18 @@
 
 #include <exec/memory.h>
 
-#if !defined( VERSIONPOWERUP )
+#if defined( VERSIONPOWERUP )
+//#include <exec/types.h>
+//#include <exec/nodes.h>
+//#include <exec/lists.h>
+//#include <exec/memory.h>
+#include <utility/tagitem.h>
+#include <powerup/ppclib/interface.h>
+//#include <powerup/ppclib/message.h>
+
+
+#include <powerup/gcclib/powerup_protos.h>
+#else
 # include <proto/exec.h>
 # include <proto/utility.h>
 # include <clib/ahi_protos.h>
@@ -57,6 +68,32 @@ static void AddWordSVPHB ( ADDARGS );
 static void AddWordsMVHB ( ADDARGS );
 static void AddWordsSVPHB ( ADDARGS );
 
+
+#if defined( VERSIONPOWERUP )
+
+static const UBYTE type2bytes[]=
+{
+  1,    // AHIST_M8S  (0)
+  2,    // AHIST_M16S (1)
+  2,    // AHIST_S8S  (2)
+  4,    // AHIST_S16S (3)
+  1,    // AHIST_M8U  (4)
+  0,
+  0,
+  0,
+  4,    // AHIST_M32S (8)
+  0,
+  8     // AHIST_S32S (10)
+};
+
+ULONG
+AHI_SampleFrameSize( ULONG sampletype )
+{
+  return type2bytes[sampletype];
+}
+
+
+#endif
 
 /******************************************************************************
 ** InitMixroutine *************************************************************

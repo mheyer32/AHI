@@ -297,14 +297,27 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
           datalength    = ((ULONG *)tag->ti_Data)[0];
           nodesize     += datalength;
           break;
+
         case AHIDB_Name:
           namelength    = strlen((UBYTE *)tag->ti_Data)+1;
           nodesize     += namelength;
           break;
+
         case AHIDB_Driver:
           driverlength  = strlen((UBYTE *)tag->ti_Data)+1;
           nodesize     += driverlength;
           break;
+
+#ifndef HAVE_HIFI
+        case AHIDB_Hifi:
+          if( tag->ti_Data == FALSE )
+          {
+            // Filter away all non-hifi modes!
+            rc = FALSE;
+            goto unlock:
+          }
+          break;
+#endif
       }
       nodesize += sizeof(struct TagItem);
       tagitems++;
@@ -347,6 +360,8 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
       AddHead((struct List *) &audiodb->ahidb_AudioModes, (struct Node *) node);
       rc = TRUE;
     }
+
+unlock:
     UnlockDatabase(audiodb);
   }
 
