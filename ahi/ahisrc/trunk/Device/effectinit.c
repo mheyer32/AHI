@@ -24,7 +24,6 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
-#include <powerup/ppclib/memory.h>
 #include <proto/exec.h>
 #define __NOLIBBASE__
 #include <proto/ahi.h>
@@ -35,6 +34,7 @@
 #include "dsp.h"
 #include "dspecho.h"
 #include "effectinit.h"
+#include "header.h"
 #include "misc.h"
 #include "mixer.h"
 
@@ -110,8 +110,20 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
   ULONG size, samplesize;
   struct Echo *es;
 
-  free_DSPEcho( audioctrl );
-
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+    case MB_MORPHOS:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+  }
 
   /* Set up the delay buffer format */
 
@@ -134,8 +146,7 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
   size = samplesize * (echo->ahiede_Delay + audioctrl->ac.ahiac_MaxBuffSamples);
 
   es = AHIAllocVec( sizeof(struct Echo) + size,
-                    MEMF_PUBLIC | MEMF_CLEAR |
-                    MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
+                    data_flags );
   
   if(es)
   {

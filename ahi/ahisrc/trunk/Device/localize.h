@@ -1,7 +1,7 @@
 /* $Id$
 * $Log$
-* Revision 4.3  1999/09/11 22:02:29  lcs
-* *** empty log message ***
+* Revision 4.4  2000/06/12 18:57:02  lcs
+* WarpUp development.
 *
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
@@ -12,7 +12,7 @@
 */
 /****************************************************************
    This file was created automatically by `FlexCat 1.9'
-   from "./ahi.cd".
+   from "../../ahisrc/Device/ahi.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
