@@ -61,7 +61,7 @@ ENABLE_WARPUP	= @ENABLE_WARPUP@
 LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
-OBJECTS		= header.o gateway.o gatestubs1.o gatestubs2.o \
+OBJECTS		= header.o gateway.o gatestubs.o \
 		  device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  audioctrl.o effectinit.o sound.o misc.o dspecho.o \
@@ -80,7 +80,7 @@ endif
 #endif
 
 GENERATED	= version.h \
-		  gatestubs1.c gatestubs1.h gatestubs2.c gatestubs2.h
+		  gatestubs.c gatestubs.h
 
 #
 # Targets
@@ -160,21 +160,13 @@ version.h:	version.rev version.date
 	 echo "#define REVISION $$rev" >> $@ && \
 	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
 
-gatestubs1.c:	$(top_srcdir)/Include/SFD/ahi_lib.sfd
+gatestubs.c:	$(top_srcdir)/Include/SFD/ahi_lib.sfd
 	$(SFDC) $(SFDC_TARGET) --mode=gatestubs $^ --output $@ \
-	        --gateprefix=gw --libprefix=_ --libarg=last
+	        --gateprefix=gw --libprefix=_ --libarg=last --addvectors=device
 
-gatestubs2.c:	ahi_internal_lib.sfd
-	$(SFDC) $(SFDC_TARGET) --mode=gatestubs $^ --output $@ \
-	        --gateprefix=gw --libprefix=_ --libarg=last
-
-gatestubs1.h:	$(top_srcdir)/Include/SFD/ahi_lib.sfd
+gatestubs.h:	$(top_srcdir)/Include/SFD/ahi_lib.sfd
 	$(SFDC) $(SFDC_TARGET) --mode=gateproto $^ --output $@ \
-	        --gateprefix=gw --libprefix=_ --libarg=last
-
-gatestubs2.h:	ahi_internal_lib.sfd
-	$(SFDC) $(SFDC_TARGET) --mode=gateproto $^ --output $@ \
-	        --gateprefix=gw --libprefix=_ --libarg=last
+	        --gateprefix=gw --libprefix=_ --libarg=last --addvectors=device
 
 $(srcdir)/localize.c:	ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd $(srcdir)/localize.c=$(srcdir)/C_c_AHI.sd 

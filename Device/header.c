@@ -34,8 +34,7 @@
 
 #include "header.h"
 #include "gateway.h"
-#include "gatestubs1.h"
-#include "gatestubs2.h"
+#include "gatestubs.h"
 #include "localize.h"
 #include "misc.h"
 #include "version.h"
