@@ -854,7 +854,7 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
         id);
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
     Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
-        bits, GetString((stereo ?
+        bits, (ULONG) GetString((stereo ?
           (pan ? msgReqInfoStereoPan : msgReqInfoStereo) :
           msgReqInfoMono), req->Catalog));
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);

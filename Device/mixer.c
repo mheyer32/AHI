@@ -659,6 +659,9 @@ Mix( struct Hook*             unused_Hook,
 
               cd->cd_SoundOK       = cd->cd_DelayedSoundOK;
 
+              cd->cd_StartPointL   = 0;
+              cd->cd_StartPointR   = 0;
+
               cd->cd_Offset        = cd->cd_DelayedOffset;
               cd->cd_FirstOffsetI  = cd->cd_DelayedFirstOffsetI;
               cd->cd_LastOffset    = cd->cd_DelayedLastOffset;
