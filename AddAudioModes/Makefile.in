@@ -24,6 +24,7 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 CPPFLAGS	= @CPPFLAGS@
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
+LIBS		= @LIBS@
 
 VPATH		= @srcdir@
 
@@ -40,7 +41,7 @@ TARGET		= AddAudioModes
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean bindist
+.PHONY:		all clean distclean maintainer-clean install revup bindist
 
 all:		$(TARGET)
 
@@ -52,13 +53,18 @@ distclean:	clean
 
 maintainer-clean: distclean
 
-bindist:	$(TARGET)
+install:	all
+	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/C/$(TARGET)
+
+revup:
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%d.%m.%y > $(srcdir)/version.date
+	@echo -n "New revision: "
+	@cat $(srcdir)/version.rev
+
+bindist:	all
 	$(INSTALL) --directory $(CDIR)
 	$(INSTALL_PROGRAM) --strip $(TARGET) $(CDIR)/$(TARGET)
-
-version.h:	AddAudioModes.c
-	@echo Creating $@
-	@grep '$$Id' $< | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/#define VERS "\1.\2 (\5.\4.\3)"/' > version.h
 
 
 #
@@ -68,6 +74,24 @@ version.h:	AddAudioModes.c
 Makefile: Makefile.in ../config.status
 	(cd .. && ./config.status)
 
+
+
+#
+# Rules
+########################################
+
+$(TARGET):	$(OBJECTS)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+
+version.h:	version.rev version.date
+	@echo Creating $@
+	@ver=`cat $(top_srcdir)/version.ver` \
+	 rev=`cat $(srcdir)/version.rev` \
+	 date=`cat $(srcdir)/version.date` && \
+	 echo "#define VERSION $$ver" > $@ && \
+	 echo "#define REVISION $$rev" >> $@ && \
+	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
 
 #
 # Dependencies
