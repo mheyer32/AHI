@@ -567,7 +567,7 @@ _AHIsub_Stop( ULONG                   flags,
     }
 
     dd->record_buffer = NULL;
-    dd->record_dma_handle = NULL;
+    dd->record_dma_handle = 0;
 
     dd->is_recording = FALSE;
   }
