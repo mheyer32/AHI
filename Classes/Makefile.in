@@ -20,7 +20,7 @@ VPATH		= @srcdir@
 
 .PHONY:		all clean distclean maintainer-clean bindist
 
-SUBDIRS		= AHIRootClass
+SUBDIRS		= AHIRootClass Buffer
 
 all:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
