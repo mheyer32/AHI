@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.3  1997/04/14 01:50:39  lcs
+* AHIST_INPUT still doesn't work...
+*
 * Revision 4.2  1997/04/07 13:12:35  lcs
 * Fixed a bug in the AHIST_INPUT record hook
 *
@@ -359,10 +362,15 @@ static __asm __interrupt void Sampler(
     CopyMemQuick(recmsg->ahirm_Buffer, actrl->ahiac_InputRecordPtr,
         actrl->ahiac_InputBlockLength << 2);  // AHIST_S16S
 
+//    KPrintF("Skrev %ld bytes till 0x%08lx, ",
+//        actrl->ahiac_InputBlockLength << 2, actrl->ahiac_InputRecordPtr);
+
     actrl->ahiac_InputRecordPtr = (APTR) (((ULONG) actrl->ahiac_InputRecordPtr) +
-                                           actrl->ahiac_InputBlockLength << 2);
+                                          (actrl->ahiac_InputBlockLength << 2));
     actrl->ahiac_InputRecordCnt -= actrl->ahiac_InputBlockLength;
     
+//    KPrintF("%ld kvar\n",actrl->ahiac_InputRecordCnt);
+
     if(actrl->ahiac_InputRecordCnt == 0)
     {
       APTR temp;
@@ -408,7 +416,7 @@ static __asm __interrupt void Sampler(
 *
 *   FUNCTION
 *       Allocates and initializes the audio hardware, selects the best
-*       mixing routine (if neccessary) according to the supplied tags.
+*       mixing routine (if necessary) according to the supplied tags.
 *       To start playing you first need to call AHI_ControlAudioA().
 *
 *   INPUTS
@@ -466,7 +474,7 @@ static __asm __interrupt void Sampler(
 *       AHIA_PlayerFreq (Fixed) - If non-zero, enables timing and specifies
 *           how many times per second PlayerFunc will be called. This must
 *           be specified if AHIA_PlayerFunc is! Do not use any extreme
-*           frequences. The result of MixFreq/PlayerFreq must fit an UWORD,
+*           frequencies. The result of MixFreq/PlayerFreq must fit an UWORD,
 *           ie it must be less or equal to 65535. It is also suggested that
 *           you keep the result over 80. For normal use this should not be a
 *           problem. Note that the data type is Fixed, not integer. 50 Hz is
@@ -481,7 +489,7 @@ static __asm __interrupt void Sampler(
 *           device's interrupt feature!
 *
 *       AHIA_RecordFunc (struct Hook *) - This function will be called
-*           regulary when sampling is turned on (see AHI_ControlAudioA())
+*           regularly when sampling is turned on (see AHI_ControlAudioA())
 *           with the following parameters:
 *               A0 - (struct Hook *)
 *               A2 - (struct AHIAudioCtrl *)
@@ -501,7 +509,7 @@ static __asm __interrupt void Sampler(
 *       *** NOTE: The function MUST return NULL (in d0). This was previously
 *           not documented. Now you know.
 *
-*       AHIA_UserData (APTR) - Can be used to initialise the ahiac_UserData
+*       AHIA_UserData (APTR) - Can be used to initialize the ahiac_UserData
 *           field.
 *
 *   RESULT
@@ -1088,7 +1096,7 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *
 *       AHIDB_Panning (ULONG *) - TRUE if this mode supports stereo panning.
 *
-*       AHIDB_HiFi (ULONG *) - TRUE if no shortcuts, like predivision, is
+*       AHIDB_HiFi (ULONG *) - TRUE if no shortcuts, like pre-division, is
 *           used by the mixing routines.
 *
 *       AHIDB_PingPong (ULONG *) - TRUE if this mode can play samples backwards.
@@ -1098,11 +1106,11 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *       AHIDB_FullDuplex (ULONG *) - TRUE if this mode can record and play at
 *           the same time.
 *
-*       AHIDB_Realtime (ULONG *) - Modes which return TRUE for this fulfils
+*       AHIDB_Realtime (ULONG *) - Modes which return TRUE for this fulfills
 *           two criteria:
 *           1) Calls to AHI_SetVol(), AHI_SetFreq() or AHI_SetSound() will be
-*              preformed within (about) 10 ms if called from a PlayFunc Hook.
-*           2) The PlayFunc Hook will be called at the specifed frequency.
+*              performed within (about) 10 ms if called from a PlayFunc Hook.
+*           2) The PlayFunc Hook will be called at the specified frequency.
 *           If you don't use AHI's PlayFunc Hook, you must not use modes that
 *           are not realtime. (Criterium 2 is not that obvious if you consider
 *           a mode that renders the output to disk as a sample.)
@@ -1140,16 +1148,16 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 *           Fs is the frequency of the sound and Fm is the mixing frequency.
 *
 *       AHIDB_MaxRecordSamples (ULONG *) - Return the number of sample frames
-*           you will recieve each time the RecordFunc is called.
+*           you will receive each time the RecordFunc is called.
 *
 *       AHIDB_BufferLen (ULONG) - Specifies how many characters will be
-*           copyed when requesting text attributes. Default is 0, which
+*           copied when requesting text attributes. Default is 0, which
 *           means that AHIDB_Driver, AHIDB_Name, AHIDB_Author,
 *           AHIDB_Copyright, AHIDB_Version and AHIDB_Annotation,
 *           AHIDB_Input and AHIDB_Output will do nothing.
 *
 *       AHIDB_Driver (STRPTR) - Name of driver (excluding path and
-*           extention). 
+*           extension). 
 *           NOTE: ti_Data is a pointer to an UBYTE array where the name
 *           will be stored. See AHIDB_BufferLen.
 *
@@ -1572,7 +1580,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *               portion of memory where the sample is stored must NOT be
 *               altered until AHI_UnloadSound() has been called! This is
 *               because some audio drivers may wish to upload the samples
-*               to local RAM. It is ok to read, though.
+*               to local RAM. It is OK to read, though.
 *
 *           AHIST_DYNAMICSAMPLE - array of 8 or 16 bit samples, which can be
 *               updated dynamically. Typically used to play data that is
@@ -1605,7 +1613,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *               to be played as offset argument. Unfortunately, this does not
 *               work for 16 bit samples.
 *
-*           AHIST_INPUT - Allways set info to NULL.
+*           AHIST_INPUT - Always set info to NULL.
 *               Note that AHI_SetFreq() may only be called with AHI_MIXFREQ
 *               for this sample type.
 *
@@ -1621,7 +1629,7 @@ __asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
 *       MUST NOT be swapped out! Allocate your sample memory with the
 *       MEMF_PUBLIC flag set. 
 *
-*       SoundFunc will be called in the same manner as Paula interrups
+*       SoundFunc will be called in the same manner as Paula interrupts
 *       occur; when the device has updated its internal variables and can
 *       accept new commands.
 *
@@ -1877,7 +1885,7 @@ __asm ULONG UnloadSound(register __d0 UWORD sound,
 *       AHI_SetFreq(), AHI_SetSound() and AHI_SetVol(). The advantages
 *       of using only one call is that simple loops can be set without
 *       using a SoundFunc (see AHI_AllocAudioA(), tag AHIA_SoundFunc) and
-*       that sounds on different channels can be syncronized even when the
+*       that sounds on different channels can be synchronized even when the
 *       sounds are not started from a PlayerFunc (see AHI_AllocAudioA(), tag
 *       AHIA_PlayerFunc). The disadvantage is that this call has more
 *       overhead than AHI_SetFreq(), AHI_SetSound() and AHI_SetVol(). It is
@@ -1895,7 +1903,7 @@ __asm ULONG UnloadSound(register __d0 UWORD sound,
 *       AHIP_BeginChannel (UWORD) - Before you start setting attributes
 *           for a sound to play, you have to use this tag to chose a
 *           channel to operate on. If AHIP_BeginChannel is omitted, the
-*           resullt is undefined.
+*           result is undefined.
 *
 *       AHIP_EndChannel (ULONG) - Signals the end of attributes for
 *           the current channel. If AHIP_EndChannel is omitted, the result

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.3  1997/04/14 01:50:39  lcs
+* AHIST_INPUT still doesn't work...
+*
 * Revision 4.2  1997/04/09 02:43:15  lcs
 * Bug in mixing routines fixed (playing stereo words on mono channel)
 *
@@ -597,7 +600,7 @@ SelectAddRoutine:
 	muls.l	d5,d1
 	divs.l	d2,d1
  ELSE
-	move.l	_UtilityBase(pc),a0
+	move.l	_UtilityBase,a0
 	
 	push	d1
 	move.l	d5,d1
@@ -819,31 +822,6 @@ functionstable:
 
 
 
-*******************************************************************************
-***** This is a special mixing loop used for input sounds.                *****
-***** It guarantees that input sounds are played exactly at the same rate *****
-***** as data is sampled. The normal mixing loop doesn't seem to do that. *****
-***** That could be considered as a bug, yes.                             *****
-***** I don't care.                                                       *****
-*******************************************************************************
-
-handleinput:
-	move.w	cd_ChannelNo(a5),d1
-	mulu.w	#AHISoundData_SIZEOF,d1
-	move.l	ahiac_SoundDatas(a2),a3
-	add.l	d1,a3
-
-; Swap buffers
-;	move.l	sd_InputBuffer2(a3),d1
-;	move.l	sd_InputBuffer1(a3),sd_InputBuffer2(a3)
-;	move.l	sd_InputBuffer0(a3),sd_InputBuffer1(a3)
-;	move.l	d1,sd_InputBuffer0(a3)
-
-	move.l	ahiac_InputBuffer1(a2),cd_DataStart(a5)
-
-;	PRINTF	2,"Playing sound: 0x%08lx (%ld-%ld)", cd_NextDataStart(a5), cd_NextOffsetI(a5), cd_NextLastOffsetI(a5)
-	rts
-
 *
 * The mixing routine mixes ahiac_BuffSamples each pass, fitting in
 * ahiac_BuffSizeNow bytes. ahiac_BuffSizeNow must be an even multiplier
@@ -918,19 +896,17 @@ _Mix:
 	and.l	#AHIST_INPUT,d1
 	beq	.notinput2
 
-	clr.l	cd_OffsetI(a5)
-	clr.w	cd_OffsetF(a5)
-	clr.l	cd_FirstOffsetI(a5)
-
 	move.l	cd_NextFlags(a5),cd_Flags(a5)
 	movem.l	cd_NextAddI(a5),d0-d7/a0/a3/a6	; AddI,AddF,DataStart,LastOffsetI,LastOffsetF,ScaleLeft,ScaleRight,AddRoutine, VolumeLeft,VolumeRight,Type
 	movem.l	d0-d7/a0/a3/a6,cd_AddI(a5)
 
 	move.l	ahiac_InputLength(a2),cd_Samples(a5)
+	clr.l	cd_OffsetI(a5)
+	clr.w	cd_OffsetF(a5)
+	clr.l	cd_FirstOffsetI(a5)
+	move.l	ahiac_InputBuffer1(a2),cd_DataStart(a5)
 
 	pop	d0
-	bsr	handleinput
-
 	bra.w	.contchannel		;same channel, new sound
 
 .notinput2
@@ -1112,7 +1088,7 @@ CalcSamples:
  ELSE
 	move.l	d3,d1
 	move.l	d4,d2
-	bsr	UDivMod64		;d0 = (d1:d2)/d0
+	bsr	_UDivMod64		;d0 = (d1:d2)/d0
  ENDC
 	addq.l	#1,d0
 	rts
@@ -2885,6 +2861,7 @@ AddByteSVPT:
 * d1.w	-256..256
 * d2.w	-256..256
 AddBytesMV:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -2913,6 +2890,7 @@ AddBytesMV:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -2922,6 +2900,7 @@ AddBytesMV:
 * d1.l	Pointer in multiplication table
 * d2.l	Pointer in multiplication table
 AddBytesMVT:
+ IFGE	__CPU-68020
 	push	a1
 	move.l	d1,a0
 	move.l	d2,a1
@@ -2950,6 +2929,7 @@ AddBytesMVT:
 	dbf	d0,.nextsample
 .exit
 	pop	a1
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -2958,6 +2938,7 @@ AddBytesMVT:
 ;in
 * d1.w	-256..256
 AddBytesSVl:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -2980,6 +2961,7 @@ AddBytesSVl:
 	addq.l	#2,a4
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -2988,6 +2970,7 @@ AddBytesSVl:
 ;in
 * d2.w	-256..256
 AddBytesSVr:
+ IFGE	__CPU-68020
 	moveq	#0,d7
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -3011,6 +2994,7 @@ AddBytesSVr:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3020,6 +3004,7 @@ AddBytesSVr:
 * d1.w	-256..256
 * d2.w	-256..256
 AddBytesSVP:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3048,6 +3033,7 @@ AddBytesSVP:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3056,6 +3042,7 @@ AddBytesSVP:
 ;in
 * d1.l	Pointer in multiplication table
 AddBytesSVTl:
+ IFGE	__CPU-68020
 	move.l	d1,a0
 	moveq	#0,d1
 	lsr.w	#1,d0
@@ -3078,6 +3065,7 @@ AddBytesSVTl:
 	addq.l	#2,a4
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 ;------------------------------------------------------------------------------
 	cnop	0,16
@@ -3085,6 +3073,7 @@ AddBytesSVTl:
 ;in
 * d2.l	Pointer in multiplication table
 AddBytesSVTr:
+ IFGE	__CPU-68020
 	move.l	d2,a0
 	moveq	#0,d1
 	moveq	#0,d2
@@ -3108,6 +3097,7 @@ AddBytesSVTr:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3117,6 +3107,7 @@ AddBytesSVTr:
 * d1.l	Pointer in multiplication table
 * d2.l	Pointer in multiplication table
 AddBytesSVPT:
+ IFGE	__CPU-68020
 	move.l	a1,d7			;save a1
 	move.l	d1,a0
 	move.l	d2,a1
@@ -3146,6 +3137,7 @@ AddBytesSVPT:
 	dbf	d0,.nextsample
 .exit
 	move.l	d7,a1			;restore a1
+ ENDC
 	rts
 
 ;******************************************************************************
@@ -3552,6 +3544,7 @@ AddWordSVPT:
 * d2.l	-32768..32767
 AddWordsMV:
 * 16 bit signed input
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3584,6 +3577,7 @@ AddWordsMV:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3593,57 +3587,33 @@ AddWordsMV:
 * d1.l	Shift Count
 * d2.l	Shift Count
 AddWordsMVT:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3653,6 +3623,7 @@ AddWordsMVT:
 * d1.l	-32768..32767
 AddWordsSVl:
 * 16 bit signed input
+ IFGE	__CPU-68020
 	moveq	#15,d2
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -3676,6 +3647,7 @@ AddWordsSVl:
 	addq.l	#2,a4
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3685,6 +3657,7 @@ AddWordsSVl:
 * d2.l	-32768..32767/
 AddWordsSVr:
 * 16 bit signed input
+ IFGE	__CPU-68020
 	moveq	#15,d1
 
 	lsr.w	#1,d0
@@ -3709,6 +3682,7 @@ AddWordsSVr:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3719,6 +3693,7 @@ AddWordsSVr:
 * d2.l	-32768..32767/-256..256
 AddWordsSVP:
 * 16/8 bit signed input (8 for '000 version)
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -3753,6 +3728,7 @@ AddWordsSVP:
 	addx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3761,33 +3737,20 @@ AddWordsSVP:
 ;in
 * d1.l	Shift count
 AddWordsSVTl:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 	addq.l	#2,a4
 .1
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	add.w	d6,d4
@@ -3796,6 +3759,7 @@ AddWordsSVTl:
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3804,33 +3768,20 @@ AddWordsSVTl:
 ;in
 * d2.l	Shift count
 AddWordsSVTr:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	2(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	2(a3,d7.l),d7
- ENDC
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
- IFGE	__CPU-68020
 	move.w	2(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	2(a3,d7.l),d7
- ENDC
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
@@ -3839,6 +3790,7 @@ AddWordsSVTr:
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -3848,57 +3800,33 @@ AddWordsSVTr:
 * d1.l	Shift count
 * d2.l	Shift count
 AddWordsSVPT:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 .1
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	add.w	d6,d4
 	addx.l	d5,d3
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;******************************************************************************
@@ -4228,6 +4156,7 @@ AddByteSVPTB:
 * d1.w	-256..256
 * d2.w	-256..256
 AddBytesMVB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -4256,6 +4185,7 @@ AddBytesMVB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4265,6 +4195,7 @@ AddBytesMVB:
 * d1.l	Pointer in multiplication table
 * d2.l	Pointer in multiplication table
 AddBytesMVTB:
+ IFGE	__CPU-68020
 	push	a1
 	move.l	d1,a0
 	move.l	d2,a1
@@ -4293,6 +4224,7 @@ AddBytesMVTB:
 	dbf	d0,.nextsample
 .exit
 	pop	a1
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4301,6 +4233,7 @@ AddBytesMVTB:
 ;in
 * d1.w	-256..256
 AddBytesSVlB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -4323,6 +4256,7 @@ AddBytesSVlB:
 	addq.l	#2,a4
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4331,6 +4265,7 @@ AddBytesSVlB:
 ;in
 * d2.w	-256..256
 AddBytesSVrB:
+ IFGE	__CPU-68020
 	moveq	#0,d7
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -4354,6 +4289,7 @@ AddBytesSVrB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4363,6 +4299,7 @@ AddBytesSVrB:
 * d1.w	-256..256
 * d2.w	-256..256
 AddBytesSVPB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -4391,6 +4328,7 @@ AddBytesSVPB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4399,6 +4337,7 @@ AddBytesSVPB:
 ;in
 * d1.l	Pointer in multiplication table
 AddBytesSVTlB:
+ IFGE	__CPU-68020
 	move.l	d1,a0
 	moveq	#0,d1
 	lsr.w	#1,d0
@@ -4421,6 +4360,7 @@ AddBytesSVTlB:
 	addq.l	#2,a4
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 ;------------------------------------------------------------------------------
 	cnop	0,16
@@ -4428,6 +4368,7 @@ AddBytesSVTlB:
 ;in
 * d2.l	Pointer in multiplication table
 AddBytesSVTrB:
+ IFGE	__CPU-68020
 	move.l	d2,a0
 	moveq	#0,d1
 	moveq	#0,d2
@@ -4451,6 +4392,7 @@ AddBytesSVTrB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4460,6 +4402,7 @@ AddBytesSVTrB:
 * d1.l	Pointer in multiplication table
 * d2.l	Pointer in multiplication table
 AddBytesSVPTB:
+ IFGE	__CPU-68020
 	move.l	a1,d7			;save a1
 	move.l	d1,a0
 	move.l	d2,a1
@@ -4489,6 +4432,7 @@ AddBytesSVPTB:
 	dbf	d0,.nextsample
 .exit
 	move.l	d7,a1			;restore a1
+ ENDC
 	rts
 
 ;******************************************************************************
@@ -4896,6 +4840,7 @@ AddWordSVPTB:
 * d2.l	-32768..32767
 AddWordsMVB:
 * 16 bit signed input
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -4928,6 +4873,7 @@ AddWordsMVB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4937,57 +4883,33 @@ AddWordsMVB:
 * d1.l	Shift Count
 * d2.l	Shift Count
 AddWordsMVTB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -4997,6 +4919,7 @@ AddWordsMVTB:
 * d1.l	-32768..32767
 AddWordsSVlB:
 * 16 bit signed input
+ IFGE	__CPU-68020
 	moveq	#15,d2
 	lsr.w	#1,d0
 	bcs.b	.1
@@ -5020,6 +4943,7 @@ AddWordsSVlB:
 	addq.l	#2,a4
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -5029,6 +4953,7 @@ AddWordsSVlB:
 * d2.l	-32768..32767/
 AddWordsSVrB:
 * 16 bit signed input
+ IFGE	__CPU-68020
 	moveq	#15,d1
 
 	lsr.w	#1,d0
@@ -5053,6 +4978,7 @@ AddWordsSVrB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -5063,6 +4989,7 @@ AddWordsSVrB:
 * d2.l	-32768..32767/-256..256
 AddWordsSVPB:
 * 16/8 bit signed input (8 for '000 version)
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
@@ -5097,6 +5024,7 @@ AddWordsSVPB:
 	subx.l	d5,d3
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -5105,33 +5033,20 @@ AddWordsSVPB:
 ;in
 * d1.l	Shift count
 AddWordsSVTlB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 	addq.l	#2,a4
 .1
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	(a3,d7.l),d7
- ENDC
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	sub.w	d6,d4
@@ -5140,6 +5055,7 @@ AddWordsSVTlB:
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -5148,33 +5064,20 @@ AddWordsSVTlB:
 ;in
 * d2.l	Shift count
 AddWordsSVTrB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	2(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	2(a3,d7.l),d7
- ENDC
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
- IFGE	__CPU-68020
 	move.w	2(a3,d3.l*4),d7
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	move.w	2(a3,d7.l),d7
- ENDC
 	asr.w	d2,d7
 	addq.l	#2,a4
 	add.w	d7,(a4)+
@@ -5183,6 +5086,7 @@ AddWordsSVTrB:
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------
@@ -5192,57 +5096,33 @@ AddWordsSVTrB:
 * d1.l	Shift count
 * d2.l	Shift count
 AddWordsSVPTB:
+ IFGE	__CPU-68020
 	lsr.w	#1,d0
 	bcs.b	.1
 	subq.w	#1,d0
 	bmi.b	.exit
 .nextsample
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 .1
- IFGE	__CPU-68020
 	move.w	(a3,d3.l*4),d7
 	asr.w	d1,d7
 	add.w	d7,(a4)+
 	move.w	2(a3,d3.l*4),d7
 	asr.w	d2,d7
 	add.w	d7,(a4)+
- ELSE
-	move.l	d3,d7
-	add.l	d7,d7
-	add.l	d7,d7
-	lea	(a3,d7.l),a0
-	move.w	(a0)+,d7
-	asr.w	d1,d7
-	add.w	d7,(a4)+
-	move.w	(a0),d7
-	asr.w	d2,d7
-	add.w	d7,(a4)+
- ENDC
 	sub.w	d6,d4
 	subx.l	d5,d3
 
 	dbf	d0,.nextsample
 .exit
+ ENDC
 	rts
 
 ;------------------------------------------------------------------------------

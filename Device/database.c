@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/04/14 01:50:39  lcs
+* AHIST_INPUT still doesn't work...
+*
 * Revision 4.1  1997/04/02 22:28:11  lcs
 * Bumped to version 4
 *
@@ -147,7 +150,7 @@ __asm __saveds struct TagItem *GetDBTagList(
 *       ULONG AHI_NextAudioID( ULONG );
 *
 *   FUNCTION
-*       This function is used to itereate through all current AudioIDs in
+*       This function is used to iterate through all current AudioIDs in
 *       the audio database.
 *
 *   INPUTS
