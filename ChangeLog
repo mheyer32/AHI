@@ -1,31 +1,26 @@
-2004-06-20  Martin Blom  <martin@blom.org>
+2004-06-26  Martin Blom  <martin@blom.org>
 
-	* Implemented adder.ahi-processor.
+	* Released AHI 5.12.
 
-	* Bumped a lot of version numbers to 7.0.
+2004-06-12  Martin Blom  <martin@blom.org>
 
-	* Implemented tick.ahi-processor and ahi-lfo.class.
+	* ahi.device: Avoid memory trashing when opening AHI_NO_UNIT using
+	a V2-sized AHIRequest. [Harry Sintonen]
 
-2004-06-07  Martin Blom  <martin@blom.org>
+2004-06-09  Martin Blom  <martin@blom.org>
 
-	* Implemented gain.ahi-processor.
+	* Released device.audio 5.1.
 
-2004-06-06  Martin Blom  <martin@blom.org>
+	* device.audio: Clear audio buffers before playing the first time
+	(removes the noise in the beginning). 
 
-	* Added error codes and handling.
+2004-06-08  Martin Blom  <martin@blom.org>
 
-	* Implemented ahi.class, ahi-buffer.class and ahi-processor.class.
+	* Added 7.1 multichannel support. And there was much rejoicing.
 
-2004-06-05  Martin Blom  <martin@blom.org>
-
-	* Imported new include files (classes etc).
+	* Added missing TAG_DONEs to ScanAudioModes.
 
 2004-06-04  Martin Blom  <martin@blom.org>
-
-	* Removed BGUI and ClassAct preference support (for now at least,
-	ReAction support might be re-added later).
-
-	* Removed WarpUp support.
 
 	* Forked off BRANCH_6.
 

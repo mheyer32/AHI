@@ -310,6 +310,8 @@ AHIDB_Output		EQU AHI_TagBase+141
 * --- New for V4, they will be ignored by V2 and earlier ---
 AHIDB_Data		EQU AHI_TagBaseR+142	; Private!
 AHIDB_DriverBaseName	EQU AHI_TagBaseR+143	; Private!
+* --- New for V6, they will be ignored by V4 and earlier ---
+AHIDB_MultiChannel	EQU AHI_TagBase+144	; Boolean
 
  ; AHI_BestAudioIDA tags
 * --- New for V4, they will be ignored by V2 and earlier ---
@@ -385,7 +387,7 @@ AHIST_BW		EQU 1<<30		; Private
 
  ; Sample types
 ; Note that only AHIST_M8S, AHIST_S8S, AHIST_M16S and AHIST_S16S
-; (plus AHIST_M32S and AHIST_S32S in V6)
+; (plus AHIST_M32S, AHIST_S32S and AHIST_L7_1 in V6)
 ; are supported by AHI_LoadSound().
 AHIST_M8S		EQU 0			; Mono, 8 bit signed (BYTE)
 AHIST_M16S		EQU 1			; Mono, 16 bit signed (WORD)
@@ -395,6 +397,8 @@ AHIST_M32S		EQU 8			; Mono, 32 bit signed (LONG)
 AHIST_S32S		EQU 10			; Stereo, 32 bit signed (2×LONG)
 
 AHIST_M8U		EQU 4			; OBSOLETE!
+
+AHIST_L7_1		EQU $00c3000a		; 7.1, 32 bit signed (8×LONG)
 
  ; Error codes
 AHIE_OK			EQU 0			; No error

@@ -48,6 +48,10 @@
 #include "mixer.h"
 #include "sound.h"
 
+#if defined( ENABLE_WARPUP )
+# include "warpup.h"
+#endif
+
 #define min(a,b) (((a)<(b))?(a):(b))
 #define max(a,b) (((a)>(b))?(a):(b))
 
@@ -56,14 +60,48 @@
 ******************************************************************************/
 
 void
+CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
+               void* arg )
+{
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
+                   audioctrl,
+                   arg );
+      break;
+
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      WarpUpCallSoundHook( audioctrl, arg );
+      break;
+#endif
+  }
+}
+
+
+void
 MixerFunc( struct Hook*             hook,
            struct AHIPrivAudioCtrl* audioctrl,
            void*                    dst )
 {
-  Mix( hook, audioctrl, dst );
-  DoMasterVolume( dst, audioctrl );
-  DoOutputBuffer( dst, audioctrl );
-  DoChannelInfo( audioctrl );
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      Mix( hook, audioctrl, dst );
+      DoMasterVolume( dst, audioctrl );
+      DoOutputBuffer( dst, audioctrl );
+      DoChannelInfo( audioctrl );
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      WarpUpCallMixer( audioctrl, dst );
+      DoOutputBuffer( dst, audioctrl );
+      DoChannelInfo( audioctrl );
+      break;
+#endif
+  }
 }
 
 
@@ -82,16 +120,32 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
   // Allocate and initialize the AHIChannelData structures
   // This structure could be accessed from from interrupts!
 
-  audioctrl->ahiac_ChannelDatas = AllocVec(
+  ULONG data_flags = MEMF_ANY;
+  
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR;
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      // Non-cached from both the PPC and m68k side
+      data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
+      break;
+#endif
+  }
+
+  audioctrl->ahiac_ChannelDatas = AHIAllocVec(
       audioctrl->ac.ahiac_Channels * sizeof( struct AHIChannelData ),
-      MEMF_PUBLIC | MEMF_CLEAR );
+      data_flags );
 
   // Allocate and initialize the AHISoundData structures
   // This structure could be accessed from from interrupts!
 
-  audioctrl->ahiac_SoundDatas = AllocVec(
+  audioctrl->ahiac_SoundDatas = AHIAllocVec(
       audioctrl->ac.ahiac_Sounds * sizeof( struct AHISoundData ),
-      MEMF_PUBLIC | MEMF_CLEAR );
+      data_flags );
 
   // Now link the list and fill in the channel number for each structure.
 
@@ -133,7 +187,19 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
     }
   }
 
-  rc = TRUE;
+
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      rc = TRUE;
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      rc = WarpUpInit( audioctrl );
+      break;
+#endif
+  }
 
   return rc;
 }
@@ -149,10 +215,22 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
-  FreeVec( audioctrl->ahiac_SoundDatas );
+  switch( MixBackend )
+  {
+    case MB_NATIVE:
+      break;
+      
+#if defined( ENABLE_WARPUP )
+    case MB_WARPUP:
+      WarpUpCleanUp( audioctrl );
+      break;
+#endif
+  }
+
+  AHIFreeVec( audioctrl->ahiac_SoundDatas );
   audioctrl->ahiac_SoundDatas = NULL;
 
-  FreeVec( audioctrl->ahiac_ChannelDatas );
+  AHIFreeVec( audioctrl->ahiac_ChannelDatas );
   audioctrl->ahiac_ChannelDatas = NULL;
 }
 
@@ -265,6 +343,16 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddLongsMonoPtr;
             break;
 
+          case AHIST_L7_1:
+          case AHIST_BW|AHIST_L7_1:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = Add71MonoBPtr;
+            else
+              *AddRoutine = Add71MonoPtr;
+            break;
+
           default:
             *ScaleLeft  = 0;
             *ScaleRight = 0;
@@ -339,6 +427,16 @@ SelectAddRoutine ( Fixed     VolumeLeft,
               *AddRoutine = AddLongsStereoPtr;
             break;
 
+          case AHIST_L7_1:
+          case AHIST_BW|AHIST_L7_1:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = Add71StereoBPtr;
+            else
+              *AddRoutine = Add71StereoPtr;
+            break;
+
           default:
             *ScaleLeft  = 0;
             *ScaleRight = 0;
@@ -347,6 +445,62 @@ SelectAddRoutine ( Fixed     VolumeLeft,
         }
         break;
 
+      case AHIST_L7_1:
+
+        // ...and then the source format.
+
+        switch(SampleType)
+        {
+          case AHIST_M8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = AddByte71Ptr;
+            break;
+
+          case AHIST_S8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = AddBytes71Ptr;
+            break;
+
+          case AHIST_M16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = AddWord71Ptr;
+            break;
+
+          case AHIST_S16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = AddWords71Ptr;
+            break;
+
+          case AHIST_M32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = AddLong71Ptr;
+            break;
+
+          case AHIST_S32S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = AddLongs71Ptr;
+            break;
+
+          case AHIST_L7_1:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+	    *AddRoutine = Add7171Ptr;
+            break;
+	    
+          default:
+            *ScaleLeft  = 0;
+            *ScaleRight = 0;
+            *AddRoutine = NULL;
+            break;
+        }
+        break;
+	
       default:
         *ScaleLeft  = 0;
         *ScaleRight = 0;
@@ -564,9 +718,7 @@ Mix( struct Hook*             unused_Hook,
           cd->cd_EOS = FALSE;
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
-	    CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
-			 audioctrl,
-			 &cd->cd_ChannelNo );
+            CallSoundHook( audioctrl, &cd->cd_ChannelNo );
           }
         }
 
@@ -583,8 +735,14 @@ Mix( struct Hook*             unused_Hook,
 
           if( try_samples > 0 )
           {
-            cd->cd_TempStartPointL = cd->cd_StartPointL;
-            cd->cd_TempStartPointR = cd->cd_StartPointR;
+            cd->cd_TempStartPointL   = cd->cd_StartPointL;
+            cd->cd_TempStartPointR   = cd->cd_StartPointR;
+            cd->cd_TempStartPointRL  = cd->cd_StartPointRL;
+            cd->cd_TempStartPointRR  = cd->cd_StartPointRR;
+            cd->cd_TempStartPointSL  = cd->cd_StartPointSL;
+            cd->cd_TempStartPointSR  = cd->cd_StartPointSR;
+            cd->cd_TempStartPointC   = cd->cd_StartPointC;
+            cd->cd_TempStartPointLFE = cd->cd_StartPointLFE;
 
             processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
                                                          cd->cd_ScaleLeft,
@@ -689,8 +847,14 @@ Mix( struct Hook*             unused_Hook,
 
           if( samples > 0 )
           {
-            cd->cd_TempStartPointL = cd->cd_StartPointL;
-            cd->cd_TempStartPointR = cd->cd_StartPointR;
+            cd->cd_TempStartPointL   = cd->cd_StartPointL;
+            cd->cd_TempStartPointR   = cd->cd_StartPointR;
+            cd->cd_TempStartPointRL  = cd->cd_StartPointRL;
+            cd->cd_TempStartPointRR  = cd->cd_StartPointRR;
+            cd->cd_TempStartPointSL  = cd->cd_StartPointSL;
+            cd->cd_TempStartPointSR  = cd->cd_StartPointSR;
+            cd->cd_TempStartPointC   = cd->cd_StartPointC;
+            cd->cd_TempStartPointLFE = cd->cd_StartPointLFE;
 	    
 	    processed = ((ADDFUNC *) cd->cd_AddRoutine)( samples,
                                                          cd->cd_ScaleLeft,

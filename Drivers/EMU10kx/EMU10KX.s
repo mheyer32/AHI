@@ -61,6 +61,22 @@
 	.asciz		"EMU10kx:16 bit stereo++"
 	CHUNK_END
 		
+	CHUNK_START	AUDM
+1:	
+	LONG2		AHIDB_AudioID,	0x001e0005
+	LONG2		AHIDB_Volume,	TRUE
+	LONG2		AHIDB_Panning,	TRUE
+	LONG2		AHIDB_Stereo,	TRUE
+	LONG2		AHIDB_MultiChannel, TRUE
+	LONG2		AHIDB_PingPong,	FALSE
+	LONG2		AHIDB_HiFi,	TRUE
+	LONG2		AHIDB_MultTable,FALSE
+	LONG2		AHIDB_Name,	2f-1b
+	.long		TAG_DONE
+2:
+	.asciz		"EMU10kx:HiFi 16 bit 7.1 multichannel"
+	CHUNK_END
+
 	FORM_END
 
 	.END

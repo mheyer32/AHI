@@ -695,6 +695,7 @@ ResetCmd ( struct AHIRequest *ioreq,
 *   EXAMPLE
 *
 *   NOTES
+*       It's only possible to read signed mono or stereo samples.
 *
 *   BUGS
 *
