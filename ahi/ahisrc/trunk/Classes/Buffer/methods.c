@@ -78,7 +78,6 @@ MethodNew(Class* class, Object* object, struct opSet* msg) {
     }
     
     AHIClassData->data = AllocVec(size, MEMF_PUBLIC | MEMF_CLEAR);
-    KPrintF("Allocated %ld bytes sample buffer: %08lx\n", size, AHIClassData->data);
   }
 
   if (AHIClassData->data == NULL) {
