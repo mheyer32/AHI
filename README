@@ -1,10 +1,10 @@
 
-The fifth beta release of AHI/PPC
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-Well, well, well...  What do you know, another beta release.  Basically,
-this release just adds support for MorphOS.  Under MorphOS, the performace
-of AHI in terms of speed is, well, better than before.  Much better, if you
-run the right applications.
+AHI version 5
+¯¯¯¯¯¯¯¯¯¯¯¯¯
+This is AHI version 5.  Yeah, really.  It's nowhere near what I wanted for
+version 5, but I figured a release was better than no release, no matter
+what.  The deadline of AmigaOS 3.9 requires some slight change of plans as
+well.
 
 If you have installed earlier beta versions of the AHI preference program,
 MUST install the new one, go to the "advanced" page, reset the default
@@ -26,8 +26,8 @@ I'd estimate that exactly one program is affected by these changes (the AHI
 preferences program), but maybe there are a few more.  Sorry about that.
 
 
-Things still to do before the full release
-¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
+Things I'd still like to do
+¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
  · Write assembler echo and master volume (m68k and ppc).
  · Add non-mixing modes for so-called "serious" music software and fast
    streaming.
@@ -40,7 +40,7 @@ Things still to do before the full release
  · Fix all the bugs you find.
 
 Take your pick!  Any help is wecome, and the more help I get, the sooner
-the full release will come.
+the "real" release will come.
 
 How to make your very own version of AHI
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
