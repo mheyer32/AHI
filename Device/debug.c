@@ -660,17 +660,3 @@ Debug_LoadModeFile( STRPTR name)
 {
   KPrintF("AHI_LoadModeFile(%s)",(ULONG)name);
 }
-
-
-/******************************************************************************
-** The Prayer *****************************************************************
-******************************************************************************/
-
-static const char prayer[] =
-{
-  "Oh Lord, most wonderful God, I pray for every one that uses this software; "
-  "Let the Holy Ghost speak, call him or her to salvation, reveal your Love. "
-  "Lord, bring the revival to this country, let the Holy Ghost fall over all "
-  "flesh, as You have promised a long time ago. Thank you for everything, thank "
-  "you for what is about to happen. Amen."
-};
