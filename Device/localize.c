@@ -1,7 +1,10 @@
 /* $Id$
 * $Log$
-* Revision 4.1  1999/01/12 16:16:54  lcs
-* Moved to GNU make and gcc.
+* Revision 4.2  1999/01/15 23:04:46  lcs
+* *** empty log message ***
+*
+* Revision 4.2  1999/01/15 22:40:25  lcs
+* Fixed a couple of warnings.
 *
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
@@ -77,7 +80,7 @@ void OpenahiCatalog(struct Locale *loc, STRPTR language)
     }
 
     ahi_Catalog = OpenCatalog(loc, (STRPTR) "ahi.catalog",
-        OC_BuiltInLanguage, ahi_BuiltInLanguage,
+        OC_BuiltInLanguage, (ULONG) ahi_BuiltInLanguage,
         tag, tagarg,
         OC_Version, ahi_Version,
         TAG_DONE);
@@ -101,11 +104,12 @@ struct Catalog *ExtOpenCatalog(struct Locale *loc, STRPTR language)
     }
 
     return OpenCatalog(loc, (STRPTR) "ahi.catalog",
-        OC_BuiltInLanguage, ahi_BuiltInLanguage,
+        OC_BuiltInLanguage, (ULONG) ahi_BuiltInLanguage,
         tag, tagarg,
         OC_Version, ahi_Version,
         TAG_DONE);
   }
+  return NULL;
 }
 
 void CloseahiCatalog(void)

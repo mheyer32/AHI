@@ -4,14 +4,18 @@
 #include <CompilerSpecific.h>
 
 #include <exec/memory.h>
-#include <proto/exec.h>
-#include <proto/utility.h>
-#include <math.h>
+
+#if !defined( VERSIONPOWERUP )
+# include <proto/exec.h>
+# include <proto/utility.h>
+# include <clib/ahi_protos.h>
+# include <pragmas/ahi_pragmas.h>
+# include <proto/ahi_sub.h>
+#endif
 
 #include "ahi_def.h"
 #include "dsp.h"
 #include "mixer.h"
-#include "asmfuncs.h"
 
 
 static void
@@ -394,10 +398,17 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 // There is a stub function in asmfuncs.a called Mix() that saves d0-d1/a0-a1
 // and calls MixMixGeneric. This stub is only assembled if VERSIONGEN is set.
 
+#if !defined( VERSIONPOWERUP )
 void ASMCALL
 MixGeneric ( REG(a0, struct Hook *Hook), 
              REG(a1, void *dst), 
              REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
+#else
+void
+MixGeneric ( struct Hook *Hook, 
+             void *dst, 
+             struct AHIPrivAudioCtrl *audioctrl )
+#endif
 {
   struct AHIChannelData	*cd;
   void                  *dstptr;
@@ -485,7 +496,6 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
             if( (cd->cd_Type ^ cd->cd_NextType) & AHIST_BW )
             {
-
               cd->cd_Offset = -cd->cd_Offset;
             }
 
@@ -1546,6 +1556,7 @@ AddWordsSVPHB ( ADDARGS )
 }
 
 
+#undef offseti
 #undef offsetf
 
 /*****************************************************************************/

@@ -1,7 +1,7 @@
 /* $Id$
 * $Log$
-* Revision 4.1  1999/01/12 16:16:54  lcs
-* Moved to GNU make and gcc.
+* Revision 4.2  1999/01/15 23:04:47  lcs
+* *** empty log message ***
 *
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4

@@ -16,6 +16,9 @@
 #include <proto/graphics.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
+#include <clib/ahi_protos.h>
+#include <pragmas/ahi_pragmas.h>
+#include <proto/ahi_sub.h>
 #include <string.h>
 
 #include "ahi_def.h"
