@@ -13,9 +13,11 @@ top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 prefix		= @prefix@
 
-userdocdir	= ${prefix}/User/Docs
-userguidedir	= ${prefix}/User/Help
-devdocdir	= ${prefix}/Developer/Docs
+devdir		= ${prefix}/Developer
+usrdir		= ${prefix}/User
+
+devdocdir	= ${devdir}/Docs
+usrdocdir	= ${usrdir}/Docs
 
 build_os	= @build_os@
 
@@ -48,7 +50,7 @@ clean:
 	$(RM) $(TARGETS) ahidev.ver ahiusr.ver \
 	      ahidev.texinfo-exp ahiusr.texinfo-exp \
 	      *.cps *.fns *.tps *.vrs *.ky *.pg *.log *.aux *.cp *.fn *.vr *.tp *.toc \
-	      *.tmp *.bak *~ \#*\# core
+	      *.bak *~ \#*\# core
 
 distclean:	clean
 	$(RM) Makefile
@@ -56,8 +58,15 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	$(TARGETS)
-	$(INSTALL) --directory $(userdocdir) $(userguidedir) $(devdocdir)
-
+	$(INSTALL) --directory $(usrdocdir) $(devdocdir)
+	$(INSTALL_DATA) ahidev.readme $(devdir)
+	$(INSTALL_DATA) ahiusr.readme $(usrdir)
+	for i in ahidev.guide ahidev.dvi ahidev.ps ahidev.html; do \
+	  $(INSTALL_DATA) $$i $(devdocdir); \
+	done
+	for i in ahiusr.guide ahiusr.dvi ahiusr.ps ahiusr.html; do \
+	  $(INSTALL_DATA) $$i $(usrdocdir); \
+	done
 
 changes:
 	$(EDITOR) readme.changes
@@ -68,7 +77,6 @@ changes:
 
 Makefile: Makefile.in ../config.status
 	(cd .. && ./config.status)
-	chmod a-w $@
 
 
 #
@@ -79,12 +87,12 @@ Makefile: Makefile.in ../config.status
 
 ahidev.readme:	readme.dev readme.changes readme.main \
 		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
-	ver="`cat $(top_srcdir)/version.rev`.`cat $(top_srcdir)/version.rev`" &&\
-	cat readme.dev readme.changes readme.main | sed -e "s/VERSION/$$ver/" > $@
+	ver="`cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" &&\
+	cat readme.dev readme.changes readme.main | sed -e "s/AHIVERSION/$$ver/" > $@
 
 ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
-	ver="`cat $(top_srcdir)/version.rev`.`cat $(top_srcdir)/version.rev`" &&\
-	cat readme.usr readme.changes readme.main | sed -e "s/VERSION/$$ver/" > $@
+	ver="`cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" &&\
+	cat readme.usr readme.changes readme.main | sed -e "s/AHIVERSION/$$ver/" > $@
 
 
 # AmigaGuide® files
@@ -126,10 +134,10 @@ ahiusr.html:	ahiusr.texinfo ahiusr.ver
 # Macro-expanded files
 
 ahidev.texinfo-exp:	ahidev.texinfo ahidev.ver
-	makeinfo -E $@ --output null.tmp ahidev.texinfo
+	makeinfo -E $@ --output /dev/null ahidev.texinfo
 
 ahiusr.texinfo-exp:	ahiusr.texinfo ahiusr.ver
-	makeinfo -E $@ --output null.tmp ahiusr.texinfo
+	makeinfo -E $@ --output /dev/null ahiusr.texinfo
 
 
 # Auto-generated version files
