@@ -1,0 +1,33 @@
+; $Id$
+; $Log$
+; Revision 1.1  1997/02/02 22:37:47  lcs
+; Initial revision
+;
+;
+#language english
+#version 0
+;
+msgDefault (//)
+Default
+msgMenuControl (//)
+\000\000Control
+msgMenuLastMode (//)
+L\000Last Mode
+msgMenuNextMode (//)
+N\000Next Mode
+msgMenuPropertyList (//)
+?\000Property List...
+msgMenuRestore (//)
+R\000Restore
+msgMenuOK (//)
+O\000OK
+msgMenuCancel (//)
+C\000Cancel
+msgUnknown (//)
+UNKNOWN:Audio ID 0x%08lx
+msgReqOK (//)
+OK
+msgReqCancel (//)
+Cancel
+msgReqFrequency (//)
+Frequency
