@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2001 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -440,7 +440,7 @@ static Object* SpecialSlider(LONG min, LONG max, LONG value)
 
 BOOL BuildGUI(char *screenname)
 {
-  Object *MUISave, *MUIUse, *MUICancel;
+  Object *MUISave, *MUIUse, *MUICancel, *MUIPlay;
   Object *page1,*page2;
   Object *MUITFreq,*MUITChannels,*MUITOutvol,*MUITMonvol,*MUITGain,*MUITInput,*MUITOutput,*MUITDebug,*MUITEcho,*MUITSurround,*MUITClipvol,*MUITCpu,*MUITACTime;
 
@@ -509,6 +509,7 @@ BOOL BuildGUI(char *screenname)
         Child, MUIOutput = SpecialSlider(0,max(state.Outputs-1,0),state.OutputSelected),
         Child, MUILOutput = SpecialLabel(getOutput()),
       End,
+      Child, MUIPlay = SimpleButton(msgButtonPlay),
       Child, HVSpace,
     End,
   End;
@@ -570,7 +571,7 @@ BOOL BuildGUI(char *screenname)
   MUIApp = ApplicationObject,
     MUIA_Application_Title, (char *) msgTextProgramName,
     MUIA_Application_Version, Version,
-    MUIA_Application_Copyright, "©1996-1999 Martin Blom",
+    MUIA_Application_Copyright, "©1996-2001 Martin Blom",
     MUIA_Application_Author, "Stéphane Barbaray/Martin Blom",
     MUIA_Application_Base, "AHI",
     MUIA_Application_HelpFile, HELPFILE,
@@ -612,6 +613,7 @@ BOOL BuildGUI(char *screenname)
     DoMethod(MUITGain, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIGain);
     DoMethod(MUITInput, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIInput);
     DoMethod(MUITOutput, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIOutput);
+    DoMethod(MUIPlay, MUIM_Notify, MUIA_Pressed, FALSE, MUIApp, 2, MUIM_Application_ReturnID, ACTID_PLAY);
     DoMethod(MUITDebug, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIDebug);
     DoMethod(MUITEcho, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUIEcho);
     DoMethod(MUITSurround, MUIM_Notify, MUIA_Pressed, TRUE, MUIWindow, 3, MUIM_Set, MUIA_Window_ActiveObject, MUISurround);
@@ -762,7 +764,7 @@ void EventLoop(void)
       {
         char* args[] = { "\033c", 
                          (char*)msgTextProgramName,
-                         "1996-1999 Stéphane Barbaray/Martin Blom"
+                         "1996-2001 Stéphane Barbaray/Martin Blom"
                        };
 
         MUI_RequestA(MUIApp, MUIWindow, 0, (char *) msgTextProgramName,
@@ -846,7 +848,7 @@ void EventLoop(void)
         int              unit_id;
         struct UnitNode* unit;
 
-        
+        FillUnit();
         unit_id = xget( MUIUnit, MUIA_Cycle_Active );
         unit    = (struct UnitNode *) GetNode( unit_id, UnitList );
         

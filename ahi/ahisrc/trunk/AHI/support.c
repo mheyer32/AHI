@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.2  2001/12/14 12:25:42  martin
+ * Fixed test sound channel bug, added a play button.
+ *
  * Revision 5.1  2001/12/14 11:47:09  martin
  * Added code for playing a test sample. No GUI button yet, though.
  *
@@ -640,7 +643,7 @@ BOOL PlaySound( struct AHIUnitPrefs* prefs )
   
   actrl = AHI_AllocAudio( AHIA_AudioID,  prefs->ahiup_AudioMode,
                           AHIA_MixFreq,  prefs->ahiup_Frequency,
-                          AHIA_Channels, prefs->ahiup_Channels,
+                          AHIA_Channels, max( prefs->ahiup_Channels, 1 ),
                           AHIA_Sounds,   1,
                           TAG_DONE );
 
