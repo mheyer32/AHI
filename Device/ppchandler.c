@@ -2,7 +2,7 @@
 
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2000 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -388,14 +388,15 @@ FillBuffer( void*                     dst,
   // The PPC mix buffer is either not m68k-cachable or cleared;
   // just read from it.
 
-  memcpy( dst,
-          audioctrl->ahiac_PowerPCContext->CurrentMixBuffer,
-          audioctrl->ahiac_BuffSizeNow );
+//  memcpy( dst,
+//          audioctrl->ahiac_PowerPCContext->CurrentMixBuffer,
+//          audioctrl->ahiac_BuffSizeNow );
 
-  // Ask slave process to prepare next buffer
+//  // Ask slave process to prepare next buffer
 
-  Signal( (struct Task*) audioctrl->ahiac_PowerPCContext->SlaveProcess,
-          SIGBREAKF_CTRL_F );
+//  Signal( (struct Task*) audioctrl->ahiac_PowerPCContext->SlaveProcess,
+//          SIGBREAKF_CTRL_F );
+  MixBuffer( dst, audioctrl );
 }
 
 
@@ -463,7 +464,7 @@ MixBuffer( void*                     mixbuffer,
                  mixbuffer,
                  audioctrl->ahiac_BuffSizeNow );
   }
-//kprintf("e");
+kprintf("e");
 
   audioctrl->ahiac_PowerPCContext->Hook         = audioctrl->ac.ahiac_MixerFunc;
   audioctrl->ahiac_PowerPCContext->Dst          = mixbuffer;
@@ -489,17 +490,17 @@ MixBuffer( void*                     mixbuffer,
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
       };
 
-//kprintf("K");
+kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
-//kprintf("k");
+kprintf("k");
 #endif
       break;
     }
 
     case MB_WARPUP:
-//kprintf("C");
+kprintf("C");
       CausePPCInterrupt();
-//kprintf("c");
+kprintf("c");
       break;
 
     case MB_NATIVE:
@@ -507,9 +508,9 @@ MixBuffer( void*                     mixbuffer,
       break;
   }
 
-//kprintf("f");
+kprintf("f");
   while( audioctrl->ahiac_PowerPCContext->Command != PPCC_COM_FINISHED );
-//kprintf("g");
+kprintf("g");
 }
 
 

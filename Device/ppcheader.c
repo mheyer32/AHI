@@ -1,6 +1,8 @@
+/* $Id: */
+
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-1999 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2000 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -425,7 +427,7 @@ WarpUpInt:
         mtlr    0
         blrl
 
-# Test and clear activation flag (is this out interrupt or somebody elses?)
+# Test and clear activation flag (is this our interrupt or somebody elses?)
 
         addi    3,14,ppcc_Active
         li      4,0
@@ -517,7 +519,7 @@ ULONG	__LIB_Version  = VERSION;
 ULONG	__LIB_Revision = REVISION;
 
 static const char VersTag[] = 
- "$VER: ahi.elf " VERS " ©1994-1999 Martin Blom. " CPU " version.\r\n";
+ "$VER: ahi.elf " VERS " ©1994-2000 Martin Blom. " CPU " version.\r\n";
 
 
 // Make sure all add-routines are fetched.
