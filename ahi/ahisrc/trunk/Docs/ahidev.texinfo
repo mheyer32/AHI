@@ -1,4 +1,4 @@
-\input iso.sty
+\input tmp-iso.sty
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename ahidev.info
@@ -47,6 +47,11 @@ possibility of such damage.}
 
 $Id$
 $Log$
+Revision 4.11  1999/03/28 22:32:46  lcs
+AHI is now GPL/LGPL software.
+Make target bindist work correctly when using a separate build directory.
+Small first steps towards a WarpOS PPC version.
+
 Revision 4.10  1999/01/10 19:27:46  lcs
 The move to GNU make is done.
 

@@ -6,8 +6,10 @@
 ;
 ; $Id$
 ; $Log$
-; Revision 1.1  1998/12/20 12:09:29  lcs
-; Initial revision
+; Revision 1.2  1999/03/28 22:32:30  lcs
+; AHI is now GPL/LGPL software.
+; Make target bindist work correctly when using a separate build directory.
+; Small first steps towards a WarpOS PPC version.
 ;
 ; Revision 4.2  1997/05/03 19:59:56  lcs
 ; Set version to 4
@@ -27,6 +29,24 @@
 ; Revision 1.1  1997/02/02 22:37:47  lcs
 ; Initial revision
 ;
+;
+;    AHI - Hardware independent audio subsystem
+;    Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+;     
+;    This library is free software; you can redistribute it and/or
+;    modify it under the terms of the GNU Library General Public
+;    License as published by the Free Software Foundation; either
+;    version 2 of the License, or (at your option) any later version.
+;     
+;    This library is distributed in the hope that it will be useful,
+;    but WITHOUT ANY WARRANTY; without even the implied warranty of
+;    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+;    Library General Public License for more details.
+;     
+;    You should have received a copy of the GNU Library General Public
+;    License along with this library; if not, write to the
+;    Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
+;    MA 02139, USA.
 ;
 ;
 ; Input and Output connector name

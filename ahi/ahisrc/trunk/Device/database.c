@@ -1,5 +1,25 @@
 /* $Id$ */
 
+/*
+     AHI - Hardware independent audio subsystem
+     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Library General Public
+     License as published by the Free Software Foundation; either
+     version 2 of the License, or (at your option) any later version.
+     
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Library General Public License for more details.
+     
+     You should have received a copy of the GNU Library General Public
+     License along with this library; if not, write to the
+     Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
+     MA 02139, USA.
+*/
+
 #include <config.h>
 #include <CompilerSpecific.h>
 
@@ -286,11 +306,13 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
 
   if(audiodb != NULL)
   {
+    BOOL hifi = FALSE;
 
 // Find total size
 
     while( (tag = NextTagItem(&tstate)) != NULL )
     {
+
       if(tag->ti_Data) switch(tag->ti_Tag)
       {
         case AHIDB_Data:
@@ -308,20 +330,25 @@ AddAudioMode( REG(a0, struct TagItem *DBtags),
           nodesize     += driverlength;
           break;
 
-#ifndef HAVE_HIFI
-        case AHIDB_Hifi:
-          if( tag->ti_Data == FALSE )
-          {
-            // Filter away all non-hifi modes!
-            rc = FALSE;
-            goto unlock:
-          }
+        case AHIDB_HiFi:
+          hifi = tag->ti_Data;
           break;
-#endif
       }
+
       nodesize += sizeof(struct TagItem);
       tagitems++;
     }
+
+#ifdef VERSIONGEN
+    if( !hifi )
+    {
+      // Silently filter away all non-hifi modes!
+      // This is not really correct. All non-hifi, non-softwaremixed
+      // modes should be filtered away. This is a design flaw, I'm afraid...
+      rc = TRUE;
+      goto unlock;
+    }
+#endif
 
     nodesize += sizeof(struct TagItem);  // The last TAG_END
     tagitems++;
@@ -653,7 +680,7 @@ AddModeFile ( UBYTE *filename )
 
             rc = TRUE;
 
-            while(ci != NULL && rc)
+            while(ci != NULL)
             {
               // Relocate loaded taglist
 

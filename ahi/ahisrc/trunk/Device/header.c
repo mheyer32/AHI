@@ -1,5 +1,25 @@
 /* $Id$ */
 
+/*
+     AHI - Hardware independent audio subsystem
+     Copyright (C) 1997-1999 Martin Blom <martin@blom.org>
+     
+     This library is free software; you can redistribute it and/or
+     modify it under the terms of the GNU Library General Public
+     License as published by the Free Software Foundation; either
+     version 2 of the License, or (at your option) any later version.
+     
+     This library is distributed in the hope that it will be useful,
+     but WITHOUT ANY WARRANTY; without even the implied warranty of
+     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+     Library General Public License for more details.
+     
+     You should have received a copy of the GNU Library General Public
+     License along with this library; if not, write to the
+     Free Software Foundation, Inc., 59 Temple Place - Suite 330, Cambridge,
+     MA 02139, USA.
+*/
+
 #include <config.h>
 #include <CompilerSpecific.h>
 
@@ -76,6 +96,7 @@ struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 #ifndef VERSION68K
+struct Library            *PowerPCBase    = NULL;
 struct Library            *PPCLibBase     = NULL;
 void                      *PPCObject      = NULL;
 #endif
@@ -372,27 +393,39 @@ OpenLibs ( void )
 
 
 #ifndef VERSION68K
-  /* PPC library */
+  /* PPC/PowerPC library */
 
-  PPCLibBase = OpenLibrary( "ppc.library", 46 );
+  Forbid();
+  
+  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
+                                             "powerpc.library" );
+  
+  Permit();
+
+  if( PowerPCBase != NULL )
+  {
+    PowerPCBase = OpenLibrary( "power.library", 14 );
+  }
+  else
+  {
+    PPCLibBase = OpenLibrary( "ppc.library", 46 );
+  }
 
   if( PPCLibBase != NULL )
   {
-    /* No big deal if things fail. In that case, the 68K version
-       will be used instead. */
-
     /* Load our code to PPC..  */
 
     PPCObject = PPCLoadObject( "DEVS:ahi.elf" );
-
-    if( PPCObject == NULL )
-    {
-      /* This, however, is a problem. */
-
-      Req( "Unable to load PPC module." );
-      return FALSE;
-    }    
   }
+  
+  if( PowerPCBase != NULL )
+  {
+    /* Load our code to PPC.. */
+    
+    Req( "WarpOS ELF loader not yet implemented" );
+    return FALSE;
+  }
+
 #endif 
 
   OpenahiCatalog(NULL, NULL);
@@ -414,11 +447,30 @@ CloseLibs ( void )
   CloseahiCatalog();
 
 #ifndef VERSION68K
-  if( PPCObject != NULL ) PPCUnLoadObject( PPCObject );
-  CloseLibrary( PPCLibBase );
+  if( PPCLibBase != NULL )
+  {
+    if( PPCObject != NULL )
+    {
+      PPCUnLoadObject( PPCObject );
+    }
+    CloseLibrary( PPCLibBase );
+  }
+
+  if( PowerPCBase != NULL )
+  {
+    if( PPCObject != NULL )
+    {
+      Req( "WarpOS ELF unloader not yet implemented" );
+    }
+    CloseLibrary( PowerPCBase );
+  }
 #endif
+
   CloseLibrary( (struct Library *) UtilityBase );
-  if(TimerIO) CloseDevice( (struct IORequest *) TimerIO );
+  if( TimerIO  != NULL )
+  {
+    CloseDevice( (struct IORequest *) TimerIO );
+  }
   FreeVec( timeval );
   FreeVec( TimerIO );
   CloseLibrary( (struct Library *) LocaleBase );
