@@ -1,7 +1,7 @@
 /* $Id$
 * $Log$
-* Revision 5.2  2001/03/11 18:28:15  lcs
-* Bumped revision.
+* Revision 5.3  2003/04/22 18:19:05  martin
+* Now creates localize.[ch] in srcdir.
 *
 * Revision 5.0  2000/11/28 00:15:17  lcs
 * Bumped CVS revision to 5.0.
@@ -20,8 +20,8 @@
 *
 */
 /****************************************************************
-   This file was created automatically by `FlexCat 1.9'
-   from "ahi.cd".
+   This file was created automatically by `FlexCat 2.4'
+   from "../../ahisrc/Device/ahi.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
