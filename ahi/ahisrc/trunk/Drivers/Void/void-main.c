@@ -25,6 +25,8 @@
 void
 SlaveEntry( void );
 
+PROCGW( static, void,  slaveentry, SlaveEntry );
+
 
 /*  There is probably no reason to support all these frequencies. If,
  *  for example, your hardware is locked at 48 kHz, it's ok to only
@@ -174,10 +176,10 @@ _AHIsub_Start( ULONG                   flags,
   {
     struct TagItem proctags[] =
     {
-      { NP_Entry,     (ULONG) SlaveEntry },
-      { NP_Name,      (ULONG) LibName    },
-      { NP_Priority,  -1                 },
-      { TAG_DONE,     0                  }
+      { NP_Entry,     (ULONG) &slaveentry },
+      { NP_Name,      (ULONG) LibName     },
+      { NP_Priority,  -1                  },
+      { TAG_DONE,     0                   }
     };
     
     dd->mixbuffer = AllocVec( AudioCtrl->ahiac_BuffSize,

@@ -31,11 +31,13 @@ MyKPrintFArgs( UBYTE*           fmt,
 })
 
 
-#if defined(__morphos__) || defined(__MORPHOS__)
+#if defined(__MORPHOS__)
 # include <emul/emulregs.h>
 # define INTGW(q,t,n,f) \
 	q t n ## _code(void) { APTR d = (APTR) REG_A1; return f(d); }	\
 	q struct EmulLibEntry n = { TRAP_LIB, 0, (APTR) n ## _code };
+# define PROCGW(q,t,n,f) \
+	q struct EmulLibEntry n = { TRAP_LIB, 0, (APTR) f };
 #elif defined(__amithlon__)
 # define INTGW(q,t,n,f)							\
 	__asm("	.text");						\
@@ -51,6 +53,9 @@ MyKPrintFArgs( UBYTE*           fmt,
 	__asm(#n "=" #n "_code+1");					\
 	__asm(".section .rodata");					\
 	q t n(APTR);
+# define PROCGW(q,t,n,f)						\
+	__asm(#n "=" #f "+1");						\
+	q t n(APTR);
 #elif defined(__AROS__)
 # define INTGW(q,t,n,f) \
 	q AROS_UFH4(t, n,						\
@@ -59,9 +64,14 @@ MyKPrintFArgs( UBYTE*           fmt,
 	  AROS_UFHA(ULONG, _b, A5),					\
 	  AROS_UFHA(struct ExecBase *, sysbase, A6)) {			\
       AROS_USERFUNC_INIT return f(d); AROS_USERFUNC_EXIT }
+# define PROCGW(q,t,n,f) \
+	q AROS_UFH0(t, n,						\
+      AROS_USERFUNC_INIT return f(); AROS_USERFUNC_EXIT }
 #elif defined(__amiga__) && defined(__mc68000__)
 # define INTGW(q,t,n,f) \
 	q t n(APTR d __asm("a1")) { return f(d); }
+# define PROCGW(q,t,n,f) \
+	__asm(#n "=" #f);
 #else
 # error Unknown OS/CPU
 #endif
