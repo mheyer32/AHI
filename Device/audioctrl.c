@@ -496,6 +496,10 @@ _AHI_AllocAudioA( struct TagItem* tags,
   AHIsubBase = OpenLibrary(audioctrl->ahiac_DriverName,DriverVersion);
 //KPrintF("Opened AHIsubBase()\n");
 
+#ifdef __AMIGAOS4__
+  audioctrl->ahiac_IAHIsub = NULL;
+#endif
+
   if(!AHIsubBase)
     goto error;
 
@@ -723,9 +727,6 @@ _AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
 {
   struct Library *AHIsubBase;
   int i;
-#ifdef __AMIGAOS4__
-  struct AHIsubIFace* IAHIsub = audioctrl->ahiac_IAHIsub;
-#endif
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -736,6 +737,10 @@ _AHI_FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
   {
     if((AHIsubBase=audioctrl->ahiac_SubLib))
     {
+#ifdef __AMIGAOS4__
+      struct AHIsubIFace* IAHIsub = audioctrl->ahiac_IAHIsub;
+#endif
+
       if(!(audioctrl->ahiac_SubAllocRC & AHISF_ERROR))
       {
 //KPrintF("Called AHIsub_Stop(play|record)\n");

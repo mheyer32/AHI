@@ -49,7 +49,7 @@
 #include "devsupp.h"
 
 
-#ifdef __AMIGAOS4
+#ifdef __AMIGAOS4__
 #define IAHIsub ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_IAHIsub
 #endif
 
