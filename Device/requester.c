@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.6  1997/02/03 16:21:23  lcs
+* AHIR_Locale should work now
+*
 * Revision 1.5  1997/02/02 22:35:50  lcs
 * Localized it
 *
@@ -109,6 +112,7 @@ struct AHIAudioModeRequesterExt
   struct Gadget                *slidergadget;
   struct MinList               *list;
   struct Menu                  *Menu;
+  struct Catalog               *Catalog;
 };
 
 
@@ -323,14 +327,14 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
 // Frequency
     if(req->Flags & freqgad)
     {
-      intuitext.IText = GetAHIString(msgReqFrequency);
+      intuitext.IText = GetString(msgReqFrequency, req->Catalog);
       pixels=IntuiTextLength(&intuitext)+INTERWIDTH;
       if(pixels+MINSLIDERWIDTH+INTERWIDTH+FREQLEN2*fontwidth > req->gw)
         return FALSE;
       ng.ng_Width=req->gw-pixels-INTERWIDTH-FREQLEN2*fontwidth;
       ng.ng_LeftEdge=req->gx+pixels;
       ng.ng_TopEdge-=2+buttonheight;
-      ng.ng_GadgetText=GetAHIString(msgReqFrequency);
+      ng.ng_GadgetText = GetString(msgReqFrequency, req->Catalog);
       ng.ng_GadgetID=FREQSLIDER;
       ng.ng_Flags=PLACETEXT_LEFT;
       gad=CreateGadget(SLIDER_KIND,gad,&ng,
@@ -657,8 +661,6 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
     req->Req.ahiam_MixFreq=AHIBase->ahib_Frequency;
     req->Req.ahiam_InfoWidth=280;
     req->Req.ahiam_InfoHeight=112;
-    req->PositiveText=GetAHIString(msgReqOK);
-    req->NegativeText=GetAHIString(msgReqCancel);
 
     FillReqStruct(req,tags);
   }
@@ -703,6 +705,16 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
   req->tempAudioID=req->Req.ahiam_AudioID;
   req->tempFrequency=req->Req.ahiam_MixFreq;
 
+// Open the catalog
+
+  req->Catalog = ExtOpenCatalog(req->Locale, NULL);
+
+  if(req->PositiveText == NULL)
+    req->PositiveText = GetString(msgReqOK, req->Catalog);
+  if(req->NegativeText == NULL)
+    req->NegativeText = GetString(msgReqCancel, req->Catalog);
+
+
 // Scan audio database for modes and create list
   req->list=&list;
   NewList((struct List *)req->list);
@@ -722,7 +734,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID=id;
-      Sprintf(node->node.ln_Name,GetAHIString(msgUnknown),id);
+      Sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
           AHIDB_Name,node->node.ln_Name);
@@ -738,6 +750,8 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
     // List is empty, no audio modes!
     // Return immediately (no nodes to free)
     SetIoErr(ERROR_NO_MORE_ENTRIES);
+    ExtCloseCatalog(req->Catalog);
+    req->Catalog = FALSE;
     return FALSE;
   }
 
@@ -798,7 +812,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
     WindowLimits(req->Window,
       // Topaz80: "Frequency"+INTERWIDTH+MINSLIDERWIDTH+INTERWIDTH+"99999 Hz" gives...
       (req->Window->BorderLeft+4)+
-      strlen(GetAHIString(msgReqFrequency))*8+
+      strlen( GetString(msgReqFrequency, req->Catalog))*8+
       INTERWIDTH+MINSLIDERWIDTH+INTERWIDTH+
       FREQLEN2*8+
       (req->Window->BorderRight+4),
@@ -847,7 +861,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
         {
           if(menuptr->nm_Label == NULL)
           {
-            menuptr->nm_CommKey = GetAHIString(*stringptr);
+            menuptr->nm_CommKey = GetString(*stringptr, req->Catalog);
             menuptr->nm_Label = menuptr->nm_CommKey + 2;
             stringptr++;
           }
@@ -928,6 +942,10 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
     SetIoErr(ERROR_NO_FREE_STORE);
     rc=FALSE;
   }
+
+  ExtCloseCatalog(req->Catalog);
+  req->Catalog = NULL;
+  req->PositiveText = req->NegativeText = NULL;
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
