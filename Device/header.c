@@ -189,6 +189,9 @@ initRoutine( struct AHIBase*  device,
   if( ( SysBase->AttnFlags & AFF_68020 ) == 0 )
   {
     Alert( ( AN_Unknown | ACPU_InstErr ) & (~AT_DeadEnd) );
+
+    FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
+             device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
     return NULL;
   }
 
@@ -196,6 +199,9 @@ initRoutine( struct AHIBase*  device,
 
   if( !OpenLibs() )
   {
+    CloseLibs();
+    FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
+             device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
     return NULL;
   }
 

@@ -82,7 +82,7 @@ MixerFunc( struct Hook*             hook,
            struct AHIPrivAudioCtrl* audioctrl,
            void*                    dst )
 {
-KPrintF(".");
+//KPrintF(".");
   switch( MixBackend )
   {
     case MB_NATIVE:
