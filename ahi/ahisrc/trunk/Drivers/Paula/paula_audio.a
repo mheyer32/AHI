@@ -2,9 +2,18 @@
 
 * $Id$
 * $Log$
-* Revision 4.25  2000/11/15 20:45:07  lcs
-* Checking in...
+* Revision 4.26  2001/09/16 19:04:26  lcs
+* * paula.audio:  The fixed CMD_STOP/CMD_START in ahi.device
+* triggered a bug that could make the driver lose track of the
+* AHIsub_Disable and AHIsub_Enable nesting.  Also, these functions
+* was not "thread safe" (they are not actually called from a thread
+* but rather an interrupt).
 *
+* Now uses "rx" to launch the rexx script.
+*
+*
+* Revision 4.23  1998/12/06 11:43:39  lcs
+* Clean-up.
 *
 * Revision 4.22  1998/11/12 22:38:53  lcs
 * Much improved timing! No more make-buffer-size-divisible-by-4 anymore...
@@ -1627,16 +1636,22 @@ AHIsub_FreeAudio:
 
 AHIsub_Disable:
 	PRINTF	6,"AHIsub_Disable()"
-* MUST NOT REFERENCE a6!! (See PlayerFunc()!)
+	pushm	a3/a6
 	move.l	ahiac_DriverData(a2),a3
 	move.l	p_PaulaBase(a3),a6
 	move.l	pb_SysLib(a6),a6
 	call	Disable
-	push	a3
-	addq.w	#1,p_DisableCount(a3)
-	rts
 	move.w	#INTF_AUDIO,custom+INTENA  ; Turn off ALL audio interrupts
-	pop	a3
+	addq.w	#1,p_DisableCount(a3)
+;	PRINTF	0,"Disable: Wrote $%04lx to intena",#INTF_AUDIO
+;	PRINTF	0,"Count: %d",p_DisableCount(a3)
+	call	Enable
+	popm	a3/a6
+	rts
+
+
+****** [driver].audio/AHIsub_Enable *****************************************
+*
 *   NAME
 *       AHIsub_Enable -- Turn on audio interrupt/task
 *
@@ -1667,18 +1682,24 @@ AHIsub_Disable:
 
 AHIsub_Enable:
 	PRINTF	6,"AHIsub_Enable()"
-* MUST NOT REFERENCE a6!! (See PlayerFunc()!)
+	pushm	a3/a6
 	move.l	ahiac_DriverData(a2),a3
 	move.l	p_PaulaBase(a3),a6
 	move.l	pb_SysLib(a6),a6
 	call	Disable
-	push	a3
+	subq.w	#1,p_DisableCount(a3)
 	bne	.exit
+	move.w	p_IRQMask(a3),custom+INTENA
+;	PRINTF	0,"Enable: Wrote $%04x to intena",p_IRQMask(a3)
+.exit
 ;	PRINTF	0,"Count: %d",p_DisableCount(a3)
 	call	Enable
 	popm	a3/a6
+	rts
 
-	pop	a3
+
+****** [driver].audio/AHIsub_Start ******************************************
+*
 *   NAME
 *       AHIsub_Start -- Starts playback or recording
 *
@@ -1953,11 +1974,16 @@ AHIsub_Start:
 	
 	call	Disable
 	tst.w	p_DisableCount(a3)
-	clr.w	p_DisableCount(a3)
 	bne	.dont_enable
 	move.w	#INTF_SETCLR|INTF_AUD0,INTENA(a4)	;enable
+.dont_enable
+	move.w	#INTF_SETCLR|INTF_AUD0,INTREQ(a4)	;start
+	call	Enable
+
 	move.l	a5,a6
 
+
+.dont_play
 	btst	#AHISB_RECORD,d7
 	beq	.dont_record
 **
@@ -4427,8 +4453,6 @@ DMA_Start:
 	lea	p_TimerPort+MP_MSGLIST(a3),a0
 	NEWLIST	a0
 
-	clr.w	p_DisableCount(a3)
-
 	lea	p_TimerPort(a3),a0
 	move.b	#NT_MSGPORT,LN_TYPE(a0)
 	move.b	#PA_SOFTINT,MP_FLAGS(a0)
@@ -4483,9 +4507,14 @@ DMA_Start:
 	tst.w	p_DisableCount(a3)
 	bne	.dont_enable
 	move.w	#INTF_SETCLR|INTF_AUDIO,INTENA(a4)	;enable all
+.dont_enable
 	move.w	#INTF_SETCLR|INTF_AUDIO,INTREQ(a4)	;start all
+	call	Enable
+
 	moveq	#AHIE_OK,d0
+.exit
 	rts
+
 .notimer
 	moveq	#AHIE_UNKNOWN,d0
 	bra	.exit
@@ -4659,7 +4688,7 @@ AHIsub_SetVol:
 * Store volume and scale according to the master volume
 	move.w	d1,ch_NextVolumeNorm(a0)
 	move.l	p_MasterVolume(a3),d0
-	bsr	AHIsub_Disable
+	cmp.l	#$10000,d0
 	blo	.scale1
 	move.w	d1,d0
 	bra	.store1
@@ -4692,7 +4721,7 @@ AHIsub_SetVol:
 	moveq	#0,d0				; Return NULL!
 
 	pop	a3
-	bsr	AHIsub_Enable
+	rts
 
 *****************************************************************************
 * If the frequency is higher than the audio DMA can handle, the samples will
@@ -4755,7 +4784,7 @@ AHIsub_SetFreq:
 	move.w	d0,ch_NextPeriod(a0)
 	move.w	d3,ch_NextScale(a0)
 
-	bsr	AHIsub_Disable
+	btst	#AHISB_IMM,d2
 	beq	.noimm
 
 ; We must not change the frequency if the scale has changed! (Unless it's 0)
@@ -4791,7 +4820,7 @@ AHIsub_SetFreq:
 	moveq	#0,d0				; Return NULL!
 	pop	d3
 
-	bsr	AHIsub_Enable
+	pop	a3
 	rts
 
 *****************************************************************************
@@ -4842,7 +4871,7 @@ AHIsub_SetSound:
 	move.l	so_Address(a1),ch_NextAddress(a0)
 	move.l	d2,ch_NextOffset(a0)
 	move.l	d3,ch_NextLength(a0)
-	bsr	AHIsub_Disable
+	move.l	d5,ch_NextType(a0)
 
 
 	btst	#AHISB_IMM,d4
@@ -4892,7 +4921,7 @@ AHIsub_SetSound:
 	moveq	#0,d0				; Return NULL!
 	popm	d2-d5
 
-	bsr	AHIsub_Enable
+	pop	a3
 	rts
 
 *****************************************************************************
@@ -5062,7 +5091,8 @@ PlayerFunc:
 	lea	p_TimerPort(a3),a0
 	call	GetMsg				; Remove message
 
-	move.l	4.w,a6
+	tst.w	p_TimerCommFlag(a3)
+	beq	.normal
 
 	clr.w	p_TimerCommFlag(a3)
 	bra	.exit
@@ -5110,7 +5140,8 @@ PlayerFunc:
 
 	; Handle the ChannelInfo effect
 
-	bsr	AHIsub_Disable
+	move.l	p_ChannelInfo(a3),d0
+	beq	.nochannelinfo
 	move.l	d0,a0
 	lea	ahieci_Offset(a0),a1
 	move.w	ahieci_Channels(a0),d0
@@ -5149,7 +5180,7 @@ PlayerFunc:
 .exit
 	moveq	#0,d0
 	popm	std
-	bsr	AHIsub_Enable
+	rts
 
 *****************************************************************************
 
