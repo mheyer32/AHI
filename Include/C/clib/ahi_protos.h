@@ -2,7 +2,7 @@
 #define CLIB_AHI_PROTOS_H
 
 /*
-**      $VER: ahi_protos.h 4.1 (2.4.97)
+**      $VER: ahi_protos.h 5.0 (13.7.2003)
 **      :ts=8 (TAB SIZE: 8)
 **
 **      C prototypes. For use with 32 bit integers only.
@@ -20,6 +20,10 @@
 #endif
 #ifndef  DEVICES_AHI_H
 #include <devices/ahi.h>
+#endif
+
+#ifdef __cplusplus
+extern "C" {
 #endif
 
 struct AHIAudioCtrl *AHI_AllocAudioA( struct TagItem * );
@@ -51,4 +55,9 @@ ULONG AHI_SampleFrameSize( ULONG );
 ULONG AHI_AddAudioMode(struct TagItem * );
 ULONG AHI_RemoveAudioMode( ULONG );
 ULONG AHI_LoadModeFile( STRPTR );
+
+#ifdef __cplusplus
+}
+#endif
+
 #endif /* CLIB_AHI_PROTOS_H */
