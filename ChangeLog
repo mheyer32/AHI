@@ -1,5 +1,11 @@
 2003-07-05  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.40.
+
+	* ahi.device: Made a subtile change to the linear interpolation
+	behaviour when a looped sound is played. Let's hope I made it
+	better and not worse ...
+
 	* Released AHI preferences 5.10.
 
 	* AHI preferences: Added annotation to the properties box.

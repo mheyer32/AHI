@@ -790,6 +790,8 @@ Mix( struct Hook*             unused_Hook,
             cd->cd_StartPointL = cd->cd_TempStartPointL;
             cd->cd_StartPointR = cd->cd_TempStartPointR;
 
+/* 	    KPrintF( "cd->cd_StartPointL=%08lx, cd->cd_StartPointR=%08lx\n", */
+/* 		     cd->cd_StartPointL, cd->cd_StartPointR ); */
             /*
             ** Offset always points OUTSIDE the sample after this
             ** call.  Ie, if we read a sample at offset (Offset.I)
@@ -797,11 +799,26 @@ Mix( struct Hook*             unused_Hook,
             ** This is true for both backward and forward mixing.
             */
 
-
+/* 	    KPrintF( "cd->cd_Add=0x%08lx:%08lx\n", */
+/* 		     (ULONG) (cd->cd_Add >> 32), (ULONG) cd->cd_Add ); */
+/* 	    KPrintF( "cd->cd_Offset=0x%08lx:%08lx, " */
+/* 		     "cd->cd_LastOffset=0x%08lx:%08lx," */
+/* 		     "cd->cd_FirstOffset=%08lx\n", */
+/* 		     (ULONG) (cd->cd_Offset >> 32), (ULONG) cd->cd_Offset, */
+/* 		     (ULONG) (cd->cd_LastOffset >> 32), (ULONG) cd->cd_LastOffset, */
+/* 		     cd->cd_FirstOffsetI ); */
+		     
             /* What we do now is to calculate how much futher we have
                advanced. */
 
               cd->cd_Offset -= cd->cd_LastOffset + 1;
+
+/* 	    KPrintF( "cd->cd_Offset=0x%08lx:%08lx, " */
+/* 		     "cd->cd_LastOffset=0x%08lx:%08lx," */
+/* 		     "cd->cd_FirstOffset=%08lx\n", */
+/* 		     (ULONG) (cd->cd_Offset >> 32), (ULONG) cd->cd_Offset, */
+/* 		     (ULONG) (cd->cd_LastOffset >> 32), (ULONG) cd->cd_LastOffset, */
+/* 		     cd->cd_FirstOffsetI ); */
 
             /*
             ** Offset should now be added to the NEXT Offset. Offset
@@ -819,8 +836,15 @@ Mix( struct Hook*             unused_Hook,
 
             cd->cd_Offset += cd->cd_NextOffset;
 
-            cd->cd_FirstOffsetI = cd->cd_Offset >> 32;
+//            cd->cd_FirstOffsetI = cd->cd_Offset >> 32;
+            cd->cd_FirstOffsetI = cd->cd_NextOffset >> 32;
 
+/* 	    KPrintF( "cd->cd_Offset=0x%08lx:%08lx, " */
+/* 		     "cd->cd_LastOffset=0x%08lx:%08lx," */
+/* 		     "cd->cd_FirstOffset=%08lx\n", */
+/* 		     (ULONG) (cd->cd_Offset >> 32), (ULONG) cd->cd_Offset, */
+/* 		     (ULONG) (cd->cd_LastOffset >> 32), (ULONG) cd->cd_LastOffset, */
+/* 		     cd->cd_FirstOffsetI ); */
             /*
             ** But what if the next sample is so short that we just
             ** passed it!?  Here is the nice part.  CalcSamples
