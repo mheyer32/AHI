@@ -1,3 +1,8 @@
+2005-01-14  Martin Blom  <martin@blom.org>
+
+	* Updated the README files. The language source files are now
+	included in the ahidev archive.
+
 2005-01-13  Martin Blom  <martin@blom.org>
 
 	* AHI preferences: Localized the anti-click time and CPU load
