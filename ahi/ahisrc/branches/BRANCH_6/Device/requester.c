@@ -1602,7 +1602,9 @@ _AHI_AudioRequestA( struct AHIAudioModeRequester* req_in,
         {
           InitRequester(&lockreq);
           locksuxs=Request(&lockreq,req->SrcWindow);
+#ifndef __AMIGAOS4__
           if(IntuitionBase->LibNode.lib_Version >= 39)
+#endif
             SetWindowPointer(req->SrcWindow,
                 WA_BusyPointer,TRUE,
                 TAG_DONE);
@@ -1638,7 +1640,9 @@ _AHI_AudioRequestA( struct AHIAudioModeRequester* req_in,
         {
           if(locksuxs)
             EndRequest(&lockreq,req->SrcWindow);
+#ifndef __AMIGAOS4__
           if(IntuitionBase->LibNode.lib_Version >= 39)
+#endif
             SetWindowPointer(req->SrcWindow,
                 WA_BusyPointer,FALSE,
                 TAG_DONE);

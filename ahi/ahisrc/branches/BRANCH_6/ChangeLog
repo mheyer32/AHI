@@ -1,3 +1,8 @@
+2004-08-06  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Applied even more OS4 patches from Davy
+	Wentzler. Thanks!
+
 2004-08-05  Martin Blom  <martin@blom.org>
 
 	* Released audio 5.18.

@@ -229,6 +229,9 @@ struct AHIPrivAudioCtrl
   UWORD                      ahiac_MaxCPU;
   struct PowerPCContext*     ahiac_PowerPCContext;
   char                       ahiac_DriverName[ 256 ];
+  #ifdef __AMIGAOS4__
+  struct AHIsubIFace*        ahiac_IAHIsub;
+  #endif
 };
 
 #ifdef __AMIGAOS4__
