@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.2  1997/04/14 01:50:39  lcs
+* Spellchecked
+*
 * Revision 4.1  1997/04/02 22:28:11  lcs
 * Bumped to version 4
 *
@@ -1004,7 +1007,7 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 *   FUNCTION
 *       Prompts the user for an audio mode, based on the modifying tags.
 *       If the user cancels or the system aborts the request, FALSE is
-*       returned, otherwise the requester's data structure relects the
+*       returned, otherwise the requester's data structure reflects the
 *       user input.
 *
 *       Note that tag values stay in effect for each use of the requester
@@ -1021,7 +1024,7 @@ __asm struct AHIAudioModeRequester *AllocAudioRequestA( register __a0 struct Tag
 *
 *   TAGS
 *       Tags used for the requester (they look remarkable similar to the
-*       screen mode requester in asl, don't they? ;-) )
+*       screen mode requester in ASL, don't they? ;-) )
 *
 *       AHIR_Window (struct Window *) - Parent window of requester. If no
 *           AHIR_Screen tag is specified, the window structure is used to

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.2  1997/04/14 01:50:39  lcs
+* Spellchecked
+*
 * Revision 4.1  1997/04/02 22:29:53  lcs
 * Bumped to version 4
 *
@@ -65,7 +68,11 @@ _DevName:	AHINAME
 _IDString:	VSTRING
 
 	VERSTAG
-
+ IFGE	__CPU-68020
+	dc.b	"*** 68020+ version ***",0
+ ELSE
+	dc.b	"*** 68000 version ***",0
+ ENDC
 
 *******************************************************************************
 ** Init & function tables *****************************************************
@@ -216,11 +223,11 @@ initRoutine:
 	lea	ahib_Lock(a5),a0
 	call	InitSemaphore
 
-	jsr	_OpenLibs(pc)
+	jsr	_OpenLibs
 	tst.l	d0
 	beq	.exit
 
-	bsr	initcode
+	jsr	initcode
 
 	move.l	a5,d0
 .exit
@@ -250,7 +257,7 @@ _DevExpunge:
 	move.l	a5,a1
 	call	Remove
 
-	jsr	_CloseLibs(pc)
+	jsr	_CloseLibs
 
 	moveq	#0,d0
 	move.l	a5,a1
@@ -277,7 +284,7 @@ Null:
 
 _DevProcEntry:
 	move.l	_AHIBase(pc),a6
-	jmp	_DevProc(pc)
+	jmp	_DevProc
 
 
 *******************************************************************************
