@@ -6,8 +6,8 @@
 ;
 ; $Id$
 ; $Log$
-; Revision 1.1  1998/12/20 12:09:27  lcs
-; Initial revision
+; Revision 1.2  1999/01/11 11:41:19  lcs
+; Now builds the catalog files, too.
 ;
 ; Revision 4.5  1997/04/27 16:16:06  lcs
 ; Added "Mastervolume with(out) clipping".
