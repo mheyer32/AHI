@@ -1,0 +1,13 @@
+==include <exec/types.h>
+==include <exec/execbase.h>
+==include <exec/libraries.h>
+==include <dos/dos.h>
+==base _AHIsubBase
+==libname ahi_sub.audio
+==bias 0
+==public
+struct Library* LibInit(struct Library* library, BPTR seglist, struct ExecBase* SysBase) (d0,a0,a6)
+struct Library* LibOpen(ULONG version) (d0)
+struct Library* LibClose()()
+BPTR LibExpunge()()
+ULONG LibNull()()
