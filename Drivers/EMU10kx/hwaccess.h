@@ -32,7 +32,10 @@
 #ifndef _HWACCESS_H
 #define _HWACCESS_H
 
-#if !defined(__amiga__) && !defined(__AROS__)
+#ifdef AHI
+#include "linuxsupport.h"
+#include "efxmgr.h"
+#else
 #include <linux/fs.h>
 #include <linux/sound.h>
 #include <linux/soundcard.h>
@@ -46,12 +49,7 @@
 #include "efxmgr.h"
 #include "passthrough.h"
 #include "midi.h"
-
-#else
-#include "linuxsupport.h"
-#include "efxmgr.h"
 #endif
-
 
 #define EMUPAGESIZE     4096            /* don't change */
 #define NUM_G           64              /* use all channels */
@@ -71,7 +69,7 @@ struct memhandle
 	u32 size;
 };
 
-#define DEBUG_LEVEL 0
+#define DEBUG_LEVEL 2
 
 #ifdef EMU10K1_DEBUG
 # define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ , y );} while(0)
@@ -83,18 +81,26 @@ struct memhandle
 
 #define ERROR() DPF(1,"error\n")
 
-#ifdef lcs
+#ifndef AHI
 /* DATA STRUCTURES */
 
 struct emu10k1_waveout
 {
-	u16 send_routing[3];
+	u32 send_routing[3];
+	// audigy only:
+	u32 send_routing2[3];
 
-	u8 send_a[3];
-	u8 send_b[3];
-	u8 send_c[3];
-	u8 send_d[3];
+	u32 send_dcba[3];
+	// audigy only:
+	u32 send_hgfe[3];
 };
+#define ROUTE_PCM 0
+#define ROUTE_PT 1
+#define ROUTE_PCM1 2
+
+#define SEND_MONO 0
+#define SEND_LEFT 1
+#define SEND_RIGHT 2
 
 struct emu10k1_wavein
 {
@@ -138,32 +144,34 @@ struct mixer_private_ioctl {
 #define CMD_AC97_BOOST		_IOW('D', 20, struct mixer_private_ioctl)
 
 //up this number when breaking compatibility
-#define PRIVATE3_VERSION 1
-#endif
+#define PRIVATE3_VERSION 2
+#endif // AHI
 
 struct emu10k1_card 
 {
-//	struct list_head list;
-
+#ifndef AHI
+	struct list_head list;
+#endif
 	struct memhandle	virtualpagetable;
 	struct memhandle	tankmem;
 	struct memhandle	silentpage;
-
-//	spinlock_t		lock;
-
+#ifndef AHI
+	spinlock_t		lock;
+#endif
 	u8			voicetable[NUM_G];
 	u16			emupagetable[MAXPAGES];
-
-//	struct list_head	timers;
-//	unsigned		timer_delay;
-//	spinlock_t		timer_lock;
-
-	void			*pci_dev;
+#ifndef AHI
+	struct list_head	timers;
+	u16			timer_delay;
+	spinlock_t		timer_lock;
+#endif
+	struct pci_dev		*pci_dev;
 	unsigned long           iobase;
 	unsigned long		length;
 	unsigned short		model;
 	unsigned int irq; 
-#ifdef lcs
+
+#ifndef AHI
 	int	audio_dev;
 	int	audio_dev1;
 	int	midi_dev;
@@ -188,21 +196,21 @@ struct emu10k1_card
 	wait_queue_head_t	open_wait;
 
 	u32	    mpuacqcount;	  // Mpu acquire count
-#endif
+#endif // AHI
 	u32	    has_toslink;	       // TOSLink detection
 
 	u8 chiprev;                    /* Chip revision                */
-
-	int isaps;
+	u8 is_audigy;
+	u8 is_aps;
 
 	struct patch_manager mgr;
-//	struct pt_data pt;
+#ifndef AHI
+	struct pt_data pt;
+#endif
 };
 
 int emu10k1_addxmgr_alloc(u32, struct emu10k1_card *);
 void emu10k1_addxmgr_free(struct emu10k1_card *, int);
-
-
 
 int emu10k1_find_control_gpr(struct patch_manager *, const char *, const char *);
 void emu10k1_set_control_gpr(struct emu10k1_card *, int , s32, int );
@@ -219,15 +227,20 @@ void emu10k1_set_volume_gpr(struct emu10k1_card *, int, s32, int);
 u32 srToPitch(u32);
 u8 sumVolumeToAttenuation(u32);
 
-//extern struct list_head emu10k1_devs;
+#ifndef AHI
+extern struct list_head emu10k1_devs;
+#endif
 
 /* Hardware Abstraction Layer access functions */
 
-void emu10k1_writefn0(struct emu10k1_card *, u32 , u32 );
-u32 emu10k1_readfn0(struct emu10k1_card *, u32 );
+void emu10k1_writefn0(struct emu10k1_card *, u32, u32);
+void emu10k1_writefn0_2(struct emu10k1_card *, u32, u32, int);
+u32 emu10k1_readfn0(struct emu10k1_card *, u32);
 
-void sblive_writeptr(struct emu10k1_card *, u32 , u32 , u32 );
-void sblive_writeptr_tag(struct emu10k1_card *card, u32 channel, ...);
+void emu10k1_timer_set(struct emu10k1_card *, u16);
+
+void sblive_writeptr(struct emu10k1_card *, u32, u32, u32);
+void sblive_writeptr_tag(struct emu10k1_card *, u32, ...);
 #define TAGLIST_END	0
 
 u32 sblive_readptr(struct emu10k1_card *, u32 , u32 );
@@ -238,17 +251,22 @@ void emu10k1_set_stop_on_loop(struct emu10k1_card *, u32);
 void emu10k1_clear_stop_on_loop(struct emu10k1_card *, u32);
 
 /* AC97 Codec register access function */
-//u16 emu10k1_ac97_read(struct ac97_codec *, u8);
-//void emu10k1_ac97_write(struct ac97_codec *, u8, u16);
+#ifdef AHI
+u16 emu10k1_readac97(struct emu10k1_card *card, u8 reg);
+void emu10k1_writeac97(struct emu10k1_card *card, u8 reg, u16 value);
+#else
+u16 emu10k1_ac97_read(struct ac97_codec *, u8);
+void emu10k1_ac97_write(struct ac97_codec *, u8, u16);
+#endif
+
 
 /* MPU access function*/
 int emu10k1_mpu_write_data(struct emu10k1_card *, u8);
 int emu10k1_mpu_read_data(struct emu10k1_card *, u8 *);
 int emu10k1_mpu_reset(struct emu10k1_card *);
-//int emu10k1_mpu_acquire(struct emu10k1_card *);
-//int emu10k1_mpu_release(struct emu10k1_card *);
-
-u16 emu10k1_readac97(struct emu10k1_card *card, u8 reg);
-void emu10k1_writeac97(struct emu10k1_card *card, u8 reg, u16 value);
+#ifndef AHI
+int emu10k1_mpu_acquire(struct emu10k1_card *);
+int emu10k1_mpu_release(struct emu10k1_card *);
+#endif
 
 #endif  /* _HWACCESS_H */

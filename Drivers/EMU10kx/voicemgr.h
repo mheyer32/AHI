@@ -48,11 +48,13 @@ struct voice_param
 	/* FX bus amount send */
 
 	u32 send_routing;
+	// audigy only:
+	u32 send_routing2;
 
-	u32 send_a;
-	u32 send_b;
-	u32 send_c;
-	u32 send_d;
+	u32 send_dcba;
+	// audigy only:
+	u32 send_hgfe;
+
 
 	u32 initial_fc;
 	u32 fc_target;
@@ -66,8 +68,13 @@ struct voice_param
 
 struct voice_mem {
 	int emupageindex;
+#ifdef AHI
 	void *addr;
 	dma_addr_t dma_handle;
+#else
+	void *addr[BUFMAXPAGES];
+	dma_addr_t dma_handle[BUFMAXPAGES];
+#endif
 	u32 pages;
 };
 

@@ -1,3 +1,17 @@
+2003-11-23  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.11.
+
+	* emu10kx.audio: Begans re-sync with the latest Linux drivers in
+	order to make it work on Audigy cards.
+
+2003-10-31  Martin Blom  <martin@blom.org>
+
+ 	* Released emu10kx.audio 5.10.
+
+	* emu10kx.audio: Don't show a requester if no sound card can be
+	found. [Nicolas Sallin]
+	
 2003-10-16  Martin Blom  <martin@blom.org>
 
 	* Released paula.audio 4.31.
@@ -29,7 +43,7 @@
 
 	* Released filesave.audio 5.4.
 
-	* Released emu10kx.audio to 5.9.a
+	* Released emu10kx.audio 5.9.
 
 	* The introduction of --addvectors made a bug in the driver's init
 	code visible. Fixed. [Marcin Kurek]
@@ -39,7 +53,7 @@
 
 2003-09-28  Martin Blom  <martin@blom.org>
 
-	* Released emu10kx.audio to 5.8.
+	* Released emu10kx.audio 5.8.
 
 	* emu10kx.audio: Added a public semaphore with hooks to control
 	the AC97 mixer.

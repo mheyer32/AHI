@@ -33,6 +33,8 @@ typedef signed char    s8;
 
 typedef unsigned int   dma_addr_t;
 
+#define __devinit
+
 #define spin_lock_irqsave(lock,flags) Disable();
 #define spin_unlock_irqrestore(lock,flags) Enable();
 
@@ -45,6 +47,7 @@ typedef unsigned int   dma_addr_t;
 #define PCI_ANY_ID                     0xffff
 #define PCI_VENDOR_ID_CREATIVE         0x1102
 #define PCI_DEVICE_ID_CREATIVE_EMU10K1 0x0002
+#define PCI_DEVICE_ID_CREATIVE_AUDIGY  0x0004
 #define EMU_APS_SUBID                  0x40011102
 
 #define SOUND_MIXER_NRDEVICES 25
