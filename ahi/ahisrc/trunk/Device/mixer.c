@@ -203,26 +203,26 @@ Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
   else
   {
     BOOL running = TRUE;
-kprintf("I");
+//kprintf("I");
     while( running )
     {
-kprintf("0");
+//kprintf("0");
       switch( audioctrl->ahiac_PPCCommand )
       {
         case AHIAC_COM_INIT:
-kprintf("1");
+//kprintf("1");
           // Keep looping
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
         case AHIAC_COM_ACK:
-kprintf("2");
+//kprintf("2");
           // Keep looping, try not to waste to much memory bandwidth...
           asm( "stop #(1<<13) | (2<<8)" : );
           break;
 
         case AHIAC_COM_SOUNDFUNC:
-kprintf("3");
+//kprintf("3");
           CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                        (struct AHIPrivAudioCtrl*) audioctrl,
                        (APTR) audioctrl->ahiac_PPCArgument );
@@ -230,27 +230,27 @@ kprintf("3");
           break;
 
         case AHIAC_COM_DEBUG:
-kprintf("4");
+//kprintf("4");
           CallDebug( audioctrl, (ULONG) audioctrl->ahiac_PPCArgument );
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
         case AHIAC_COM_QUIT:
-kprintf("5");
+//kprintf("5");
           running = FALSE;
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
         
         case AHIAC_COM_NONE:
         default:
-kprintf("6");
+//kprintf("6");
           // Error
           running  = FALSE;
           audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
       }
     }
-kprintf("i");
+//kprintf("i");
 
     /* End chain! */
     return 1;
@@ -266,7 +266,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   int                  i;
   BOOL                 flushed = FALSE;
 
-kprintf("M");
+//kprintf("M");
   // Flush all DYNAMICSAMPLE's
 
   sd = audioctrl->ahiac_SoundDatas;
@@ -293,12 +293,16 @@ kprintf("M");
             break;
 
           case MB_WARPUP:
-            SetCache68K( CACHE_DCACHEFLUSH,
-                         sd->sd_Addr,
-                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+            CacheClearE( sd->sd_Addr,
+                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ),
+                         CACRF_ClearD );
+// This function seem not to be callable from interrupts !?
+//            SetCache68K( CACHE_DCACHEFLUSH,
+//                         sd->sd_Addr,
+//                         sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
             break;
 
-          default:
+          case MB_NATIVE:
             // Ugh!
             break;
         }
@@ -307,19 +311,16 @@ kprintf("M");
     sd++;
   }
 
-  if( ! flushed && MixBackend == MB_WARPUP )
-  {
-
-    /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
-       flush the cache before mixing starts. :( */
-/*
-    SetCache68K( CACHE_DCACHEFLUSH,
-                 audioctrl->ahiac_PPCMixBuffer,
-                 audioctrl->ahiac_BuffSizeNow );
-*/
-
-  }
-
+//  if( ! flushed && MixBackend == MB_WARPUP )
+//  {
+//
+//    /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
+//       flush, or better, *invalidate* the cache before mixing starts. */
+//
+//    SetCache68K( CACHE_DCACHEINV,
+//                 audioctrl->ahiac_PPCMixBuffer,
+//                 audioctrl->ahiac_BuffSizeNow );
+//  }
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
 
@@ -333,39 +334,44 @@ kprintf("M");
         IF_CACHEFLUSHNO | IF_ASYNC, 0, 0,
 
         0xC0DECAFE,
-        (ULONG) Hook, (ULONG) audioctrl->ahiac_PPCMixBuffer, (ULONG) audioctrl,
-        0, 0, 0, 0,
+        (ULONG) Hook,
+        (ULONG) audioctrl->ahiac_PPCMixBuffer,
+        (ULONG) audioctrl,
+        TRUE,                                  // Flush buffer afterwards!
+        0, 0, 0,
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
       };
 
-      kprintf("K");
+      //kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
-      kprintf("k");
+      //kprintf("k");
 
       audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // I like it better after
       break;
     }
 
     case MB_WARPUP:
-      audioctrl->ahiac_PPCWarpUpContext->AudioCtrl = (struct AudioCtrl*) audioctrl;
-      audioctrl->ahiac_PPCWarpUpContext->Hook      = Hook;
-      audioctrl->ahiac_PPCWarpUpContext->Dst       = audioctrl->ahiac_PPCMixBuffer;
-      audioctrl->ahiac_PPCWarpUpContext->Active    = TRUE;
+      audioctrl->ahiac_PPCWarpUpContext->AudioCtrl    = (struct AudioCtrl*) audioctrl;
+      audioctrl->ahiac_PPCWarpUpContext->Hook         = Hook;
+      audioctrl->ahiac_PPCWarpUpContext->Dst          = audioctrl->ahiac_PPCMixBuffer;
+      audioctrl->ahiac_PPCWarpUpContext->MixLongWords = ( audioctrl->ahiac_BuffSizeNow + 3 / 4 );
+      audioctrl->ahiac_PPCWarpUpContext->Active       = TRUE;
 
       audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // Must be before
-      kprintf("C");
+      //kprintf("C");
       CausePPCInterrupt();
-      kprintf("c");
+      //kprintf("c");
       break;
 
-    default:
+    case MB_NATIVE:
       // Ugh!
       break;
   }
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
 
-  // The PPC mix buffer is not m68k-cachable (or cleared); just read from it.
+  // The PPC mix buffer is either not m68k-cachable or cleared;
+  // just read from it.
 
   memcpy( dst, audioctrl->ahiac_PPCMixBuffer, audioctrl->ahiac_BuffSizeNow );
 
@@ -376,7 +382,7 @@ kprintf("M");
   /*** AHIET_CHANNELINFO ***/
 
   DoChannelInfo(audioctrl);
-kprintf("m");
+//kprintf("m");
 
   return;
 }
@@ -402,23 +408,39 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
   // This structure could be accessed from from interrupts!
 
   audioctrl->ahiac_ChannelDatas = AHIAllocVec(
-      audioctrl->ac.ahiac_Channels * sizeof(struct AHIChannelData),
+      audioctrl->ac.ahiac_Channels * sizeof( struct AHIChannelData ),
       MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
   // Allocate and initialize the AHISoundData structures
   // This structure could be accessed from from interrupts!
 
   audioctrl->ahiac_SoundDatas = AHIAllocVec(
-      audioctrl->ac.ahiac_Sounds * sizeof(struct AHISoundData),
+      audioctrl->ac.ahiac_Sounds * sizeof( struct AHISoundData ),
       MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
   // Allocate structures specific to the PPC version
 
   if( PPCObject != NULL )
   {
-    audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
-        audioctrl->ac.ahiac_BuffSize,
-        MEMF_PUBLIC | MEMF_NOCACHEM68K );
+    switch( MixBackend )
+    {
+      case MB_NATIVE:
+        Req( "Internal error: Illegal MixBackend in InitMixroutine()" );
+        break;
+
+      case MB_POWERUP:
+        audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
+            audioctrl->ac.ahiac_BuffSize,
+            MEMF_PUBLIC | MEMF_NOCACHEM68K );
+        break;
+
+      case MB_WARPUP:
+        audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
+            audioctrl->ac.ahiac_BuffSize,
+            MEMF_PUBLIC | MEMF_NOCACHEPPC | MEMF_NOCACHEM68K );
+//            MEMF_PUBLIC );
+        break;
+    }
 
     audioctrl->ahiac_PPCMixInterrupt = AllocVec(
         sizeof( struct Interrupt ),
@@ -469,14 +491,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
     if( PPCObject != NULL )
     {
       int r = ~0;
-
-      audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Type = NT_INTERRUPT;
-      audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Pri  = 127;
-      audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Name = (STRPTR) DevName;
-      audioctrl->ahiac_PPCMixInterrupt->is_Data         = audioctrl;
-      audioctrl->ahiac_PPCMixInterrupt->is_Code         = (void(*)(void)) Interrupt;
-
-      AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
 
       r &= GetSymbol( AddByteMono     );
       r &= GetSymbol( AddByteStereo   );
@@ -541,30 +555,46 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
               { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
             };
 
-            audioctrl->ahiac_PPCWarpUpContext = 
-                AllocVec32( sizeof( struct WarpUpContext ), 
-                            MEMF_CLEAR | MEMF_CHIP );
+            audioctrl->ahiac_PPCWarpUpContext = AHIAllocVec(
+                sizeof( struct WarpUpContext ), 
+                MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEPPC | MEMF_NOCACHEM68K );
 
             if( audioctrl->ahiac_PPCWarpUpContext != NULL )
             {
-              audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
+              audioctrl->ahiac_PPCWarpUpContext->MixBuffer = 
+                AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
+                             MEMF_PUBLIC );
 
-              args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
+              // Set a default value, just in case...
 
-              if( AHIGetELFSymbol( "InitWarpUp", &args.PP_Code ) )
+              audioctrl->ahiac_PPCWarpUpContext->MixLongWords = 
+                  ( audioctrl->ac.ahiac_BuffSize + 3 ) / 4;
+
+              if( audioctrl->ahiac_PPCWarpUpContext->MixBuffer != NULL )
               {
-                if( RunPPC( &args ) == PPERR_SUCCESS )
+                audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
+
+                args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
+
+                if( AHIGetELFSymbol( "InitWarpUp", &args.PP_Code ) )
                 {
-                  rc = TRUE;
+                  if( RunPPC( &args ) == PPERR_SUCCESS )
+                  {
+                    rc = TRUE;
+                  }
+                  else
+                  {
+                    Req( "Call to InitWarpUp() failed." );
+                  }
                 }
                 else
                 {
-                  Req( "Call to InitWarpUp() failed." );
+                  Req( "Unable to fetch symbol 'InitWarpUp'." );
                 }
               }
               else
               {
-                Req( "Unable to fetch symbol 'InitWarpUp'." );
+                Req( "Out of memory in InitMixroutine()." );
               }
             }
             else
@@ -574,10 +604,17 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
             break;
           }
+        }
 
-          default:
-            Req( "Internal error: Unknown MixBackend in InitMixroutine()." );
-            break;
+        if( rc )
+        {
+          audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Type = NT_INTERRUPT;
+          audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Pri  = 127;
+          audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Name = (STRPTR) DevName;
+          audioctrl->ahiac_PPCMixInterrupt->is_Data         = audioctrl;
+          audioctrl->ahiac_PPCMixInterrupt->is_Code         = (void(*)(void)) Interrupt;
+
+          AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
         }
       }
       else
@@ -640,6 +677,11 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 void
 CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
 {
+  if( audioctrl->ahiac_PPCMixInterrupt != NULL )
+  {
+    RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
+  }
+
   switch( MixBackend )
   {
     case MB_NATIVE:
@@ -674,21 +716,13 @@ CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
           Req( "Unable to fetch symbol 'CleanUpWarpUp'." );
         }
 
-        FreeVec32( audioctrl->ahiac_PPCWarpUpContext );
+        AHIFreeVec( audioctrl->ahiac_PPCWarpUpContext->MixBuffer );
+        AHIFreeVec( audioctrl->ahiac_PPCWarpUpContext );
         audioctrl->ahiac_PPCWarpUpContext = NULL;
       }
 
       break;
     }
-
-    default:
-      Req( "Internal error: Unknown MixBackend in CleanUpMixroutine()." );
-      break;
-  }
-
-  if( audioctrl->ahiac_PPCMixInterrupt != NULL )
-  {
-    RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
   }
 
   FreeVec( audioctrl->ahiac_PPCMixInterrupt );
@@ -1357,7 +1391,6 @@ MixGeneric ( struct Hook *unused_Hook,
             continue;               // .contchannel (same channel, new sound)
           }
         } // FreqOK && SoundOK
-
         break; // .contchannel
 
       } // while(TRUE)

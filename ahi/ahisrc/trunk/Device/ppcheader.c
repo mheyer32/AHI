@@ -36,12 +36,6 @@
 ** Prototypes *****************************************************************
 ******************************************************************************/
 
-int
-CallMixroutine( unsigned int             magic,
-                struct Hook*             Hook, 
-                void*                    dst, 
-                struct AHIPrivAudioCtrl* audioctrl );
-
 void
 FlushCache( void* address, unsigned long length );
 
@@ -50,9 +44,6 @@ FlushCacheAll( void  );
 
 void
 InvalidateCache( void* address, unsigned long length );
-
-//ULONG
-//InternalSampleFrameSize( ULONG sampletype );
 
 void WarpUpInt( void );
 
@@ -64,6 +55,8 @@ void WarpUpInt( void );
 // ppc.library < 46.26
 
 asm("
+        .text
+
         .align  2
         .globl  KernelObject
       	.type   KernelObject,@function
@@ -95,10 +88,11 @@ KernelObject:
 ******************************************************************************/
 
 int
-CallMixroutine( unsigned int magic,
-                struct Hook *Hook, 
-                void *dst, 
-                struct AHIPrivAudioCtrl *audioctrl )
+CallMixroutine( unsigned int             magic,
+                struct Hook*             Hook, 
+                void*                    dst, 
+                struct AHIPrivAudioCtrl* audioctrl,
+                int                      flush_result )
 {
   struct AHISoundData *sd;
   int                  i;
@@ -110,7 +104,13 @@ CallMixroutine( unsigned int magic,
     return 20; // RETURN_FAIL
   }
 
+
+  // Wait for start signal...
+
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_START );
+
+
+  // Start m68k interrupt handler
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
@@ -148,14 +148,27 @@ CallMixroutine( unsigned int magic,
     sd++;
   }
 
+  // Wait for m68k interrupt handler to go active
+
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
+
+  // Mix
 
   MixGeneric( Hook, dst, audioctrl );
 
-  FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
+  // Flush mixed samples to memory (PowerUp only!)
+
+  if( flush_result )
+  {
+    FlushCache( dst, audioctrl->ahiac_BuffSizeNow );
+  }
+
+  // Kill the m68k interrupt handler
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_QUIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+
+  // Wait for it
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
@@ -168,6 +181,7 @@ CallMixroutine( unsigned int magic,
 ******************************************************************************/
 
 asm( "
+        .text
 
 /*     r3 = beginning address of data block to flush
  *     r4 = size of data block to flush (in bytes)
@@ -262,6 +276,7 @@ struct TagItem InitTags[] =
 };
 
 asm( "
+          .text
 
 _LVOSetExcHandler = -516
 _LVORemExcHandler = -522
@@ -278,6 +293,8 @@ wc_PowerPCBase   = 8
 wc_XLock         = 12
 wc_Hook          = 16
 wc_Dst           = 20
+wc_MixBuffer     = 24;
+wc_MixLongWords  = 28;
 
 /* InitWarpUp ****************************************************************/
 
@@ -358,12 +375,15 @@ WarpUpInt:
 
         mr      14,2
 
+# Set up MMU
+
         lwz     3,wc_PowerPCBase(14)
         lwz     0,_LVOSetExcMMU+2(3)
         mtlr    0
         blrl
 
-# Test and clear
+# Test and clear activation flag (is this out interrupt or somebody elses?)
+
         addi    3,14,wc_Active
         li      4,0
 1:
@@ -374,29 +394,45 @@ WarpUpInt:
         cmpwi   0,5,0
         beq     2f
 
-        lis     4,blinkbase@ha
-        addi    4,4,blinkbase@l
-        lwz     4,0(4)
-
-        lbz     3,0(4)
-        xori    3,3,2
-        stb     3,0(4)
-
 # Call the CallMixroutine (V.4 ABI)
-        stwu    1,-8(1)
+
+        stwu    1,-16(1)
+        stw     2,8(1)
+        stw     13,12(1)
 
         lis     3,magic@ha
         addi    3,3,magic@l
         lwz     3,0(3)
         lwz     4,wc_Hook(14)
-        lwz     5,wc_Dst(14)
+        lwz     5,wc_MixBuffer(14)
+#        lwz     5,wc_Dst(14)
         lwz     6,wc_AudioCtrl(14)
+        li      7,0                         # No need to flush the buffer!
+#        li      7,1                         # Do flush the buffer!
 
         bl      CallMixroutine
 
-        addi    1,1,8
+        lwz     2,8(1)
+        lwz     13,12(1)
+        addi    1,1,16
 
+# Copy the cachable mixing buffer to the non-cachable (so the m68k can read it)
+
+        lwz     3,wc_MixBuffer(14)
+        lwz     4,wc_Dst(14)
+        subi    3,3,4
+        subi    4,4,4
+        lwz     5,wc_MixLongWords(14)
+        mtctr   5
+3:
+        lwzu    5,4(3)
+        stwu    5,4(4)
+        bdnz    3b
+        
 2:
+
+# Restore MMU
+
         lwz     3,wc_PowerPCBase(14)
         lwz     0,_LVOClearExcMMU+2(3)
         mtlr    0
@@ -455,7 +491,7 @@ CleanUpWarpUp:
 ******************************************************************************/
 
 // Just some library stuff... All the stuff will have to be added 
-// in the final release.
+// in the final release. TODO!
 
 ULONG	__LIB_Version  = VERSION;
 ULONG	__LIB_Revision = REVISION;

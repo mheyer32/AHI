@@ -150,11 +150,10 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
 
       return AllocVec32( byteSize, new_requirements );
     }
-
-    default:
-      Req( "Internal error: Unknown MixBackend in AHIAllocVec()." );
-      return NULL;
   }
+
+  Req( "Internal error: Unknown MixBackend in AHIAllocVec()." );
+  return NULL;
 }
 
 /******************************************************************************
@@ -168,20 +167,18 @@ AHIFreeVec( APTR memoryBlock )
   {
     case MB_NATIVE:
       FreeVec( memoryBlock );
-      break;
+      return;
 
     case MB_POWERUP:
       PPCFreeVec( memoryBlock );
-      break;
+      return;
 
     case MB_WARPUP:
       FreeVec32( memoryBlock );
-      break;
-
-    default:
-      Req( "Internal error: Unknown MixBackend in AHIFreeVec()." );
-      break;
+      return;
   }
+
+  Req( "Internal error: Unknown MixBackend in AHIFreeVec()." );
 }
 
 
@@ -210,11 +207,10 @@ AHILoadObject( const char* objname )
 
       return o;
     }
-
-    default:
-      Req( "Internal error: Unknown MixBackend in AHILoadObject()." );
-      return NULL;
   }    
+
+  Req( "Internal error: Unknown MixBackend in AHILoadObject()." );
+  return NULL;
 }
 
 /******************************************************************************
@@ -228,20 +224,18 @@ AHIUnloadObject( void* obj )
   {
     case MB_NATIVE:
       Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
-      break;
+      return;
 
     case MB_POWERUP:
       PPCUnLoadObject( obj );
-      break;
+      return;
 
     case MB_WARPUP:
       ELFUnLoadObject( obj );
-      break;
-
-    default:
-      Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
-      break;
+      return;
   }
+
+  Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
 }
 
 /******************************************************************************
@@ -252,14 +246,11 @@ BOOL
 AHIGetELFSymbol( const char* name,
                  void** ptr )
 {
-  BOOL rc = FALSE;
-
   switch( MixBackend )
   {
     case MB_NATIVE:
       Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
-      rc = FALSE;
-      break;
+      return FALSE;
 
     case MB_POWERUP:
     {
@@ -272,27 +263,25 @@ AHIGetELFSymbol( const char* name,
         STB_GLOBAL,
         0
       };
-
+      
       struct TagItem tag_done =
       {
         TAG_DONE, 0
       };
 
+      BOOL rc;
+
       oi.Name = (char*) name;
       rc = PPCGetObjectAttrs( PPCObject, &oi, &tag_done );
       *ptr = (void*) oi.Address;
       
-      break;
+      return rc;
     }
 
     case MB_WARPUP:
-      rc = ELFGetSymbol( PPCObject, name, ptr );
-      break;
-
-    default:
-      Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
-
+      return ELFGetSymbol( PPCObject, name, ptr );
   }
 
-  return rc;
+  Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
+  return FALSE;
 }
