@@ -74,22 +74,22 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 #endif /* !defined( VERSIONPPC ) */
 
 
-ADDFUNC* AddByteMVHPtr    = NULL;
-ADDFUNC* AddByteSVPHPtr   = NULL;
-ADDFUNC* AddBytesMVHPtr   = NULL;
-ADDFUNC* AddBytesSVPHPtr  = NULL;
-ADDFUNC* AddWordMVHPtr    = NULL;
-ADDFUNC* AddWordSVPHPtr   = NULL;
-ADDFUNC* AddWordsMVHPtr   = NULL;
-ADDFUNC* AddWordsSVPHPtr  = NULL;
-ADDFUNC* AddByteMVHBPtr   = NULL;
-ADDFUNC* AddByteSVPHBPtr  = NULL;
-ADDFUNC* AddBytesMVHBPtr  = NULL;
-ADDFUNC* AddBytesSVPHBPtr = NULL;
-ADDFUNC* AddWordMVHBPtr   = NULL;
-ADDFUNC* AddWordSVPHBPtr  = NULL;
-ADDFUNC* AddWordsMVHBPtr  = NULL;
-ADDFUNC* AddWordsSVPHBPtr = NULL;
+ADDFUNC* AddByteMonoPtr     = NULL;
+ADDFUNC* AddByteStereoPtr   = NULL;
+ADDFUNC* AddBytesMonoPtr    = NULL;
+ADDFUNC* AddBytesStereoPtr  = NULL;
+ADDFUNC* AddWordMonoPtr     = NULL;
+ADDFUNC* AddWordStereoPtr   = NULL;
+ADDFUNC* AddWordsMonoPtr    = NULL;
+ADDFUNC* AddWordsStereoPtr  = NULL;
+ADDFUNC* AddByteMonoBPtr    = NULL;
+ADDFUNC* AddByteStereoBPtr  = NULL;
+ADDFUNC* AddBytesMonoBPtr   = NULL;
+ADDFUNC* AddBytesStereoBPtr = NULL;
+ADDFUNC* AddWordMonoBPtr    = NULL;
+ADDFUNC* AddWordStereoBPtr  = NULL;
+ADDFUNC* AddWordsMonoBPtr   = NULL;
+ADDFUNC* AddWordsStereoBPtr = NULL;
 
 static const UBYTE type2bytes[]=
 {
@@ -388,22 +388,22 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 //kprintf( "InitMixroutine #5\n" );
 #define GetSymbol( name ) r &= AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
-      GetSymbol( AddByteMVH    );
-      GetSymbol( AddByteSVPH   );
-      GetSymbol( AddBytesMVH   );
-      GetSymbol( AddBytesSVPH  );
-      GetSymbol( AddWordMVH    );
-      GetSymbol( AddWordSVPH   );
-      GetSymbol( AddWordsMVH   );
-      GetSymbol( AddWordsSVPH  );
-      GetSymbol( AddByteMVHB   );
-      GetSymbol( AddByteSVPHB  );
-      GetSymbol( AddBytesMVHB  );
-      GetSymbol( AddBytesSVPHB );
-      GetSymbol( AddWordMVHB   );
-      GetSymbol( AddWordSVPHB  );
-      GetSymbol( AddWordsMVHB  );
-      GetSymbol( AddWordsSVPHB );
+      GetSymbol( AddByteMono     );
+      GetSymbol( AddByteStereo   );
+      GetSymbol( AddBytesMono    );
+      GetSymbol( AddBytesStereo  );
+      GetSymbol( AddWordMono     );
+      GetSymbol( AddWordStereo   );
+      GetSymbol( AddWordsMono    );
+      GetSymbol( AddWordsStereo  );
+      GetSymbol( AddByteMonoB    );
+      GetSymbol( AddByteStereoB  );
+      GetSymbol( AddBytesMonoB   );
+      GetSymbol( AddBytesStereoB );
+      GetSymbol( AddWordMonoB    );
+      GetSymbol( AddWordStereoB  );
+      GetSymbol( AddWordsMonoB   );
+      GetSymbol( AddWordsStereoB );
 
 #undef GetSymbol
 
@@ -451,22 +451,22 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
 #define GetSymbol( name ) name ## Ptr = name;
 
-      GetSymbol( AddByteMVH    );
-      GetSymbol( AddByteSVPH   );
-      GetSymbol( AddBytesMVH   );
-      GetSymbol( AddBytesSVPH  );
-      GetSymbol( AddWordMVH    );
-      GetSymbol( AddWordSVPH   );
-      GetSymbol( AddWordsMVH   );
-      GetSymbol( AddWordsSVPH  );
-      GetSymbol( AddByteMVHB   );
-      GetSymbol( AddByteSVPHB  );
-      GetSymbol( AddBytesMVHB  );
-      GetSymbol( AddBytesSVPHB );
-      GetSymbol( AddWordMVHB   );
-      GetSymbol( AddWordSVPHB  );
-      GetSymbol( AddWordsMVHB  );
-      GetSymbol( AddWordsSVPHB );
+      GetSymbol( AddByteMono     );
+      GetSymbol( AddByteStereo   );
+      GetSymbol( AddBytesMono    );
+      GetSymbol( AddBytesStereo  );
+      GetSymbol( AddWordMono     );
+      GetSymbol( AddWordStereo   );
+      GetSymbol( AddWordsMono    );
+      GetSymbol( AddWordsStereo  );
+      GetSymbol( AddByteMonoB    );
+      GetSymbol( AddByteStereoB  );
+      GetSymbol( AddBytesMonoB   );
+      GetSymbol( AddBytesStereoB );
+      GetSymbol( AddWordMonoB    );
+      GetSymbol( AddWordStereoB  );
+      GetSymbol( AddWordsMonoB   );
+      GetSymbol( AddWordsStereoB );
 
 #undef GetSymbol
 
@@ -617,9 +617,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft + VolumeRight;
           *ScaleRight = 0;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddByteMVHBPtr;
+            *AddRoutine = AddByteMonoBPtr;
           else
-            *AddRoutine = AddByteMVHPtr;
+            *AddRoutine = AddByteMonoPtr;
           break;
 
         case AHIST_S8S:
@@ -627,9 +627,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddBytesMVHBPtr;
+            *AddRoutine = AddBytesMonoBPtr;
           else
-            *AddRoutine = AddBytesMVHPtr;
+            *AddRoutine = AddBytesMonoPtr;
           break;
 
         case AHIST_M16S:
@@ -637,9 +637,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft + VolumeRight;
           *ScaleRight = 0;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordMVHBPtr;
+            *AddRoutine = AddWordMonoBPtr;
           else
-            *AddRoutine = AddWordMVHPtr;
+            *AddRoutine = AddWordMonoPtr;
           break;
 
         case AHIST_S16S:
@@ -647,9 +647,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordsMVHBPtr;
+            *AddRoutine = AddWordsMonoBPtr;
           else
-            *AddRoutine = AddWordsMVHPtr;
+            *AddRoutine = AddWordsMonoPtr;
           break;
 
         default:
@@ -671,9 +671,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddByteSVPHBPtr;
+            *AddRoutine = AddByteStereoBPtr;
           else
-            *AddRoutine = AddByteSVPHPtr;
+            *AddRoutine = AddByteStereoPtr;
           break;
 
         case AHIST_S8S:
@@ -681,9 +681,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddBytesSVPHBPtr;
+            *AddRoutine = AddBytesStereoBPtr;
           else
-            *AddRoutine = AddBytesSVPHPtr;
+            *AddRoutine = AddBytesStereoPtr;
           break;
 
         case AHIST_M16S:
@@ -691,9 +691,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordSVPHBPtr;
+            *AddRoutine = AddWordStereoBPtr;
           else
-            *AddRoutine = AddWordSVPHPtr;
+            *AddRoutine = AddWordStereoPtr;
           break;
 
         case AHIST_S16S:
@@ -701,9 +701,9 @@ SelectAddRoutine ( Fixed     VolumeLeft,
           *ScaleLeft  = VolumeLeft;
           *ScaleRight = VolumeRight;
           if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordsSVPHBPtr;
+            *AddRoutine = AddWordsStereoBPtr;
           else
-            *AddRoutine = AddWordsSVPHPtr;
+            *AddRoutine = AddWordsStereoPtr;
           break;
 
         default:
@@ -795,18 +795,28 @@ MixGeneric ( struct Hook *Hook,
           samples     = min( samplesleft, cd->cd_Samples );
           try_samples = min( samples, cd->cd_AntiClickCount );
 
-          processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
-                                                       cd->cd_ScaleLeft,
-                                                       cd->cd_ScaleRight,
-                                                      &cd->cd_Offset, 
-                                                       cd->cd_Add,
-                                                       audioctrl,
-                                                       cd->cd_DataStart,
-                                                      &dstptr,
-                                                       cd,
-                                                       TRUE );
-          cd->cd_Samples -= processed;
-          samplesleft    -= processed;
+          if( try_samples > 0 )
+          {
+            cd->cd_TempStartPointL = cd->cd_StartPointL;
+            cd->cd_TempStartPointR = cd->cd_StartPointR;
+            processed = ((ADDFUNC *) cd->cd_AddRoutine)( try_samples,
+                                                         cd->cd_ScaleLeft,
+                                                         cd->cd_ScaleRight,
+                                                        &cd->cd_TempStartPointL,
+                                                        &cd->cd_TempStartPointR,
+                                                         cd->cd_DataStart,
+                                                        &dstptr,
+                                                         cd->cd_FirstOffsetI,
+                                                         cd->cd_Add,
+                                                        &cd->cd_Offset, 
+                                                         TRUE );
+            cd->cd_Samples -= processed;
+            samplesleft    -= processed;
+          }
+          else
+          {
+            processed = 0;
+          }
 
           if( try_samples == cd->cd_AntiClickCount ||
               processed != samples )
@@ -882,18 +892,24 @@ MixGeneric ( struct Hook *Hook,
 
           samples = min( samplesleft, cd->cd_Samples );
 
-          processed = ((ADDFUNC *) cd->cd_AddRoutine)( samples,
-                                                       cd->cd_ScaleLeft,
-                                                       cd->cd_ScaleRight,
-                                                      &cd->cd_Offset, 
-                                                       cd->cd_Add,
-                                                       audioctrl,
-                                                       cd->cd_DataStart,
-                                                      &dstptr,
-                                                       cd,
-                                                       FALSE );
-          cd->cd_Samples -= processed;
-          samplesleft    -= processed;
+          if( samples > 0 )
+          {
+            cd->cd_TempStartPointL = cd->cd_StartPointL;
+            cd->cd_TempStartPointR = cd->cd_StartPointR;
+            processed = ((ADDFUNC *) cd->cd_AddRoutine)( samples,
+                                                         cd->cd_ScaleLeft,
+                                                         cd->cd_ScaleRight,
+                                                        &cd->cd_TempStartPointL,
+                                                        &cd->cd_TempStartPointR,
+                                                         cd->cd_DataStart,
+                                                        &dstptr,
+                                                         cd->cd_FirstOffsetI,
+                                                         cd->cd_Add,
+                                                        &cd->cd_Offset, 
+                                                         FALSE );
+            cd->cd_Samples -= processed;
+            samplesleft    -= processed;
+          }
 
           if( cd->cd_Samples == 0 )
           {

@@ -40,7 +40,7 @@ ASM		= @ASM@
 
 CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir} -DVERSION$(VER)
 CFLAGS		= @CFLAGS@ -O3 -m$(CPU)
-ASFLAGS		= @ASFLAGS@ -m$(CPU)
+ASFLAGS		= @ASFLAGS@ -m$(CPU) --register-prefix-optional --bitwise-or
 LDFLAGS		= @LDFLAGS@ -nostartfiles
 LIBS		= @LIBS@
 ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \

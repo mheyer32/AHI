@@ -260,6 +260,7 @@ static void GetSliderAttrs(struct AHIAudioModeRequesterExt *req, LONG *levels, L
 static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
 {
   LONG sliderlevels,sliderlevel,selected;
+  BOOL disabled = !sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID);
 
   if(all)
   {
@@ -277,7 +278,7 @@ static void SetSelected(struct AHIAudioModeRequesterExt *req, BOOL all)
   GT_SetGadgetAttrs(req->slidergadget, req->Window, NULL,
       GTSL_Max,sliderlevels-1,
       GTSL_Level, sliderlevel,
-      GA_Disabled,!sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID),
+      GA_Disabled,disabled,
       TAG_DONE);
 
   UpdateInfoWindow(req);
