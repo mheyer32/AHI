@@ -1,5 +1,8 @@
 2003-04-12  Martin Blom  <martin@blom.org>
 
+	* PlayTest: I finally fixed the bug that could make the example
+	call DeleteIORequest() on a pointer obtained from AllocMem().
+
 	* Released ahi.device 5.32.
 
 	* ahi.deivce: io_Actual is now valid even if a CMD_READ or
