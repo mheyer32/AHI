@@ -44,4 +44,8 @@ AC_C_INLINE
 dnl Checks for library functions.
 
 
-AC_OUTPUT(Makefile AHI/Makefile AddAudioModes/Makefile, echo timestamp > stamp-h)
+AC_OUTPUT(Makefile
+          AHI/Makefile
+          AddAudioModes/Makefile
+          Docs/Makefile,
+          echo timestamp > stamp-h)
