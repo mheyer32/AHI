@@ -47,6 +47,14 @@
 #include "header.h"
 #include "misc.h"
 
+#if defined( __AROS__ )
+void
+ReadEClock( struct EClockVal* ecv )
+{
+  ecv->ev_hi = 0;
+  ecv->ev_lo = 0;
+}
+#endif
 
 /******************************************************************************
 ** Findnode *******************************************************************
@@ -412,6 +420,11 @@ PreTimer( struct AHIPrivAudioCtrl* audioctrl )
   ULONG pretimer_period;  // Clocks between PreTimer calls
   ULONG mixer_time;       // Clocks spent in mixer
 
+  if( TimerBase == NULL )
+  {
+    return FALSE;
+  }
+
   pretimer_period = audioctrl->ahiac_Timer.EntryTime.ev_lo;
 
   ReadEClock( &audioctrl->ahiac_Timer.EntryTime );
@@ -424,9 +437,13 @@ PreTimer( struct AHIPrivAudioCtrl* audioctrl )
   if( pretimer_period != 0 )
   {
     audioctrl->ahiac_UsedCPU = ( mixer_time << 8 ) / pretimer_period;
+
+    return ( audioctrl->ahiac_UsedCPU <= audioctrl->ahiac_MaxCPU );
   }
-  
-  return ( audioctrl->ahiac_UsedCPU <= audioctrl->ahiac_MaxCPU );
+  else
+  {
+    return FALSE;
+  }
 }
 
 /******************************************************************************
@@ -436,5 +453,10 @@ PreTimer( struct AHIPrivAudioCtrl* audioctrl )
 void
 PostTimer( struct AHIPrivAudioCtrl* audioctrl )
 {
+  if( TimerBase == NULL )
+  {
+    return;
+  }
+
   ReadEClock( &audioctrl->ahiac_Timer.ExitTime );
 }

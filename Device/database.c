@@ -670,7 +670,7 @@ AddModeFile ( UBYTE *filename )
   if(iff != NULL)
   {
 
-    iff->iff_Stream = Open(filename, MODE_OLDFILE);
+    iff->iff_Stream = (ULONG) Open(filename, MODE_OLDFILE);
 
     if(iff->iff_Stream != 0)
     {
@@ -868,7 +868,7 @@ AddModeFile ( UBYTE *filename )
         }
         CloseIFF(iff);
       }
-      Close(iff->iff_Stream);
+      Close((BPTR) iff->iff_Stream);
     }
     FreeIFF(iff);
   }

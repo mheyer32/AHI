@@ -574,7 +574,7 @@ ReadConfig ( struct AHIDevUnit *iounit,
 
   if((iff=AllocIFF()))
   {
-    iff->iff_Stream=Open("ENV:Sys/ahi.prefs", MODE_OLDFILE);
+    iff->iff_Stream=(ULONG) Open("ENV:Sys/ahi.prefs", MODE_OLDFILE);
     if(iff->iff_Stream)
     {
       InitIFFasDOS(iff);
@@ -685,7 +685,7 @@ ReadConfig ( struct AHIDevUnit *iounit,
         }
         CloseIFF(iff);
       }
-      Close(iff->iff_Stream);
+      Close((BPTR) iff->iff_Stream);
     }
     FreeIFF(iff);
   }

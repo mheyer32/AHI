@@ -22,6 +22,7 @@
 
 #include <devices/ahi.h>
 #include <exec/memory.h>
+#include <intuition/intuition.h>
 #include <prefs/prefhdr.h>
 #include <workbench/workbench.h>
 
@@ -93,7 +94,7 @@ static struct Image image1 =
     NULL
 };
 
-static char *toolTypes[] = {
+static STRPTR toolTypes[] = {
   "ACTION=USE",
   NULL
 };
@@ -104,20 +105,20 @@ static struct DiskObject projIcon = {
   {                               /* Embedded Gadget Structure */
     NULL,                         /* Next Gadget Pointer */
     97,12,52,23,                  /* Left,Top,Width,Height */
-    GADGIMAGE|GADGHBOX,           /* Flags */
-    GADGIMMEDIATE|RELVERIFY,      /* Activation Flags */
-    BOOLGADGET,                   /* Gadget Type */
+    GFLG_GADGIMAGE|GFLG_GADGHBOX, /* Flags */
+    GACT_IMMEDIATE|GACT_RELVERIFY,/* Activation Flags */
+    GTYP_BOOLGADGET,              /* Gadget Type */
     (APTR)&image1,                /* Render Image */
     NULL,                         /* Select Image */
     NULL,                         /* Gadget Text */
-    NULL,                         /* Mutual Exclude */
+    0,                            /* Mutual Exclude */
     NULL,                         /* Special Info */
     0,                            /* Gadget ID */
     NULL                          /* User Data */
   },  
   WBPROJECT,                      /* Icon Type */
   deftoolname,                    /* Default Tool */
-  (STRPTR*) toolTypes,            /* Tool Type Array */
+  toolTypes,                      /* Tool Type Array */
   NO_ICON_POSITION,               /* Current X */
   NO_ICON_POSITION,               /* Current Y */
   NULL,                           /* Drawer Structure */
@@ -239,7 +240,7 @@ struct List *GetUnits(char *name) {
     NewList(list);
     
     if(name && (iff = AllocIFF())) {
-      iff->iff_Stream = Open(name, MODE_OLDFILE);
+      iff->iff_Stream = (ULONG) Open(name, MODE_OLDFILE);
       if(iff->iff_Stream) {
         InitIFFasDOS(iff);
         if(!OpenIFF(iff, IFFF_READ)) {
@@ -300,7 +301,7 @@ struct List *GetUnits(char *name) {
           }
           CloseIFF(iff);
         }
-        Close(iff->iff_Stream);
+        Close((BPTR) iff->iff_Stream);
       }
       FreeIFF(iff);
     }
@@ -476,7 +477,7 @@ BOOL SaveSettings(char *name, struct List *list) {
   BOOL               success = FALSE;
 
   if(name && (iff = AllocIFF())) {
-    iff->iff_Stream = Open(name, MODE_NEWFILE);
+    iff->iff_Stream = (ULONG) Open(name, MODE_NEWFILE);
     if(iff->iff_Stream) {
       InitIFFasDOS(iff);
       if(!OpenIFF(iff, IFFF_WRITE)) {
@@ -512,7 +513,7 @@ BOOL SaveSettings(char *name, struct List *list) {
         }
         CloseIFF(iff);
       }
-      Close(iff->iff_Stream);
+      Close((BPTR) iff->iff_Stream);
     }
     FreeIFF(iff);
   }
@@ -527,7 +528,7 @@ BOOL SaveSettings(char *name, struct List *list) {
 BOOL WriteIcon(char *name) {
   struct DiskObject *dobj;
   char *olddeftool;
-  char **oldtooltypes;
+  STRPTR* oldtooltypes;
   BOOL success = FALSE;
 
   /* Use the already present icon */
@@ -664,14 +665,14 @@ BOOL PlaySound( struct AHIUnitPrefs* prefs )
                            AHIP_Vol,          0x10000,
                            AHIP_Pan,          0x8000,
                            AHIP_Sound,        0,
-                           AHIP_EndChannel,   NULL,
+                           AHIP_EndChannel,   0,
                            TAG_DONE );
 
           Delay( 50 );
           
           AHI_Play( actrl, AHIP_BeginChannel, 0,
                            AHIP_Sound,        AHI_NOSOUND,
-                           AHIP_EndChannel,   NULL,
+                           AHIP_EndChannel,   0,
                            TAG_DONE );
 
           // Give the anti-click code a break ...

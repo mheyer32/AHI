@@ -1,3 +1,7 @@
+2003-04-14  Martin Blom  <martin@blom.org>
+
+	* Ported AHI to AROS.
+
 2003-04-13  Martin Blom  <martin@blom.org>
 
 	* ahi.device: For some weired reason I apparently disabled
