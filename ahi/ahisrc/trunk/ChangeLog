@@ -1,3 +1,14 @@
+2003-07-28  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.42.
+
+	* ahi.device: Re-disabled the powerpc assembler optimized mixing
+	routines, since they're totally fubar. I'll look into it until
+	next release, I promise ...
+
+	* Rebuilt everything with an updated GG-cross build enviroment and
+	using the new SDK for the MorphOS version.
+
 2003-07-24  Martin Blom  <martin@blom.org>
 
 	* Bugfixed the ix86be-amithlon version and removed that beta
