@@ -2,6 +2,10 @@
 
 * $Id$
 * $Log$
+* Revision 4.31  2003/10/16 19:27:22  martin
+* In MorphOS, audio.device is no longer used as a lock for the audio hardware.
+* Instead, an internal flag is used.
+*
 * Revision 4.30  2003/04/29 09:40:50  martin
 * Updated autodocs to say that V6 drivers do not need to preserve all
 * registers in AHIsub_Disable()/AHIsub_Enable().
@@ -308,6 +312,7 @@ AHIDB_PaulaDMA		EQU	AHIDB_UserBase+2	* Boolean
 	APTR	pb_MiscResource
 	APTR	pb_CardResource
 	ULONG	pb_AudioFreq			;PAL/NTSC clock constant
+	APTR	pb_Lock
 	LABEL	paulaBase_SIZEOF
 
  * channel (private) used in DMA mode
@@ -505,6 +510,7 @@ intuiName:	dc.b	"intuition.library",0
 timerName:	dc.b	"timer.device",0
 miscName:	MISCNAME
 cardName:	dc.b	"card.resource",0
+mosName:	dc.b	"MorphOS",0
 filterVar:	dc.b	"AHIpaulaFilterFreq",0
 screenVar:	dc.b	"AHIpaulaSampleLimit",0
 bufferVar:	dc.b	"AHIpaulaBufferLength",0
@@ -1022,7 +1028,26 @@ AHIsub_AllocAudio:
 	bsr	GetVarInt
 	move.w	d0,p_MixTaskPri(a3)
 
+* Check if MorphOS
+	move.l	pb_SysLib(a5),a6
+	lea	mosName(pc),a1
+	call	FindResident
+	tst.l	d0
+	beq	.allocdev
+
+* If MorphOS, check internal lock
+	call	Forbid
+	move.l	pb_Lock(a5),d0
+	bne	.locked
+	move.l	a3,pb_Lock(a5)
+.locked
+	call	Permit
+	tst.l	d0
+	bne	.error_hwinuse
+	bra	.allocated
+
 * allocate audio.device
+.allocdev
 	move.l	pb_SysLib(a5),a6
 	call	CreateMsgPort
 	move.l	d0,p_audioport(a3)
@@ -1057,6 +1082,8 @@ AHIsub_AllocAudio:
 	move.l	pb_DosLib(a5),a6
 	moveq	#1,d1
 	call	Delay
+
+.allocated
 
 * Set dummy interrupt handler
 	move.l	pb_SysLib(a5),a6
@@ -1280,6 +1307,7 @@ AHIsub_AllocAudio:
 	popm	std
 	rts
 
+.error_hwinuse
 .error_noaudiodev
 .error_noreqmem
 .error_noport
@@ -1729,6 +1757,14 @@ AHIsub_FreeAudio:
 	move.l	d0,a0
 	call	DeleteMsgPort
 .noaudioport
+
+	call	Forbid
+	cmp.l	pb_Lock(a5),a3
+	bne	.unlocked
+	clr.l	pb_Lock(a5)
+.unlocked
+	call	Permit
+
 	tst.l	p_AuraAddress(a3)
 	beq	.noaura
 	move.l	pb_CardResource(a5),d0
@@ -4867,7 +4903,6 @@ AHIsub_SetVol:
 	btst.b	#PB_DMA,p_Flags(a3)
 	beq	AHIsub_NoDMA
 
-	PRINTF	2,"AHIsub_SetVol()"
 	mulu.w	#channel_SIZEOF,d0
 	lea	p_Channels(a3),a0
 	add.l	d0,a0
@@ -5638,7 +5673,7 @@ DMA_HandleInt:
 	cmp.l	#AHIST_S16S,d3
 	bhi	.error				; Sanity check!
 	lsl.l	#2,d3
-	move.l	.jmp(pc,d3.l),a3
+	move.l	jmpt(pc,d3.l),a3
 .fill
 	jsr	(a3)
 .filled
@@ -5648,9 +5683,9 @@ DMA_HandleInt:
 * This should never happen...
 .error
 	PRINTF	2,"Illegal type! %08lx",d3
-	bra	.exit
+	rts
 
-.jmp
+jmpt:
 	dc.l	CopySampleM8S
 	dc.l	CopySampleM16S
 	dc.l	CopySampleS8S
