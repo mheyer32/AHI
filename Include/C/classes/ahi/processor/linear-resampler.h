@@ -1,10 +1,10 @@
-#ifndef CLASSES_AHI_PROCESSOR_IFFT_H
-#define CLASSES_AHI_PROCESSOR_IFFT_H
+#ifndef CLASSES_AHI_PROCESSOR_LINEAR_RESAMPLER_H
+#define CLASSES_AHI_PROCESSOR_LINEAR_RESAMPLER_H
 
 /*
-**	$VER: ifft.h 7.0 (2.7.2003)
+**	$VER: linear-resampler.h 7.0 (2.7.2003)
 **
-**	ifft.ahi-processor definitions
+**	linear-resampler.ahi-processor definitions
 **
 **	(C) Copyright 2002-2003 Martin Blom
 **	All Rights Reserved.
@@ -18,32 +18,29 @@
 #include <classes/ahi/processor.h>
 #endif
 
-/* This class inherits "ahi-processor.class". */
-#define AHIC_IFFTProcessor	"ifft.ahi-processor"
+/* This class inherits "resampler.ahi-processor". */
+#define AHIC_LinearResamplerProcessor	"linear-resampler.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {
   namespace Processor {
-    namespace IFFT {
+    namespace LinearResampler {
 #else
-# define _P _IFFTProcessor
+# define _P _LinearResamplerProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
 
-      enum {
+      /* No attributes */
+      
+/*****************************************************************************/
 
-	/* The number of overlapping sample frames to use */
-	_AHIA(_P, Overlap,	(_AHIA_Dummy+66))	/* OM_NEW,
-							   OM_SET,
-							   OM_GET,
-							   OM_NOTIFY */
-      };
+      /* No methods. */
 
 /*****************************************************************************/
 
-      /* No methods */
-
+      /* No errors. */
+      
 /*****************************************************************************/
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
@@ -54,4 +51,4 @@ namespace AHI {
 # undef _P
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
-#endif /* CLASSES_AHI_PROCESSOR_IFFT_H */
+#endif /* CLASSES_AHI_PROCESSOR_Linear_RESAMPLER_H */

@@ -1,10 +1,10 @@
-#ifndef CLASSES_AHI_PROCESSOR_IFFT_H
-#define CLASSES_AHI_PROCESSOR_IFFT_H
+#ifndef CLASSES_AHI_PROCESSOR_TICK_H
+#define CLASSES_AHI_PROCESSOR_TICK_H
 
 /*
-**	$VER: ifft.h 7.0 (2.7.2003)
+**	$VER: tick.h 7.0 (2.7.2003)
 **
-**	ifft.ahi-processor definitions
+**	tick.ahi-processor definitions
 **
 **	(C) Copyright 2002-2003 Martin Blom
 **	All Rights Reserved.
@@ -19,31 +19,33 @@
 #endif
 
 /* This class inherits "ahi-processor.class". */
-#define AHIC_IFFTProcessor	"ifft.ahi-processor"
+#define AHIC_TickProcessor	"tick.ahi-processor"
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
 namespace AHI {
   namespace Processor {
-    namespace IFFT {
+    namespace Tick {
 #else
-# define _P _IFFTProcessor
+# define _P _TickProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
 
       enum {
+	
+	/* The notification attribute */
+	_AHIA(_P, Tick,		(_AHIA_Dummy+94))	/* OM_NOTIFY */
 
-	/* The number of overlapping sample frames to use */
-	_AHIA(_P, Overlap,	(_AHIA_Dummy+66))	/* OM_NEW,
-							   OM_SET,
-							   OM_GET,
-							   OM_NOTIFY */
       };
+      
+/*****************************************************************************/
+
+      /* No methods. */
 
 /*****************************************************************************/
 
-      /* No methods */
-
+      /* No errors. */
+      
 /*****************************************************************************/
 
 #if defined(__cplusplus) && !defined(AHI_NO_NAMESPACES)
@@ -54,4 +56,4 @@ namespace AHI {
 # undef _P
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
-#endif /* CLASSES_AHI_PROCESSOR_IFFT_H */
+#endif /* CLASSES_AHI_PROCESSOR_TICK_H */
