@@ -1,5 +1,7 @@
 2004-10-31  Martin Blom  <martin@blom.org>
 
+	* Released AHI 5.14.
+
 	* Imported the rest of the AROS modifications from AROS
 	CVS. Mostly Makefile mods.
 
