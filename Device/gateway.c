@@ -962,7 +962,7 @@ gw_PreTimer( struct AHIPrivAudioCtrl* audioctrl ) __attribute__((regparm(3)));
 static BOOL
 gw_PreTimer( struct AHIPrivAudioCtrl* audioctrl )
 {
-  return PreTimer( audioctrl );
+  return 0; //PreTimer( audioctrl );
 }
 
 static struct

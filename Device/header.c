@@ -602,43 +602,15 @@ OpenLibs ( void )
 
   OpenahiCatalog(NULL, NULL);
 
-#if 0
-  {
-    char buf[2];
-    
-    if( GetVar( "AHINoBetaRequester", buf, sizeof( buf ), 0 ) == -1 )
-    {
-      const char* backend = "Internal error";
-
-      switch( MixBackend )
-      {
-        case MB_NATIVE:
-#if defined( __morphos__ ) || defined( __MORPHOS__ )
-          backend = "MorphOS/" CPU;
-#elif defined( __amithlon__ )
-          backend = "Amithlon/" CPU;
-#else
-#endif
-          break;
-
-#if defined( ENABLE_WARPUP )
-        case MB_WARPUP:
-          backend = "WarpUp";
-          break;
-#endif
-      }
-
-      Req( "This is a beta release of AHI. The latest supported \n"
-           "version is 4.180, which can be found at\n"
-           "<URL:http://www.lysator.liu.se/~lcs/ahi.html>.\n"
-           "\n"
-           "Detailed bug reports and patches are welcome.\n"
-           "Sound kernel in use: %s.\n"
-           "\n"
-           "/Martin Blom <martin@blom.org>\n",
-           (ULONG) backend );
-    }
-  }
+#if defined( __amithlon__ )
+  Req( "This is an *alpha* release of AHI/x86.\n"
+       "I really made it just to show off ... You\n"
+       "should use the m68k version for now.\n"
+       "\n"
+       "Totally unoptimized! It's big and slow.\n"
+       "\n"
+       "Detailed bug reports and patches are welcome.\n"
+	 "/Martin Blom <martin@blom.org>\n" );
 #endif
 
   return TRUE;
