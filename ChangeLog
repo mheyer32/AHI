@@ -1,3 +1,7 @@
+2003-01-22  Martin Blom  <martin@blom.org>
+
+	* Examples: source code now included in bindist.
+
 2003-01-20  Martin Blom  <martin@blom.org>
 
 	* AHI-Handler: Now part of build tree, ported to gcc, GPL:ed and
