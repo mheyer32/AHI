@@ -17,45 +17,6 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-/* $Id$
- * $Log$
- * Revision 5.3  2002/01/06 16:16:03  martin
- * Removed some warnings.
- *
- * Revision 5.2  2001/12/14 12:25:42  martin
- * Fixed test sound channel bug, added a play button.
- *
- * Revision 5.1  2001/12/14 11:47:09  martin
- * Added code for playing a test sample. No GUI button yet, though.
- *
- * Revision 5.0  2000/11/28 00:13:26  lcs
- * Bumped CVS revision to 5.0.
- *
- * Revision 4.7  2000/06/05 20:28:37  lcs
- * Fixed configure problems with separate build directories.
- *
- * Revision 4.6  1999/04/22 19:41:25  lcs
- * Removed SAS/C smakefile.
- * I had the copyright date screwed up: Changed to 1996-1999 (which is only
- * partly correct, but still better than 1997-1999....)
- *
- * Revision 4.5  1999/03/28 22:30:51  lcs
- * AHI is now GPL/LGPL software.
- * Make target bindist work correctly when using a separate build directory.
- * Small first steps towards a WarpOS PPC version.
- *
- * Revision 4.4  1999/01/09 23:14:16  lcs
- * Switched from SAS/C to gcc
- *
- * Revision 4.3  1997/06/24 21:49:49  lcs
- * Increased version number to match the catalogs (4.5).
- *
- * Revision 4.2  1997/04/07 01:36:51  lcs
- * Localized it, bug fixes
- *
- */
-
-
 #include <config.h>
 #include <CompilerSpecific.h>
 
@@ -293,6 +254,21 @@ struct List *GetUnits(char *name) {
                 CopyMem(global->sp_Data, &globalprefs, 
                     min( sizeof(struct AHIGlobalPrefs),
 			 (size_t) global->sp_Size ));
+
+		/* Set upsupported options to their defaults */
+
+		if( AHIBase->lib_Version <= 4 )
+		{
+		  globalprefs.ahigp_AntiClickTime = 0;
+		}
+		
+		if( AHIBase->lib_Version >= 5 )
+		{
+		  globalprefs.ahigp_DisableSurround  = FALSE;
+		  globalprefs.ahigp_DisableEcho      = FALSE;
+		  globalprefs.ahigp_FastEcho         = FALSE;
+		  globalprefs.ahigp_ClipMasterVolume = TRUE;
+		}
               }
 
               while(ci) {
