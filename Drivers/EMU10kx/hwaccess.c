@@ -449,7 +449,6 @@ u16 emu10k1_readac97(struct emu10k1_card *card, u8 reg)
 
 	spin_unlock_irqrestore(&card->lock, flags);
 
-	printk( "emu10k1_readac97 %02x->%08x\n", reg, data );
 	return data;
 }
 
@@ -463,7 +462,6 @@ void emu10k1_writeac97(struct emu10k1_card *card, u8 reg, u16 value)
 	outw(value, card->iobase + AC97DATA);
 
 	spin_unlock_irqrestore(&card->lock, flags);
-	printk( "emu10k1_writeac97 %02x, %08x\n", reg, value );
 }
 #endif
 

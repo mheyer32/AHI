@@ -52,7 +52,8 @@ int emu10k1_find_control_gpr(struct patch_manager *mgr, const char *patch_name, 
 
 	for (i = 0; i < mgr->current_pages * PATCHES_PER_PAGE; i++) {
 		patch = PATCH(mgr, i);
-			sprintf(s,"%s", patch->name);
+//			sprintf(s,"%s", patch->name);
+		        strcpy(s,patch->name);
 
 		if (!strcmp(s, patch_name)) {
 			gpr_used = patch->gpr_used;
