@@ -204,7 +204,6 @@ SetVol ( UWORD                    channel,
   }
 
   AHIsub_Enable(&audioctrl->ac);
-
   return 0;
 }
 
@@ -457,10 +456,6 @@ SetSound ( UWORD                    channel,
 
   AHIsub_Disable(&audioctrl->ac);
 
-//kprintf( "A: 0x%08lx-0x%08lx (%ld) [0x%08lx-0x%08lx]\n",
-//         (ULONG) (cd->cd_Offset >> 32), (ULONG) (cd->cd_LastOffset >> 32), cd->cd_Samples,
-//         (ULONG) (cd->cd_NextOffset >> 32), (ULONG) (cd->cd_NextLastOffset >> 32) );
-
   if(sound == AHI_NOSOUND)
   {
     cd->cd_NextSoundOK    = FALSE;
@@ -541,20 +536,16 @@ SetSound ( UWORD                    channel,
         cd->cd_ScaleRight    = cd->cd_DelayedScaleRight;
         cd->cd_AddRoutine    = cd->cd_DelayedAddRoutine;
         cd->cd_Samples       = cd->cd_DelayedSamples;
-
         cd->cd_AntiClickCount = 0;
       }
       else
       {
         cd->cd_SoundDelayed = TRUE;
       }
+
       cd->cd_EOS = TRUE;  /* Signal End-Of-Sample */
     }
   }
-
-//kprintf( "B: 0x%08lx-0x%08lx (%ld) [0x%08lx-0x%08lx]\n",
-//         (ULONG) (cd->cd_Offset >> 32), (ULONG) (cd->cd_LastOffset >> 32), cd->cd_Samples,
-//         (ULONG) (cd->cd_NextOffset >> 32), (ULONG) (cd->cd_NextLastOffset >> 32) );
 
   AHIsub_Enable(&audioctrl->ac);
 

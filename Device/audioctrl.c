@@ -534,11 +534,6 @@ AllocAudioA( struct TagItem* tags,
       audioctrl->ahiac_Channels2=(audioctrl->ac.ahiac_Channels+1)/2;
     else
       audioctrl->ahiac_Channels2=audioctrl->ac.ahiac_Channels;
-/*
-    KPrintF("Mode: 0x%08lx, channels: %ld (%ld), flags: 0x%08lx\n",
-        audioctrl->ac.ahiac_BuffType, audioctrl->ac.ahiac_Channels,
-        audioctrl->ahiac_Channels2, audioctrl->ac.ahiac_Flags);
-*/
 
     if(!(audioctrl->ac.ahiac_Flags & AHIACF_NOTIMING))
     {

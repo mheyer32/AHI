@@ -20,9 +20,6 @@
      MA 02139, USA.
 */
 
-//#define DEBUG
-//#define DEBUG_R
-
 #include <config.h>
 #include <CompilerSpecific.h>
 
@@ -690,9 +687,6 @@ ReadCmd ( struct AHIRequest *ioreq,
     AddTail((struct List *) &iounit->ReadList,(struct Node *) ioreq);
 
     /* Copy the current buffer contents */
-#ifdef DEBUG_R
-    KPrintF("Copy old!\n");
-#endif
     FillReadBuffer(ioreq, iounit, AHIBase);
 
     ReleaseSemaphore(&iounit->ListLock);
@@ -943,10 +937,6 @@ FeedReaders ( struct AHIDevUnit *iounit,
 {
   struct AHIRequest *ioreq;
 
-#ifdef DEBUG_R
-  KPrintF("FillReaders\n");
-#endif
-
   ObtainSemaphore(&iounit->ListLock);
   for(ioreq = (struct AHIRequest *)iounit->ReadList.mlh_Head;
       ioreq->ahir_Std.io_Message.mn_Node.ln_Succ;
@@ -959,14 +949,8 @@ FeedReaders ( struct AHIDevUnit *iounit,
 
   if( ! iounit->ReadList.mlh_Head->mln_Succ )
   {
-#ifdef DEBUG_R
-    KPrintF("Empty list\n");
-#endif
     if(--iounit->RecordOffDelay == 0)
     {
-#ifdef DEBUG_R
-      KPrintF("Removing\n");
-#endif
       AHI_ControlAudio(iounit->AudioCtrl,
           AHIC_Record,FALSE,
           TAG_DONE);
@@ -998,9 +982,6 @@ FillReadBuffer ( struct AHIRequest *ioreq,
   APTR  oldaddress;
   BOOL  remove;
 
-#ifdef DEBUG_R
-  KPrintF("FillReadBuffer\n");
-#endif
   if(iounit->ValidRecord) // Make sure we have a valid source buffer
   {
     oldaddress = ioreq->ahir_Std.io_Data;
@@ -1010,15 +991,7 @@ FillReadBuffer ( struct AHIRequest *ioreq,
 
     length2 = (iounit->RecordSize - ioreq->ahir_Std.io_Offset)
               / AHI_SampleFrameSize(AHIST_S16S);
-#ifdef DEBUG_R
-    KPrintF("Samples left in buffer: %ld\n", length2);
-#endif
     length2 = MultFixed(length2, (Fixed) ioreq->ahir_Frequency);
-
-#ifdef DEBUG_R
-    KPrintF("Left to store: %ld  Left to read: %ld\n",length, length2);
-#endif
-
 
     if(length <= length2)
     {
@@ -1029,12 +1002,6 @@ FillReadBuffer ( struct AHIRequest *ioreq,
       length = length2;
       remove = FALSE;
     }
-
-#ifdef DEBUG_R
-    KPrintF("Copying %ld bytes from 0x%08lx + 0x%08lx to 0x%08lx, add 0x%08lx\n",
-      length, iounit->RecordBuffer, ioreq->ahir_Std.io_Offset,
-      ioreq->ahir_Std.io_Data, ioreq->ahir_Frequency);
-#endif
 
     switch (ioreq->ahir_Type)
     {
@@ -1088,9 +1055,6 @@ FillReadBuffer ( struct AHIRequest *ioreq,
     {
       Remove((struct Node *) ioreq);
       TermIO(ioreq, AHIBase);
-#ifdef DEBUG_R
-      KPrintF("Finished.\n");
-#endif
     }
     else
     {
@@ -1120,10 +1084,6 @@ NewWriter ( struct AHIRequest *ioreq,
   struct AHISampleInfo si;
   struct Library *AHIsubBase;
 
-#ifdef DEBUG
-  KPrintF("New writer (0x%08lx)\n", ioreq);
-#endif
-
   AHIsubBase = ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_SubLib;
 
   si.ahisi_Type    = ioreq->ahir_Type;
@@ -1151,11 +1111,6 @@ NewWriter ( struct AHIRequest *ioreq,
   
     if(ioreq->ahir_Link)
     {
-  
-#ifdef DEBUG
-      KPrintF("Linked (0x%08lx)\n",ioreq);
-#endif
-  
       // See if the linked request is playing, silent or waiting...
   
       if(FindNode((struct List *) &iounit->PlayingList,
@@ -1181,11 +1136,6 @@ NewWriter ( struct AHIRequest *ioreq,
   
     if(delay)
     {
-  
-#ifdef DEBUG
-      KPrintF("Delayed (0x%08lx)\n",ioreq);
-#endif
-  
       if( ! ioreq->ahir_Link->ahir_Link)
       {
         struct AHIRequest *otherioreq = ioreq->ahir_Link;
@@ -1272,10 +1222,6 @@ AddWriter ( struct AHIRequest *ioreq,
 {
   int channel;
 
-#ifdef DEBUG
-  KPrintF("Addwriter (0x%08lx)\n",ioreq);
-#endif
-
   // Search for a free channel, and use if found
 
   for(channel = 0; channel < iounit->Channels; channel++)
@@ -1296,25 +1242,16 @@ AddWriter ( struct AHIRequest *ioreq,
     // No free channel found. Check if we can kick the last one out...
     // There is at least on node in the list, and the last one has lowest priority.
 
-#ifdef DEBUG
-    KPrintF("No free channel (0x%08lx)\n",ioreq);
-#endif
-
     ioreq2 = (struct AHIRequest *) iounit->PlayingList.mlh_TailPred; 
     if(ioreq->ahir_Std.io_Message.mn_Node.ln_Pri
         > ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri)
     {
       // Let's steal his place!
+
       RemTail((struct List *) &iounit->PlayingList);
       channel = GetExtras(ioreq2)->Channel;
       GetExtras(ioreq2)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq2);
-
-#ifdef DEBUG
-      KPrintF("Stealing %ld (my: %ld, her: %ld) (0x%08lx)\n",channel,
-        ioreq->ahir_Std.io_Message.mn_Node.ln_Pri,
-        ioreq2->ahir_Std.io_Message.mn_Node.ln_Pri, ioreq);
-#endif
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
       PlayRequest(channel, ioreq, iounit, AHIBase);
     }
@@ -1322,9 +1259,6 @@ AddWriter ( struct AHIRequest *ioreq,
     {
       // Let's be quiet for a while.
 
-#ifdef DEBUG
-      KPrintF("Being quiet for a while.. (0x%08lx)\n",ioreq);
-#endif
       GetExtras(ioreq)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
     }
@@ -1348,10 +1282,6 @@ PlayRequest ( int channel,
 
   AHIsubBase = ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_SubLib;
 
-#ifdef DEBUG
-  KPrintF("PlayRequest(%ld, 0x%08lx)\n", channel, ioreq);
-#endif
-
   // Start the sound
 
   GetExtras(ioreq)->Channel = channel;
@@ -1360,10 +1290,6 @@ PlayRequest ( int channel,
   {
     struct Voice        *v = &iounit->Voices[channel];
     struct AHIRequest   *r = ioreq->ahir_Link;
-
-#ifdef DEBUG
-    KPrintF("It has a link! 0x%08lx\n", ioreq->ahir_Link);
-#endif
 
     v->NextSound     = GetExtras(r)->Sound;
     v->NextVolume    = r->ahir_Volume;
@@ -1379,10 +1305,6 @@ PlayRequest ( int channel,
     iounit->Voices[channel].NextOffset  = PLAY;
     iounit->Voices[channel].NextRequest = NULL;
   }
-
-#ifdef DEBUG
-  KPrintF("Starting it (0x%08lx)\n",ioreq);
-#endif
 
   AHIsub_Disable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
@@ -1416,9 +1338,6 @@ PlayRequest ( int channel,
   Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
   
 //  while(((volatile UBYTE) (iounit->Voices[channel].Flags) & VF_STARTED) == 0);
-#ifdef DEBUG
-  KPrintF("Exiting PlayRequest()\n");
-#endif
 }
 
 
@@ -1437,10 +1356,6 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
 {
   struct MinList templist;
   struct AHIRequest *ioreq;
-
-#ifdef DEBUG
-  KPrintF("RethinkPlayers\n");
-#endif
 
   NewList((struct List *) &templist);
 
@@ -1479,10 +1394,6 @@ RemPlayers ( struct List *list,
 {
   struct AHIRequest *ioreq, *node;
 
-#ifdef DEBUG
-  KPrintF("RemPlayers\n");
-#endif
-
   node = (struct AHIRequest *) list->lh_Head;
   while(node->ahir_Std.io_Message.mn_Node.ln_Succ)
   {
@@ -1491,11 +1402,6 @@ RemPlayers ( struct List *list,
 
     if(ioreq->ahir_Std.io_Command == AHICMD_WRITTEN)
     {
-
-#ifdef DEBUG
-      KPrintF("Removing 0x%08lx\n", ioreq);
-#endif
-
       Remove((struct Node *) ioreq);
 
       if(ioreq->ahir_Link)
