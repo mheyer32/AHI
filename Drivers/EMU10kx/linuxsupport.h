@@ -72,8 +72,8 @@ typedef unsigned int   dma_addr_t;
 #define AC97_MIC_VOL             0x000e
 #define AC97_LINEIN_VOL          0x0010
 #define AC97_CD_VOL              0x0012
-#define AC97_AUX_VOL             0x0016
 #define AC97_VIDEO_VOL           0x0014
+#define AC97_AUX_VOL             0x0016
 #define AC97_PCMOUT_VOL          0x0018
 #define AC97_RECORD_SELECT       0x001a
 #define AC97_RECORD_GAIN         0x001c

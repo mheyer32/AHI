@@ -198,6 +198,15 @@ RecordInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) );
 
 
 
+static void
+SaveMixerState( struct DriverData* dd );
+
+static void
+RestoreMixerState( struct DriverData* dd );
+
+static void
+UpdateMonitorMixer( struct DriverData* dd );
+
 static Fixed
 Linear2MixerGain( Fixed  linear,
 		  UWORD* bits );
@@ -280,7 +289,7 @@ static const STRPTR Inputs[ INPUTS ] =
   "Phone"
 };
 
-static const UWORD Input_bits[ INPUTS ] =
+static const UWORD InputBits[ INPUTS ] =
 {
   AC97_RECMUX_MIC,
   AC97_RECMUX_CD,
@@ -627,9 +636,9 @@ LibAllocAudio( REG( a1, struct TagItem* taglist ),
 
     dd->input          = 0;
     dd->output         = 0;
-    dd->monitor_volume = 0;
-    dd->input_gain     = 0x10000;
-    dd->output_volume  = 0x10000;
+    dd->monitor_volume = Linear2MixerGain( 0, &dd->monitor_volume_bits );
+    dd->input_gain     = Linear2RecordGain( 0x10000, &dd->input_gain_bits );
+    dd->output_volume  = Linear2MixerGain( 0x10000, &dd->output_volume_bits );
 
     // No attenuation and natural tone for all outputs
     emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
@@ -922,9 +931,7 @@ LibStart( REG( d0, ULONG flags ),
 	dd->voice.startloop, dd->voice.endloop);
 	    
     emu10k1_voice_playback_setup( &dd->voice );
-
-    DPF(2, "emu10k1_waveout_start()\n");
-
+    
     dd->playback_interrupt_enabled = TRUE;
     
     /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
@@ -933,6 +940,8 @@ LibStart( REG( d0, ULONG flags ),
     emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
 
     emu10k1_voices_start( &dd->voice, 1, 0 );    
+
+    dd->is_playing = TRUE;
   }
 
   if( flags & AHISF_RECORD )
@@ -998,7 +1007,10 @@ LibStart( REG( d0, ULONG flags ),
 	       RECORD_BUFFER_SAMPLES * 4 );
       return AHIE_NOMEM;
     }
-    
+
+    SaveMixerState( dd );
+    UpdateMonitorMixer( dd );
+
     sblive_writeptr( &dd->card, ADCBA, 0, dd->record_dma_handle );
     sblive_writeptr( &dd->card, ADCBS, 0, RECORD_BUFFER_SIZE_VALUE );
     sblive_writeptr( &dd->card, ADCCR, 0, adcctl );
@@ -1008,6 +1020,8 @@ LibStart( REG( d0, ULONG flags ),
     /* Enable ADC interrupts  */
     
     emu10k1_irq_enable( &dd->card, INTE_ADCBUFENABLE );
+
+    dd->is_recording = TRUE;
   }
 
   return AHIE_OK;
@@ -1049,6 +1063,8 @@ LibStop( REG( d0, ULONG flags ),
   
   if( flags & AHISF_PLAY )
   {
+    dd->is_playing= FALSE;
+    
     if( dd->voice_started )
     {
       emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
@@ -1083,10 +1099,14 @@ LibStop( REG( d0, ULONG flags ),
 
   if( flags & AHISF_RECORD )
   {
+    dd->is_recording = FALSE;
+
     emu10k1_irq_disable( &dd->card, INTE_ADCBUFENABLE );
     
     sblive_writeptr( &dd->card, ADCCR, 0, 0 );
     sblive_writeptr( &dd->card, ADCBS, 0, ADCBS_BUFSIZE_NONE );
+
+    RestoreMixerState( dd );
 
     if( dd->record_buffer != NULL )
     {
@@ -1232,6 +1252,10 @@ LibHardwareControl( REG( d0, ULONG attribute ),
     case AHIC_MonitorVolume:
       dd->monitor_volume = Linear2MixerGain( (Fixed) argument,
 					     &dd->monitor_volume_bits );
+      if( dd->is_recording )
+      {
+	UpdateMonitorMixer( dd );
+      }
       return TRUE;
 
     case AHIC_MonitorVolume_Query:
@@ -1257,7 +1281,13 @@ LibHardwareControl( REG( d0, ULONG attribute ),
 
     case AHIC_Input:
       dd->input = argument;
-      emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT, Input_bits[ dd->input ] );
+      emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT, InputBits[ dd->input ] );
+
+      if( dd->is_recording )
+      {
+	UpdateMonitorMixer( dd );
+      }
+
       return TRUE;
 
     case AHIC_Input_Query:
@@ -1577,6 +1607,69 @@ RecordInterrupt( REG( a1, struct AHIAudioCtrlDrv* audioctrl ) )
 /******************************************************************************
 ** Misc. **********************************************************************
 ******************************************************************************/
+
+static void
+SaveMixerState( struct DriverData* dd )
+{
+  dd->ac97_mic    = emu10k1_readac97( &dd->card, AC97_MIC_VOL );
+  dd->ac97_cd     = emu10k1_readac97( &dd->card, AC97_CD_VOL );
+  dd->ac97_video  = emu10k1_readac97( &dd->card, AC97_VIDEO_VOL );
+  dd->ac97_aux    = emu10k1_readac97( &dd->card, AC97_AUX_VOL );
+  dd->ac97_linein = emu10k1_readac97( &dd->card, AC97_LINEIN_VOL );
+  dd->ac97_phone  = emu10k1_readac97( &dd->card, AC97_PHONE_VOL );
+}
+
+
+static void
+RestoreMixerState( struct DriverData* dd )
+{
+  emu10k1_writeac97( &dd->card, AC97_MIC_VOL,    dd->ac97_mic );
+  emu10k1_writeac97( &dd->card, AC97_CD_VOL,     dd->ac97_cd );
+  emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,  dd->ac97_video );
+  emu10k1_writeac97( &dd->card, AC97_AUX_VOL,    dd->ac97_aux );
+  emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL, dd->ac97_linein );
+  emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,  dd->ac97_phone );
+}
+
+static void
+UpdateMonitorMixer( struct DriverData* dd )
+{
+  int   i  = InputBits[ dd->input ];
+  UWORD m  = dd->monitor_volume_bits & 0x801f;
+  UWORD s  = dd->monitor_volume_bits;
+  UWORD mm = AC97_MUTE | 0x0008;
+  UWORD sm = AC97_MUTE | 0x0808;
+  
+  KPrintF( "i=%ld m=%04lx s=%04lx\n", i, m, s );
+
+  if( i == AC97_RECMUX_STEREO_MIX ||
+      i == AC97_RECMUX_MONO_MIX )
+  {
+    // Use the original mixer settings
+    RestoreMixerState( dd );
+  }
+  else
+  {
+    emu10k1_writeac97( &dd->card, AC97_MIC_VOL,
+		       i == AC97_RECMUX_MIC ? m : mm );
+    
+    emu10k1_writeac97( &dd->card, AC97_CD_VOL,
+		       i == AC97_RECMUX_CD ? s : sm );
+    
+    emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,
+		       i == AC97_RECMUX_VIDEO ? s : sm );
+    
+    emu10k1_writeac97( &dd->card, AC97_AUX_VOL,
+		       i == AC97_RECMUX_AUX ? s : sm );
+    
+    emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,
+		       i == AC97_RECMUX_LINE ? s : sm );
+    
+    emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,
+		       i == AC97_RECMUX_PHONE ? m : mm );
+  }
+}
+
 
 static Fixed
 Linear2MixerGain( Fixed  linear,
