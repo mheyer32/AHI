@@ -24,6 +24,25 @@
 #include <stdlib.h>
 #include "filesave.h"
 
+#define __bswap_short(x) \
+            ((((x) & 0xff00) >>  8) | (((x) & 0x00ff) << 8))
+
+#define __bswap_long(x) \
+            ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
+             (((x) & 0x0000ff00) <<  8) | (((x) & 0x000000ff) << 24))
+
+unsigned short
+bswap_short( unsigned short x )
+{
+  return (unsigned short) __bswap_short( x );
+}
+
+unsigned long
+bswap_long( unsigned long x )
+{
+  return __bswap_long( x );
+}
+
 #define dd ((struct filesave *) AudioCtrl->ahiac_DriverData)
 
 #define SAVEBUFFERSIZE 100000   // in samples (min)
@@ -72,6 +91,19 @@ struct EIGHTSVXheader {
 
   ULONG                 BODYid;
   ULONG                 BODYsize;
+};
+
+struct WAVEheader {
+  ULONG                 FORMid;
+  ULONG                 FORMsize;
+  ULONG                 WAVEid;
+
+  ULONG                 FORMATid;
+  ULONG                 FORMATsize;
+  FormatChunk           FORMATchunk;
+  
+  ULONG                 DATAid;
+  ULONG                 DATAsize;
 };
 
 extern char __far _LibID[];
@@ -224,6 +256,10 @@ ULONG __asm __saveds intAHIsub_AllocAudio(
     case FORMAT_S16:
       break;
 
+    case FORMAT_WAVE:
+      ext = ".WAV";
+      break;
+
     default:
       break;
   }
@@ -306,6 +342,10 @@ ULONG __asm __saveds intAHIsub_Start(
         break;
 
       case FORMAT_S16:
+        savebufferlength <<= 1;
+        break;
+
+      case FORMAT_WAVE:
         savebufferlength <<= 1;
         break;
 
@@ -494,6 +534,9 @@ LONG __asm __saveds intAHIsub_GetAttr(
           return 16;
 
         case FORMAT_S16:
+          return 16;
+
+        case FORMAT_WAVE:
           return 16;
 
         default:
@@ -727,6 +770,21 @@ void __asm __saveds SlaveTask(register __a2 struct AHIAudioCtrlDrv *AudioCtrl)
     }
   };
 
+  struct WAVEheader WAVEheader = // All NULLs will be filled later.
+  {
+    ID_RIFF, NULL, ID_WAVE,
+    ID_fmt, __bswap_long( sizeof(FormatChunk) ),
+    {
+      __bswap_short( WAVE_PCM ),
+      0,
+      0,
+      0,
+      0,
+      __bswap_short( 16 )
+    },
+    ID_data, NULL
+  };
+
   struct EasyStruct req =
   {
     sizeof (struct EasyStruct),
@@ -817,6 +875,11 @@ void __asm __saveds SlaveTask(register __a2 struct AHIAudioCtrlDrv *AudioCtrl)
         if(!(file = Open(dd->fs_FileReq->fr_File, MODE_NEWFILE))) goto quit;
         Write(file, &S16header, sizeof S16header);
       }
+      break;
+
+    case FORMAT_WAVE:
+      if(!(file = Open(dd->fs_FileReq->fr_File, MODE_NEWFILE))) goto quit;
+      Write(file, &WAVEheader, sizeof WAVEheader);
       break;
   }
 
@@ -991,6 +1054,30 @@ void __asm __saveds SlaveTask(register __a2 struct AHIAudioCtrlDrv *AudioCtrl)
 
         length = samples*2;
         break;
+
+      case FORMAT_WAVE:
+        if(AudioCtrl->ahiac_Flags & AHIACF_HIFI)
+        {
+          WORD *dest = &((WORD *) dd->fs_SaveBuffer)[offset];
+          LONG *source = dd->fs_MixBuffer;
+
+          for(i = 0; i < samples; i++)
+          {
+            *dest++ = bswap_short( *source++ >> 16 );
+          }
+        }
+        else
+        {
+          WORD *dest = &((WORD *) dd->fs_SaveBuffer)[offset];
+          WORD *source = dd->fs_MixBuffer;
+
+          for(i = 0; i < samples; i++)
+          {
+            *dest++ = bswap_short( *source++ );
+          }
+        }
+        length = samples*2;
+        break;
     }
 
     offset          += samples;
@@ -1061,6 +1148,25 @@ void __asm __saveds SlaveTask(register __a2 struct AHIAudioCtrlDrv *AudioCtrl)
         Write(file2, &S16header, sizeof S16header);
       }
       break;   
+
+    case FORMAT_WAVE:
+    {
+      short num_channels;
+      short block_align;
+      
+      num_channels = AudioCtrl->ahiac_Flags & AHIACF_STEREO ? 2 : 1;
+      block_align  = num_channels * 16 / 8;
+      
+      WAVEheader.FORMsize                   = bswap_long( sizeof(WAVEheader)-8+bytesWritten );
+      WAVEheader.FORMATchunk.numChannels    = bswap_short( num_channels );
+      WAVEheader.FORMATchunk.samplesPerSec  = bswap_long( AudioCtrl->ahiac_MixFreq );
+      WAVEheader.FORMATchunk.avgBytesPerSec = bswap_long( AudioCtrl->ahiac_MixFreq * block_align );
+      WAVEheader.FORMATchunk.blockAlign     = bswap_short( block_align );
+      WAVEheader.DATAsize                   = bswap_long( bytesWritten );
+      Seek(file,0,OFFSET_BEGINNING);
+      Write(file,&WAVEheader,sizeof WAVEheader);
+      break;
+    }
   }
 
   if(AudioCtrl->ahiac_Flags & AHIACF_HIFI)
