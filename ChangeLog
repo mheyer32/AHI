@@ -1,3 +1,8 @@
+2004-01-18  Martin Blom  <martin@blom.org>
+
+	* Device/audioctrl.c (_AHI_AllocAudioA): Changed 'case NULL' to
+	'case 0'.
+
 2004-01-17  Martin Blom  <martin@blom.org>
 
 	* The top Makefile called 'make' directly and didn't use
