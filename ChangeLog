@@ -1,3 +1,8 @@
+2004-01-17  Martin Blom  <martin@blom.org>
+
+	* The top Makefile called 'make' directly and didn't use
+	$(MAKE). Fixed.
+
 2003-12-22  Martin Blom  <martin@blom.org>
 
 	* Released aros.audio 5.0.
