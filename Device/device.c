@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.3  1997/01/04 13:26:41  lcs
+* Debugged CMD_WRITE
+*
 * Revision 1.2  1996/12/21 23:06:35  lcs
 * "Finished" the code for CMD_WRITE
 *
@@ -618,6 +621,7 @@ static __asm __interrupt void SoundFunc(
 
   if(voice->PlayingRequest)
   {
+    KPrintF("Marking 0x%08lx as written\n", voice->PlayingRequest);
     voice->PlayingRequest->ahir_Std.io_Command = AHICMD_WRITTEN;
   }
   voice->PlayingRequest = voice->QueuedRequest;
@@ -626,20 +630,24 @@ static __asm __interrupt void SoundFunc(
   switch(voice->NextOffset)
   {
     case FREE:
+      KPrintF("INT: This is not happening! (%ld)\n",sndmsg->ahism_Channel);
       break;
     case MUTE:
-      voice->NextOffset = FREE;
+      KPrintF("INT: Channel %ld is now free\n",sndmsg->ahism_Channel);
       /* A AHI_NOSOUND is done, channel is silent */
+      voice->NextOffset = FREE;
       break;
     case PLAY:
-      voice->NextOffset = MUTE;
+      KPrintF("INT: Channel %ld won't loop\n",sndmsg->ahism_Channel);
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,NULL);
+      voice->NextOffset = MUTE;
       break;
     default:
-      voice->NextOffset = PLAY;
+      KPrintF("INT: Attached sound on channel %ld\n",sndmsg->ahism_Channel);
       /* A normal sound is done, and another is waiting */
       voice->QueuedRequest = voice->NextRequest;
+      voice->NextRequest = NULL;
       AHI_SetSound(sndmsg->ahism_Channel,
           voice->NextSound,
           voice->NextOffset,
@@ -652,6 +660,7 @@ static __asm __interrupt void SoundFunc(
           voice->NextVolume,
           voice->NextPan,
           actrl,NULL);
+      voice->NextOffset = PLAY;
       break;
   }
 
