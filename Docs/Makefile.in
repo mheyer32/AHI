@@ -31,6 +31,7 @@ VPATH		= @srcdir@
 ########################################
 
 TARGETS		= ahidev.readme ahiusr.readme \
+		  ahidev.guide ahiusr.guide \
 		  ahidev.dvi ahiusr.dvi \
 		  ahidev.ps ahiusr.ps
 
@@ -44,8 +45,8 @@ TARGETS		= ahidev.readme ahiusr.readme \
 all:		$(TARGETS)
 
 clean:
-	$(RM) $(TARGETS) ahidev.ver ahiusr.ver \
-	      *.log *.bak *~ \#*\# core Makefile.dep
+	$(RM) -r $(TARGETS) ahidev.ver ahiusr.ver tmp \
+	      *.tmp *.log *.bak *~ \#*\# core Makefile.dep
 
 distclean:	clean
 	$(RM) Makefile
@@ -71,6 +72,8 @@ Makefile: Makefile.in ../config.status
 # Rules
 ########################################
 
+# readme files
+
 ahidev.readme:	readme.dev readme.changes readme.main \
 		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	ver="`cat $(top_srcdir)/version.rev`.`cat $(top_srcdir)/version.rev`" &&\
@@ -80,8 +83,44 @@ ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
 	ver="`cat $(top_srcdir)/version.rev`.`cat $(top_srcdir)/version.rev`" &&\
 	cat readme.usr readme.changes readme.main | sed -e "s/VERSION/$$ver/" > $@
 
-ahiusr-exp.texinfo ahiusr.guide: ahiusr.texinfo ahiusr.ver
-	makeinfo -E ahiusr-exp.texinfo --guide --output ahiusr.guide ahiusr.texinfo
+
+# AmigaGuide® files
+
+ahidev.guide: ahidev.texinfo ahidev.ver
+	makeinfo --amiga --output ahidev.guide ahidev.texinfo
+
+ahiusr.guide: ahiusr.texinfo ahiusr.ver
+	makeinfo --amiga --output ahiusr.guide ahiusr.texinfo
+
+
+# DVI files
+
+ahidev.dvi:	ahidev.texinfo.tmp
+	texi2dvi $<
+
+ahiusr.dvi:	ahiusr.texinfo.tmp
+	texi2dvi $<
+
+
+# PS files
+
+ahidev.ps:	ahidev.dvi
+	dvips -o $@ $<
+
+ahiusr.ps:	ahiusr.dvi
+	dvips -o $@ $<
+
+
+# Macro-expanded files
+
+ahidev.texinfo.tmp:	ahidev.texinfo ahidev.ver
+	makeinfo -E $@ --output tmp/null.tmp ahidev.texinfo
+
+ahiusr.texinfo.tmp:	ahiusr.texinfo ahiusr.ver
+	makeinfo -E $@ --output tmp/null.tmp ahiusr.texinfo
+
+
+# Auto-generated version files
 
 ahidev.ver:	ahidev.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	echo "@set ahiver `cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" > $@
@@ -90,8 +129,3 @@ ahidev.ver:	ahidev.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
 ahiusr.ver:	ahiusr.texinfo $(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	echo "@set ahiver `cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" > $@
 	grep '$$Id' ahiusr.texinfo | sed -e 's/^.*Id: .* \(.*\)\.\(.*\) ..\(..\)\/\(..\)\/\(..\).*/@set docver \1.\2 (\5.\4.\3)/' >> $@
-
-
-
-
-
