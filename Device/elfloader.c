@@ -605,7 +605,8 @@ static BOOL scanElfSymbols(struct ElfObject *eo,struct PPCObjectInfo *info,
   char *name = info->Name;
 //kprintf( "scanElfSymbols( 0x%08lx, 0x%08lx, %ld\n", eo, info, relmode );
   if (relmode) {
-    int i,j;
+    unsigned int i;
+    int j;
     struct ELFSection *es;
     struct Elf32_Rela *r;
 
@@ -911,11 +912,11 @@ allocstr( const char* string )
 static BPTR
 opstream(struct ElfObject *eo, const char* name )
 {
-  BPTR handle;
+  BPTR handle = NULL;
 
   if( name != NULL )
   {
-    handle = Open( name, MODE_OLDFILE );
+    handle = Open( (char*) name, MODE_OLDFILE );
   }
 
   return (handle);
@@ -1003,10 +1004,10 @@ static BOOL common_symbols(struct ElfObject *eo)
 {
   static const char *FN = "common_symbols(): ";
   static const char *bssname = ".bss";
-  struct ELFSection *s;
+  struct ELFSection *s = NULL;
   struct Elf32_Sym *sym;
   uint16 *relocp;
-  uint32 offset,idx,cnt=0;
+  uint32 offset = 0,idx = 0,cnt=0;
   unsigned int i;
 
   /* First try to find a .bss, where Common symbols could be appended */

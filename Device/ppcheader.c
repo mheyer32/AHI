@@ -97,10 +97,7 @@ KernelObject:
 ******************************************************************************/
 
 int
-CallMixroutine( unsigned int             magic,
-                struct Hook*             Hook, 
-                void*                    dst, 
-                struct AHIPrivAudioCtrl* audioctrl,
+CallMixroutine( struct PowerPCContext*   context,
                 int                      flush_result )
 {
   struct AHISoundData *sd;
