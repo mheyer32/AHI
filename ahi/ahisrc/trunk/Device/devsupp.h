@@ -20,11 +20,12 @@
      MA 02139, USA.
 */
 
-#ifndef _DEVSUPP_H_
-#define _DEVSUPP_H_
+#ifndef ahi_devsupp_h
+#define ahi_devsupp_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
+
 #include <devices/ahi.h>
 
 #define RecArgs REG(d0, ULONG size),    \
@@ -49,4 +50,4 @@ asmRecordFunc ( REG(d0, ULONG samples),
                 REG(a0, void *data),
                 REG(a1, void *buffer) );
 
-#endif /*_DEVSUPP_H_ */
+#endif /* ahi_devsupp_h */

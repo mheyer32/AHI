@@ -20,28 +20,22 @@
      MA 02139, USA.
 */
 
-#ifndef ahi_audioctrl_h
-#define ahi_audioctrl_h
+#ifndef ahi_requester_h
+#define ahi_requester_h
 
 #include "ahi_def.h"
 
-struct AHIAudioCtrl*
-AllocAudioA( struct TagItem* tags,
-             struct AHIBase* AHIBase );
+struct AHIAudioModeRequester*
+AllocAudioRequestA( struct TagItem* tags,
+                    struct AHIBase* AHIBase );
 
 ULONG
-FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
-           struct AHIBase*          AHIBase );
+AudioRequestA( struct AHIAudioModeRequester* req_in,
+               struct TagItem*               tags,
+               struct AHIBase*               AHIBase );
 
-ULONG
-KillAudio( struct AHIBase* AHIBase );
+void
+FreeAudioRequest( struct AHIAudioModeRequester* req,
+                  struct AHIBase*               AHIBase);
 
-ULONG
-ControlAudioA( struct AHIPrivAudioCtrl* audioctrl,
-               struct TagItem*          tags,
-               struct AHIBase*          AHIBase );
-
-struct AHIPrivAudioCtrl*
-CreateAudioCtrl( struct TagItem *tags );
-
-#endif /* ahi_audioctrl_h */
+#endif /* ahi_requester_h */

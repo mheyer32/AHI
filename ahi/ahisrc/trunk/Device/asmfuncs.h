@@ -20,11 +20,12 @@
      MA 02139, USA.
 */
 
-#ifndef _ASMFUNCS_H_
-#define _ASMFUNCS_H_
+#ifndef ahi_asmfuncs_h
+#define ahi_asmfuncs_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
+
 #include "ahi_def.h"
 
 char STDARGS *Sprintf(char *dst, const char *fmt, ...);
@@ -37,4 +38,4 @@ void ASMCALL MixEntry( REG(a0, struct Hook *Hook),
                        REG(a1, void *dst), 
                        REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
-#endif /* _ASMFUNCS_H_ */
+#endif /* ahi_asmfuncs_h */

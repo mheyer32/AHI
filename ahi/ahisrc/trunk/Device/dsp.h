@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _DSP_H_
-#define _DSP_H_
+#ifndef ahi_dsp_h
+#define ahi_dsp_h
 
 #include <exec/types.h>
 #include "ahi_def.h"
@@ -50,4 +50,4 @@ struct Echo
 };
 
 
-#endif /* _DSP_H_ */
+#endif /* ahi_dsp_h */

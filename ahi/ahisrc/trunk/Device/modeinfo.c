@@ -406,10 +406,10 @@ BOOL TestAudioID(ULONG id, struct TagItem *tags )
 */
 
 ULONG
-GetAudioAttrsA( ULONG                   id,
-                struct AHIAudioCtrlDrv* actrl,
-                struct TagItem*         tags,
-                struct AHIBase*         AHIBase )
+GetAudioAttrsA( ULONG                    id,
+                struct AHIPrivAudioCtrl* actrl,
+                struct TagItem*          tags,
+                struct AHIBase*          AHIBase )
 {
   struct AHI_AudioDatabase *audiodb;
   struct TagItem *dbtags,*tag1,*tag2,*tstate=tags;

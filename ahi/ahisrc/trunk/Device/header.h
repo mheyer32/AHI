@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _HEADER_H_
-#define _HEADER_H_
+#ifndef ahi_header_h
+#define ahi_header_h
 
 #include <exec/types.h>
 #include "addroutines.h"
@@ -81,4 +81,4 @@ extern ADDFUNC*                  AddLofiWordsStereoBPtr;
 BPTR
 DevExpunge( struct AHIBase* device );
 
-#endif /* _HEADER_H_ */
+#endif /* ahi_header_h */

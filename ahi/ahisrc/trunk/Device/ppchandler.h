@@ -20,15 +20,16 @@
      MA 02139, USA.
 */
 
-#ifndef _PPCHANDLER_H_
-#define _PPCHANDLER_H_
+#ifndef ahi_ppchandler_h
+#define ahi_ppchandler_h
 
 #include "ahi_def.h"
 
-void PPCHandler( void );
+void
+PPCHandler( void );
 
 void
 FillBuffer( void*                     dst,
             struct AHIPrivAudioCtrl*  audioctrl );
 
-#endif /* _PPCHANDLER_H_ */
+#endif /* ahi_ppchandler_h */

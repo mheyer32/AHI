@@ -70,5 +70,4 @@ struct PPCHandlerMessage
 #define PPCC_COM_DEBUG         6
 #define PPCC_COM_FINISHED      7
 
-
 #endif /* _PPCHEADER_H_ */

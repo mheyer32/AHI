@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _DATABASE_H_
-#define _DATABASE_H_
+#ifndef ahi_database_h
+#define ahi_database_h
 
 #include <exec/types.h>
 #include <exec/semaphores.h>
@@ -42,6 +42,22 @@ struct AHI_AudioDatabase
 };
 
 
+ULONG
+NextAudioID( ULONG           id,
+             struct AHIBase* AHIBase );
+
+ULONG
+AddAudioMode( struct TagItem* DBtags,
+              struct AHIBase* AHIBase );
+
+ULONG
+RemoveAudioMode( ULONG           id,
+                 struct AHIBase* AHIBase );
+
+ULONG
+LoadModeFile( UBYTE*          name,
+              struct AHIBase* AHIBase );
+
 struct AHI_AudioDatabase*
 LockDatabase( void );
 
@@ -55,4 +71,4 @@ struct TagItem*
 GetDBTagList( struct AHI_AudioDatabase* audiodb,
               ULONG id );
 
-#endif /* _DATABASE_H_ */
+#endif /* ahi_database_h */

@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _DSPECHO_H_
-#define _DSPECHO_H_
+#ifndef ahi_dspecho_h
+#define ahi_dspecho_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
@@ -49,4 +49,4 @@ do_DSPEchoStereo32( struct Echo *es,
                     void *buf,
                     struct AHIPrivAudioCtrl *audioctrl );
 
-#endif /* _DSPECHO_H_ */
+#endif /* ahi_dspecho_h */

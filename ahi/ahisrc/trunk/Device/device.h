@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _DEVICE_H_
-#define _DEVICE_H_
+#ifndef ahi_device_h
+#define ahi_device_h	
 
 /*** New Style Device definitions ***/
 
@@ -170,6 +170,16 @@ struct AHIDevUnit
         UBYTE                    Sounds[MAXSOUNDS];
 };
 
+ULONG
+DevOpen ( ULONG              unit,
+          ULONG              flags,
+          struct AHIRequest* ioreq,
+          struct AHIBase*    AHIBase );
+
+BPTR
+DevClose ( struct AHIRequest* ioreq,
+           struct AHIBase*    AHIBase );
+
 BOOL
 ReadConfig ( struct AHIDevUnit *iounit,
              struct AHIBase *AHIBase );
@@ -182,4 +192,4 @@ void
 FreeHardware ( struct AHIDevUnit *iounit,
                struct AHIBase *AHIBase );
 
-#endif /* _DEVICE_H_ */
+#endif /* ahi_device_h */

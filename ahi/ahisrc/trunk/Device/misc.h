@@ -20,8 +20,8 @@
      MA 02139, USA.
 */
 
-#ifndef _MISC_H_
-#define _MISC_H_
+#ifndef ahi_misc_h
+#define ahi_misc_h
 
 #include <config.h>
 #include <CompilerSpecific.h>
@@ -43,7 +43,8 @@ void
 Req( const char* text, ... );
 
 APTR
-AHIAllocVec( ULONG byteSize, ULONG requirements );
+AHIAllocVec( ULONG byteSize,
+             ULONG requirements );
 
 void
 AHIFreeVec( APTR memoryBlock );
@@ -58,4 +59,4 @@ BOOL
 AHIGetELFSymbol( const char* name,
                  void** ptr );
 
-#endif /* _MISC_H_ */
+#endif /* ahi_misc_h */

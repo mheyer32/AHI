@@ -20,10 +20,18 @@
      MA 02139, USA.
 */
 
-#ifndef _DEVCOMMANDS_H_
-#define _DEVCOMMANDS_H_
+#ifndef ahi_devcommands_h
+#define ahi_devcommands_h
 
 #include "ahi_def.h"
+
+void
+DevBeginIO( struct AHIRequest* ioreq,
+            struct AHIBase*    AHIBase );
+
+ULONG
+DevAbortIO( struct AHIRequest* ioreq,
+            struct AHIBase*    AHIBase );
 
 void
 PerformIO ( struct AHIRequest *ioreq,
@@ -45,4 +53,4 @@ void
 UpdateSilentPlayers ( struct AHIDevUnit *iounit,
                       struct AHIBase *AHIBase );
 
-#endif /* _DEVCOMMANDS_H_ */
+#endif /* ahi_devcommands_h */
