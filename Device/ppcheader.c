@@ -67,7 +67,7 @@ void main( void )
   audioctrl = (struct AHIPrivAudioCtrl*) 
       PPCGetTaskAttr( PPCTASKTAG_STARTUP_MSGDATA );
 
-  PPCkprintf( "Got here.... 0x%08lx\n", audioctrl );
+//  PPCkprintf( "Got here.... 0x%08lx\n", audioctrl );
   
   while( TRUE )
   {
@@ -77,7 +77,7 @@ void main( void )
 
     if( signals & SIGBREAKF_CTRL_C )
     {
-      PPCkprintf( "***Break\n" );
+//      PPCkprintf( "***Break\n" );
       break;
     }
     else if( signals & SIGBREAKF_CTRL_F )
