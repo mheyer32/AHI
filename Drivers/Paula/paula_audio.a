@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.17  1998/01/10 19:47:33  lcs
-* Alright, the DMA version is ready for release.
+* Revision 4.18  1998/02/09 00:41:36  lcs
+* Fixed a interrupt problem (playback could touch record's enable bits!).
 *
+*
+* Revision 4.15  1997/12/02 09:27:33  lcs
+* Added a DMA mode (beta).
 *
 * Revision 4.14  1997/12/02 09:26:03  lcs
 * Enclosed FindTask("Picasso96") with Forbid()/Permit(), in order to
@@ -188,6 +191,8 @@ AHIDB_Paula14Bit	EQU	AHIDB_UserBase+0	* Boolean
 	UWORD	p_IRQMask
 
 
+	UBYTE	p_SwapChannels			;TRUE if left/right should be swapped
+	UWORD	p_Pad0
 	UBYTE	p_ScreenIsDouble		;TRUE if screen mode allows >28kHz
 
 	UWORD	p_MixTaskPri
@@ -619,11 +624,13 @@ AHIsub_AllocAudio:
 	pushm	std
 	move.l	a6,a5
 
+	move.l	a1,d3
+
+
 * Allocate the 'paula' structure (our variables)
 	move.l	pb_SysLib(a5),a6
 	move.l	#paula_SIZEOF,d0
 	move.l	#MEMF_PUBLIC|MEMF_CLEAR,d1
-	PRINTF	2,"[0;0H[J"
 	call	AllocVec
 	move.l	d0,ahiac_DriverData(a2)
 	beq	.error_nopaula
@@ -933,6 +940,7 @@ AHIsub_AllocAudio:
 * Update ahiac_MixFreq to what the mixing/sampling frequency really is
 	moveq	#0,d0				;Default
 	lea	fakefreqVar(pc),a0
+	bsr	GetVarInt
 	tst.l	d0
 	bne	.skipfrequpdate
 	move.l	ahiac_MixFreq(a2),d1
@@ -1092,6 +1100,7 @@ calcperiod:
 	move.l	d0,d1
 	move.l	pb_AudioFreq(a5),d2
 	move.l	d2,d0
+	move.l	d1,d3
 	move.l	pb_UtilLib(a5),a1
 	move.l	p_AudioFreq(a3),d2
 	cmp.l	d3,d1
@@ -1139,6 +1148,8 @@ checkvideo:
 	pushm	std
 
 * Check the AHIpaulaSampleLimit variable.
+* If 1, allow > 28 kHz frequencies, if 0, don't. If not present,
+* check the screen mode.
 
 	moveq	#-1,d0
 	lea	screenVar(pc),a0
@@ -1453,6 +1464,7 @@ AHIsub_FreeAudio:
 
 	move.l	a6,a5
 	move.l	pb_SysLib(a5),a6
+
 	move.l	ahiac_DriverData(a2),d0
 	beq	.nopaula
 	move.l	d0,a3
@@ -1573,6 +1585,7 @@ AHIsub_Disable:
 	move.l	ahiac_DriverData(a2),a3
 	move.l	p_PaulaBase(a3),a6
 	move.l	pb_SysLib(a6),a6
+	PRINTF	4,"AHIsub_Disable()"
 	push	a3
 	addq.w	#1,p_DisableCount(a3)
 	rts
@@ -1612,16 +1625,12 @@ AHIsub_Enable:
 	move.l	ahiac_DriverData(a2),a3
 	move.l	p_PaulaBase(a3),a6
 	move.l	pb_SysLib(a6),a6
+	PRINTF	4,"AHIsub_Enable()"
 	push	a3
 	bne	.exit
 ;	PRINTF	0,"Count: %d",p_DisableCount(a3)
 	call	Enable
-	btst.b	#PB_DMA,p_Flags(a3)
-	beq	.mixing
-	move.w	#INTF_SETCLR|INTF_AUDIO,custom+INTENA
-	bra	.exit
-.mixing
-	move.w	#INTF_SETCLR|INTF_AUD0,custom+INTENA
+	popm	a3/a6
 
 	pop	a3
 *   NAME
@@ -1805,6 +1814,8 @@ AHIsub_Start:
 	pushm	std
 
 	move.l	d0,d7
+	lea	custom,a4
+	move.l	ahiac_DriverData(a2),a3
 
 	btst	#AHISB_PLAY,d7
 	beq	.dont_play
@@ -1863,6 +1874,7 @@ AHIsub_Start:
 	tst.w	p_DisableCount(a3)
 	clr.w	p_DisableCount(a3)
 	bne	.dont_enable
+	move.w	#INTF_SETCLR|INTF_AUD0,INTENA(a4)	;enable
 	move.l	a5,a6
 
 	btst	#AHISB_RECORD,d7
@@ -1970,6 +1982,7 @@ AHIsub_Start:
 	move.w	#INTF_SETCLR|INTF_AUD3,INTREQ(a4)	;start
 
 .dont_record
+.return
 	moveq	#AHIE_OK,d0
 .exit
 	popm	std
@@ -2239,6 +2252,7 @@ AHIsub_Update:
 
 	call	AHIsub_Disable		;make sure we don't get an interrupt
 					;while updating our local variables
+	move.l	ahiac_DriverData(a2),a3
 
 	move.l	ahiac_PlayerFunc(a2),a0
 	move.l	a0,p_PlayerHook(a3)
@@ -2305,6 +2319,7 @@ AHIsub_Stop:
 
 	lea	custom,a4
 	move.l	a6,a5
+	move.l	pb_SysLib(a5),a6
 	move.l	ahiac_DriverData(a2),a3
 
 	push	d0
@@ -2328,8 +2343,9 @@ AHIsub_Stop:
 	move.w	#INTF_AUD0,INTREQ(a4)		;Clear any waiting interrupts
 	move.l	#Interrupt_Dummy,IS_CODE+p_PlayInt(a3)
 	lea	p_PlayInt(a3),a1
-	move.w	#INTF_AUDIO,INTENA(a4)
-	move.w	#INTF_AUDIO,INTREQ(a4)		;Clear any waiting interrupts
+	moveq	#INTB_AUD0,d0
+	call	SetIntVector
+
 	moveq	#0,d0
 	move.w	d0,AUD0VOL(a4)
 	move.w	d0,AUD1VOL(a4)
@@ -2366,6 +2382,7 @@ AHIsub_Stop:
 	move.w	#INTF_AUD3,INTREQ(a4)		;Clear any waiting interrupts
 
 	move.l	#Interrupt_Dummy,IS_CODE+p_RecInt(a3)
+	lea	p_RecInt(a3),a1
 	moveq	#INTB_AUD3,d0
 	call	SetIntVector
 
@@ -2503,6 +2520,7 @@ AHIsub_GetAttr:
 	move.l	a1,a3
 	move.l	a6,a5
 	move.l	pb_UtilLib(a5),a6
+
 
 	moveq	#FALSE,d3		; 14 bit flag
 	moveq	#FALSE,d4		; DMA flag
@@ -2876,6 +2894,7 @@ AHIsub_HardwareControl:
 	bne.b	.dontsetmonvol
 	move.l	ahiac_DriverData(a2),a1
 	lsr.l	#8,d1
+	lsr.l	#2,d1
 	move.w	d1,p_MonitorVolume(a1)
 	bra.b	.exit
 .dontsetmonvol
@@ -4208,6 +4227,7 @@ DMA_Start:
 	tst.w	p_DisableCount(a3)
 	bne	.dont_enable
 	move.w	#INTF_SETCLR|INTF_AUDIO,INTENA(a4)	;enable all
+	move.w	#INTF_SETCLR|INTF_AUDIO,INTREQ(a4)	;start all
 	moveq	#AHIE_OK,d0
 	rts
 .notimer
@@ -4230,6 +4250,7 @@ DMA_Update:
 	beq	.error
 	push	a6
 	move.l	d0,a6
+	lea	p_EAlarm(a3),a0
 	call	ReadEClock
 	move.l	d0,p_EClock(a3)
 	pop	a6
@@ -4269,6 +4290,7 @@ DMA_Stop:
 	move.w	#DMAF_AUDIO,DMACON(a4)		;Disable DMA
 	move.w	#INTF_AUDIO,INTREQ(a4)		;Clear any waiting interrupts
 
+	tst.b	p_TimerDev(a3)
 	bne	.notimer
 	st	p_TimerDev(a3)
 
@@ -4434,8 +4456,8 @@ AHIsub_SetFreq:
 	mulu.w	#channel_SIZEOF,d0
 	lea	p_Channels(a3),a0
 	add.l	d0,a0
+
 	cmp.l	#AHI_MIXFREQ,d1
-	PRINTF	2,"AHIsub_SetFreq()"
 	bne	.normal_freq
 	move.l	ahiac_MixFreq(a2),d1
 .normal_freq
@@ -4529,8 +4551,8 @@ AHIsub_SetSound:
 
 	mulu.w	#channel_SIZEOF,d0
 	lea	p_Channels(a3),a0
+	add.l	d0,a0
 
-	PRINTF	2,"AHIsub_SetSound()"
 	cmp.w	#AHI_NOSOUND,d1
 	bne	.sound_ok
 	moveq	#0,d2
@@ -4631,7 +4653,6 @@ AHIsub_SetEffect:
 	beq	.mastervolume
 	cmp.l	#AHIET_CANCEL|AHIET_MASTERVOLUME,d0
 	beq	.mastervolume_off
-
 	cmp.l	#AHIET_CHANNELINFO,d0
 	beq	.channelinfo
 	cmp.l	#AHIET_CANCEL|AHIET_CHANNELINFO,d0
