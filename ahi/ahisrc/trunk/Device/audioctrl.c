@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 4.16  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+* Renamed from cfuncs.c to audioctrl.c.
+*
 * Revision 4.15  1997/11/23 13:03:06  lcs
 * Just debugging..
 *
@@ -18,99 +22,16 @@
 * Revision 4.10  1997/10/11 15:58:13  lcs
 * Boolean variables are compared using XNOR now, not ==.
 *
-* Revision 4.9  1997/07/27 02:03:23  lcs
-* AHI_LoadSound() now returns an error if the user tries to
-* play unsigned samples in HiFi modes (i.e., removed the
-* AHI-Noteplayer kludge).
-*
-* Revision 4.8  1997/07/27 02:02:14  lcs
-* AHI_LoadSound() always returned 0 if the driver overloaded the
-* function. Now it returns the correct value.
-*
-* Revision 4.7  1997/07/27 00:15:21  lcs
-* Removed a reference to AHI_KillAudio() in the audiodocs.
-*
-* Revision 4.6  1997/06/28 21:14:58  lcs
-* DizzyTestAudioID() much faster (FindTagitem()->NextTagItem())
-*
-* Revision 4.5  1997/06/21 18:13:43  lcs
-* Fixed some problems in AHI_BestAudioIDA(), like Dizzytags for example.
-*
-* Changed BOOL return values to ULONG in ordet to set all 32 bits.
-*
-* Revision 4.4  1997/06/02 18:15:02  lcs
-* Added optional clipping when using master volume > 100%.
-*
-* Revision 4.3  1997/04/14 01:50:39  lcs
-* AHIST_INPUT still doesn't work...
-*
-* Revision 4.2  1997/04/07 13:12:35  lcs
-* Fixed a bug in the AHIST_INPUT record hook
-*
-* Revision 4.1  1997/04/02 22:28:11  lcs
-* Bumped to version 4
-*
-* Revision 1.18  1997/03/27 12:16:27  lcs
-* Major bug in the device interface code fixed.
-*
-* Revision 1.17  1997/03/25 22:27:49  lcs
-* Tried to get AHIST_INPUT to work, but I cannot get it synced! :(
-*
-* Revision 1.16  1997/03/24 18:03:10  lcs
-* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
-*
-* Revision 1.15  1997/03/24 12:41:51  lcs
-* Echo rewritten
-*
-* Revision 1.14  1997/03/06 22:36:03  lcs
-* Updated doc for Controlaudio(), regarding the timing feature.
-*
-* Revision 1.13  1997/02/15 14:02:02  lcs
-* All functions that take an audio mode id as input can now use
-* AHI_DEFAULT_ID as well.
-*
-* Revision 1.12  1997/02/12 15:32:45  lcs
-* Moved each autodoc header to the file where the function is
-*
-* Revision 1.11  1997/02/10 02:23:06  lcs
-* Infowindow in the requester added.
-*
-* Revision 1.10  1997/02/04 15:44:30  lcs
-* AHIDB_MaxChannels didn't work in AHI_BestAudioID()
-*
-* Revision 1.9  1997/02/02 22:35:50  lcs
-* Localized it
-*
-* Revision 1.8  1997/02/02 18:15:04  lcs
-* Added protection against CPU overload
-*
-* Revision 1.7  1997/02/01 21:54:53  lcs
-* Will never use drivers that are newer than itself anymore
-*
-* Revision 1.4  1997/01/15 18:35:07  lcs
-* AHIB_Dizzy has a better implementation and definition now.
-* (Was BOOL, now pointer to a second tag list)
-*
-* Revision 1.3  1997/01/04 20:19:56  lcs
-* Changed the AHI_DEBUG levels
-*
-* Revision 1.2  1996/12/21 23:06:35  lcs
-* Replaced all EQ with ==
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
-*
 */
 
+#include <CompilerSpecific.h>
 #include "ahi_def.h"
-#include "localize.h"
 
 #include <exec/memory.h>
 #include <exec/alerts.h>
 #include <utility/utility.h>
 #include <utility/tagitem.h>
 
-#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
 #include <strings.h>
@@ -118,9 +39,11 @@
 #ifndef  noprotos
 
 #ifndef _GENPROTO
-#include "cfuncs_protos.h"
+#include "audioctrl_protos.h"
 #endif
 
+#include "mixer_protos.h"
+#include "asmfuncs_protos.h"
 #include "database_protos.h"
 #include "debug_protos.h"
 
@@ -132,25 +55,18 @@
     ( (in > max) ? max : ( (in < min) ? min : in ) )
 
 
-#define XOR(a,b) ((a && !b) || (!a && b))
-#define XNOR(a,b) (! XOR(a,b))
-
-extern __asm ULONG RecalcBuff( register __d1 ULONG , register __a2 struct AHIPrivAudioCtrl * );
-extern __asm BOOL InitMixroutine(register __a2 struct AHIPrivAudioCtrl *);
-extern __asm BOOL initSignedTable(register __a2 struct AHIPrivAudioCtrl *, register __a5 struct AHIBase *);
-extern __asm BOOL initUnsignedTable(register __a2 struct AHIPrivAudioCtrl *, register __a5 struct AHIBase *);
-extern __asm void Mix(void);
-extern __asm BOOL PreTimer(void);
-extern __asm void PostTimer(void);
-extern __asm BOOL DummyPreTimer(void);
-extern __asm void DummyPostTimer(void);
-
-
 /******************************************************************************
 ** CreateAudioCtrl & UpdateAudioCtrl ******************************************
 ******************************************************************************/
 
-extern struct Hook DefPlayerHook;
+#define DEFPLAYERFREQ (50<<16)
+
+ULONG DummyHook()
+{
+  return 0;
+}
+
+struct Hook DefPlayerHook = {0, 0, DummyHook, 0, 0};
 
 static struct TagItem boolmap[] =
 {
@@ -164,9 +80,9 @@ static struct TagItem boolmap[] =
   { TAG_DONE, }
 };
 
-#define DEFPLAYERFREQ (50)
 
-__asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *tags)
+struct AHIPrivAudioCtrl *
+CreateAudioCtrl(struct TagItem *tags)
 {
   struct AHIPrivAudioCtrl *audioctrl;
   struct AHI_AudioDatabase *audiodb;
@@ -218,6 +134,13 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
     if(audioctrl->ac.ahiac_MaxPlayerFreq == 0)
       audioctrl->ac.ahiac_MaxPlayerFreq = DEFPLAYERFREQ;
 
+    if(audioctrl->ac.ahiac_PlayerFreq < 65536)
+      audioctrl->ac.ahiac_PlayerFreq <<= 16;
+    if(audioctrl->ac.ahiac_MinPlayerFreq < 65536)
+      audioctrl->ac.ahiac_MinPlayerFreq <<= 16;
+    if(audioctrl->ac.ahiac_MaxPlayerFreq < 65536)
+      audioctrl->ac.ahiac_MaxPlayerFreq <<= 16;
+
     if(audiodb=LockDatabase())
     {
       if(dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID))
@@ -246,7 +169,8 @@ __asm struct AHIPrivAudioCtrl *CreateAudioCtrl( register __a0 struct TagItem *ta
     return audioctrl;
 }
 
-__asm  void UpdateAudioCtrl( register __a0 struct AHIPrivAudioCtrl *audioctrl)
+static void
+UpdateAudioCtrl(struct AHIPrivAudioCtrl *audioctrl)
 {
   ULONG  temp;
 
@@ -268,153 +192,15 @@ __asm  void UpdateAudioCtrl( register __a0 struct AHIPrivAudioCtrl *audioctrl)
 }
 
 
-/******************************************************************************
-** TestAudioID & DizzyTestAudioID *********************************************
-******************************************************************************/
-
-// tags may be NULL
-
-BOOL TestAudioID(ULONG id, struct TagItem *tags )
-{
-  if(DizzyTestAudioID(id, tags) != 0x10000)
-    return FALSE;
-  else
-    return TRUE;
-}
-
-// tags may be NULL
-
-Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
-{
-  LONG volume=0,stereo=0,panning=0,hifi=0,pingpong=0,record=0,realtime=0,
-       fullduplex=0,bits=0,channels=0,minmix=0,maxmix=0;
-  ULONG total=0,hits=0;
-  struct TagItem *tstate, *tag;
-  
-  if(tags == NULL)
-  {
-    return (Fixed) 0x10000;
-  }
-
-  if(id == AHI_DEFAULT_ID)
-  {
-    id = AHIBase->ahib_AudioMode;
-  }
-
-  AHI_GetAudioAttrs(id, NULL,
-      AHIDB_Volume, &volume,
-      AHIDB_Stereo, &stereo,
-      AHIDB_Panning, &panning,
-      AHIDB_HiFi,&hifi,
-      AHIDB_PingPong,&pingpong,
-      AHIDB_Record,&record,
-      AHIDB_Bits,&bits,
-      AHIDB_MaxChannels,&channels,
-      AHIDB_MinMixFreq,&minmix,
-      AHIDB_MaxMixFreq,&maxmix,
-      AHIDB_Realtime,&realtime,
-      AHIDB_FullDuplex,&fullduplex,
-      TAG_DONE);
-
-  tstate = tags;
-
-  while (tag = NextTagItem(&tstate))
-  {
-    switch (tag->ti_Tag)
-    {
-      // Check source mode
-
-      case AHIDB_AudioID:    
-        total++;
-        if( ((tag->ti_Data)&0xffff0000) == (id & 0xffff0000) )
-          hits++;
-        break;
-
-      // Boolean tags
-
-      case AHIDB_Volume:
-        total++;
-        if(XNOR(tag->ti_Data, volume))
-          hits++;
-        break;
-
-      case AHIDB_Stereo:
-        total++;
-        if(XNOR(tag->ti_Data, stereo))
-          hits++;
-        break;
-      case AHIDB_Panning:
-        total++;
-        if(XNOR(tag->ti_Data, panning))
-          hits++;
-        break;
-      case AHIDB_HiFi:
-        total++;
-        if(XNOR(tag->ti_Data, hifi))
-          hits++;
-        break;
-      case AHIDB_PingPong:
-        total++;
-        if(XNOR(tag->ti_Data, pingpong))
-          hits++;
-        break;
-      case AHIDB_Record:
-        total++;
-        if(XNOR(tag->ti_Data, record))
-          hits++;
-        break;
-      case AHIDB_Realtime:
-        total++;
-        if(XNOR(tag->ti_Data, realtime))
-          hits++;
-        break;
-      case AHIDB_FullDuplex:
-        total++;
-        if(XNOR(tag->ti_Data, fullduplex))
-          hits++;
-        break;
-
-      // The rest
-
-      case AHIDB_Bits:
-        total++;
-        if(tag->ti_Data <= bits)
-          hits++;
-        break;
-      case AHIDB_MaxChannels:
-        total++;
-        if(tag->ti_Data <= channels )
-          hits++;
-        break;
-      case AHIDB_MinMixFreq:
-        total++;
-        if(tag->ti_Data >= minmix)
-          hits++;
-        break;
-      case AHIDB_MaxMixFreq:
-        total++;
-        if(tag->ti_Data <= maxmix)
-          hits++;
-        break;
-    } /* switch */
-  } /* while */
-
-
-  if(total)
-    return (Fixed) ((hits<<16)/total);
-  else
-    return (Fixed) 0x10000;
-}
-
 
 /******************************************************************************
 ** Sampler ********************************************************************
 ******************************************************************************/
 
-static __asm __interrupt void Sampler(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIPrivAudioCtrl *actrl,
-    register __a1 struct AHIRecordMessage *recmsg)
+ASMCALL INTERRUPT static 
+void Sampler ( REG(a0, struct Hook *hook),
+               REG(a2, struct AHIPrivAudioCtrl *actrl),
+               REG(a1, struct AHIRecordMessage *recmsg) )
 {
   if(actrl->ahiac_InputRecordPtr)
   {
@@ -605,7 +391,9 @@ static __asm __interrupt void Sampler(
 *
 */
 
-__asm struct AHIAudioCtrl *AllocAudioA( register __a1 struct TagItem *tags )
+ASMCALL struct AHIAudioCtrl *
+AllocAudioA( REG(a1, struct TagItem *tags),
+             REG(a6, struct AHIBase *AHIBase) )
 {
   struct AHIPrivAudioCtrl* audioctrl;
   struct Library *AHIsubBase;
@@ -827,7 +615,9 @@ error:
 *
 */
 
-__asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
+ASMCALL ULONG 
+FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+           REG(a6, struct AHIBase *AHIBase) )
 {
   struct Library *AHIsubBase;
   int i;
@@ -911,7 +701,8 @@ __asm ULONG FreeAudio( register __a2 struct AHIPrivAudioCtrl *audioctrl )
 *
 */
 
-__asm ULONG KillAudio(void)
+ASMCALL ULONG
+KillAudio( REG(a6, struct AHIBase *AHIBase) )
 {
   UWORD i;
 
@@ -1034,8 +825,10 @@ __asm ULONG KillAudio(void)
 *
 */
 
-__asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
-    register __a1 struct TagItem *tags)
+ASMCALL ULONG
+ControlAudioA( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
+               REG(a1, struct TagItem *tags),
+               REG(a6, struct AHIBase *AHIBase) )
 {
   ULONG *ptr, playflags=NULL, stopflags=NULL, rc=AHIE_OK;
   UBYTE update=FALSE;
@@ -1066,6 +859,10 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
       break;
     case AHIA_PlayerFreq:
       audioctrl->ac.ahiac_PlayerFreq=tag->ti_Data;
+
+      if(audioctrl->ac.ahiac_PlayerFreq < 65536)
+        audioctrl->ac.ahiac_PlayerFreq <<= 16;
+
       if(!(audioctrl->ac.ahiac_Flags & AHIACF_NOTIMING)) // Dont call unless timing is used.
         RecalcBuff(audioctrl->ac.ahiac_PlayerFreq,audioctrl);
       update=TRUE;
@@ -1134,1079 +931,3 @@ __asm ULONG ControlAudioA( register __a2 struct AHIPrivAudioCtrl *audioctrl,
 }
 
 
-/******************************************************************************
-** AHI_GetAudioAttrsA *********************************************************
-******************************************************************************/
-
-/****** ahi.device/AHI_GetAudioAttrsA ***************************************
-*
-*   NAME
-*       AHI_GetAudioAttrsA -- examine an audio mode via a tag list
-*       AHI_GetAudioAttrs -- varargs stub for AHI_GetAudioAttrsA()
-*
-*   SYNOPSIS
-*       success = AHI_GetAudioAttrsA( ID, [audioctrl], tags );
-*       D0                            D0  A2           A1
-*
-*       BOOL AHI_GetAudioAttrsA( ULONG, struct AHIAudioCtrl *,
-*                                struct TagItem * );
-*
-*       success = AHI_GetAudioAttrs( ID, [audioctrl], attr1, &result1, ...);
-*
-*       BOOL AHI_GetAudioAttrs( ULONG, struct AHIAudioCtrl *, Tag, ... );
-*
-*   FUNCTION
-*       Retrieve information about an audio mode specified by ID or audioctrl
-*       according to the tags in the tag list. For each entry in the tag
-*       list, ti_Tag identifies the attribute, and ti_Data is mostly a
-*       pointer to a LONG (4 bytes) variable where you wish the result to be
-*       stored.
-*
-*   INPUTS
-*       ID - An audio mode identifier, AHI_DEFAULT_ID (V4) or AHI_INVALID_ID.
-*       audioctrl - A pointer to an AHIAudioCtrl structure, only used if
-*           ID equals AHI_INVALID_ID. Set to NULL if not used. If set to
-*           NULL when used, this function returns immediately. Always set
-*           ID to AHI_INVALID_ID and use audioctrl if you have allocated
-*           a valid AHIAudioCtrl structure. Some of the tags return incorrect
-*           values otherwise.
-*       tags - A pointer to a tag list.
-*
-*   TAGS
-*       AHIDB_Volume (ULONG *) - TRUE if this mode supports volume changes.
-*
-*       AHIDB_Stereo (ULONG *) - TRUE if output is in stereo. Unless
-*           AHIDB_Panning (see below) is TRUE, all even channels are played
-*           to the left and all odd to the right.
-*
-*       AHIDB_Panning (ULONG *) - TRUE if this mode supports stereo panning.
-*
-*       AHIDB_HiFi (ULONG *) - TRUE if no shortcuts, like pre-division, is
-*           used by the mixing routines.
-*
-*       AHIDB_PingPong (ULONG *) - TRUE if this mode can play samples backwards.
-*
-*       AHIDB_Record (ULONG *) - TRUE if this mode can record samples.
-*
-*       AHIDB_FullDuplex (ULONG *) - TRUE if this mode can record and play at
-*           the same time.
-*
-*       AHIDB_Realtime (ULONG *) - Modes which return TRUE for this fulfills
-*           two criteria:
-*           1) Calls to AHI_SetVol(), AHI_SetFreq() or AHI_SetSound() will be
-*              performed within (about) 10 ms if called from a PlayFunc Hook.
-*           2) The PlayFunc Hook will be called at the specified frequency.
-*           If you don't use AHI's PlayFunc Hook, you must not use modes that
-*           are not realtime. (Criterium 2 is not that obvious if you consider
-*           a mode that renders the output to disk as a sample.)
-*
-*       AHIDB_Bits (ULONG *) - The number of output bits (8, 12, 14, 16 etc).
-*
-*       AHIDB_MaxChannels (ULONG *) - The maximum number of channels this mode
-*           can handle.
-*
-*       AHIDB_MinMixFreq (ULONG *) - The minimum mixing frequency supported.
-*
-*       AHIDB_MaxMixFreq (ULONG *) - The maximum mixing frequency supported.
-*
-*       AHIDB_Frequencies (ULONG *) - The number of different sample rates
-*           available.
-*
-*       AHIDB_FrequencyArg (ULONG) - Specifies which frequency
-*           AHIDB_Frequency should return (see below). Range is 0 to
-*           AHIDB_Frequencies-1 (including).
-*           NOTE: ti_Data is NOT a pointer, but an ULONG.
-*
-*       AHIDB_Frequency (ULONG *) - Return the frequency associated with the
-*           index number specified with AHIDB_FrequencyArg (see above).
-*
-*       AHIDB_IndexArg (ULONG) - AHIDB_Index will return the index which
-*           gives the closest frequency to AHIDB_IndexArg
-*           NOTE: ti_Data is NOT a pointer, but an ULONG.
-*
-*       AHIDB_Index (ULONG *) - Return the index associated with the frequency
-*           specified with AHIDB_IndexArg (see above).
-*
-*       AHIDB_MaxPlaySamples (ULONG *) - Return the lowest number of sample
-*           frames that must be present in memory when AHIST_DYNAMICSAMPLE
-*           sounds are used. This number must then be scaled by Fs/Fm, where
-*           Fs is the frequency of the sound and Fm is the mixing frequency.
-*
-*       AHIDB_MaxRecordSamples (ULONG *) - Return the number of sample frames
-*           you will receive each time the RecordFunc is called.
-*
-*       AHIDB_BufferLen (ULONG) - Specifies how many characters will be
-*           copied when requesting text attributes. Default is 0, which
-*           means that AHIDB_Driver, AHIDB_Name, AHIDB_Author,
-*           AHIDB_Copyright, AHIDB_Version and AHIDB_Annotation,
-*           AHIDB_Input and AHIDB_Output will do nothing.
-*
-*       AHIDB_Driver (STRPTR) - Name of driver (excluding path and
-*           extension). 
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen.
-*
-*       AHIDB_Name (STRPTR) - Human readable name of this mode.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen.
-*
-*       AHIDB_Author (STRPTR) - Name of driver author.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen.
-*
-*       AHIDB_Copyright (STRPTR) - Driver copyright notice.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen
-*
-*       AHIDB_Version (STRPTR) - Driver version string.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen.
-*
-*       AHIDB_Annotation (STRPTR) - Annotation by driver author.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen.
-*
-*       AHIDB_MinMonitorVolume (Fixed *)
-*       AHIDB_MaxMonitorVolume (Fixed *) - Lower/upper limit for input
-*           monitor volume, see AHI_ControlAudioA(). If both are 0.0,
-*           the sound hardware does not have an input monitor feature.
-*           If both are same, but not 0.0, the hardware always sends the
-*           recorded sound to the outputs (at the given volume). (V2)
-*
-*       AHIDB_MinInputGain (Fixed *)
-*       AHIDB_MaxInputGain (Fixed *) - Lower/upper limit for input gain,
-*           see AHI_ControlAudioA(). If both are same, there is no input
-*           gain hardware. (V2)
-*
-*       AHIDB_MinOutputVolume (Fixed *)
-*       AHIDB_MaxOutputVolume (Fixed *) - Lower/upper limit for output
-*           volume, see AHI_ControlAudioA(). If both are same, the sound
-*           card does not have volume control. (V2)
-*
-*       AHIDB_Inputs (ULONG *) - The number of inputs the sound card has.
-*           (V2)
-*
-*       AHIDB_InputArg (ULONG) - Specifies what AHIDB_Input should return
-*           (see below). Range is 0 to AHIDB_Inputs-1 (including).
-*           NOTE: ti_Data is NOT a pointer, but an ULONG. (V2)
-*
-*       AHIDB_Input (STRPTR) - Gives a human readable string describing the
-*           input associated with the index specified with AHIDB_InputArg
-*           (see above). See AHI_ControlAudioA() for how to select one.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen. (V2)
-*
-*       AHIDB_Outputs (ULONG *) - The number of outputs the sound card
-*           has. (V2)
-*
-*       AHIDB_OutputArg (ULONG) - Specifies what AHIDB_Output should return
-*           (see below). Range is 0 to AHIDB_Outputs-1 (including)
-*           NOTE: ti_Data is NOT a pointer, but an ULONG. (V2)
-*
-*       AHIDB_Output (STRPTR) - Gives a human readable string describing the
-*           output associated with the index specified with AHIDB_OutputArg
-*           (see above). See AHI_ControlAudioA() for how to select one.
-*           NOTE: ti_Data is a pointer to an UBYTE array where the name
-*           will be stored. See AHIDB_BufferLen. (V2)
-*
-*       AHIDB_AudioID (ULONG *) - The ID for this mode. (V4)
-*
-*       If the requested information cannot be found, the variable will be not
-*       be touched.
-*
-*   RESULT
-*       TRUE if everything went well.
-*
-*   EXAMPLE
-*
-*   NOTES
-*
-*   BUGS
-*       In versions earlier than 3, the tags that filled a string buffer would
-*       not NULL-terminate the string on buffer overflows.
-*
-*   SEE ALSO
-*      AHI_NextAudioID(), AHI_BestAudioIDA()
-*
-****************************************************************************
-*
-*/
-
-__asm ULONG GetAudioAttrsA( register __d0 ULONG id,
-    register __a2 struct AHIAudioCtrlDrv *actrl,
-    register __a1 struct TagItem *tags)
-{
-  struct AHI_AudioDatabase *audiodb;
-  struct TagItem *dbtags,*tag1,*tag2,*tstate=tags;
-  ULONG *ptr;
-  ULONG stringlen;
-  struct Library *AHIsubBase=NULL;
-  struct AHIAudioCtrlDrv *audioctrl=NULL;
-  BOOL rc=TRUE; // TRUE == _everything_ went well
-  struct TagItem idtag[2] = { AHIA_AudioID, 0, TAG_DONE };
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
-  {
-    Debug_GetAudioAttrsA(id, actrl, tags);
-  }
-
-  if(audiodb=LockDatabase())
-  {
-    if(id == AHI_INVALID_ID)
-    {
-      if(!(audioctrl=actrl))
-        rc=FALSE;
-      else
-        idtag[0].ti_Data=((struct AHIPrivAudioCtrl *)actrl)->ahiac_AudioID;
-    }
-    else
-    {
-      idtag[0].ti_Data = (id == AHI_DEFAULT_ID ? AHIBase->ahib_AudioMode : id);
-      audioctrl=(struct AHIAudioCtrlDrv *)CreateAudioCtrl(idtag);
-    }
-
-    if(audioctrl && rc )
-    {
-      if(dbtags=GetDBTagList(audiodb, idtag[0].ti_Data))
-      {
-        stringlen=GetTagData(AHIDB_BufferLen,0,tags);
-        if(AHIsubBase=OpenLibrary(((struct AHIPrivAudioCtrl *)audioctrl)->ahiac_DriverName,DriverVersion))
-        {
-          while(tag1=NextTagItem(&tstate))
-          {
-            ptr=(ULONG *)tag1->ti_Data;
-            switch(tag1->ti_Tag)
-            {
-            case AHIDB_Driver:
-            case AHIDB_Name:
-              if(tag2=FindTagItem(tag1->ti_Tag,dbtags))
-                stccpy((char *)tag1->ti_Data,(char *)tag2->ti_Data,stringlen);
-              break;
-// Skip these!
-            case AHIDB_FrequencyArg:
-            case AHIDB_IndexArg:
-            case AHIDB_InputArg:
-            case AHIDB_OutputArg:
-              break;
-// Strings
-            case AHIDB_Author:
-            case AHIDB_Copyright:
-            case AHIDB_Version:
-            case AHIDB_Annotation:
-              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,0,(ULONG)"",dbtags,audioctrl),stringlen);
-              break;
-// Input & Output strings
-            case AHIDB_Input:
-              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,
-                  GetTagData(AHIDB_InputArg,0,tags),
-                  (ULONG) GetahiString(msgDefault),dbtags,audioctrl),stringlen);
-              break;
-            case AHIDB_Output:
-              stccpy((char *)tag1->ti_Data,(char *)AHIsub_GetAttr(tag1->ti_Tag,
-                  GetTagData(AHIDB_OutputArg,0,tags),
-                  (ULONG) GetahiString(msgDefault),dbtags,audioctrl),stringlen);
-              break;
-// Other
-            case AHIDB_Bits:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,0,dbtags,audioctrl);
-              break;
-            case AHIDB_MaxChannels:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,128,dbtags,audioctrl);
-              break;
-            case AHIDB_MinMixFreq:
-              *ptr=AHIsub_GetAttr(AHIDB_Frequency,0,0,dbtags,audioctrl);
-              break;
-            case AHIDB_MaxMixFreq:
-              *ptr=AHIsub_GetAttr(AHIDB_Frequency,(AHIsub_GetAttr(AHIDB_Frequencies,1,0,dbtags,audioctrl)-1),0,dbtags,audioctrl);
-              break;
-            case AHIDB_Frequencies:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,1,dbtags,audioctrl);
-              break;
-            case AHIDB_Frequency:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,GetTagData(AHIDB_FrequencyArg,0,tags),0,dbtags,audioctrl);
-              break;
-            case AHIDB_Index:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,GetTagData(AHIDB_IndexArg,0,tags),0,dbtags,audioctrl);
-              break;
-            case AHIDB_MaxPlaySamples:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,audioctrl->ahiac_MaxBuffSamples,dbtags,audioctrl);
-              break;
-            case AHIDB_MaxRecordSamples:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,0,dbtags,audioctrl);
-              break;
-            case AHIDB_MinMonitorVolume:
-            case AHIDB_MaxMonitorVolume:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,0x00000,dbtags,audioctrl);
-              break;
-            case AHIDB_MinInputGain:
-            case AHIDB_MaxInputGain:
-            case AHIDB_MinOutputVolume:
-            case AHIDB_MaxOutputVolume:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,0x10000,dbtags,audioctrl);
-              break;
-            case AHIDB_Inputs:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,0,dbtags,audioctrl);
-              break;
-            case AHIDB_Outputs:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,1,dbtags,audioctrl);
-              break;
-// Booleans that defaults to FALSE
-            case AHIDB_Realtime:
-            case AHIDB_Record:
-            case AHIDB_FullDuplex:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,FALSE,dbtags,audioctrl);
-              break;
-// Booleans that defaults to TRUE
-            case AHIDB_PingPong:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,TRUE,dbtags,audioctrl);
-              break;
-// Tags from the database.
-            default:
-              if(tag2=FindTagItem(tag1->ti_Tag,dbtags))
-                *ptr=tag2->ti_Data;
-              break;
-            }
-          }
-        }
-        else // no AHIsubBase
-          rc=FALSE;
-      }
-      else // no database taglist
-        rc=FALSE;
-    }
-    else // no valid audioctrl
-       rc=FALSE;
-    if(id != AHI_INVALID_ID)
-      FreeVec(audioctrl);
-    if(AHIsubBase)
-      CloseLibrary(AHIsubBase);
-    UnlockDatabase(audiodb);
-  }
-  else // unable to lock database
-    rc=FALSE;
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_HIGH)
-  {
-    KPrintF("=>%s\n", rc ? "TRUE" : "FALSE" );
-  }
-
-  return (ULONG) rc;
-}
-
-
-/******************************************************************************
-** AHI_BestAudioIDA ***********************************************************
-******************************************************************************/
-
-/****** ahi.device/AHI_BestAudioIDA *****************************************
-*
-*   NAME
-*       AHI_BestAudioIDA -- calculate the best ModeID with given parameters
-*       AHI_BestAudioID -- varargs stub for AHI_BestAudioIDA()
-*
-*   SYNOPSIS
-*       ID = AHI_BestAudioIDA( tags );
-*       D0                     A1
-*
-*       ULONG AHI_BestAudioIDA( struct TagItem * );
-*
-*       ID = AHI_BestAudioID( tag1, ... );
-*
-*       ULONG AHI_BestAudioID( Tag, ... );
-*
-*   FUNCTION
-*       Determines the best AudioID to fit the parameters set in the tag
-*       list.
-*
-*   INPUTS
-*       tags - A pointer to a tag list. Only the tags present matter.
-*
-*   TAGS
-*       Many combinations are probably stupid to ask for, like not supporting
-*       panning or recording.
-*
-*       AHIDB_AudioID (ULONG) - The mode must use the same audio hardware
-*           as this mode does.
-*
-*       AHIDB_Volume (BOOL) - If TRUE: mode must support volume changes.
-*           If FALSE: mode must not support volume changes.
-*
-*       AHIDB_Stereo (BOOL) - If TRUE: mode must have stereo output.
-*           If FALSE: mode must not have stereo output (=mono).
-*
-*       AHIDB_Panning (BOOL) - If TRUE: mode must support volume panning.
-*           If FALSE: mode must not support volume panning. 
-*
-*       AHIDB_HiFi (BOOL) - If TRUE: mode must have HiFi output.
-*           If FALSE: mode must not have HiFi output.
-*
-*       AHIDB_PingPong (BOOL) - If TRUE: mode must support playing samples
-*           backwards. If FALSE: mode must not support playing samples
-*           backwards.
-*
-*       AHIDB_Record (BOOL) - If TRUE: mode must support recording. If FALSE:
-*           mode must not support recording.
-*
-*       AHIDB_Realtime (BOOL) - If TRUE: mode must be realtime. If FALSE:
-*           take a wild guess.
-*
-*       AHIDB_FullDuplex (BOOL) - If TRUE: mode must be able to record and
-*           play at the same time.
-*
-*       AHIDB_Bits (UBYTE) - Mode must have greater or equal number of bits.
-*
-*       AHIDB_MaxChannels (UWORD) - Mode must have greater or equal number
-*           of channels.
-*
-*       AHIDB_MinMixFreq (ULONG) - Lowest mixing frequency supported must be
-*           less or equal.
-*
-*       AHIDB_MaxMixFreq (ULONG) - Highest mixing frequency must be greater
-*           or equal.
-*
-*       AHIB_Dizzy (struct TagItem *) - This tag points to a second tag list.
-*           After all other tags has been tested, the mode that matches these
-*           tags best is returned, i.e. the one that has most of the features
-*           you ask for, and least of the ones you don't want. Without this
-*           second tag list, this function hardly does what its name
-*           suggests. (V4)
-*
-*   RESULT
-*       ID - The best AudioID to use or AHI_INVALID_ID if none of the modes
-*           in the audio database could meet the requirements.
-*
-*   EXAMPLE
-*
-*   NOTES
-*
-*   BUGS
-*       Due to a bug in the code that compared the boolean tag values in
-*       version 4.158 and earlier, TRUE must be equal to 1. The bug is not
-*       present in later revisions.
-*
-*
-*   SEE ALSO
-*      AHI_NextAudioID(), AHI_GetAudioAttrsA()
-*
-****************************************************************************
-*
-*/
-
-__asm ULONG BestAudioIDA( register __a1 struct TagItem *tags )
-{
-  ULONG id = AHI_INVALID_ID, bestid = 0;
-  Fixed score, bestscore = 0;
-  struct TagItem *dizzytags;
-  const static struct TagItem defdizzy[] =
-  {
-    // Default is off for performance reasons..
-    AHIDB_Volume,     FALSE,
-    AHIDB_Stereo,     FALSE,
-    AHIDB_Panning,    FALSE,
-    AHIDB_HiFi,       FALSE,
-    AHIDB_PingPong,   FALSE,
-    // Default is on, 'cause they won't hurt performance (?)
-    AHIDB_Record,     TRUE,
-    AHIDB_Realtime,   TRUE,
-    AHIDB_FullDuplex, TRUE,
-    // And we don't care about the rest...
-    TAG_DONE
-  };
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
-  {
-    Debug_BestAudioIDA(tags);
-  }
-
-  dizzytags = (struct TagItem *) GetTagData(AHIB_Dizzy, (ULONG) defdizzy,tags);
-
-  while(AHI_INVALID_ID != (id=AHI_NextAudioID(id)))
-  {
-    if(!TestAudioID(id, tags))
-    {
-      continue;
-    }
-
-    // Check if this id the better than the last one
-    score = DizzyTestAudioID(id, dizzytags);
-    if(score > bestscore)
-    {
-      bestscore = score;
-      bestid = id;
-    }
-    else if(score == bestscore)
-    {
-      if(id > bestid)
-      {
-        bestid = id;    // Return the highest suitable audio id.
-      }
-    }
-  }
-
-  if(bestid == 0)
-  {
-    bestid = AHI_INVALID_ID;
-  }
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
-  {
-    KPrintF("=>0x%08lx\n",bestid);
-  }
-
-  return bestid;
-}
-
-
-/******************************************************************************
-** AHI_LoadSound **************************************************************
-******************************************************************************/
-
-/****** ahi.device/AHI_LoadSound ********************************************
-*
-*   NAME
-*       AHI_LoadSound -- prepare a sound for playback
-*
-*   SYNOPSIS
-*       error = AHI_LoadSound( sound, type, info, audioctrl );
-*       D0                     D0:16  D1    A0    A2
-*
-*       ULONG AHI_LoadSound( UWORD, ULONG, APTR, struct AHIAudioCtrl * );
-*
-*   FUNCTION
-*       Defines an ID number for the sound and prepares it for playback.
-*
-*   INPUTS
-*       sound - The numeric ID to be used as a reference to this sound.
-*           The ID is a number greater or equal to 0 and less than what you
-*           specified with AHIA_Sounds when you called AHI_AllocAudioA().
-*       type - The type of the sound. Currently four types are supported:
-*           AHIST_SAMPLE - array of 8 or 16 bit samples. Note that the
-*               portion of memory where the sample is stored must NOT be
-*               altered until AHI_UnloadSound() has been called! This is
-*               because some audio drivers may wish to upload the samples
-*               to local RAM. It is OK to read, though.
-*
-*           AHIST_DYNAMICSAMPLE - array of 8 or 16 bit samples, which can be
-*               updated dynamically. Typically used to play data that is
-*               loaded from disk or calculated realtime.
-*               Avoid using this sound type as much as possible; it will
-*               use much more CPU power than AHIST_SAMPLE on a DMA/DSP
-*               sound card.
-*
-*           AHIST_INPUT - The input from your sampler (not fully functional
-*               yet).
-*
-*       info - Depends on type:
-*           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
-*               ahisi_Type - Format of samples (four formats are supported).
-*                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
-*                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V4). 
-*                   AHIST_M16S: Mono, 16 bit signed (WORDs).
-*                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V4).
-*               ahisi_Address - Address to the sample array.
-*               ahisi_Length - The size of the array, in samples.
-*               Don't even think of setting ahisi_Address to 0 and
-*               ahisi_Length to 0xffffffff as you can do with
-*               AHIST_DYNAMICSAMPLE! Very few DMA/DSP cards have 4 GB onboard
-*               RAM...
-*
-*           AHIST_DYNAMICSAMPLE A pointer to a struct AHISampleInfo, filled
-*               as described above (AHIST_SAMPLE).
-*               If ahisi_Address is 0 and ahisi_Length is 0xffffffff
-*               AHI_SetSound() can take the real address of an 8 bit sample
-*               to be played as offset argument. Unfortunately, this does not
-*               work for 16 bit samples.
-*
-*           AHIST_INPUT - Always set info to NULL.
-*               Note that AHI_SetFreq() may only be called with AHI_MIXFREQ
-*               for this sample type.
-*
-*       audioctrl - A pointer to an AHIAudioCtrl structure.
-*
-*   RESULT
-*       An error code, defined in <devices/ahi.h>.
-*
-*   EXAMPLE
-*
-*   NOTES
-*       There is no need to place a sample array in Chip memory, but it
-*       MUST NOT be swapped out! Allocate your sample memory with the
-*       MEMF_PUBLIC flag set. 
-*
-*   BUGS
-*       AHIST_INPUT does not fully work yet.
-*
-*   SEE ALSO
-*       AHI_UnloadSound(), AHI_SetEffect(), AHI_SetFreq(), AHI_SetSound(),
-*       AHI_SetVol(), <devices/ahi.h>
-*
-****************************************************************************
-*
-*/
-
-__asm ULONG LoadSound( register __d0 UWORD sound, register __d1 ULONG type,
-    register __a0 APTR info, register __a2 struct AHIPrivAudioCtrl *audioctrl )
-{
-
-  struct Library *AHIsubBase = audioctrl->ahiac_SubLib;
-  ULONG rc;
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
-  {
-    Debug_LoadSound(sound, type, info, audioctrl);
-  }
-
-  rc = AHIsub_LoadSound(sound, type, info, (struct AHIAudioCtrlDrv *) audioctrl);
-
-  if((audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING) || (rc != AHIS_UNKNOWN))
-  {
-    return rc;
-  }
-
-  rc = AHIE_OK;
-
-  switch(type)
-  {
-    case AHIST_DYNAMICSAMPLE:
-    case AHIST_SAMPLE:
-    {
-      struct AHISampleInfo *si = (struct AHISampleInfo *) info;
-      
-      switch(si->ahisi_Type)
-      {
-        case AHIST_M8S:
-        case AHIST_M16S:
-#ifdef _M68020
-        case AHIST_S8S:
-        case AHIST_S16S:
-#endif
-          /* AHI_FreeAudio() will deallocate...  */
-
-          if(initSignedTable(audioctrl, AHIBase))
-          {
-            audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
-            audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
-            audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
-          }
-          else rc = AHIE_NOMEM;
-
-          break;
-
-        /* Obsolete, present for compability only. FIXIT! */
-
-        case AHIST_M8U:
-
-          /* AHI_FreeAudio() will deallocate...  */
-
-          if( ((audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0) && 
-              initUnsignedTable(audioctrl, AHIBase))
-          {
-            audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
-            audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
-            audioctrl->ahiac_SoundDatas[sound].sd_Length = si->ahisi_Length;
-          }
-          else rc = AHIE_NOMEM;
-
-          break;
-
-        default:
-          rc = AHIE_BADSAMPLETYPE;
-      }
-      
-      break;
-    }
- 
-    case AHIST_INPUT:
-    {
-      if(audioctrl->ahiac_InputBuffer[0] == NULL)
-      {
-        ULONG playsamples = 0, recordsamples = 0;
-
-        if(AHI_GetAudioAttrs( AHI_INVALID_ID, (struct AHIAudioCtrl *) audioctrl,
-            AHIDB_MaxPlaySamples,   &playsamples,
-            AHIDB_MaxRecordSamples, &recordsamples,
-            TAG_DONE))
-        {
-          audioctrl->ahiac_InputBlockLength = recordsamples;
-          audioctrl->ahiac_InputLength      = recordsamples;
-          while(audioctrl->ahiac_InputLength < playsamples)
-          {
-            audioctrl->ahiac_InputLength += recordsamples;
-          }
-
-          /* AHI_FreeAudio() will deallocate...  */
-
-          audioctrl->ahiac_InputBuffer[0] = AllocVec(
-              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
-              MEMF_PUBLIC|MEMF_CLEAR);
-
-          audioctrl->ahiac_InputBuffer[1] = AllocVec(
-              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
-              MEMF_PUBLIC|MEMF_CLEAR);
-
-          audioctrl->ahiac_InputBuffer[2] = AllocVec(
-              audioctrl->ahiac_InputLength * AHI_SampleFrameSize(AHIST_S16S),
-              MEMF_PUBLIC|MEMF_CLEAR);
-/*
-          KPrintF("Buffer0: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[0], audioctrl->ahiac_InputLength);
-          KPrintF("Buffer1: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[1], audioctrl->ahiac_InputLength);
-          KPrintF("Buffer2: %lx, length %ld\n",audioctrl->ahiac_InputBuffer[2], audioctrl->ahiac_InputLength);
-*/
-          if((audioctrl->ahiac_InputBuffer[0] != NULL) &&
-             (audioctrl->ahiac_InputBuffer[1] != NULL) &&
-             (audioctrl->ahiac_InputBuffer[2] != NULL))
-          {
-            audioctrl->ahiac_InputRecordPtr = audioctrl->ahiac_InputBuffer[0];
-            audioctrl->ahiac_InputRecordCnt = audioctrl->ahiac_InputLength;
-
-            audioctrl->ahiac_SoundDatas[sound].sd_Type = AHIST_INPUT|AHIST_S16S;
-            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[0] =
-                audioctrl->ahiac_InputBuffer[0];
-            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[1] =
-                audioctrl->ahiac_InputBuffer[1];
-            audioctrl->ahiac_SoundDatas[sound].sd_InputBuffer[2] =
-                audioctrl->ahiac_InputBuffer[2];
-
-            /* See also: AHI_SetSound() */
-
-          }
-          else
-          {
-            FreeVec(audioctrl->ahiac_InputBuffer[0]);
-            FreeVec(audioctrl->ahiac_InputBuffer[1]);
-            FreeVec(audioctrl->ahiac_InputBuffer[2]);
-            audioctrl->ahiac_InputBuffer[0] = NULL;
-            audioctrl->ahiac_InputBuffer[1] = NULL;
-            audioctrl->ahiac_InputBuffer[2] = NULL;
-            rc = AHIE_NOMEM;
-          }
-        }
-        else rc = AHIE_UNKNOWN;
-      }
-      break;
-    }
-
-    default:
-      rc = AHIE_BADSOUNDTYPE;
-      break;
-  }
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
-  {
-    KPrintF("=>%ld\n", rc);
-  }
-  return rc;
-}
-
-
-/******************************************************************************
-** AHI_UnloadSound ************************************************************
-******************************************************************************/
-
-/****** ahi.device/AHI_UnloadSound *****************************************
-*
-*   NAME
-*       AHI_UnloadSound -- discard a sound
-*
-*   SYNOPSIS
-*       AHI_UnloadSound( sound, audioctrl );
-*                        D0:16  A2
-*
-*       void AHI_UnloadSound( UWORD, struct AHIAudioCtrl * );
-*
-*   FUNCTION
-*       Tells 'ahi.device' that this sound will not be used anymore.
-*
-*   INPUTS
-*       sound - The ID of the sound to unload.
-*       audioctrl - A pointer to an AHIAudioCtrl structure.
-*
-*   RESULT
-*
-*   EXAMPLE
-*
-*   NOTES
-*       This call will not break a Forbid() state.
-*
-*   BUGS
-*
-*   SEE ALSO
-*       AHI_LoadSound()
-*
-****************************************************************************
-*
-*/
-
-__asm ULONG UnloadSound(register __d0 UWORD sound, 
-    register __a2 struct AHIPrivAudioCtrl *audioctrl)
-{
-  struct Library *AHIsubBase = audioctrl->ahiac_SubLib;
-  ULONG rc;
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
-  {
-    Debug_UnloadSound(sound, audioctrl);
-  }
-
-  rc = AHIsub_UnloadSound(sound, (struct AHIAudioCtrlDrv *) audioctrl);
-
-  if((audioctrl->ac.ahiac_Flags & AHIACF_NOMIXING) || (rc != AHIS_UNKNOWN))
-  {
-    return 0;
-  }
-  
-  audioctrl->ahiac_SoundDatas[sound].sd_Type = AHIST_NOTYPE;
-  
-  return 0;
-}
-
-
-/******************************************************************************
-** AHI_PlayA ******************************************************************
-******************************************************************************/
-
-/****** ahi.device/AHI_PlayA ************************************************
-*
-*   NAME
-*       AHI_PlayA -- Start multiple sounds in one call (V4)
-*       AHI_Play -- varargs stub for AHI_PlayA()
-*
-*   SYNOPSIS
-*       AHI_PlayA( audioctrl, tags );
-*                  A2         A1
-*
-*       void AHI_PlayA( struct AHIAudioCtrl *, struct TagItem * );
-*
-*       AHI_Play( AudioCtrl, tag1, ...);
-*
-*       void AHI_Play( struct AHIAudioCtrl *, Tag, ... );
-*
-*   FUNCTION
-*       This function performs the same actions as multiple calls to
-*       AHI_SetFreq(), AHI_SetSound() and AHI_SetVol(). The advantages
-*       of using only one call is that simple loops can be set without
-*       using a SoundFunc (see AHI_AllocAudioA(), tag AHIA_SoundFunc) and
-*       that sounds on different channels can be synchronized even when the
-*       sounds are not started from a PlayerFunc (see AHI_AllocAudioA(), tag
-*       AHIA_PlayerFunc). The disadvantage is that this call has more
-*       overhead than AHI_SetFreq(), AHI_SetSound() and AHI_SetVol(). It is
-*       therefore recommended that you only use this call if you are not
-*       calling from a SoundFunc or PlayerFunc.
-*
-*       The supplied tag list works like a 'program'. This means that
-*       the order of tags matter.
-*
-*   INPUTS
-*       audioctrl - A pointer to an AHIAudioCtrl structure.
-*       tags - A pointer to a tag list.
-*
-*   TAGS
-*       AHIP_BeginChannel (UWORD) - Before you start setting attributes
-*           for a sound to play, you have to use this tag to chose a
-*           channel to operate on. If AHIP_BeginChannel is omitted, the
-*           result is undefined.
-*
-*       AHIP_EndChannel (ULONG) - Signals the end of attributes for
-*           the current channel. If AHIP_EndChannel is omitted, the result
-*           is undefined. ti_Data MUST BE NULL!
-*
-*       AHIP_Freq (ULONG) - The playback frequency in Hertz or AHI_MIXFREQ.
-*
-*       AHIP_Vol (Fixed) - The desired volume. If omitted, but AHIP_Pan is
-*           present, AHIP_Vol defaults to 0.
-*
-*       AHIP_Pan (sposition) - The desired panning. If omitted, but AHIP_Vol
-*           is present, AHIP_Pan defaults to 0 (extreme left).
-*
-*       AHIP_Sound (UWORD) - Sound to be played, or AHI_NOSOUND.
-*
-*       AHIP_Offset (ULONG) - Specifies an offset (in samples) into the
-*           sound. If this tag is present, AHIP_Length MUST be present too!
-*
-*       AHIP_Length (LONG) - Specifies how many samples that should be
-*           player.
-*
-*       AHIP_LoopFreq (ULONG)
-*       AHIP_LoopVol (Fixed)
-*       AHIP_LoopPan (sposition)
-*       AHIP_LoopSound (UWORD)
-*       AHIP_LoopOffset (ULONG)
-*       AHIP_LoopLength (LONG) - These tags can be used to set simple loop
-*          attributes. They default to their sisters. These tags must be
-*          after the other tags.
-*
-*   RESULT
-*
-*   EXAMPLE
-*
-*   NOTES
-*
-*   BUGS
-*
-*   SEE ALSO
-*       AHI_SetFreq(), AHI_SetSound(), AHI_SetVol()
-*
-****************************************************************************
-*
-*/
-
-__asm ULONG PlayA( register __a2 struct AHIAudioCtrl *audioctrl,
-    register __a1 struct TagItem *tags)
-{
-  struct TagItem *tag,*tstate=tags;
-  struct Library *AHIsubBase=((struct AHIPrivAudioCtrl *)audioctrl)->ahiac_SubLib;
-  BOOL  setfreq,setvol,setsound,loopsetfreq,loopsetvol,loopsetsound;
-  ULONG channel,freq,vol,pan,sound,offset,length;
-  ULONG loopfreq,loopvol,looppan,loopsound,loopoffset,looplength;
-
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_ALL)
-  {
-    Debug_PlayA(audioctrl,tags);
-  }
-
-  AHIsub_Disable((struct AHIAudioCtrlDrv *)audioctrl);
-
-  while(tag=NextTagItem(&tstate))
-  {
-    switch(tag->ti_Tag)
-    {
-    case AHIP_BeginChannel:
-      channel=tag->ti_Data;
-      setfreq=setvol=setsound=loopsetfreq=loopsetvol=loopsetsound= \
-      vol=pan=offset=length=loopvol=looppan=loopoffset=looplength=0;
-      break;
-    case AHIP_Freq:
-      loopfreq=
-      freq=tag->ti_Data;
-      setfreq=TRUE;
-      break;
-    case AHIP_Vol:
-      loopvol=
-      vol=tag->ti_Data;
-      setvol=TRUE;
-      break;
-    case AHIP_Pan:
-      looppan=
-      pan=tag->ti_Data;
-      setvol=TRUE;
-      break;
-    case AHIP_Sound:
-      loopsound=
-      sound=tag->ti_Data;
-      setsound=TRUE;
-      break;
-    case AHIP_Offset:
-      loopoffset=
-      offset=tag->ti_Data;
-      break;
-    case AHIP_Length:
-      looplength=
-      length=tag->ti_Data;
-      break;
-    case AHIP_LoopFreq:
-      loopfreq=tag->ti_Data;
-      loopsetfreq=TRUE;
-      break;
-    case AHIP_LoopVol:
-      loopvol=tag->ti_Data;
-      loopsetvol=TRUE;
-      break;
-    case AHIP_LoopPan:
-      looppan=tag->ti_Data;
-      loopsetvol=TRUE;
-      break;
-    case AHIP_LoopSound:
-      loopsound=tag->ti_Data;
-      loopsetsound=TRUE;
-      break;
-    case AHIP_LoopOffset:
-      loopoffset=tag->ti_Data;
-      loopsetsound=TRUE;           // AHIP_LoopSound: doesn't have to be present
-      break;
-    case AHIP_LoopLength:
-      looplength=tag->ti_Data;
-      break;
-    case AHIP_EndChannel:
-      if(setfreq)
-        AHI_SetFreq(channel,freq,audioctrl,AHISF_IMM);
-      if(loopsetfreq)
-        AHI_SetFreq(channel,loopfreq,audioctrl,NULL);
-      if(setvol)
-        AHI_SetVol(channel,vol,pan,audioctrl,AHISF_IMM);
-      if(loopsetvol)
-        AHI_SetVol(channel,loopvol,looppan,audioctrl,NULL);
-      if(setsound)
-        AHI_SetSound(channel,sound,offset,length,audioctrl,AHISF_IMM);
-      if(loopsetsound)
-        AHI_SetSound(channel,loopsound,loopoffset,looplength,audioctrl,NULL);
-      break;
-    }
-  }
-
-  AHIsub_Enable((struct AHIAudioCtrlDrv *)audioctrl);
-  return NULL;
-}
-
-
-/******************************************************************************
-** AHI_SampleFrameSize ********************************************************
-******************************************************************************/
-
-/****** ahi.device/AHI_SampleFrameSize **************************************
-*
-*   NAME
-*       AHI_SampleFrameSize -- get the size of a sample frame (V4)
-*
-*   SYNOPSIS
-*       size = AHI_SampleFrameSize( sampletype );
-*       D0                          D0
-*
-*       ULONG AHI_SampleFrameSize( ULONG );
-*
-*   FUNCTION
-*       Returns the size in bytes of a sample frame for a given sample type.
-*
-*   INPUTS
-*       sampletype - The sample type to examine. See <devices/ahi.h> for
-*           possible types.
-*
-*   RESULT
-*
-*   EXAMPLE
-*
-*   NOTES
-*
-*   BUGS
-*
-*   SEE ALSO
-*      <devices/ahi.h>
-*
-****************************************************************************
-*
-*/
-
-const static UBYTE type2bytes[]=
-{
-  1,    // AHIST_M8S  (0)
-  2,    // AHIST_M16S (1)
-  2,    // AHIST_S8S  (2)
-  4,    // AHIST_S16S (3)
-  1,    // AHIST_M8U  (4)
-  0,
-  0,
-  0,
-  4,    // AHIST_M32S (8)
-  0,
-  8     // AHIST_S32S (10)
-};
-
-__asm ULONG SampleFrameSize( register __d0 ULONG sampletype )
-{
-  if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
-  {
-    Debug_SampleFrameSize(sampletype);
-    KPrintF("=>%ld\n",type2bytes[sampletype]);
-  }
-
-  return type2bytes[sampletype];
-}
