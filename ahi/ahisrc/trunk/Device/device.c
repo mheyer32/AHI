@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.12  1998/01/29 23:09:47  lcs
+* Playing with anticlick
+*
 * Revision 4.11  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -620,6 +623,9 @@ ReadConfig ( struct AHIDevUnit *iounit,
                 if(globalprefs->ahigp_ClipMasterVolume)
                   AHIBase->ahib_Flags |= AHIBF_CLIPPING;
               }
+
+              AHIBase->ahib_AntiClickSamples = 64;  // FIXIT! User setable should it be, yes.
+
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);
             while(ci)

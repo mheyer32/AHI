@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.18  1998/01/29 23:09:47  lcs
+* Playing with anticlick
+*
 * Revision 4.17  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -166,6 +169,8 @@ CreateAudioCtrl(struct TagItem *tags)
       GetTagData(AHIA_MinPlayerFreq,0,tags);
     audioctrl->ac.ahiac_MaxPlayerFreq =
       GetTagData(AHIA_MaxPlayerFreq,0,tags);
+    audioctrl->ac.ahiac_AntiClickSamples = 
+      GetTagData(AHIA_AntiClickSamples,~0,tags);
 
     audioctrl->ahiac_MasterVolume=0x00010000;
     audioctrl->ahiac_SetMasterVolume=0x00010000;
@@ -175,7 +180,7 @@ CreateAudioCtrl(struct TagItem *tags)
       audioctrl->ahiac_AudioID = AHIBase->ahib_AudioMode;
 
     if(audioctrl->ac.ahiac_MixFreq == AHI_DEFAULT_FREQ)
-      audioctrl->ac.ahiac_MixFreq=AHIBase->ahib_Frequency;
+      audioctrl->ac.ahiac_MixFreq = AHIBase->ahib_Frequency;
 
     if(audioctrl->ac.ahiac_PlayerFunc == NULL)
       audioctrl->ac.ahiac_PlayerFunc=&DefPlayerHook;
@@ -193,6 +198,9 @@ CreateAudioCtrl(struct TagItem *tags)
       audioctrl->ac.ahiac_MinPlayerFreq <<= 16;
     if(audioctrl->ac.ahiac_MaxPlayerFreq < 65536)
       audioctrl->ac.ahiac_MaxPlayerFreq <<= 16;
+
+    if(audioctrl->ac.ahiac_AntiClickSamples == ~0)
+      audioctrl->ac.ahiac_AntiClickSamples = AHIBase->ahib_AntiClickSamples;
 
     if((audiodb=LockDatabase()))
     {
@@ -705,6 +713,7 @@ FreeAudio( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
     FreeVec(audioctrl->ahiac_MultTableU);
     FreeVec(audioctrl->ac.ahiac_SamplerFunc);
     FreeVec(audioctrl->ac.ahiac_MixerFunc);
+    FreeVec(audioctrl->ahiac_AntiClickBuffer);
     FreeVec(audioctrl->ahiac_SoundDatas);
     FreeVec(audioctrl->ahiac_ChannelDatas);
 

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1998/01/29 23:09:47  lcs
+* Playing with anticlick
+*
 * Revision 4.3  1998/01/13 20:24:04  lcs
 * Generic c version of the mixer finished.
 *
@@ -53,6 +56,12 @@ DoOutputBuffer ( void *buffer,
 static void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
+static void
+CallAddRoutine ( LONG samples,
+                 void **dst,
+                 struct AHIChannelData *cd,
+                 struct AHIPrivAudioCtrl *audioctrl );
+
 
 typedef void (ADDFUNC)(ADDARGS);
 
@@ -90,6 +99,8 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 {
   BOOL rc = FALSE;
 
+  //kprintf("[0;0H[J");
+
   // Allocate and initialize the AHIChannelData structures
 
   // This structure could be accessed from from interrupts!
@@ -97,7 +108,7 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
   audioctrl->ahiac_ChannelDatas = AllocVec(
       audioctrl->ac.ahiac_Channels * sizeof(struct AHIChannelData),
       MEMF_PUBLIC|MEMF_CLEAR);
-      
+
 
   // Now link the list and fill in the channel number for each structure.
 
@@ -148,6 +159,20 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       {
         sd->sd_Type = AHIST_NOTYPE;
       }
+
+      audioctrl->ahiac_AntiClickSize = audioctrl->ac.ahiac_AntiClickSamples *
+          AHI_SampleFrameSize(audioctrl->ac.ahiac_BuffType);
+
+      audioctrl->ahiac_AntiClickBuffer = AllocVec(
+        audioctrl->ahiac_AntiClickSize, MEMF_PUBLIC);
+
+/* If it fails, we just loose the anticlick feature. Big deal.
+
+      if(audioctrl->ahiac_AntiClickBuffer != NULL)
+      {
+
+      }
+*/
 
       // Sucess!
       
@@ -440,7 +465,6 @@ MixGeneric ( REG(a0, struct Hook *Hook),
         if(cd->cd_EOS)
         {
           cd->cd_EOS = FALSE;
-
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
             CallHookPkt(audioctrl->ac.ahiac_SoundFunc, audioctrl, &cd->cd_ChannelNo);
@@ -449,7 +473,6 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
         if(cd->cd_FreqOK && cd->cd_SoundOK)
         {
-
           if(cd->cd_AddRoutine == NULL)
           {
             break;  // Panic! Should never happen.
@@ -461,9 +484,7 @@ MixGeneric ( REG(a0, struct Hook *Hook),
 
             /* Call AddRoutine (cd->cd_Samples) */
 
-            ((ADDFUNC *) cd->cd_AddRoutine)(
-                cd->cd_Samples, cd->cd_ScaleLeft, cd->cd_ScaleRight,
-                &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, &dstptr, cd);
+            CallAddRoutine(cd->cd_Samples, &dstptr, cd, audioctrl);
 
             /* Linear interpol. stuff */
 
@@ -471,7 +492,7 @@ MixGeneric ( REG(a0, struct Hook *Hook),
             cd->cd_LastSampleR = cd->cd_TempLastSampleR;
 
             /* Give AHIST_INPUT special treatment! */
-          
+
             if(cd->cd_Type & AHIST_INPUT)
             {
               // Screw it... I doesn't work anyway.
@@ -561,9 +582,8 @@ MixGeneric ( REG(a0, struct Hook *Hook),
           
             /*** Call AddRoutine (samplesleft) ***/
 
-            ((ADDFUNC *) cd->cd_AddRoutine)(
-                samplesleft, cd->cd_ScaleLeft, cd->cd_ScaleRight,
-                &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, &dstptr, cd);
+            CallAddRoutine(samplesleft, &dstptr, cd, audioctrl);
+
           }
         } // FreqOK && SoundOK
 
@@ -720,6 +740,103 @@ DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl )
 }
 
 
+static void
+CallAddRoutine ( LONG samples,
+                 void **dstptr,
+                 struct AHIChannelData *cd,
+                 struct AHIPrivAudioCtrl *audioctrl )
+{
+  LONG fadesamples = 0;
+  LONG i;
+  LONG *src, *dst;
+  LONG scale, scaleadd;
+  LONG lastsampleL, lastsampleR;
+
+  if(cd->cd_AntiClickCount > 0 && audioctrl->ahiac_AntiClickBuffer != NULL)
+  {
+
+    fadesamples = min(cd->cd_AntiClickCount, samples);
+
+    cd->cd_AntiClickCount -= fadesamples;
+
+    if(fadesamples > 0)
+    {
+
+      /* Starting points */
+
+      lastsampleL = cd->cd_LastScaledSampleL;
+      lastsampleR = cd->cd_LastScaledSampleR;
+
+      /* Clear the buffer */
+
+      memset(audioctrl->ahiac_AntiClickBuffer, 0, audioctrl->ahiac_AntiClickSize);
+
+      /* Get temp buffer pointer */
+
+      dst = audioctrl->ahiac_AntiClickBuffer;
+
+      /* Mix fadesamples to temp buffer */
+
+      ((ADDFUNC *) cd->cd_AddRoutine)(
+        fadesamples, cd->cd_ScaleLeft, cd->cd_ScaleRight,
+        &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, (void **) &dst, cd);
+
+      /* Now fade in the temp buffer to the mixing buffer */
+
+      src = audioctrl->ahiac_AntiClickBuffer;
+      dst = *dstptr;
+
+      scale    = 0;
+      scaleadd = (0x7FFFFFFF / fadesamples);  // -> (0 <= (scale>>23) < 256)
+
+      // Note: There will be overflow in the calculations below, but thanks
+      // to the nature of 2-complementary numbers, the result will be correct
+      // in the end anyway. I hope.
+
+      switch(audioctrl->ac.ahiac_BuffType)
+      {
+
+        case AHIST_M32S:
+          for(i = fadesamples; i > 0; i--)
+          {
+            *dst++ += lastsampleL +
+                      ((*src++ >> 8) - (lastsampleL >> 8)) * (scale >> 23);
+            scale  += scaleadd;
+          }
+          break;
+
+        case AHIST_S32S:
+          for(i = fadesamples; i > 0; i--)
+          {
+            *dst++ += lastsampleL +
+                      ((*src++ >> 8) - (lastsampleL >> 8)) * (scale >> 23);
+            *dst++ += lastsampleR +
+                      ((*src++ >> 8) - (lastsampleR >> 8)) * (scale >> 23);
+            scale  += scaleadd;
+          }
+          break;
+
+        default:
+          break; // Panic
+      }
+
+//      ((LONG *) *dstptr)[0] = 0x7FFFFFFF;
+
+      /* Update the destination pointer */
+
+      *dstptr = dst;
+    }
+
+  }
+
+  /* Now mix the rest of the samples */
+
+  ((ADDFUNC *) cd->cd_AddRoutine)(
+      samples - fadesamples, cd->cd_ScaleLeft, cd->cd_ScaleRight,
+      &cd->cd_Offset, cd->cd_Add, audioctrl, cd->cd_DataStart, dstptr, cd);
+}
+
+
 /******************************************************************************
 ** CalcSamples ****************************************************************
 ******************************************************************************/
@@ -845,7 +962,7 @@ AddByteMVH ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
@@ -867,6 +984,7 @@ AddByteMVH ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -880,7 +998,7 @@ AddByteSVPH ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
@@ -903,6 +1021,7 @@ AddByteSVPH ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -916,8 +1035,8 @@ AddBytesMVH ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -944,6 +1063,8 @@ AddBytesMVH ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -957,8 +1078,8 @@ AddBytesSVPH ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -986,6 +1107,8 @@ AddBytesSVPH ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -999,7 +1122,7 @@ AddWordMVH ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1021,6 +1144,7 @@ AddWordMVH ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -1034,7 +1158,7 @@ AddWordSVPH ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
@@ -1057,6 +1181,7 @@ AddWordSVPH ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -1070,8 +1195,8 @@ AddWordsMVH ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1098,6 +1223,8 @@ AddWordsMVH ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -1111,8 +1238,8 @@ AddWordsSVPH ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1140,6 +1267,8 @@ AddWordsSVPH ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -1160,7 +1289,7 @@ AddByteMVHB ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1182,6 +1311,7 @@ AddByteMVHB ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -1195,7 +1325,7 @@ AddByteSVPHB ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
@@ -1218,6 +1348,7 @@ AddByteSVPHB ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 
@@ -1232,8 +1363,8 @@ AddBytesMVHB ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1260,6 +1391,8 @@ AddBytesMVHB ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -1273,8 +1406,8 @@ AddBytesSVPHB ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1302,6 +1435,8 @@ AddBytesSVPHB ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -1315,7 +1450,7 @@ AddWordMVHB ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1337,6 +1472,7 @@ AddWordMVHB ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -1350,7 +1486,7 @@ AddWordSVPHB ( ADDARGS )
   int     i;
   LONG    lastsample, currentsample;
 
-  currentsample = cd->cd_TempLastSampleL;
+  lastsample = currentsample = cd->cd_TempLastSampleL;
   
   for(i = Samples; i > 0; i--)
   {
@@ -1373,6 +1509,7 @@ AddWordSVPHB ( ADDARGS )
   }
 
   cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
 
   *Dst    = dst;
 }
@@ -1386,8 +1523,8 @@ AddWordsMVHB ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1414,6 +1551,8 @@ AddWordsMVHB ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }
@@ -1427,8 +1566,8 @@ AddWordsSVPHB ( ADDARGS )
   int     i;
   LONG    lastsampleL, lastsampleR, currentsampleL, currentsampleR;
 
-  currentsampleL = cd->cd_TempLastSampleL;
-  currentsampleR = cd->cd_TempLastSampleR;
+  lastsampleL = currentsampleL = cd->cd_TempLastSampleL;
+  lastsampleR = currentsampleR = cd->cd_TempLastSampleR;
 
   for(i = Samples; i > 0; i--)
   {
@@ -1456,6 +1595,8 @@ AddWordsSVPHB ( ADDARGS )
 
   cd->cd_TempLastSampleL = currentsampleL;
   cd->cd_TempLastSampleR = currentsampleR;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsampleL;
+  cd->cd_LastScaledSampleR = ScaleLeft * lastsampleR;
 
   *Dst    = dst;
 }

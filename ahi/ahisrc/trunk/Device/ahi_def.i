@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.7  1998/01/29 23:09:47  lcs
+* Playing with anticlick
+*
 * Revision 4.6  1998/01/13 20:24:04  lcs
 * Generic c version of the mixer finished.
 *
@@ -93,6 +96,7 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	ULONG	ahib_Input
 	ULONG	ahib_Output
 	Fixed	ahib_MaxCPU
+	ULONG	ahib_AntiClickSamples
 	LABEL	AHIBase_SIZEOF
 
 
@@ -153,6 +157,8 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	STRUCT	ahiac_Timer,Timer_SIZEOF
 	UWORD	ahiac_UsedCPU
 	UWORD	ahiac_Pad
+	APTR	ahiac_AntiClickBuffer
+	ULONG	ahiac_AntiClickSize		* in bytes
 	STRUCT	ahiac_DriverName,41+1		* sizeof("DEVS:ahi/                          .audio")
 	LABEL	AHIPrivAudioCtrl_SIZEOF
 
@@ -194,10 +200,13 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	LONG	cd_TempLastSampleL	;for linear interpolation routines
 	LONG	cd_LastSampleR		;for linear interpolation routines
 	LONG	cd_TempLastSampleR	;for linear interpolation routines
+	LONG	cd_LastScaledSampleL	;for anticlick
+	LONG	cd_LastScaledSampleR	;for anticlick
 
 	APTR	cd_Succ			;For the wet and dry lists
 	UWORD	cd_ChannelNo
 	UWORD	cd_Pad
+	LONG	cd_AntiClickCount
 
 	LABEL	AHIChannelData_SIZEOF
 
