@@ -1,3 +1,7 @@
+2001-04-12  Martin Blom  <martin@blom.org>
+
+	* PAULA: Always use calibration tables for 14-bit output.
+
 2001-03-29  Martin Blom  <martin@blom.org>
 
         * Released ahi.device 5.6.
