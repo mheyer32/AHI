@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.12  1997/02/03 01:40:18  lcs
+* *** empty log message ***
+*
 * Revision 1.11  1997/02/02 18:15:04  lcs
 * Added protection against CPU overload
 *
@@ -776,7 +779,6 @@ SetVol_nodebug
 *       It is safe to call this function from an interrupt.
 *
 *   BUGS
-*       Freq is limited to 1048576 Hz.
 *
 *   SEE ALSO
 *       AHI_SetEffect(),  AHI_SetSound(), AHI_SetVol(), AHI_LoadSound()
