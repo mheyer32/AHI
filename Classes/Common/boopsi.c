@@ -36,19 +36,16 @@ extern void _etext;
 ******************************************************************************/
 
 int
-_start(void)
-{
+_start(void) {
   return -1;
 }
 
 void
-exit(int rc)
-{
+exit(int rc) {
   Req(_AHI_CLASS_NAME " called exit() with return code %ld\n"
        "Can't terminate myself; becomming a zombie", rc);
 
-  while(TRUE)
-  {
+  while(TRUE) {
     Wait(0);
   }
 }
@@ -83,8 +80,7 @@ ALIAS(__DOSBase, DOSBase);
 ** Module resident structure **************************************************
 ******************************************************************************/
 
-static const APTR FuncTable[] =
-{
+static const APTR FuncTable[] = {
 #if defined (__MORPHOS__) || defined (__amithlon__)
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
@@ -98,8 +94,7 @@ static const APTR FuncTable[] =
 };
 
 
-static const APTR InitTable[4] =
-{
+static const APTR InitTable[4] = {
   (APTR) sizeof(struct AHIClassBase),
   (APTR) &FuncTable,
   NULL,
@@ -114,8 +109,7 @@ static const APTR InitTable[4] =
 // This structure must reside in the text segment or the read-only
 // data segment!  "const" makes it happen.
 
-static const struct Resident RomTag =
-{
+static const struct Resident RomTag = {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &_etext,
@@ -146,8 +140,7 @@ static const struct Resident RomTag =
 /* Should be in libamiga, but isn't? */
 
 static ULONG
-gw_HookEntry(void)
-{
+gw_HookEntry(void) {
   struct Hook* h   = (struct Hook*) REG_A0;
   void*        o   = (void*)        REG_A2; 
   void*        msg = (void*)        REG_A1;
@@ -155,8 +148,7 @@ gw_HookEntry(void)
   return (((ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)(h, o, msg));
 }
 
-struct EmulLibEntry _HookEntry =
-{
+struct EmulLibEntry _HookEntry = {
   TRAP_LIB, 0, (void (*)(void)) &gw_HookEntry
 };
 
@@ -171,8 +163,7 @@ __asm(".globl HookEntry;HookEntry=_HookEntry");
 struct ClassLibrary*
 _ClassInit(struct ClassLibrary*  library,
 	    BPTR                  seglist,
-	    struct ExecBase*      sysbase)
-{
+	    struct ExecBase*      sysbase) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) library;
   SysBase = sysbase;
 
@@ -188,31 +179,26 @@ _ClassInit(struct ClassLibrary*  library,
   DOSBase       = (struct DosLibrary*)    OpenLibrary(DOSNAME, 37);
   UtilityBase   = (struct UtilityBase*)   OpenLibrary(UTILITYNAME, 37);
 
-  if (IntuitionBase == NULL)
-  {
+  if (IntuitionBase == NULL) {
     Alert(AN_Unknown|AG_OpenLib|AO_Intuition);
     goto error;
   }
 
-  if (DOSBase == NULL)
-  {
+  if (DOSBase == NULL) {
     Req("Unable to open 'dos.library' version 37.\n");
     goto error;
   }
 
-  if (UtilityBase == NULL)
-  {
+  if (UtilityBase == NULL) {
     Req("Unable to open 'utility.library' version 37.\n");
     goto error;
   }
 
-  if (! AHIClassInit(AHIClassBase))
-  {
+  if (! AHIClassInit(AHIClassBase)) {
     goto error;
   }
 
-  if (AHIClassBase->common.cl.cl_Class == NULL)
-  {
+  if (AHIClassBase->common.cl.cl_Class == NULL) {
     goto error;
   }
 
@@ -235,19 +221,15 @@ error:
 ******************************************************************************/
 
 BPTR
-_ClassExpunge(struct AHIClassBase* AHIClassBase)
-{
+_ClassExpunge(struct AHIClassBase* AHIClassBase) {
   BPTR seglist = 0;
 
-  if (AHIClassBase->common.cl.cl_Lib.lib_OpenCnt == 0)
-  {
-    if (AHIClassBase->common.cl.cl_Class != NULL)
-    {
+  if (AHIClassBase->common.cl.cl_Lib.lib_OpenCnt == 0) {
+    if (AHIClassBase->common.cl.cl_Class != NULL) {
       KPrintF("Freeing class " _AHI_CLASS_NAME "\n");
 
       // FreeClass() will also RemoveClass() us
-      if (! FreeClass(AHIClassBase->common.cl.cl_Class))
-      {
+      if (! FreeClass(AHIClassBase->common.cl.cl_Class)) {
 	Req("Unable to free BOOPSI class.");
 
 	/* What to do?? */
@@ -261,8 +243,7 @@ _ClassExpunge(struct AHIClassBase* AHIClassBase)
     /* Since ClassInit() calls us on failure, we have to check if we're
        really added to the library list before removing us. */
 
-    if (AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Succ != NULL)
-    {
+    if (AHIClassBase->common.cl.cl_Lib.lib_Node.ln_Succ != NULL) {
       Remove((struct Node *) AHIClassBase);
     }
 
@@ -278,8 +259,7 @@ _ClassExpunge(struct AHIClassBase* AHIClassBase)
              (AHIClassBase->common.cl.cl_Lib.lib_NegSize +
 	       AHIClassBase->common.cl.cl_Lib.lib_PosSize));
   }
-  else
-  {
+  else {
     AHIClassBase->common.cl.cl_Lib.lib_Flags |= LIBF_DELEXP;
   }
 
@@ -292,8 +272,7 @@ _ClassExpunge(struct AHIClassBase* AHIClassBase)
 ******************************************************************************/
 
 struct ClassLibrary*
-_ClassOpen(ULONG version, struct AHIClassBase* AHIClassBase)
-{
+_ClassOpen(ULONG version, struct AHIClassBase* AHIClassBase) {
   AHIClassBase->common.cl.cl_Lib.lib_Flags &= ~LIBF_DELEXP;
   AHIClassBase->common.cl.cl_Lib.lib_OpenCnt++;
 
@@ -302,20 +281,17 @@ _ClassOpen(ULONG version, struct AHIClassBase* AHIClassBase)
 
 
 /******************************************************************************
-** Class closing ************************************************************** 
+** Class closing **************************************************************
 ******************************************************************************/
 
 BPTR
-_ClassClose(struct AHIClassBase* AHIClassBase)
-{
+_ClassClose(struct AHIClassBase* AHIClassBase) {
   BPTR seglist = 0;
 
   AHIClassBase->common.cl.cl_Lib.lib_OpenCnt--;
 
-  if (AHIClassBase->common.cl.cl_Lib.lib_OpenCnt == 0)
-  {
-    if (AHIClassBase->common.cl.cl_Lib.lib_Flags & LIBF_DELEXP)
-    {
+  if (AHIClassBase->common.cl.cl_Lib.lib_OpenCnt == 0) {
+    if (AHIClassBase->common.cl.cl_Lib.lib_Flags & LIBF_DELEXP) {
       seglist = _ClassExpunge(AHIClassBase);
     }
   }
@@ -329,8 +305,7 @@ _ClassClose(struct AHIClassBase* AHIClassBase)
 ******************************************************************************/
 
 Class*
-_ObtainEngine(struct AHIClassBase* AHIClassBase)
-{
+_ObtainEngine(struct AHIClassBase* AHIClassBase) {
   return AHIClassBase->common.cl.cl_Class;
 }
 
@@ -340,7 +315,6 @@ _ObtainEngine(struct AHIClassBase* AHIClassBase)
 ******************************************************************************/
 
 ULONG
-_ClassNull(struct AHIClassBase* AHIClassBase)
-{
+_ClassNull(struct AHIClassBase* AHIClassBase) {
   return 0;
 }
