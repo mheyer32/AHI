@@ -3,14 +3,16 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
+# include <exec/interrupts.h>
+# include <hardware/intbits.h>
+
 #if !defined( VERSIONPOWERUP )
 # include <exec/memory.h>
 # include <exec/execbase.h>
-# include <exec/interrupts.h>
-# include <hardware/intbits.h>
 # include <powerup/ppclib/memory.h>
 # include <proto/exec.h>
 # include <proto/utility.h>
+# include <powerup/ppclib/tasks.h>
 # include <powerup/ppclib/interface.h>
 # include <powerup/ppclib/object.h>
 # include <proto/ppc.h> 
@@ -125,18 +127,20 @@ AHI_SampleFrameSize( ULONG sampletype )
 }
 
 static void
-CallSoundHook( volatile struct AHIPrivAudioCtrl *audioctrl )
+CallSoundHook( struct AHIPrivAudioCtrl *audioctrl )
 {
-  audioctrl->ahiac_Com = AHIAC_COM_SOUNDFUNC;
-  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
+  audioctrl->ahiac_PPCCommand = AHIAC_COM_SOUNDFUNC;
+  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
 static void
-CallDebug( volatile struct AHIPrivAudioCtrl *audioctrl, long value )
+CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 {
-  audioctrl->ahiac_ComV = value;
-  audioctrl->ahiac_Com  = AHIAC_COM_DEBUG;
-  while( audioctrl->ahiac_Com != AHIAC_COM_ACK );
+  audioctrl->ahiac_PPCArgument = (void*) value;
+  audioctrl->ahiac_PPCCommand  = AHIAC_COM_DEBUG;
+  *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 }
 
 #else
@@ -151,10 +155,10 @@ CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 
 
 INTERRUPT SAVEDS int
-Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
+Interrupt( struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
 {
 
-  if( audioctrl->ahiac_Com != AHIAC_COM_INIT )
+  if( audioctrl->ahiac_PPCCommand != AHIAC_COM_INIT )
   {
     /* Not for us, continue */
     return 0;
@@ -163,60 +167,59 @@ Interrupt( volatile struct AHIPrivAudioCtrl *audioctrl __asm( "a1" ) )
   {
     BOOL running = TRUE;
 
-    audioctrl->ahiac_Com = AHIAC_COM_ACK;
+//kprintf( "Interrupt\n" );
+    audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
 
     while( running )
     {
-      switch( audioctrl->ahiac_Com )
+      switch( audioctrl->ahiac_PPCCommand )
       {
         case AHIAC_COM_INIT:
         case AHIAC_COM_ACK:
+//kprintf( "AHIAC_COM_INITACK\n" );
           // Keep looping
+          asm( "stop #(1<<13) | (2<<8)" : );
           break;
 
         case AHIAC_COM_SOUNDFUNC:
+//kprintf( "AHIAC_COM_SOUNDFUNC\n" );
           CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                        (struct AHIPrivAudioCtrl*) audioctrl,
-                       (UWORD*) &audioctrl->ahiac_ChannelNo );
-          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+                       (APTR) audioctrl->ahiac_PPCArgument );
+          audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
         case AHIAC_COM_DEBUG:
-          CallDebug( audioctrl, audioctrl->ahiac_ComV );
-          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          CallDebug( audioctrl, (ULONG) audioctrl->ahiac_PPCArgument );
+          audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
 
         case AHIAC_COM_QUIT:
+//kprintf( "AHIAC_COM_QUIT\n" );
           running = FALSE;
-          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
         
         case AHIAC_COM_NONE:
         default:
           // Error
           running  = FALSE;
-          audioctrl->ahiac_Com = AHIAC_COM_ACK;
+          audioctrl->ahiac_PPCCommand = AHIAC_COM_ACK;
           break;
       }
     }
 
+//kprintf( "Exiting\n" );
     /* End chain! */
     return 1;
   }
 };
 
 void ASMCALL
-MixPowerUp ( REG(a0, struct Hook *Hook), 
-             REG(a1, void *dst), 
-             REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
+MixPowerUp( REG(a0, struct Hook *Hook), 
+            REG(a1, void *dst), 
+            REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
 {
-  struct Interrupt  is =
-  {
-    { NULL, NULL, NT_INTERRUPT, 32, (STRPTR) DevName },
-    (APTR) audioctrl,
-    (VOID (*)(void)) Interrupt
-  };
-
   struct ModuleArgs mod =
   {
     IF_CACHEFLUSHNO, 0, 0,
@@ -229,20 +232,28 @@ MixPowerUp ( REG(a0, struct Hook *Hook),
 
   int res;
 
+//kprintf( "MixPowerUp\n" );
+
   // Flush all DYNAMICSAMPLE's 
   // TODO: Only flush if there are DYNAMICSAMPLE's loaded!
 
-  CacheClearU();
+  //CacheClearU();
 
-  // NOTE: Not allowed in interrupts, must move!
+#ifdef USE_PPC_PROCESS
 
-  AddIntServer( INTB_PORTS, &is );
+  audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
+  PPCSignalTask( audioctrl->ahiac_PPCTask, SIGBREAKF_CTRL_D );
+//kprintf( "Signalled\n" );
+  while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
+//kprintf( "Waited\n" );
+#else
 
-  res = PPCRunKernelObject( AHIPPCObject, &mod );
+  res = PPCRunKernelObject( PPCObject, &mod );
+//kprintf( "Ran KernelObject\n" );
 
-  RemIntServer( INTB_PORTS, &is );
+#endif
 
-  // The PPC mixer buffer is not m68k-cachable; just read from it.
+  // The PPC mix buffer is not m68k-cachable; just read from it.
 
   memcpy( dst, audioctrl->ahiac_PPCMixBuffer, audioctrl->ahiac_BuffSizeNow );
 
@@ -272,22 +283,43 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 {
   BOOL rc = FALSE;
 
-  //kprintf("[0;0H[J");
-
   // Allocate and initialize the AHIChannelData structures
-
   // This structure could be accessed from from interrupts!
 
   audioctrl->ahiac_ChannelDatas = AHIAllocVec(
       audioctrl->ac.ahiac_Channels * sizeof(struct AHIChannelData),
       MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
 
+  // Allocate and initialize the AHISoundData structures
+  // This structure could be accessed from from interrupts!
+
+  audioctrl->ahiac_SoundDatas = AHIAllocVec(
+      audioctrl->ac.ahiac_Sounds * sizeof(struct AHISoundData),
+      MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
+
+  // Allocate structures specific to the PPC version
+
+  if( PPCObject != NULL )
+  {
+    audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
+        audioctrl->ac.ahiac_BuffSize,
+        MEMF_PUBLIC | MEMF_NOCACHEM68K );
+//        MEMF_PUBLIC | MEMF_NOCACHEM68K | MEMF_NOCACHEPPC );
+
+    audioctrl->ahiac_PPCMixInterrupt = AllocVec(
+        sizeof( struct Interrupt ),
+        MEMF_PUBLIC | MEMF_CLEAR );
+  }
 
   // Now link the list and fill in the channel number for each structure.
 
-  if(audioctrl->ahiac_ChannelDatas != NULL)
+  if( audioctrl->ahiac_ChannelDatas != NULL &&
+      audioctrl->ahiac_SoundDatas != NULL &&
+      ( PPCObject == NULL || audioctrl->ahiac_PPCMixBuffer != NULL ) &&
+      ( PPCObject == NULL || audioctrl->ahiac_PPCMixInterrupt != NULL ) )
   {
     struct AHIChannelData *cd;
+    struct AHISoundData   *sd;
     int                    i;
 
     cd = audioctrl->ahiac_ChannelDatas;
@@ -311,120 +343,203 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
     // Clear the last link;
     cd->cd_Succ = NULL;
 
-    // Allocate and initialize the AHISoundData structures
 
-    // This structure could be accessed from from interrupts!
+    sd = audioctrl->ahiac_SoundDatas;
 
-    audioctrl->ahiac_SoundDatas = AHIAllocVec(
-        audioctrl->ac.ahiac_Sounds * sizeof(struct AHISoundData),
-        MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K );
-
-
-    if(audioctrl->ahiac_SoundDatas != NULL)
+    for( i = 0; i < audioctrl->ac.ahiac_Sounds; i++)
     {
-      struct AHISoundData *sd;
+      sd->sd_Type = AHIST_NOTYPE;
+    }
 
-      sd = audioctrl->ahiac_SoundDatas;
-
-      for( i = 0; i < audioctrl->ac.ahiac_Sounds; i++)
+    if( PPCObject != NULL )
+    {
+      struct PPCObjectInfo oi =
       {
-        sd->sd_Type = AHIST_NOTYPE;
-      }
+        0,
+        NULL,
+        PPCELFINFOTYPE_SYMBOL,
+        STT_SECTION,
+        STB_GLOBAL,
+        0
+      };
 
-      if( AHIPPCObject != NULL )
+      struct TagItem tag_done =
       {
-        audioctrl->ahiac_PPCMixBuffer = AHIAllocVec(
-          audioctrl->ac.ahiac_BuffSize, MEMF_PUBLIC | MEMF_NOCACHEM68K | MEMF_NOCACHEPPC );
+        TAG_DONE, 0
+      };
 
-        if( audioctrl->ahiac_PPCMixBuffer != NULL )
-        {
-          struct PPCObjectInfo oi =
-          {
-            NULL,
-            NULL,
-            PPCELFINFOTYPE_SYMBOL,
-            STT_SECTION,
-            STB_GLOBAL,
-            0
-          };
+      int r = ~0;
 
-          struct TagItem tag_done =
-          {
-            TAG_DONE, 0
-          };
+      audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Type = NT_INTERRUPT;
+      audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Pri  = 127;
+      audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Name = (STRPTR) DevName;
+      audioctrl->ahiac_PPCMixInterrupt->is_Data         = audioctrl;
+      audioctrl->ahiac_PPCMixInterrupt->is_Code         = (void(*)(void)) Interrupt;
 
-          int r = ~0;
+      AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
 
 #define GetSymbol( name ) \
-          oi.Name = #name; \
-          r &= PPCGetObjectAttrs( AHIPPCObject, &oi, &tag_done ); \
-          name ## Ptr = (ADDFUNC*) oi.Address;
+      oi.Name = #name; \
+      r &= PPCGetObjectAttrs( PPCObject, &oi, &tag_done ); \
+      name ## Ptr = (ADDFUNC*) oi.Address;
 
-          GetSymbol( AddSilence    );
-          GetSymbol( AddSilence    );
-          GetSymbol( AddSilenceB   );
-          GetSymbol( AddByteMVH    );
-          GetSymbol( AddByteSVPH   );
-          GetSymbol( AddBytesMVH   );
-          GetSymbol( AddBytesSVPH  );
-          GetSymbol( AddWordMVH    );
-          GetSymbol( AddWordSVPH   );
-          GetSymbol( AddWordsMVH   );
-          GetSymbol( AddWordsSVPH  );
-          GetSymbol( AddByteMVHB   );
-          GetSymbol( AddByteSVPHB  );
-          GetSymbol( AddBytesMVHB  );
-          GetSymbol( AddBytesSVPHB );
-          GetSymbol( AddWordMVHB   );
-          GetSymbol( AddWordSVPHB  );
-          GetSymbol( AddWordsMVHB  );
-          GetSymbol( AddWordsSVPHB );
+      GetSymbol( AddSilence    );
+      GetSymbol( AddSilence    );
+      GetSymbol( AddSilenceB   );
+      GetSymbol( AddByteMVH    );
+      GetSymbol( AddByteSVPH   );
+      GetSymbol( AddBytesMVH   );
+      GetSymbol( AddBytesSVPH  );
+      GetSymbol( AddWordMVH    );
+      GetSymbol( AddWordSVPH   );
+      GetSymbol( AddWordsMVH   );
+      GetSymbol( AddWordsSVPH  );
+      GetSymbol( AddByteMVHB   );
+      GetSymbol( AddByteSVPHB  );
+      GetSymbol( AddBytesMVHB  );
+      GetSymbol( AddBytesSVPHB );
+      GetSymbol( AddWordMVHB   );
+      GetSymbol( AddWordSVPHB  );
+      GetSymbol( AddWordsMVHB  );
+      GetSymbol( AddWordsSVPHB );
 
 #undef GetSymbol
 
-          // Sucess?
-      
-          rc = ( r != 0 ? TRUE : FALSE );
+      // Sucess?
+    
+      rc = ( r != 0 ? TRUE : FALSE );
+
+#ifdef USE_PPC_PROCESS
+      if( rc )
+      {
+        audioctrl->ahiac_M68KPort = PPCCreatePortTags( TAG_DONE );
+
+        if( audioctrl->ahiac_M68KPort == 0 )
+        {
+          Req( "Unable to create M68k/PPC message port." );
+          rc = FALSE;
+        }
+        else
+        {
+          audioctrl->ahiac_PPCStartupMsg =
+              PPCCreateMessage( audioctrl->ahiac_M68KPort , 0 );
+
+          if( audioctrl->ahiac_PPCStartupMsg == NULL )
+          {
+            Req( "Unable to create PPC startup message." );
+            rc = FALSE;
+          }
+          else
+          {
+
+kprintf( "Starting task\n");
+            audioctrl->ahiac_PPCTask = PPCCreateTaskTags( PPCObject,
+                PPCTASKTAG_STARTUP_MSG, (ULONG) audioctrl->ahiac_PPCStartupMsg,
+                PPCTASKTAG_STARTUP_MSGDATA, (ULONG) audioctrl,
+                TAG_DONE );
+
+            if( audioctrl->ahiac_PPCTask == NULL )
+            {
+              rc = FALSE;
+            }
+kprintf( "Started task: %ld\n", rc);
+
+          }
         }
       }
-      else // AHIPPCObject
-      {
+#endif
+
+    }
+    else // PPCObject
+    {
 
 #define GetSymbol( name ) \
-        name ## Ptr = name;
+    name ## Ptr = name;
 
-        GetSymbol( AddSilence    );
-        GetSymbol( AddSilence    );
-        GetSymbol( AddSilenceB   );
-        GetSymbol( AddByteMVH    );
-        GetSymbol( AddByteSVPH   );
-        GetSymbol( AddBytesMVH   );
-        GetSymbol( AddBytesSVPH  );
-        GetSymbol( AddWordMVH    );
-        GetSymbol( AddWordSVPH   );
-        GetSymbol( AddWordsMVH   );
-        GetSymbol( AddWordsSVPH  );
-        GetSymbol( AddByteMVHB   );
-        GetSymbol( AddByteSVPHB  );
-        GetSymbol( AddBytesMVHB  );
-        GetSymbol( AddBytesSVPHB );
-        GetSymbol( AddWordMVHB   );
-        GetSymbol( AddWordSVPHB  );
-        GetSymbol( AddWordsMVHB  );
-        GetSymbol( AddWordsSVPHB );
+      GetSymbol( AddSilence    );
+      GetSymbol( AddSilence    );
+      GetSymbol( AddSilenceB   );
+      GetSymbol( AddByteMVH    );
+      GetSymbol( AddByteSVPH   );
+      GetSymbol( AddBytesMVH   );
+      GetSymbol( AddBytesSVPH  );
+      GetSymbol( AddWordMVH    );
+      GetSymbol( AddWordSVPH   );
+      GetSymbol( AddWordsMVH   );
+      GetSymbol( AddWordsSVPH  );
+      GetSymbol( AddByteMVHB   );
+      GetSymbol( AddByteSVPHB  );
+      GetSymbol( AddBytesMVHB  );
+      GetSymbol( AddBytesSVPHB );
+      GetSymbol( AddWordMVHB   );
+      GetSymbol( AddWordSVPHB  );
+      GetSymbol( AddWordsMVHB  );
+      GetSymbol( AddWordsSVPHB );
 
 #undef GetSymbol
 
-        // Sucess!
+      // Sucess!
     
-        rc = TRUE;
-      }
+      rc = TRUE;
     }
   }
 
   return rc;
 }
 
+/******************************************************************************
+** CleanUpMixroutine **********************************************************
+******************************************************************************/
+
+// This function is used to clean up after the mixer routine (called from 
+// AHI_FreeAudio()).
+
+void
+CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
+{
+kprintf( "CleanUpMixroutine\n" );
+#ifdef USE_PPC_PROCESS
+  if( audioctrl->ahiac_PPCStartupMsg != NULL )
+  { 
+    if( audioctrl->ahiac_PPCTask != NULL )
+    {
+kprintf( "Breaking\n" );
+      PPCSignalTask( audioctrl->ahiac_PPCTask, SIGBREAKF_CTRL_C );
+
+      while( TRUE )
+      {
+        void* PPCMsg = PPCGetMessage( audioctrl->ahiac_M68KPort );
+
+        if( PPCMsg == audioctrl->ahiac_PPCStartupMsg )
+        {
+kprintf( "Get startupmessage\n" );
+          break;
+        }
+        else
+        {
+kprintf( "Waiting\n" );
+          PPCWaitPort( audioctrl->ahiac_M68KPort );
+        }
+      }
+    }
+
+    PPCDeleteMessage( audioctrl->ahiac_PPCStartupMsg );
+  }
+
+  if( audioctrl->ahiac_M68KPort != NULL )
+  {
+    while( PPCDeletePort( audioctrl->ahiac_M68KPort ) == FALSE);
+  }
+
+kprintf( "ok\n" );
+#endif
+
+  RemIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
+  FreeVec( audioctrl->ahiac_PPCMixInterrupt );
+  AHIFreeVec( audioctrl->ahiac_PPCMixBuffer );
+  AHIFreeVec( audioctrl->ahiac_SoundDatas );
+  AHIFreeVec( audioctrl->ahiac_ChannelDatas );
+}
 
 /******************************************************************************
 ** calcMasterVolumeTable ******************************************************
@@ -713,7 +828,7 @@ MixGeneric ( struct Hook *Hook,
           if(audioctrl->ac.ahiac_SoundFunc != NULL)
           {
 #if defined( VERSIONPOWERUP )
-            audioctrl->ahiac_ChannelNo = cd->cd_ChannelNo;
+            audioctrl->ahiac_PPCArgument = &cd->cd_ChannelNo;
             CallSoundHook( audioctrl );
 #else
             CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
@@ -875,7 +990,7 @@ MixGeneric ( struct Hook *Hook,
 
   /*** AHIET_MASTERVOLUME ***/
 
-//  DoMasterVolume(dst, audioctrl);
+  DoMasterVolume(dst, audioctrl);
 
 #if !defined( VERSIONPOWERUP )
 
@@ -1137,8 +1252,6 @@ AddByteMVH ( ADDARGS )
 
   for(i = Samples; i > 0; i--)
   {
-    // kprintf( "i: %ld  oi: %08lx of: %08lx\n", i, offseti, offsetf );
-
     if( offseti == cd->cd_FirstOffsetI) {
       lastsample = cd->cd_LastSampleL;
     }
@@ -1331,7 +1444,7 @@ AddWordMVH ( ADDARGS )
   *Offset = offset;
 }
 
-
+#if 0
 void
 AddWordSVPH ( ADDARGS )
 {
@@ -1369,7 +1482,55 @@ AddWordSVPH ( ADDARGS )
   *Dst    = dst;
   *Offset = offset;
 }
+#else
+void
+AddWordSVPH ( ADDARGS )
+{
+  WORD    *src    = Src;
+  LONG    *dst    = *Dst;
+  Fixed64  offset = *Offset;
+  int      i;
+  LONG     lastsample, currentsample;
 
+  lastsample = currentsample = cd->cd_TempLastSampleL;
+  
+  i = Samples;
+
+  while( offseti == cd->cd_FirstOffsetI && i > 0 )
+  {
+    lastsample    = cd->cd_LastSampleL;
+    currentsample = src[ offseti ];
+
+    lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
+
+    *dst++ += ScaleLeft * lastsample;
+    *dst++ += ScaleRight * lastsample;
+
+    offset += Add;
+    i--;
+  }
+
+  while( i > 0 )
+  {
+    lastsample    = src[ offseti - 1 ];
+    currentsample = src[ offseti ];
+
+    lastsample += (((currentsample - lastsample) * offsetf ) >> 15);
+
+    *dst++ += ScaleLeft * lastsample;
+    *dst++ += ScaleRight * lastsample;
+
+    offset += Add;
+    i--;
+  }
+
+  cd->cd_TempLastSampleL = currentsample;
+  cd->cd_LastScaledSampleL = ScaleLeft * lastsample;
+
+  *Dst    = dst;
+  *Offset = offset;
+}
+#endif
 
 void
 AddWordsMVH ( ADDARGS )

@@ -3,6 +3,8 @@
 #ifndef _AHI_DEF_H_
 #define _AHI_DEF_H_
 
+#define USE_PPC_PROCESS
+
 /*** Debug stuff ***/
 
 extern void KPrintF(char *fmt,...);
@@ -67,7 +69,7 @@ extern struct LocaleBase	*LocaleBase;
 extern struct Device		*TimerBase;
 extern struct UtilityBase	*UtilityBase;
 extern struct Library           *PPCLibBase;
-extern void                     *AHIPPCObject;
+extern void                     *PPCObject;
 
 
 /*** Definitions ***/
@@ -128,6 +130,7 @@ struct Timer
 	struct EClockVal	 EntryTime;
 	struct EClockVal	 ExitTime;
 };
+
 
 struct AHISoundData
 {
@@ -281,11 +284,13 @@ struct AHIPrivAudioCtrl
 	UWORD			 ahiac_Channels2;	/* Max virtual channels/hw channel */
 	struct Timer		 ahiac_Timer;
 	UWORD			 ahiac_UsedCPU;
-	UWORD			 ahiac_Com;		/* PPC communication variable */
-	UWORD			 ahiac_ChannelNo;	/* PPC communication variable */
-	UWORD			 ahiac_Pad;
-	LONG			 ahiac_ComV;		/* PPC communication variable */
+	volatile UWORD		 ahiac_PPCCommand;
+	volatile void		*ahiac_PPCArgument;
 	APTR			 ahiac_PPCMixBuffer;
+	struct Interrupt	*ahiac_PPCMixInterrupt;
+	APTR			 ahiac_M68KPort;
+	APTR			 ahiac_PPCStartupMsg;
+	APTR			 ahiac_PPCTask;
 	char			 ahiac_DriverName[ 256 ];
 };
 
@@ -295,5 +300,6 @@ struct AHIPrivAudioCtrl
 #define AHIAC_COM_SOUNDFUNC	3
 #define AHIAC_COM_QUIT		4
 #define AHIAC_COM_DEBUG		5
+#define AHIAC_COM_FINISHED	6
 
 #endif /* AHI_DEF_H_ */

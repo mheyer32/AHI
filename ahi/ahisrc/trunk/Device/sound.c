@@ -887,7 +887,7 @@ LoadSound ( REG(d0, UWORD sound),
     case AHIST_SAMPLE:
     {
       struct AHISampleInfo *si = (struct AHISampleInfo *) info;
-      
+
       switch(si->ahisi_Type)
       {
         case AHIST_M8S:

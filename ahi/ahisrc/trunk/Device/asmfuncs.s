@@ -160,10 +160,10 @@ _Mix:
 
 	XREF	_MixGeneric
 	XREF	_MixPowerUp
-	XREF	_AHIPPCObject
+	XREF	_PPCObject
 
 	pushm	d0-d1/a0-a1
-	tst.l	_AHIPPCObject
+	tst.l	_PPCObject
 	bne	.powerup
 	jsr	_MixGeneric
 	popm	d0-d1/a0-a1

@@ -25,70 +25,10 @@ HAVE_CLIPPING	EQU	1
 
 *** Definitions ***
 
- IFD	VERSION68K
-
-	STRUCTURE Fixed64_STRUCT,0
-	LONG	F64_I
-	ULONG	F64_F
-	LABEL	F64_SIZEOF
-
-Fixed64     MACRO
-\1          EQU     SOFFSET
-SOFFSET     SET     SOFFSET+F64_SIZEOF
-            ENDM
- ENDC
-
-
-AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
-
-	BITDEF	AHIB,NOSURROUND,0
-	BITDEF	AHIB,NOECHO,1
-	BITDEF	AHIB,FASTECHO,2
-	BITDEF	AHIB,CLIPPING,3
-
-* AHIBase
-	STRUCTURE AHIBase,LIB_SIZE
-	UBYTE	ahib_Flags
-	UBYTE	ahib_DebugLevel
-	APTR	ahib_SysLib
-	ULONG	ahib_SegList
-	APTR	ahib_AudioCtrl
-	STRUCT	ahib_DevUnits,AHI_UNITS*4
-	STRUCT  ahib_Lock,SS_SIZE
-	ULONG	ahib_AudioMode
-	ULONG	ahib_Frequency
-	Fixed	ahib_MonitorVolume
-	Fixed	ahib_InputGain
-	Fixed	ahib_OutputVolume
-	ULONG	ahib_Input
-	ULONG	ahib_Output
-	Fixed	ahib_MaxCPU
-	ULONG	ahib_AntiClickSamples
-	LABEL	AHIBase_SIZEOF
-
-
 	STRUCTURE Timer,0
 	STRUCT	EntryTime,EV_SIZE
 	STRUCT	ExitTime,EV_SIZE
 	LABEL	Timer_SIZEOF
-
- IFD	VERSION68K
-
-	STRUCTURE AHISoundData,0
-	ULONG	sd_Type
-	APTR	sd_Addr
-	ULONG	sd_Length
-	APTR	sd_InputBuffer0
-	APTR	sd_InputBuffer1
-	APTR	sd_InputBuffer2
-	LABEL	AHISoundData_SIZEOF
-
- ENDC
-
-	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
-	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
-	BITDEF	AHIAC,POSTPROC,29		;private ahiac_Flags flag
-	BITDEF	AHIAC,CLIPPING,28		;private ahiac_Flags flag
 
 * Private AudioCtrl structure
 	STRUCTURE AHIPrivAudioCtrl,AHIAudioCtrlDrv_SIZEOF
@@ -126,15 +66,42 @@ AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 	UWORD	ahiac_Channels2
 	STRUCT	ahiac_Timer,Timer_SIZEOF
 	UWORD	ahiac_UsedCPU
-	UWORD	ahiac_Com			* PPC communication variable
-	UWORD	ahiac_ChannelNo			* PPC communication variable
-	UWORD	ahiac_Pad
-	LONG	ahiac_ComV;			* PPC communication variable
+	UWORD	ahiac_PPCCommand;
+	LONG	ahiac_PPCArgument;
 	APTR	ahiac_PPCMixBuffer;
+	APTR	ahiac_PPCMixInterrupt;
+	APTR	ahiac_M68KPort;
+	APTR	ahiac_PPCStartupMsg;
+	APTR	ahiac_PPCTask;
 	STRUCT	ahiac_DriverName,256
 	LABEL	AHIPrivAudioCtrl_SIZEOF
 
  IFD	VERSION68K
+
+	STRUCTURE Fixed64_STRUCT,0
+	LONG	F64_I
+	ULONG	F64_F
+	LABEL	F64_SIZEOF
+
+Fixed64     MACRO
+\1          EQU     SOFFSET
+SOFFSET     SET     SOFFSET+F64_SIZEOF
+            ENDM
+
+	STRUCTURE AHISoundData,0
+	ULONG	sd_Type
+	APTR	sd_Addr
+	ULONG	sd_Length
+	APTR	sd_InputBuffer0
+	APTR	sd_InputBuffer1
+	APTR	sd_InputBuffer2
+	LABEL	AHISoundData_SIZEOF
+
+
+	BITDEF	AHIAC,NOMIXING,31		;private ahiac_Flags flag
+	BITDEF	AHIAC,NOTIMING,30		;private ahiac_Flags flag
+	BITDEF	AHIAC,POSTPROC,29		;private ahiac_Flags flag
+	BITDEF	AHIAC,CLIPPING,28		;private ahiac_Flags flag
 
 * AHIChannelData (private)
 	STRUCTURE AHIChannelData,0
