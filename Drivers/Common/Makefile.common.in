@@ -128,7 +128,7 @@ gatestubs1.h:	$(top_srcdir)/Include/FD/ahi_sub_lib.fd \
 	             $^ -o $@
 
 gatestubs1.o:	gatestubs1.c
-	$(CC) $(CPPFLAGS) $(CFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)
+	$(CC) $(CFLAGS) $(CPPFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)
 
 gatestubs2.c:	lib.fd lib_protos.h
 	$(FD2INLINE) --mode=gatestubs --gateprefix=gw --libprefix=_ \
