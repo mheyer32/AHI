@@ -60,7 +60,7 @@ bindist:	$(TARGETS)
 	cd $(srcdir) && for dir in `find Asm C FD -type d -not -name CVS`; do \
 	 $(INSTALL) --directory $(DEVINCDIR)/$$dir; \
 	done
-	cd $(srcdir) && for file in `find Asm C FD -type f`; do \
+	cd $(srcdir) && for file in `find Asm C FD -type f -not -path "*CVS/*"`; do \
 	 $(INSTALL_DATA) $$file $(DEVINCDIR)/$$file; \
 	done
 
