@@ -140,6 +140,23 @@ gatestubs2.h:	lib.fd lib_protos.h
 	             $(FD2INLINE_TARGET) \
 	             $^ -o $@
 
+#camdinline.h:	camd_drv.fd camd_drv_protos.h
+#	$(FD2INLINE) --mode=new $(FD2INLINE_TARGET) \
+#			$^ -o $@
+
+camdstubs.c:	camd_drv.fd camd_drv_protos.h
+	$(FD2INLINE) --mode=gatestubs --gateprefix=gw --libprefix=_ \
+	             $(FD2INLINE_TARGET) \
+	             $^ -o $@
+
+camdstubs.h:	camd_drv.fd camd_drv_protos.h
+	$(FD2INLINE) --mode=gateproto --gateprefix=gw --libprefix=_ \
+	             $(FD2INLINE_TARGET) \
+	             $^ -o $@
+
+camdstubs.o:	camdstubs.c
+	$(CC) $(CFLAGS) $(CPPFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)
+
 version.h:	version.rev version.date
 	@echo Creating $@
 	@ver=`cat $(srcdir)/version.ver` \
