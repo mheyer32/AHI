@@ -16,6 +16,8 @@ prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 bindir		= @bindir@
 
+build_os	= @build_os@
+
 CC		= @CC@
 INSTALL		= @INSTALL@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
@@ -23,7 +25,6 @@ INSTALL_PROGRAM	= @INSTALL_PROGRAM@
 CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
 CFLAGS		= @CFLAGS@
 LDFLAGS		= @LDFLAGS@
-
 
 VPATH		= @srcdir@
 
@@ -75,8 +76,12 @@ Makefile: Makefile.in ../config.status
 ########################################
 
 Makefile.dep:	$(SOURCES) version.h
-#	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
-	touch $@
-	makedepend -f $@ $(SOURCES)
+ifneq ($(build_os),"amigaos")
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+else
+	# This is much faster...
+	-@touch $@
+	-@makedepend -f $@ $(SOURCES)
+endif
 
 include Makefile.dep

@@ -18,10 +18,12 @@ prefix		= @prefix@
 exec_prefix	= @exec_prefix@
 bindir		= @bindir@
 
+build_os	= @build_os@
+
 CC		= @CC@
 INSTALL		= @INSTALL@
-INSTALL_DATA	= @INSTALL_DATA@
 INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
 
 CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir}
 CFLAGS		= @CFLAGS@
@@ -92,14 +94,14 @@ Makefile: Makefile.in ../config.status
 # Rules
 ########################################
 
-AHI_BGUI:	$(OBJECTS) $(OBJECTS_BGUI) $(LIBS)
-	$(CC) $(LDFLAGS) $^ -o $@
+AHI_BGUI:	$(OBJECTS) $(OBJECTS_BGUI)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
-AHI_CA:		$(OBJECTS) $(OBJECTS_CA) $(LIBS)
-	$(CC) $(LDFLAGS) $^ -o $@
+AHI_CA:		$(OBJECTS) $(OBJECTS_CA)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
-AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI) $(LIBS)
-	$(CC) $(LDFLAGS) $^ -o $@
+AHI_MUI:	$(OBJECTS) $(OBJECTS_MUI)
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 ahiprefs_Cat.c:	ahiprefs.cd
 	$(FLEXCAT) ahiprefs.cd ahiprefs_Cat.c=C_c_noauto.sd
@@ -138,8 +140,12 @@ catalogs:
 ########################################
 
 Makefile.dep:	$(SOURCES) ahiprefs_Cat.h version.h
-#	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
-	touch $@
-	makedepend -f $@ $(SOURCES)
+ifneq ($(build_os),"amigaos")
+	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
+else
+	# This is much faster...
+	-@touch $@
+	-@makedepend -f $@ $(SOURCES)
+endif
 
 include Makefile.dep
