@@ -1,5 +1,7 @@
 2003-04-29  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.37.
+
 	* The non-hifi audio modes are now assembler optimized in the m68k
 	version.
 
