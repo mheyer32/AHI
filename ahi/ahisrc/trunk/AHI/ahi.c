@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 5.1  2002/02/24 15:40:36  martin
+ * Increased driver info buffers from 32 to 64 characters.
+ *
  * Revision 5.0  2000/11/28 00:13:23  lcs
  * Bumped CVS revision to 5.0.
  *
@@ -108,10 +111,10 @@ static char outvolBuffer[16];
 static char monvolBuffer[16];
 static char gainBuffer[16];
 
-static char authorBuffer[32];
-static char copyrightBuffer[32];
-static char driverBuffer[32];
-static char versionBuffer[32];
+static char authorBuffer[64];
+static char copyrightBuffer[64];
+static char driverBuffer[64];
+static char versionBuffer[64];
 
 
 /******************************************************************************
@@ -331,7 +334,7 @@ void NewMode(int selectedmode) {
       AHIDB_MinInputGain,     (ULONG) &MinGain,
       AHIDB_MaxInputGain,     (ULONG) &MaxGain,
 
-      AHIDB_BufferLen,        32,
+      AHIDB_BufferLen,        64,
       AHIDB_Author,           (ULONG) authorBuffer,
       AHIDB_Copyright,        (ULONG) copyrightBuffer,
       AHIDB_Driver,           (ULONG) driverBuffer,
