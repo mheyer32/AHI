@@ -134,8 +134,9 @@ static void RecSlave( struct ExecBase* SysBase )
           for(i = RECBUFFERSIZE-offs;i>0;i--)
           {
             dd->fs_RecBuffer[(offs)<<1] = 
-            dd->fs_RecBuffer[((offs++)<<1)+1] = 
+            dd->fs_RecBuffer[((offs)<<1)+1] = 
             samples[count++]<<8;
+	    offs++;
           }
           offs = 0;
           break;
@@ -146,8 +147,9 @@ static void RecSlave( struct ExecBase* SysBase )
           for(i = length-count;i>0;i--)
           {
             dd->fs_RecBuffer[(offs)<<1] = 
-            dd->fs_RecBuffer[((offs++)<<1)+1] = 
+            dd->fs_RecBuffer[((offs)<<1)+1] = 
             samples[count++]<<8;
+	    offs++;
           }
           count = 0;
         }
