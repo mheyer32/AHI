@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.9  1997/10/14 17:58:53  lcs
+* Fixed some mistakes in the overview autodoc section
+*
 * Revision 4.8  1997/10/11 15:58:13  lcs
 * Added the ahiac_UsedCPU field to the AHIAudioCtrl structure.
 *
@@ -209,7 +212,7 @@ stuffChar:
 *       * Driver based
 *
 *       Each supported sound card is controlled by a library-based audio
-*       driver. For a 'dumb' sound card, a new driver should be written in
+*       driver. For a 'dumb' sound card, a new driver could be written in
 *       a few hours. For a 'smart' sound card, it is possible to utilize an
 *       on-board DSP, for example, to maximize performance and sound quality.
 *       For sound cards with own DSP but little or no memory, it is possible
@@ -223,7 +226,7 @@ stuffChar:
 *       The device's mixing routines mix 8- or 16-bit signed samples, both
 *       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
 *       (with stereo panning if desired) data, using any number of channels
-*       (as long as 'any' means less than 128...).  Tables can be used speed
+*       (as long as 'any' means less than 128).  Tables can be used speed
 *       the mixing up (especially when using 8-bit samples).  The samples can
 *       have any length (including odd) and can have any number of loops.
 *       There are also so-called HiFi mixing routines that can be used, that
