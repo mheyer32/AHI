@@ -1,5 +1,9 @@
 2001-12-21  Martin Blom  <martin@blom.org>
 
+	* Release AHI preferences 5.3.
+
+	* Released ahi.device 5.20.
+
 	* Added alpha support for Amithlon/native x86. Go ahead, try it,
 	but do save your work first ... Then enjoy the fireworks!
 
