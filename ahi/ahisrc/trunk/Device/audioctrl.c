@@ -606,6 +606,20 @@ AllocAudioA( struct TagItem* tags,
     audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) PreTimerPreserveAllRegs;
     audioctrl->ac.ahiac_PostTimer = (void (*)(void)) PostTimerPreserveAllRegs;
 
+    audioctrl->ac.ahiac_PreTimerFunc=AllocVec(sizeof(struct Hook),MEMF_PUBLIC|MEMF_CLEAR);
+    if(!audioctrl->ac.ahiac_PreTimerFunc)
+      goto error;
+
+    audioctrl->ac.ahiac_PostTimerFunc=AllocVec(sizeof(struct Hook),MEMF_PUBLIC|MEMF_CLEAR);
+    if(!audioctrl->ac.ahiac_PostTimerFunc)
+      goto error;
+
+    audioctrl->ac.ahiac_PreTimerFunc->h_Entry    = (HOOKFUNC) HookEntry;
+    audioctrl->ac.ahiac_PreTimerFunc->h_SubEntry = (HOOKFUNC) PreTimerFunc;
+    
+    audioctrl->ac.ahiac_PostTimerFunc->h_Entry    = (HOOKFUNC) HookEntry;
+    audioctrl->ac.ahiac_PostTimerFunc->h_SubEntry = (HOOKFUNC) PostTimerFunc;
+    
     if( !InitMixroutine( audioctrl ) ) goto error;
   }
 
@@ -721,6 +735,8 @@ FreeAudio( struct AHIPrivAudioCtrl* audioctrl,
 
     FreeVec( audioctrl->ac.ahiac_SamplerFunc );
     FreeVec( audioctrl->ac.ahiac_MixerFunc );
+    FreeVec( audioctrl->ac.ahiac_PreTimerFunc );
+    FreeVec( audioctrl->ac.ahiac_PostTimerFunc );
 
     AHIFreeVec( audioctrl );
   }

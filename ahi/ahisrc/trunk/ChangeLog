@@ -1,5 +1,12 @@
 2003-04-29  Martin Blom  <martin@blom.org>
 
+	* Updated autodocs to say that V6 drivers do not need to preserve
+	all registers in AHIsub_Disable()/AHIsub_Enable().
+
+	* Added ahiac_PreTimerFunc and ahiac_PostTimerFunc to
+	AHIAudioCtrlDrv structure (available to V6 drivers only, of
+	course).
+
 	* When building the developer's archives, only relevant header
 	files are included now. For example, only the m68k archive
 	contains header files for SAS/C, Storm and assemblers.

@@ -94,6 +94,16 @@ void EndianSwap( size_t size, void* data );
 #endif
 
 BOOL
+PreTimerFunc( struct Hook*             hook,
+	      struct AHIPrivAudioCtrl* audioctrl,
+	      void*                    null );
+
+void
+PostTimerFunc( struct Hook*             hook,
+	       struct AHIPrivAudioCtrl* audioctrl,
+	       void*                    null );
+
+BOOL
 PreTimer( struct AHIPrivAudioCtrl* audioctrl );
 
 void

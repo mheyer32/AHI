@@ -2,6 +2,13 @@
 
 * $Id$
 * $Log$
+* Revision 4.30  2003/04/29 09:40:50  martin
+* Updated autodocs to say that V6 drivers do not need to preserve all
+* registers in AHIsub_Disable()/AHIsub_Enable().
+*
+* Added ahiac_PreTimerFunc and ahiac_PostTimerFunc to AHIAudioCtrlDrv
+* structure (available to V6 drivers only, of course).
+*
 * Revision 4.29  2003/03/30 05:38:08  piru
 * DMA playback did CloseDevice with a0 = p_TimerReq. Fixed.
 * Library cleanup didn't free resources at failure. Fixed.
@@ -756,6 +763,9 @@ GetVarInt:
 *       Example: You use PreTimer() and PostTimer(), and since these
 *       calls were added in V4 of ahi.device, your driver's version should
 *       be 4, too.
+*
+*       Note that AHI version 4 will not open V6 drivers, for obvious
+*       reasons.
 *
 *       AUDIO ID NUMBERS
 *
@@ -1784,6 +1794,7 @@ AHIsub_FreeAudio:
 *
 *   NOTES
 *       This call should be guaranteed to preserve all registers.
+*       V6 drivers do NOT have to preserve all registers.
 *       This call nests.
 *
 *   SEE ALSO
@@ -1830,6 +1841,7 @@ AHIsub_Disable:
 *
 *   NOTES
 *       This call should be guaranteed to preserve all registers.
+*       V6 drivers do NOT have to preserve all registers.
 *       This call nests.
 *
 *   SEE ALSO
@@ -1894,7 +1906,17 @@ AHIsub_Enable:
 *          cleared so you don't have to test d0), skip step 3 and 4. This
 *          is used to avoid overloading the CPU. This step is optional.
 *          A2 is assumed to point to struct AHIAudioCtrlDrv. All registers
-*          except d0 are preserved.  (V4)]
+*          except d0 are preserved. (V4)
+*
+*          Starting with V6, you can also call the pre-timer Hook
+*          (ahiac_PreTimerFunc) with the following parameters:
+*                  A0 - (struct Hook *)           - The Hook itself
+*                  A2 - (struct AHIAudioCtrlDrv *)
+*                  A1 - Set to NULL.
+*          The Hook is not guaranteed to preserve all registers and
+*          you must check the return value and not rely on the Z flag. (V6)
+*
+*          This step, 2, is optional.]
 *
 *       3) Call the mixing Hook (ahiac_MixerFunc) with the following
 *          parameters:
@@ -1936,7 +1958,16 @@ AHIsub_Enable:
 *          reasons).
 *
 *       5) [Call the ahiac_PostTimer function. A2 is assumed to point to
-*          struct AHIAudioCtrlDrv. All registers are preserved.  (V4)]
+*          struct AHIAudioCtrlDrv. All registers are preserved. (V4)
+*
+*          Starting with V6, you can also call the post-timer Hook
+*          (ahiac_PostTimerFunc) with the following parameters:
+*                  A0 - (struct Hook *)           - The Hook itself
+*                  A2 - (struct AHIAudioCtrlDrv *)
+*                  A1 - Set to NULL.
+*          The Hook is not guaranteed to preserve all registers. (V6)
+*
+*          This step, 5, is optional.]
 *
 *       6) Wait until the whole buffer has been played, then repeat.
 *

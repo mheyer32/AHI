@@ -467,6 +467,14 @@ EndianSwap( size_t size, void* data) {
 ******************************************************************************/
 
 BOOL
+PreTimerFunc( struct Hook*             hook,
+	      struct AHIPrivAudioCtrl* audioctrl,
+	      void*                    null )
+{
+  return PreTimer( audioctrl );
+}
+
+BOOL
 PreTimer( struct AHIPrivAudioCtrl* audioctrl )
 {
   ULONG pretimer_period;  // Clocks between PreTimer calls
@@ -501,6 +509,14 @@ PreTimer( struct AHIPrivAudioCtrl* audioctrl )
 /******************************************************************************
 ** PostTimer  *****************************************************************
 ******************************************************************************/
+
+void
+PostTimerFunc( struct Hook*             hook,
+	       struct AHIPrivAudioCtrl* audioctrl,
+	       void*                    null )
+{
+  PostTimer( audioctrl );
+}
 
 void
 PostTimer( struct AHIPrivAudioCtrl* audioctrl )
