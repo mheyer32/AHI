@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.10  1997/02/20 10:26:13  lcs
+* *** empty log message ***
+*
 * Revision 1.9  1997/02/18 22:26:49  lcs
 * Faster mixing routines for 16 bit samples when using tables.
 *
@@ -1649,9 +1652,9 @@ OffsWordsSVTrB:	dc.w	AddWordsSVTrB-*
 OffsWordsSVPTB:	dc.w	AddWordsSVPTB-*
 OffsWordsMVHB:	dc.w	AddWordsMVHB-*
 OffsWordsSVPHB:	dc.w	AddWordsSVPHB-*
-
-
 		dc.w	-1
+
+
 
 	cnop	0,16
 	ds.b	16
