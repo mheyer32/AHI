@@ -1,5 +1,9 @@
 2005-01-12  Martin Blom  <martin@blom.org>
 
+	* Released AHI preferences 5.15.
+
+	* Released ahi.device 5.56.
+
 	* Added 'FILL' switch to FlexCat when generating the catalogs in
 	order to make missing strings use the built-in English defaults
 	instead of nothing. [Pierre Giroux]
