@@ -104,6 +104,7 @@ Record in full duplex
 ;
 msgReqInfoMultiChannel (//)
 7.1 multichannel
+;
 msgFreqFmt (//)
 %lu Hz
 ;
