@@ -41,12 +41,14 @@ case $host in
   linkerflags="-noixemul -r"
   optflags="-mcpu=${CPU} -O2"
   asflags="-m${CPU} --defsym CPU=${CPU}"
+  resident=""   dnl *** Not supported (yet?)
  ;;
  m68k-unknown-amigaos)
   : ${CPU="68020"}
   linkerflags="-noixemul"
   optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math"
   asflags="-m${CPU} --register-prefix-optional --bitwise-or --defsym CPU=${CPU}"
+  resident="-resident"
  ;;
  powerpc-unknown-morphos)
   : ${CPU="603"}
@@ -54,6 +56,7 @@ case $host in
   linkerflags="-noixemul"
   optflags="-mcpu=${CPU} -O2"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
+  resident="-mresident32"
  ;;
  *)
   AC_MSG_WARN(Unknown architecture!)
@@ -68,12 +71,17 @@ top_builddir=$(pwd)
 : ${ASFLAGS="${asflags}"}
 : ${ARFLAGS="-ru"}
 
+: ${CFLAG_RESIDENT="${resident}"}
+: ${LDFLAG_RESIDENT="${resident}"}
+
 : ${DISTDIR="/tmp/${host_alias}-ahi"}
 
 AC_PREFIX_DEFAULT( / )
 
 AC_SUBST(ASFLAGS)
 AC_SUBST(ARFLAGS)
+AC_SUBST(CFLAG_RESIDENT)
+AC_SUBST(LDFLAG_RESIDENT)
 AC_SUBST(DISTDIR)
 
 dnl Checks for programs.

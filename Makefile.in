@@ -45,7 +45,7 @@ DEVREADME	= $(host_alias)-ahidev-$(VERSION).$(REVISION).readme
 
 SUBDIRS		= AHI AddAudioModes Device Docs Drivers Examples Include
 
-ifeq ($(host_cpu),m68k)
+ifneq (@CFLAG_RESIDENT@,)
 SUBDIRS 	+= AHI-Handler
 endif
 
