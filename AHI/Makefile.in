@@ -87,6 +87,8 @@ bindist:	all
 	for i in $(LANGUAGES); do \
 	  $(INSTALL) -d $(CATDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
+	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahiprefs.catalog; \
+	  $(INSTALL_DATA) ${srcdir}/translations/$$i.ct $(CATDIR)/$$i/ahiprefs.ct; \
 	done
 	$(INSTALL_DATA) ${srcdir}/ahiprefs.cd $(CATDIR)
 	$(INSTALL_DATA) ${srcdir}/ahiprefs.ct $(CATDIR)

@@ -1,5 +1,8 @@
 2005-01-12  Martin Blom  <martin@blom.org>
 
+	* The binary user archive now includes the .ct files for easy
+	translation updates.
+
 	* Updated to FlexCat 2.6.6-cvs-2005-01-12 and regenerated language
 	files.
 
