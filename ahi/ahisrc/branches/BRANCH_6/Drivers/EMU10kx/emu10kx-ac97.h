@@ -22,6 +22,7 @@
 
 #include <config.h>
 #include <exec/semaphores.h>
+#include <utility/hooks.h>
 
 #define EMU10KX_AC97_SEMAPHORE "emu10kx.ac97"
 

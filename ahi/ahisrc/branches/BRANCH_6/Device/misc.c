@@ -128,16 +128,15 @@ ReqA( const char* text, APTR args )
 ** SprintfA *******************************************************************
 ******************************************************************************/
 
-static UWORD struffChar[] =
-{
-  0x16c0,     // moveb %d0,%a3@+
-  0x4e75      // rts
-};
-
 char*
 SprintfA( char *dst, const char *fmt, ULONG* args )
 {
 #ifndef __AMIGAOS4__
+  static const UWORD struffChar[] =
+  {
+    0x16c0,     // moveb %d0,%a3@+
+    0x4e75      // rts
+  };
   return RawDoFmt( (UBYTE*) fmt,
                    args, 
                    (void(*)(void)) &struffChar,
