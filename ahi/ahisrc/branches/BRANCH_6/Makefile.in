@@ -12,6 +12,7 @@ top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 DISTDIR		= @DISTDIR@
 CATDIR		= ${DISTDIR}/User/Catalogs
+CATSRCDIR	= ${DISTDIR}/Developer/Translations
 
 host_cpu	= @host_cpu@
 host_alias	= @host_alias@
@@ -80,9 +81,11 @@ bindist:
 	$(INSTALL_DATA) ${srcdir}/COPYING.DRIVERS $(DISTDIR)
 	$(INSTALL_DATA) ${srcdir}/ChangeLog $(DISTDIR)
 
-	$(INSTALL) -d $(CATDIR)
+	$(INSTALL) -d $(CATDIR) $(CATSRCDIR)
 	$(INSTALL_DATA) ${srcdir}/README.ATO $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/README.ATO $(CATSRCDIR)
 	$(INSTALL_DATA) ${srcdir}/README.TRANSLATIONS $(CATDIR)
+	$(INSTALL_DATA) ${srcdir}/README.TRANSLATIONS $(CATSRCDIR)
 
 	cd Include && $(MAKE) gcc-include
 	for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
