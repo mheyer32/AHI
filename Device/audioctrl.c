@@ -66,7 +66,7 @@ RecalcBuff ( Fixed freq, struct AHIPrivAudioCtrl *audioctrl )
   int length;
 
   // If ULONG, convert to Fixed
-  if(freq < 65536) freq <<= 16;
+//  if(freq < 65536) freq <<= 16;
 
   // Sanity check
   if(freq == 0) return 0;

@@ -88,6 +88,12 @@ static const char VersTag[] =
  "$VER: ahi.elf " VERS " ©1994-1999 Martin Blom. " CPU " version.\r\n";
 
 
+// Make sure all add-routines are fetched.
+
+static void* a1 = AddByteMono;
+static void* a2 = AddLofiByteMono;
+
+
 // Function used to call the actual mixing routine.
 
 int
