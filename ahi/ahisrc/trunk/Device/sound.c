@@ -14,7 +14,6 @@
 #include "effectinit.h"
 #include "mixer.h"
 
-
 /******************************************************************************
 ** AHI_SetVol *****************************************************************
 ******************************************************************************/
@@ -640,7 +639,7 @@ SetEffect ( REG(a0, ULONG *effect),
       if(audioctrl->ahiac_SetMasterVolume != emv->ahiemv_Volume)
       {
         audioctrl->ahiac_SetMasterVolume = emv->ahiemv_Volume;
-        rc = update_MasterVolume(audioctrl, AHIBase);
+        rc = update_MasterVolume( audioctrl );
       }
       break;
     }
@@ -650,7 +649,7 @@ SetEffect ( REG(a0, ULONG *effect),
       if(audioctrl->ahiac_SetMasterVolume != 0x10000)
       {
         audioctrl->ahiac_SetMasterVolume = 0x10000;
-        rc = update_MasterVolume(audioctrl, AHIBase);
+        rc = update_MasterVolume( audioctrl );
       }
       break;    
 
@@ -674,11 +673,11 @@ SetEffect ( REG(a0, ULONG *effect),
    */
 
     case AHIET_DSPMASK:
-      rc = update_DSPMask((struct AHIEffDSPMask *) effect, audioctrl, AHIBase);
+      rc = update_DSPMask( (struct AHIEffDSPMask *) effect, audioctrl );
       break;
       
     case AHIET_DSPMASK|AHIET_CANCEL:
-      clear_DSPMask(audioctrl, AHIBase);
+      clear_DSPMask( audioctrl );
       rc = AHIE_OK;
       break;
 
@@ -688,11 +687,11 @@ SetEffect ( REG(a0, ULONG *effect),
    */
 
     case AHIET_DSPECHO:
-      rc = update_DSPEcho((struct AHIEffDSPEcho *) effect, audioctrl, AHIBase);
+      rc = update_DSPEcho( (struct AHIEffDSPEcho *) effect, audioctrl );
       break;
       
     case AHIET_DSPECHO|AHIET_CANCEL:
-      free_DSPEcho(audioctrl, AHIBase);
+      free_DSPEcho( audioctrl );
       rc = AHIE_OK;
       break;
 
@@ -841,13 +840,13 @@ LoadSound ( REG(d0, UWORD sound),
       {
         case AHIST_M8S:
         case AHIST_M16S:
-#ifdef _M68020
+#ifdef HAVE_HIFI
         case AHIST_S8S:
         case AHIST_S16S:
 #endif
           /* AHI_FreeAudio() will deallocate...  */
 
-          if(initSignedTable(audioctrl, AHIBase))
+          if( initSignedTable( audioctrl ) )
           {
             audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
             audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;
@@ -864,7 +863,7 @@ LoadSound ( REG(d0, UWORD sound),
           /* AHI_FreeAudio() will deallocate...  */
 
           if( ((audioctrl->ac.ahiac_Flags & AHIACF_HIFI) == 0) && 
-              initUnsignedTable(audioctrl, AHIBase))
+              initUnsignedTable( audioctrl ) )
           {
             audioctrl->ahiac_SoundDatas[sound].sd_Type   = si->ahisi_Type;
             audioctrl->ahiac_SoundDatas[sound].sd_Addr   = si->ahisi_Address;

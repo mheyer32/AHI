@@ -13,14 +13,16 @@ dnl General
 AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
-: ${CFLAGS='-g -O2 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
+
+: ${CFLAGS='-g -O0 -fomit-frame-pointer -ffast-math -W -Wall -Wstrict-prototypes -Wno-unused '}
 : ${ASFLAGS='--register-prefix-optional'}
 : ${LDFLAGS='-noixemul'}
 
 : ${DISTDIR='/tmp/ahi'}
-AC_SUBST(DISTDIR)
+AC_PREFIX_DEFAULT( / )
 
 AC_SUBST(ASFLAGS)
+AC_SUBST(DISTDIR)
 
 dnl Checks for programs.
 

@@ -119,7 +119,7 @@ initRoutine( REG( d0, struct AHIBase* device ),
   AHIBase->ahib_SysLib  = sysbase;
   AHIBase->ahib_SegList = (ULONG) seglist;
 
-#if defined( mc68020 ) || defined( mc68030 ) || defined( mc68040 ) || defined( mc68060 )
+#ifdef MC68020_PLUS
   if( ( SysBase->AttnFlags & AFF_68020 ) == 0 )
   {
     Alert( ( AN_Unknown | ACPU_InstErr ) & (~AT_DeadEnd) );

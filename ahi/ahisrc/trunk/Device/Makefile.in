@@ -9,7 +9,7 @@ CPU	= 68060
 
 #Can be VERSION68K, VERSIONGEN, VERSIONPOWERUP or VERSIONWARPUP:
 
-VER	= VERSIONGEN
+VER	= VERSION68K
 
 
 #
@@ -20,6 +20,7 @@ VER	= VERSIONGEN
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
+prefix		= @prefix@
 DISTDIR		= @DISTDIR@
 DEVSDIR		= ${DISTDIR}/User/Devs
 CATDIR		= ${DISTDIR}/User/Catalogs
@@ -95,6 +96,9 @@ maintainer-clean: distclean
 
 device:		$(TARGET)
 
+install:	$(TARGET)
+	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
+
 bindist:
 	$(INSTALL) --directory $(DEVSDIR)
 
@@ -142,7 +146,7 @@ Makefile: Makefile.in ../config.status
 
 asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
 	$(ASM) $(ASMFLAGS) $<
-	objcopy $@ --output-target=a.out-amiga
+#	objcopy $@ --output-target=a.out-amiga
 
 
 $(TARGET):	$(OBJECTS)

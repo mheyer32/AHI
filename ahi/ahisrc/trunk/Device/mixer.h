@@ -25,24 +25,19 @@ BOOL
 InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl );
 
 void
-calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl,
-                        struct AHIBase *AHIBase );
+calcMasterVolumeTable ( struct AHIPrivAudioCtrl *audioctrl );
 
 BOOL
-initSignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                  struct AHIBase *AHIBase );
+initSignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 
 void
-calcSignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                  struct AHIBase *AHIBase );
+calcSignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 
 BOOL
-initUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                    struct AHIBase *AHIBase );
+initUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 
 void
-calcUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl,
-                    struct AHIBase *AHIBase );
+calcUnsignedTable ( struct AHIPrivAudioCtrl *audioctrl );
 
 void
 SelectAddRoutine ( Fixed     VolumeLeft,
@@ -77,24 +72,19 @@ BOOL ASMCALL
 InitMixroutine ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 void ASMCALL
-calcMasterVolumeTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), 
-                        REG(a5, struct AHIBase *AHIBase) );
+calcMasterVolumeTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 BOOL ASMCALL
-initSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                  REG(a5, struct AHIBase *AHIBase) );
+initSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 void ASMCALL
-calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                  REG(a5, struct AHIBase *AHIBase) );
+calcSignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 BOOL ASMCALL
-initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl), 
-                    REG(a5, struct AHIBase *AHIBase) );
+initUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 void ASMCALL
-calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                    REG(a5, struct AHIBase *AHIBase) );
+calcUnsignedTable ( REG(a2, struct AHIPrivAudioCtrl *audioctrl) );
 
 void ASMCALL
 SelectAddRoutine ( REG(d0, Fixed     VolumeLeft),

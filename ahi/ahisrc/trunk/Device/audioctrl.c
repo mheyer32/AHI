@@ -180,7 +180,7 @@ CreateAudioCtrl(struct TagItem *tags)
       if((dbtags=GetDBTagList(audiodb,audioctrl->ahiac_AudioID)))
       {
         audioctrl->ac.ahiac_Flags=PackBoolTags(GetTagData(AHIDB_Flags,NULL,dbtags),dbtags,boolmap);
-#ifdef _M68020
+#ifdef HAVE_CLIPPING
         if(AHIBase->ahib_Flags & AHIBF_CLIPPING)
         {
           audioctrl->ac.ahiac_Flags |= AHIACF_CLIPPING;
@@ -494,7 +494,7 @@ AllocAudioA( REG(a1, struct TagItem *tags),
     audioctrl->ac.ahiac_Flags &= ~AHIACF_STEREO;
 
 // HiFi
-#ifdef _M68020
+#ifdef HAVE_HIFI
   if(!(audioctrl->ahiac_SubAllocRC & AHISF_KNOWHIFI))
     audioctrl->ac.ahiac_Flags &= ~AHIACF_HIFI;
 #else
@@ -955,19 +955,27 @@ ControlAudioA( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
       break;
     }
   }
+
 // Let's act!
   if(update)
+  {
     AHIsub_Update(NULL,(struct AHIAudioCtrlDrv *)audioctrl);
+  }
+  
   if(playflags)
+  {
     rc=AHIsub_Start(playflags,(struct AHIAudioCtrlDrv *)audioctrl);
+  }
+  
   if(stopflags)
+  {
     AHIsub_Stop(stopflags,(struct AHIAudioCtrlDrv *)audioctrl);
+  }
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
     KPrintF("=>%ld\n",rc);
   }
+
   return rc;
 }
-
-

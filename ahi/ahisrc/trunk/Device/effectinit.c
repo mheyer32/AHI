@@ -24,17 +24,8 @@
 ** MASTERVOLUME ***************************************************************
 ******************************************************************************/
 
-#ifdef VERSION68K
-
-BOOL ASMCALL
-update_MasterVolume ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                      REG(a5, struct AHIBase *AHIBase) )
-#else
-
 BOOL 
-update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl,
-                      struct AHIBase *AHIBase )
-#endif
+update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl )
 {
   struct Library        *AHIsubBase;
   struct AHIChannelData *cd;
@@ -57,9 +48,9 @@ update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl,
   audioctrl->ahiac_MasterVolume = volume;
 
   /* Update the mastervolume table, and the volume tables */
-  calcMasterVolumeTable(audioctrl, AHIBase);
-  calcSignedTable(audioctrl, AHIBase);
-  calcUnsignedTable(audioctrl, AHIBase);
+  calcMasterVolumeTable( audioctrl );
+  calcSignedTable( audioctrl );
+  calcUnsignedTable( audioctrl );
 
   /* Update volume for channels */
 
@@ -92,24 +83,14 @@ update_MasterVolume ( struct AHIPrivAudioCtrl *audioctrl,
 #define mode_ncnm   4       // No cross, no mix
 #define mode_fast   8
 
-#ifdef VERSION68K
-
-BOOL ASMCALL
-update_DSPEcho ( REG(a0, struct AHIEffDSPEcho *echo),
-                 REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                 REG(a5, struct AHIBase *AHIBase) )
-#else
-
 BOOL
 update_DSPEcho ( struct AHIEffDSPEcho *echo,
-                 struct AHIPrivAudioCtrl *audioctrl,
-                 struct AHIBase *AHIBase )
-#endif
+                 struct AHIPrivAudioCtrl *audioctrl )
 {
   ULONG size, samplesize;
   struct Echo *es;
 
-  free_DSPEcho(audioctrl, AHIBase);
+  free_DSPEcho( audioctrl );
 
 
   /* Set up the delay buffer format */
@@ -193,7 +174,7 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 
 #endif
 
-    update_MasterVolume(audioctrl,AHIBase);
+    update_MasterVolume( audioctrl );
 
 #ifdef VERSION68K
 
@@ -344,17 +325,8 @@ update_DSPEcho ( struct AHIEffDSPEcho *echo,
 }
 
 
-#ifdef VERSION68K
-
-void ASMCALL
-free_DSPEcho ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-               REG(a5, struct AHIBase *AHIBase) )
-#else
-
 void
-free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl,
-               struct AHIBase *AHIBase )
-#endif
+free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl )
 {
   void *p = audioctrl->ahiac_EffDSPEchoStruct;
 
@@ -363,7 +335,7 @@ free_DSPEcho ( struct AHIPrivAudioCtrl *audioctrl,
   FreeVec(p);
 
   audioctrl->ahiac_EchoMasterVolume = 0x10000;
-  update_MasterVolume(audioctrl,AHIBase);
+  update_MasterVolume( audioctrl );
 }
 
 
@@ -395,19 +367,9 @@ addchannel ( struct AHIChannelData **list, struct AHIChannelData *cd )
   cd->cd_Succ = NULL;
 }
 
-#ifdef VERSION68K
-
-BOOL ASMCALL
-update_DSPMask ( REG(a0, struct AHIEffDSPMask *mask),
-                 REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                 REG(a5, struct AHIBase *AHIBase) )
-#else
-
 BOOL 
 update_DSPMask ( struct AHIEffDSPMask *mask,
-                 struct AHIPrivAudioCtrl *audioctrl,
-                 struct AHIBase *AHIBase )
-#endif
+                 struct AHIPrivAudioCtrl *audioctrl )
 {
   struct AHIChannelData *cd, *wet = NULL, *dry = NULL;
   struct Library        *AHIsubBase;
@@ -451,17 +413,8 @@ update_DSPMask ( struct AHIEffDSPMask *mask,
 }
 
 
-#ifdef VERSION68K
-
-void ASMCALL
-clear_DSPMask ( REG(a2, struct AHIPrivAudioCtrl *audioctrl),
-                REG(a5, struct AHIBase *AHIBase) )
-#else
-
 void
-clear_DSPMask ( struct AHIPrivAudioCtrl *audioctrl,
-                struct AHIBase *AHIBase )
-#endif
+clear_DSPMask ( struct AHIPrivAudioCtrl *audioctrl )
 {
   struct AHIChannelData *cd;
   struct Library        *AHIsubBase;

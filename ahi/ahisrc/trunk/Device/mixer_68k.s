@@ -20,6 +20,7 @@
 	XDEF	_Mix68k
 	XDEF	_CalcSamples
 
+	XREF	_SysBase
 	XREF	_UtilityBase
 	XREF	_Fixed2Shift
 	XREF	_UDivMod64
@@ -87,17 +88,16 @@ _InitMixroutine:
 
 ;in:
 * a2	AHIAudioCtrl
-* a5	AHIBase
 _calcMasterVolumeTable:
 	pushm	std
-
 	btst.b	#AHIACB_CLIPPING-24,ahiac_Flags(a2)
 	beq	.exit
 
 	btst	#AHIACB_HIFI,ahiac_Flags+3(a2)
 	bne	.exit
 
-	move.l	ahib_SysLib(a5),a6
+
+	move.l	_SysBase,a6
 	move.l	ahiac_MasterVolumeTable(a2),d0
 	bne	.gottable
 	move.l	#65536*2,d0
@@ -132,7 +132,6 @@ _calcMasterVolumeTable:
 
 ;in:
 * a2	ptr to AHIAudioCtrl
-* a5	ptr to AHIBase
 ;out:
 * d0	TRUE on success
 _initSignedTable:
@@ -144,7 +143,7 @@ _initSignedTable:
 	tst.l	ahiac_MultTableS(a2)
 	bne.b	.notable			;there is already a table!
 
-	move.l	ahib_SysLib(a5),a6
+	move.l	_SysBase,a6
 	move.l	#256*(TABLEMAXVOL+1)*4,d0	;include highest volume, too!
 	moveq	#MEMF_PUBLIC,d1			;may be accessed from interrupts
 	call	AllocVec
@@ -214,7 +213,6 @@ _calcSignedTable:
 	rts
 ;in:
 * a2	ptr to AHIAudioCtrl
-* a5	ptr to AHIBase
 ;out:
 * d0	TRUE on success
 _initUnsignedTable:
@@ -228,7 +226,7 @@ _initUnsignedTable:
 	tst.l	ahiac_MultTableU(a2)
 	bne.b	.notable			;there is already a table!
 
-	move.l	ahib_SysLib(a5),a6
+	move.l	_SysBase,a6
 	move.l	#256*(TABLEMAXVOL+1)*4,d0	;incude highest volume, too!
 						;*4 => Look like the signed table!
 	moveq	#MEMF_PUBLIC,d1			;may be accessed from interrupts
@@ -986,7 +984,7 @@ _CalcSamples:
   ELSE
 	move.l	d3,d1
 	move.l	d4,d2
-	bsr	_UDivMod64		;d0 = (d1:d2)/d0
+	jsr	_UDivMod64		;d0 = (d1:d2)/d0
   ENDC * 68020
 	addq.l	#1,d0
 
@@ -1017,7 +1015,7 @@ _CalcSamples:
 	beq	.error
 	move.l	d3,d1
 	move.l	d4,d2
-	bsr	_UDivMod64		;d0 = (d1:d2)/d0
+	jsr	_UDivMod64		;d0 = (d1:d2)/d0
 	addq.l	#1,d0
  ENDC * 68060
 
@@ -1243,7 +1241,7 @@ FixVolWordMV:
 
 FixVolWordMVT:
 	add.l	d1,d0
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	lea	OffsWordMVT(pc),a0
 	rts
 
@@ -1293,22 +1291,22 @@ FixVolWordSVP:
 	rts
 
 FixVolWordSVTl:
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	lea	OffsWordSVTl(pc),a0
 	rts
 
 FixVolWordSVTr:
 	move.l	d1,d0
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	move.l	d0,d1
 	lea	OffsWordSVTr(pc),a0
 	rts
 
 FixVolWordSVPT:
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	push	d0
 	move.l	d1,d0
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	move.l	d0,d1
 	pop	d0
 	lea	OffsWordSVPT(pc),a0
@@ -1340,10 +1338,10 @@ FixVolWordsMV:
 	rts
 
 FixVolWordsMVT:
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	push	d0
 	move.l	d1,d0
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	move.l	d0,d1
 	pop	d0
 	lea	OffsWordsMVT(pc),a0
@@ -1382,22 +1380,22 @@ FixVolWordsSVP:
 	rts
 
 FixVolWordsSVTl:
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	lea	OffsWordsSVTl(pc),a0
 	rts
 
 FixVolWordsSVTr:
 	move.l	d1,d0
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	move.l	d0,d1
 	lea	OffsWordsSVTr(pc),a0
 	rts
 
 FixVolWordsSVPT:
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	push	d0
 	move.l	d1,d0
-	bsr	_Fixed2Shift
+	jsr	_Fixed2Shift
 	move.l	d0,d1
 	pop	d0
 	lea	OffsWordsSVPT(pc),a0
