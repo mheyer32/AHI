@@ -277,7 +277,7 @@ AHIGetELFSymbol( const char* name,
       oi.Name = (char*) name;
       rc = PPCGetObjectAttrs( PPCObject, &oi, &tag_done );
       *ptr = (void*) oi.Address;
-      
+
       return rc;
     }
 

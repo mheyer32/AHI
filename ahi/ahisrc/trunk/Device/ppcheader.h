@@ -28,6 +28,7 @@
 #include "ahi_def.h"
 
 #define WARPUP_INVALIDATE_CACHE
+#define POWERUP_USE_MIXTASK
 
 struct WarpUpContext
 {
@@ -41,6 +42,16 @@ struct WarpUpContext
   void*               MixBuffer;
   int                 MixLongWords;
 #endif
+};
+
+struct PowerUpContext
+{
+  void*               Port;
+  void*               Msg;
+  void*               Task;
+  struct AudioCtrl*   AudioCtrl;
+  struct Hook*        Hook;
+  void*	              Dst;
 };
 
 #endif /* _PPCHEADER_H_ */

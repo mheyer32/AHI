@@ -24,6 +24,7 @@
 #define _HEADER_H_
 
 #include <exec/types.h>
+#include "addroutines.h"
 
 enum MixBackend_t
 {
@@ -41,5 +42,39 @@ extern const char		 IDString[];
 
 extern enum MixBackend_t	 MixBackend;
 extern void			*PPCObject;
+
+extern ADDFUNC*                  AddByteMonoPtr;
+extern ADDFUNC*                  AddByteStereoPtr;
+extern ADDFUNC*                  AddBytesMonoPtr;
+extern ADDFUNC*                  AddBytesStereoPtr;
+extern ADDFUNC*                  AddWordMonoPtr;
+extern ADDFUNC*                  AddWordStereoPtr;
+extern ADDFUNC*                  AddWordsMonoPtr;
+extern ADDFUNC*                  AddWordsStereoPtr;
+extern ADDFUNC*                  AddByteMonoBPtr;
+extern ADDFUNC*                  AddByteStereoBPtr;
+extern ADDFUNC*                  AddBytesMonoBPtr;
+extern ADDFUNC*                  AddBytesStereoBPtr;
+extern ADDFUNC*                  AddWordMonoBPtr;
+extern ADDFUNC*                  AddWordStereoBPtr;
+extern ADDFUNC*                  AddWordsMonoBPtr;
+extern ADDFUNC*                  AddWordsStereoBPtr;
+
+extern ADDFUNC*                  AddLofiByteMonoPtr;
+extern ADDFUNC*                  AddLofiByteStereoPtr;
+extern ADDFUNC*                  AddLofiBytesMonoPtr;
+extern ADDFUNC*                  AddLofiBytesStereoPtr;
+extern ADDFUNC*                  AddLofiWordMonoPtr;
+extern ADDFUNC*                  AddLofiWordStereoPtr;
+extern ADDFUNC*                  AddLofiWordsMonoPtr;
+extern ADDFUNC*                  AddLofiWordsStereoPtr;
+extern ADDFUNC*                  AddLofiByteMonoBPtr;
+extern ADDFUNC*                  AddLofiByteStereoBPtr;
+extern ADDFUNC*                  AddLofiBytesMonoBPtr;
+extern ADDFUNC*                  AddLofiBytesStereoBPtr;
+extern ADDFUNC*                  AddLofiWordMonoBPtr;
+extern ADDFUNC*                  AddLofiWordStereoBPtr;
+extern ADDFUNC*                  AddLofiWordsMonoBPtr;
+extern ADDFUNC*                  AddLofiWordsStereoBPtr;
 
 #endif /* _HEADER_H_ */

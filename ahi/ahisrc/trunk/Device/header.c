@@ -37,6 +37,7 @@
 #include "header.h"
 #include "device.h"
 #include "localize.h"
+#include "addroutines.h"
 #include "misc.h"
 
 #include "version.h"
@@ -47,6 +48,7 @@ OpenLibs ( void );
 static void
 CloseLibs ( void );
 
+#define GetSymbol( name ) AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
 /******************************************************************************
 ** Device entry ***************************************************************
@@ -99,6 +101,40 @@ struct UtilityBase        *UtilityBase    = NULL;
 struct Library            *PowerPCBase    = NULL;
 struct Library            *PPCLibBase     = NULL;
 void                      *PPCObject      = NULL;
+
+ADDFUNC* AddByteMonoPtr                   = NULL;
+ADDFUNC* AddByteStereoPtr                 = NULL;
+ADDFUNC* AddBytesMonoPtr                  = NULL;
+ADDFUNC* AddBytesStereoPtr                = NULL;
+ADDFUNC* AddWordMonoPtr                   = NULL;
+ADDFUNC* AddWordStereoPtr                 = NULL;
+ADDFUNC* AddWordsMonoPtr                  = NULL;
+ADDFUNC* AddWordsStereoPtr                = NULL;
+ADDFUNC* AddByteMonoBPtr                  = NULL;
+ADDFUNC* AddByteStereoBPtr                = NULL;
+ADDFUNC* AddBytesMonoBPtr                 = NULL;
+ADDFUNC* AddBytesStereoBPtr               = NULL;
+ADDFUNC* AddWordMonoBPtr                  = NULL;
+ADDFUNC* AddWordStereoBPtr                = NULL;
+ADDFUNC* AddWordsMonoBPtr                 = NULL;
+ADDFUNC* AddWordsStereoBPtr               = NULL;
+
+ADDFUNC* AddLofiByteMonoPtr               = NULL;
+ADDFUNC* AddLofiByteStereoPtr             = NULL;
+ADDFUNC* AddLofiBytesMonoPtr              = NULL;
+ADDFUNC* AddLofiBytesStereoPtr            = NULL;
+ADDFUNC* AddLofiWordMonoPtr               = NULL;
+ADDFUNC* AddLofiWordStereoPtr             = NULL;
+ADDFUNC* AddLofiWordsMonoPtr              = NULL;
+ADDFUNC* AddLofiWordsStereoPtr            = NULL;
+ADDFUNC* AddLofiByteMonoBPtr              = NULL;
+ADDFUNC* AddLofiByteStereoBPtr            = NULL;
+ADDFUNC* AddLofiBytesMonoBPtr             = NULL;
+ADDFUNC* AddLofiBytesStereoBPtr           = NULL;
+ADDFUNC* AddLofiWordMonoBPtr              = NULL;
+ADDFUNC* AddLofiWordStereoBPtr            = NULL;
+ADDFUNC* AddLofiWordsMonoBPtr             = NULL;
+ADDFUNC* AddLofiWordsStereoBPtr           = NULL;
 
 /* linker can use symbol b for symbol a if a is not defined */
 #define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
@@ -371,7 +407,43 @@ OpenLibs ( void )
     return FALSE;
   }
 
+  // Fill in some defaults...
+
   MixBackend = MB_NATIVE;
+
+  AddByteMonoPtr         = AddByteMono;
+  AddByteStereoPtr       = AddByteStereo;
+  AddBytesMonoPtr        = AddBytesMono;
+  AddBytesStereoPtr      = AddBytesStereo;
+  AddWordMonoPtr         = AddWordMono;
+  AddWordStereoPtr       = AddWordStereo;
+  AddWordsMonoPtr        = AddWordsMono;
+  AddWordsStereoPtr      = AddWordsStereo;
+  AddByteMonoBPtr        = AddByteMonoB;
+  AddByteStereoBPtr      = AddByteStereoB;
+  AddBytesMonoBPtr       = AddBytesMonoB;
+  AddBytesStereoBPtr     = AddBytesStereoB;
+  AddWordMonoBPtr        = AddWordMonoB;
+  AddWordStereoBPtr      = AddWordStereoB;
+  AddWordsMonoBPtr       = AddWordsMonoB;
+  AddWordsStereoBPtr     = AddWordsStereoB;
+
+  AddLofiByteMonoPtr     = AddLofiByteMono;
+  AddLofiByteStereoPtr   = AddLofiByteStereo;
+  AddLofiBytesMonoPtr    = AddLofiBytesMono;
+  AddLofiBytesStereoPtr  = AddLofiBytesStereo;
+  AddLofiWordMonoPtr     = AddLofiWordMono;
+  AddLofiWordStereoPtr   = AddLofiWordStereo;
+  AddLofiWordsMonoPtr    = AddLofiWordsMono;
+  AddLofiWordsStereoPtr  = AddLofiWordsStereo;
+  AddLofiByteMonoBPtr    = AddLofiByteMonoB;
+  AddLofiByteStereoBPtr  = AddLofiByteStereoB;
+  AddLofiBytesMonoBPtr   = AddLofiBytesMonoB;
+  AddLofiBytesStereoBPtr = AddLofiBytesStereoB;
+  AddLofiWordMonoBPtr    = AddLofiWordMonoB;
+  AddLofiWordStereoBPtr  = AddLofiWordStereoB;
+  AddLofiWordsMonoBPtr   = AddLofiWordsMonoB;
+  AddLofiWordsStereoBPtr = AddLofiWordsStereoB;
 
   /* PPC/PowerPC library loading
 
@@ -450,6 +522,8 @@ OpenLibs ( void )
 
     if( PPCObject != NULL )
     {
+      int r = ~0;
+
       AHIGetELFSymbol( "__LIB_Version", (void*) &version );
       AHIGetELFSymbol( "__LIB_Revision", (void*) &revision );
     
@@ -462,6 +536,46 @@ OpenLibs ( void )
         Req( "'ahi.elf' version %ld.%ld doesn't match 'ahi.device' %ld.%ld.",
              *version, *revision, Version, Revision );
 
+        return FALSE;
+      }
+
+      r &= GetSymbol( AddByteMono     );
+      r &= GetSymbol( AddByteStereo   );
+      r &= GetSymbol( AddBytesMono    );
+      r &= GetSymbol( AddBytesStereo  );
+      r &= GetSymbol( AddWordMono     );
+      r &= GetSymbol( AddWordStereo   );
+      r &= GetSymbol( AddWordsMono    );
+      r &= GetSymbol( AddWordsStereo  );
+      r &= GetSymbol( AddByteMonoB    );
+      r &= GetSymbol( AddByteStereoB  );
+      r &= GetSymbol( AddBytesMonoB   );
+      r &= GetSymbol( AddBytesStereoB );
+      r &= GetSymbol( AddWordMonoB    );
+      r &= GetSymbol( AddWordStereoB  );
+      r &= GetSymbol( AddWordsMonoB   );
+      r &= GetSymbol( AddWordsStereoB );
+
+      r &= GetSymbol( AddLofiByteMono     );
+      r &= GetSymbol( AddLofiByteStereo   );
+      r &= GetSymbol( AddLofiBytesMono    );
+      r &= GetSymbol( AddLofiBytesStereo  );
+      r &= GetSymbol( AddLofiWordMono     );
+      r &= GetSymbol( AddLofiWordStereo   );
+      r &= GetSymbol( AddLofiWordsMono    );
+      r &= GetSymbol( AddLofiWordsStereo  );
+      r &= GetSymbol( AddLofiByteMonoB    );
+      r &= GetSymbol( AddLofiByteStereoB  );
+      r &= GetSymbol( AddLofiBytesMonoB   );
+      r &= GetSymbol( AddLofiBytesStereoB );
+      r &= GetSymbol( AddLofiWordMonoB    );
+      r &= GetSymbol( AddLofiWordStereoB  );
+      r &= GetSymbol( AddLofiWordsMonoB   );
+      r &= GetSymbol( AddLofiWordsStereoB );
+
+      if( r == 0 )
+      {
+        Req( "Unable to fetch all symbols from ELF object." );
         return FALSE;
       }
     }

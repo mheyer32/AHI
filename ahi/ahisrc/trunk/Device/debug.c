@@ -218,6 +218,199 @@ GetTagName( Tag tag )
   }
 }
 
+enum Datatype
+{
+  dt_Hex,
+  dt_Dec,
+  dt_Boolean,
+  dt_String,
+  dt_Fixed
+};
+
+static enum Datatype
+GetDatatype( Tag tag )
+{
+  switch( tag )
+  {
+    case AHIA_AudioID: return dt_Hex;
+    case AHIA_MixFreq: return dt_Dec;
+    case AHIA_Channels: return dt_Dec;
+    case AHIA_Sounds: return dt_Dec;
+    case AHIA_SoundFunc: return dt_Hex;
+    case AHIA_PlayerFunc: return dt_Hex;
+    case AHIA_PlayerFreq: return dt_Fixed;
+    case AHIA_MinPlayerFreq: return dt_Fixed;
+    case AHIA_MaxPlayerFreq: return dt_Fixed;
+//    case AHIA_PlayerFreqUnit: return dt_Hex;
+    case AHIA_RecordFunc: return dt_Hex;
+    case AHIA_UserData: return dt_Hex;
+//    case AHIA_ErrorFunc: return dt_Hex;
+    case AHIA_AntiClickSamples: return dt_Dec;
+    case AHIP_BeginChannel: return dt_Dec;
+    case AHIP_EndChannel: return dt_Dec;
+    case AHIP_Freq: return dt_Dec;
+    case AHIP_Vol: return dt_Fixed;
+    case AHIP_Pan: return dt_Fixed;
+    case AHIP_Sound: return dt_Dec;
+    case AHIP_Offset: return dt_Hex;
+    case AHIP_Length: return dt_Hex;
+    case AHIP_LoopFreq: return dt_Dec;
+    case AHIP_LoopVol: return dt_Fixed;
+    case AHIP_LoopPan: return dt_Fixed;
+    case AHIP_LoopSound: return dt_Dec;
+    case AHIP_LoopOffset: return dt_Hex;
+    case AHIP_LoopLength: return dt_Hex;
+    case AHIC_Play: return dt_Boolean;
+    case AHIC_Record: return dt_Boolean;
+//    case AHIC_PausePlay: return dt_Boolean;
+//    case AHIC_PauseRecord: return dt_Boolean;
+    case AHIC_MixFreq_Query: return dt_Hex;
+    case AHIC_Input: return dt_Dec;
+    case AHIC_Input_Query: return dt_Hex;
+    case AHIC_Output: return dt_Dec;
+    case AHIC_Output_Query: return dt_Hex;
+//    case AHIC_MonitorVolumeLeft: return dt_Fixed;
+//    case AHIC_MonitorVolumeLeft_Query: return dt_Hex;
+//    case AHIC_MonitorVolumeRight: return dt_Fixed;
+//    case AHIC_MonitorVolumeRight_Query: return dt_Hex;
+//    case AHIC_OutputVolumeLeft: return dt_Fixed;
+//    case AHIC_OutputVolumeLeft_Query: return dt_Hex;
+//    case AHIC_OutputVolumeRight: return dt_Fixed;
+//    case AHIC_OutputVolumeRight_Query: return dt_Hex;
+//    case AHIC_InputGainLeft: return dt_Fixed;
+//    case AHIC_InputGainLeft_Query: return dt_Hex;
+//    case AHIC_InputGainRight: return dt_Fixed;
+//    case AHIC_InputGainRight_Query: return dt_Hex;
+//    case AHIC_PlaySampleFormat: return dt_Hex;
+//    case AHIC_PlaySampleFormat_Query: return dt_Hex;
+//    case AHIC_RecordSampleFormat: return dt_Hex;
+//    case AHIC_RecordSampleFormat_Query: return dt_Dec;
+    case AHIDB_AudioID: return dt_Hex;
+    case AHIDB_BufferLen: return dt_Dec;
+    case AHIDB_Driver: return dt_Hex;
+    case AHIDB_Author: return dt_Hex;
+    case AHIDB_Copyright: return dt_Hex;
+    case AHIDB_Version: return dt_Hex;
+    case AHIDB_Annotation: return dt_Hex;
+    case AHIDB_Name: return dt_Hex;
+    case AHIDB_Data: return dt_Hex;
+    case AHIDB_Flags: return dt_Hex;
+//    case AHIDB_Play: return dt_Hex;
+    case AHIDB_Record: return dt_Hex;
+//    case AHIDB_Direct: return dt_Hex;
+    case AHIDB_Volume: return dt_Hex;
+    case AHIDB_Stereo: return dt_Hex;
+    case AHIDB_Panning: return dt_Hex;
+//    case AHIDB_Surround: return dt_Hex;
+    case AHIDB_PingPong: return dt_Hex;
+    case AHIDB_MultTable: return dt_Hex;
+    case AHIDB_MaxChannels: return dt_Hex;
+    case AHIDB_MaxPlaySamples: return dt_Hex;
+    case AHIDB_MaxRecordSamples: return dt_Hex;
+    case AHIDB_Bits: return dt_Hex;
+    case AHIDB_HiFi: return dt_Hex;
+    case AHIDB_Realtime: return dt_Hex;
+    case AHIDB_FullDuplex: return dt_Hex;
+//    case AHIDB_Accelerated: return dt_Hex;
+//    case AHIDB_Available: return dt_Hex;
+//    case AHIDB_Hidden: return dt_Hex;
+    case AHIDB_Frequencies: return dt_Hex;
+    case AHIDB_FrequencyArg: return dt_Dec;
+    case AHIDB_Frequency: return dt_Hex;
+//    case AHIDB_FrequencyArray: return dt_Hex;
+    case AHIDB_IndexArg: return dt_Dec;
+    case AHIDB_Index: return dt_Hex;
+    case AHIDB_Inputs: return dt_Hex;
+    case AHIDB_InputArg: return dt_Dec;
+    case AHIDB_Input: return dt_Hex;
+//    case AHIDB_InputArray: return dt_Hex;
+    case AHIDB_Outputs: return dt_Hex;
+    case AHIDB_OutputArg: return dt_Dec;
+    case AHIDB_Output: return dt_Hex;
+//    case AHIDB_OutputArray: return dt_Hex;
+//    case AHIDB_MonitorVolumesLeft: return dt_Hex;
+//    case AHIDB_MonitorVolumeLeftArg: return dt_Dec;
+//    case AHIDB_MonitorVolumeLeft: return dt_Hex;
+//    case AHIDB_MonitorVolumeLeftArray: return dt_Hex;
+//    case AHIDB_MonitorVolumesRight: return dt_Hex;
+//    case AHIDB_MonitorVolumeRightArg: return dt_Dec;
+//    case AHIDB_MonitorVolumeRight: return dt_Hex;
+//    case AHIDB_MonitorVolumeRightArray: return dt_Hex;
+//    case AHIDB_OutputVolumesLeft: return dt_Hex;
+//    case AHIDB_OutputVolumeLeftArg: return dt_Dec;
+//    case AHIDB_OutputVolumeLeft: return dt_Hex;
+//    case AHIDB_OutputVolumeLeftArray: return dt_Hex;
+//    case AHIDB_OutputVolumesRight: return dt_Hex;
+//    case AHIDB_OutputVolumeRightArg: return dt_Dec;
+//    case AHIDB_OutputVolumeRight: return dt_Hex;
+//    case AHIDB_OutputVolumeRightArray: return dt_Hex;
+//    case AHIDB_InputGainsLeft: return dt_Hex;
+//    case AHIDB_InputGainLeftArg: return dt_Dec;
+//    case AHIDB_InputGainLeft: return dt_Hex;
+//    case AHIDB_InputGainLeftArray: return dt_Hex;
+//    case AHIDB_InputGainsRight: return dt_Hex;
+//    case AHIDB_InputGainRightArg: return dt_Dec;
+//    case AHIDB_InputGainRight: return dt_Hex;
+//    case AHIDB_InputGainRightArray: return dt_Hex;
+//    case AHIDB_PlaySampleFormats: return dt_Hex;
+//    case AHIDB_PlaySampleFormatArg: return dt_Dec;
+//    case AHIDB_PlaySampleFormat: return dt_Hex;
+//    case AHIDB_PlaySampleFormatArray: return dt_Hex;
+//    case AHIDB_RecordSampleFormats: return dt_Hex;
+//    case AHIDB_RecordSampleFormatArg: return dt_Dec;
+//    case AHIDB_RecordSampleFormat: return dt_Hex;
+//    case AHIDB_RecordSampleFormatArray: return dt_Hex;
+    case AHIB_Dizzy: return dt_Boolean;
+    case AHIR_Window: return dt_Hex;
+    case AHIR_Screen: return dt_Hex;
+    case AHIR_PubScreenName: return dt_String;
+    case AHIR_PrivateIDCMP: return dt_Hex;
+    case AHIR_IntuiMsgFunc: return dt_Hex;
+    case AHIR_SleepWindow: return dt_Boolean;
+    case AHIR_UserData: return dt_Hex;
+    case AHIR_TextAttr: return dt_Hex;
+    case AHIR_Locale: return dt_Hex;
+    case AHIR_TitleText: return dt_String;
+    case AHIR_PositiveText: return dt_String;
+    case AHIR_NegativeText: return dt_String;
+    case AHIR_InitialLeftEdge: return dt_Dec;
+    case AHIR_InitialTopEdge: return dt_Dec;
+    case AHIR_InitialWidth: return dt_Dec;
+    case AHIR_InitialHeight: return dt_Dec;
+    case AHIR_InitialAudioID: return dt_Hex;
+    case AHIR_InitialMixFreq: return dt_Dec;
+    case AHIR_InitialInfoOpened: return dt_Boolean;
+    case AHIR_InitialInfoLeftEdge: return dt_Dec;
+    case AHIR_InitialInfoTopEdge: return dt_Dec;
+    case AHIR_InitialInfoWidth: return dt_Dec;
+    case AHIR_InitialInfoHeight: return dt_Dec;
+    case AHIR_DoMixFreq: return dt_Boolean;
+    case AHIR_DoDefaultMode: return dt_Boolean;
+//    case AHIR_DoChannels: return dt_Boolean;
+//    case AHIR_DoHidden: return dt_Boolean;
+//    case AHIR_DoDirectModes: return dt_Boolean;
+    case AHIR_FilterTags: return dt_Hex;
+    case AHIR_FilterFunc: return dt_Hex;
+    case AHIC_MonitorVolume: return dt_Fixed;
+    case AHIC_MonitorVolume_Query: return dt_Hex;
+    case AHIC_InputGain: return dt_Fixed;
+    case AHIC_InputGain_Query: return dt_Hex;
+    case AHIC_OutputVolume: return dt_Fixed;
+    case AHIC_OutputVolume_Query: return dt_Hex;
+    case AHIDB_MinMixFreq: return dt_Dec;
+    case AHIDB_MaxMixFreq: return dt_Dec;
+    case AHIDB_MinMonitorVolume: return dt_Hex;
+    case AHIDB_MaxMonitorVolume: return dt_Hex;
+    case AHIDB_MinInputGain: return dt_Hex;
+    case AHIDB_MaxInputGain: return dt_Hex;
+    case AHIDB_MinOutputVolume: return dt_Hex;
+    case AHIDB_MaxOutputVolume: return dt_Hex;
+
+    default:
+      return dt_Hex;
+  }
+}
+
 
 // tags may be NULL
 
@@ -227,17 +420,50 @@ PrintTagList(struct TagItem *tags)
   struct TagItem *tstate;
   struct TagItem *tag;
 
-  if(tags == NULL)
+  if( tags == NULL )
   {
-    KPrintF("No taglist\n");
+    KPrintF( "No taglist!\n" );
   }
   else
   {
     tstate = tags;
-    while((tag = NextTagItem(&tstate)))
+
+    while( ( tag = NextTagItem( &tstate ) ) )
     {
-      KPrintF("\n  %30s, 0x%08lx,", GetTagName( tag->ti_Tag ), tag->ti_Data);
+      switch( GetDatatype( tag->ti_Tag ) )
+      {
+        case dt_Hex:
+          KPrintF( "\n  %30s, 0x%08lx,", 
+                   GetTagName( tag->ti_Tag ), tag->ti_Data );
+          break;
+
+        case dt_Dec:
+          KPrintF( "\n  %30s, %ld,", 
+                   GetTagName( tag->ti_Tag ), tag->ti_Data );
+          break;
+
+        case dt_Boolean:
+          KPrintF( "\n  %30s, %s,", 
+                   GetTagName( tag->ti_Tag ), 
+                   tag->ti_Data ? "TRUE" : "FALSE" );
+          break;
+
+        case dt_String:
+          KPrintF( "\n  %30s, %s,", 
+                   GetTagName( tag->ti_Tag ), tag->ti_Data );
+          break;
+
+        case dt_Fixed:
+        {
+          KPrintF( "\n  %30s, %ld.%ld,", 
+                   GetTagName( tag->ti_Tag ), 
+                   tag->ti_Data >> 16,
+                   ( ( tag->ti_Data & 0xffff ) * 1000 ) >> 16 );
+          break;
+        }
+      }
     }
+
     KPrintF("\n  TAG_DONE)");
   }
 }
