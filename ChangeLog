@@ -1,5 +1,8 @@
 2004-10-31  Martin Blom  <martin@blom.org>
 
+	* Imported the rest of the AROS modifications from AROS
+	CVS. Mostly Makefile mods.
+
 	* Released emu10kx.audio 5.22.
 
 	* emu10kx.audio: Reduced the volume boost by 6 dB. According to my
