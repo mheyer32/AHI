@@ -135,7 +135,7 @@ static struct DiskObject projIcon = {
 
 /* See the header file for macros */
 
-#if !defined( WORDS_BIG_ENDIAN )
+#if !defined( WORDS_BIGENDIAN )
 
 static UWORD
 EndianSwapUWORD( UWORD x ) {

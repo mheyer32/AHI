@@ -1,5 +1,8 @@
 2003-04-22  Martin Blom  <martin@blom.org>
 
+	* The endian update from 2003-04-17 broke all big endian
+	targets. Fixed.
+
 	* void.audio: This example driver can now be compiled using gcc
 	and builds for all targets (m68k-amigaos, ppc-morphos,
 	i?86be-amithlon and i386-aros).
