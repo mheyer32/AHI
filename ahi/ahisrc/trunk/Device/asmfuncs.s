@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.17  1997/02/18 22:26:49  lcs
+* Faster mixing routines for 16 bit samples when using tables.
+*
 * Revision 1.16  1997/02/12 15:32:45  lcs
 * Moved each autodoc header to the file where the function is
 *
@@ -1513,6 +1516,7 @@ _PreTimer:
 	neg.l	d2			; d2 = clocks since last entry
 	lsl.l	#8,d1
 	divu.l	d2,d1
+;	bsr	printd1
 	cmp.b	ahiac_MaxCPU(a2),d1
 	bls	.ok
 	moveq	#TRUE,d0
@@ -1523,6 +1527,24 @@ _PreTimer:
 	tst.l	d0
 	popm	d1-d2/a0-a1/a6
 	rts
+
+
+a:	dc.w	0
+b:	dc.w	10
+printd1:
+	add.w	d1,a
+	subq.w	#1,b
+	bpl	pd1exit
+	move.w	#10,b
+	moveq	#0,d0
+	move.w	a,d0
+	divu	#25,d0
+	ext.l	d0
+	clr.w	a
+	PRINTF	2,"Using %ld%% CPU time...",d0
+pd1exit
+	rts
+
 
 _PostTimer:
 	pushm	d0-d1/a0-a1/a6
