@@ -33,20 +33,26 @@
 #define DRIVER_NEED_GLOBAL_EXECBASE
 #include "DriverBase.h"
 
+struct EMU10kxData;
+
 struct EMU10kxBase
 {
     /** Skeleton's variables *************************************************/
 
     struct DriverBase      driverbase;
 
+
     /** The driver's global data *********************************************/
 
-    /** A sempahore used for locking *****************************************/
+    
+    /** A sempahore used for locking */
     struct SignalSemaphore semaphore;
 
-    /** A bit mask (protected by 'semaphore') used to prevent more than one
-	user of a sound card at a time */
-    ULONG                  allocated_bitmask;
+    /** The number of cards found */
+    int                    cards_found;
+
+    /** A EMU10kxData structure for each card found */
+    struct EMU10kxData**   driverdatas;
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
@@ -73,7 +79,11 @@ struct EMU10kxData
     /*** The driverbase ******************************************************/
 
     struct DriverBase*  ahisubbase;
-    
+
+    /*** The AudioCtrl currently using this DriverData structure *************/
+
+    struct AHIAudioCtrlDrv* audioctrl;
+
     /*** Playback/recording interrupts ***************************************/
     
     /** TRUE when playback is enabled */

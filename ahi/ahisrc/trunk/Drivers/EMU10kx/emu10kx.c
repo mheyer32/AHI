@@ -32,27 +32,21 @@ driver! Anything that is based on this driver has to be GPL:ed.
 #include <config.h>
 
 #include <devices/ahi.h>
-#include <exec/exec.h>
+#include <exec/memory.h>
 #include <libraries/ahi_sub.h>
 #include <libraries/openpci.h>
 
 #include <clib/alib_protos.h>
 #include <proto/ahi_sub.h>
-#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/openpci.h>
 #include <proto/utility.h>
 
 #include <string.h>
 
-#include "8010.h"
 #include "library.h"
+#include "8010.h"
 #include "emu10kx-misc.h"
-#include "emu10kx-interrupt.h"
-
-/* Public functions in main.c */
-int emu10k1_init(struct emu10k1_card *card);
-void emu10k1_cleanup(struct emu10k1_card *card);
 
 
 /******************************************************************************
@@ -109,9 +103,6 @@ static const STRPTR Outputs[ OUTPUTS ] =
   "Front & Rear"
 };
 
-INTGW( static, void,  playbackinterrupt, PlaybackInterrupt );
-INTGW( static, void,  recordinterrupt,   RecordInterrupt );
-INTGW( static, ULONG, emu10kxinterrupt,  EMU10kxInterrupt );
 
 /******************************************************************************
 ** AHIsub_AllocAudio **********************************************************
@@ -124,161 +115,39 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
-  struct EMU10kxData* dd;
-  int                 card_num;
-  UWORD               command_word;
-  int                 ret;
-  int                 i;
-  struct pci_dev*     dev;
-  BOOL                in_use;
+  int   card_num;
+  ULONG ret;
+  int   i;
 
   card_num = ( GetTagData( AHIDB_AudioID, 0, taglist) & 0x0000f000 ) >> 12;
 
-  if( card_num >= 32 )
+  if( card_num >= EMU10kxBase->cards_found ||
+      EMU10kxBase->driverdatas[ card_num ] == NULL )
   {
-    Req( "More than 32 cards not supported." );
-    return AHISF_ERROR;
-  }
-
-  ObtainSemaphore( &EMU10kxBase->semaphore );
-  in_use = ( ( EMU10kxBase->allocated_bitmask & ( 1UL << card_num ) ) != 0 );
-  EMU10kxBase->allocated_bitmask |= ( 1UL << card_num );
-  ReleaseSemaphore( &EMU10kxBase->semaphore );
-
-  if( in_use )
-  {
-    return AHISF_ERROR;
-  }
-  
-  // FIXME: This shoule be non-cachable, DMA-able memory
-  dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
-
-  if( dd == NULL )
-  {
-    Req( "Unable to allocate driver structure." );
+    Req( "No EMU10kxData for card %ld.", card_num );
     return AHISF_ERROR;
   }
   else
   {
+    struct EMU10kxData* dd = EMU10kxBase->driverdatas[ card_num ];
+    BOOL                in_use;
+
     AudioCtrl->ahiac_DriverData = dd;
 
-    dd->ahisubbase = AHIsubBase;
-
-    dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->interrupt.is_Node.ln_Pri  = 0;
-    dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->interrupt.is_Code         = (void(*)(void)) &emu10kxinterrupt;
-    dd->interrupt.is_Data         = (APTR) AudioCtrl;
-
-    dd->playback_interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->playback_interrupt.is_Node.ln_Pri  = 0;
-    dd->playback_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->playback_interrupt.is_Code         = (void(*)(void)) &playbackinterrupt;
-    dd->playback_interrupt.is_Data         = (APTR) AudioCtrl;
-
-    dd->record_interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->record_interrupt.is_Node.ln_Pri  = 0;
-    dd->record_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->record_interrupt.is_Code         = (void(*)(void)) &recordinterrupt;
-    dd->record_interrupt.is_Data         = (APTR) AudioCtrl;
-
-    dev = 0;
-
-    do
+    ObtainSemaphore( &EMU10kxBase->semaphore );
+    in_use = ( dd->audioctrl != NULL );
+    if( !in_use )
     {
-      dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-			     PCI_DEVICE_ID_CREATIVE_EMU10K1,
-			     dev );
-    } while( dev != 0 && card_num-- != 0 );
+      dd->audioctrl = AudioCtrl;
+    }
+    ReleaseSemaphore( &EMU10kxBase->semaphore );
 
-    if( dev == NULL )
+    if( in_use )
     {
-      Req( "Unable to find EMU10k subsystem." );
+      Req( "Card is in use by %lx\n", dd->audioctrl );
       return AHISF_ERROR;
     }
-
-    dd->card.pci_dev = dev;
-
-//  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
-//  {
-//    printf( "Unable to set DMA mask for card." );
-//    goto error;
-//  }
-
-    command_word = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
-    command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
-    pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
-
-    dd->pci_master_enabled = TRUE;
-
-    // FIXME: How about latency/pcibios_set_master()??
-
-    dd->card.iobase  = dev->base_address[ 0 ];
-    dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
-    dd->card.irq     = dev->irq;
-    dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
-    dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
-    dd->card.isaps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
-					       dd->card.pci_dev )
-			 == EMU_APS_SUBID );
-
-    pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
-
-    dd->interrupt_added = TRUE;
-
-    /* Initialize chip */
-
-    if( emu10k1_init( &dd->card ) < 0 )
-    {
-      Req( "Unable to initialize EMU10kx subsystem.");
-      return AHISF_ERROR;
-    }
-
-    /* Initialize mixer */
-
-    emu10k1_writeac97( &dd->card, AC97_RESET, 0L);
-
-    Delay( 1 );
-
-    if (emu10k1_readac97( &dd->card, AC97_RESET ) & 0x8000) {
-      Req( "ac97 codec not present.");
-      return AHISF_ERROR;
-    }
-
-    dd->input          = 0;
-    dd->output         = 0;
-    dd->monitor_volume = Linear2MixerGain( 0, &dd->monitor_volume_bits );
-    dd->input_gain     = Linear2RecordGain( 0x10000, &dd->input_gain_bits );
-    dd->output_volume  = Linear2MixerGain( 0x10000, &dd->output_volume_bits );
-
-    // No attenuation and natural tone for all outputs
-    emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
-
-    emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT,     InputBits[ 0 ] );
-
-    emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x0000 );
-
-    emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE | 0x0008 );
-    emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x0008 );
-    emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0808 );
-
-
-    if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
-    {
-      sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
-      emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
-    }
-
-    dd->emu10k1_initialized = TRUE;
-
+    
     /* Since the EMU10kx chips can play a voice at any sample rate, we
        do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
 
@@ -319,30 +188,11 @@ _AHIsub_FreeAudio( struct AHIAudioCtrlDrv* AudioCtrl,
 
   if( dd != NULL )
   {
-    if( dd->card.pci_dev != NULL )
-    {
-      if( dd->emu10k1_initialized )
-      {
-	emu10k1_cleanup( &dd->card );
-      }
+    ObtainSemaphore( &EMU10kxBase->semaphore );
+    dd->audioctrl = NULL;
+    ReleaseSemaphore( &EMU10kxBase->semaphore );
 
-      if( dd->pci_master_enabled )
-      {
-	UWORD cmd;
-
-	cmd = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
-	cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
-	pci_write_config_word( PCI_COMMAND, cmd, dd->card.pci_dev );
-      }
-
-      if( dd->interrupt_added )
-      {
-	pci_rem_intserver( &dd->interrupt, dd->card.pci_dev );
-      }
-    }
-
-    FreeVec( dd );
-    dd = NULL;
+    AudioCtrl->ahiac_DriverData = NULL;
   }
 }
 

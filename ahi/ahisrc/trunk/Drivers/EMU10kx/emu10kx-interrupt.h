@@ -19,13 +19,13 @@
 
 #include <config.h>
 
-#include <devices/ahi.h>
+#include "DriverData.h"
 
 ULONG
-EMU10kxInterrupt( struct AHIAudioCtrlDrv* audioctrl );
+EMU10kxInterrupt( struct EMU10kxData* dd );
 
 void
-PlaybackInterrupt( struct AHIAudioCtrlDrv* audioctrl );
+PlaybackInterrupt( struct EMU10kxData* dd );
 
 void
-RecordInterrupt( struct AHIAudioCtrlDrv* audioctrl );
+RecordInterrupt( struct EMU10kxData* dd );

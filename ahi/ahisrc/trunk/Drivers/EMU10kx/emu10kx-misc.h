@@ -22,6 +22,14 @@
 #include <devices/ahi.h>
 #include <DriverData.h>
 
+struct EMU10kxData*
+AllocDriverData( struct pci_dev*    dev,
+		 struct DriverBase* AHIsubBase );
+
+void
+FreeDriverData( struct EMU10kxData* dd,
+		struct DriverBase*  AHIsubBase );
+
 void
 SaveMixerState( struct EMU10kxData* dd );
 
