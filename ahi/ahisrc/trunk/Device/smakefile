@@ -1,5 +1,8 @@
 # $Id$
 # $Log$
+# Revision 4.5  1997/04/15 12:22:14  lcs
+# Catalog changes.
+#
 # Revision 4.4  1997/04/14 01:50:39  lcs
 # *** empty log message ***
 #
@@ -175,7 +178,7 @@ dspinit_protos.h: dspinit.c
 ##
 ###############################################################################
 
-support: includes autodocs catalogs newcatalogs hyperdoc printeddoc
+support: includes autodocs newcatalogs catalogs hyperdoc printeddoc
 
 ##
 ## Build include files
@@ -258,6 +261,7 @@ catalogs:
 newcatalogs:
 	# Make NewCatalog.ct
 	--FlexCat ahi.cd NEWCTFILE AHI:User/Catalogs/NewCatalog.ct
+	copy ahi.cd AHI:User/Catalogs/
 	# Update the translations
 	list \#?.ct > T:catscript lformat "FlexCat ahi.cd %n NEWCTFILE %n"
 	execute T:catscript
