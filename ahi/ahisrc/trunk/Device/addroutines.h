@@ -74,4 +74,22 @@ LONG AddWordStereoB( ADDARGS );
 LONG AddWordsMonoB( ADDARGS );
 LONG AddWordsStereoB( ADDARGS );
 
+LONG AddLofiByteMono( ADDARGS );
+LONG AddLofiByteStereo( ADDARGS );
+LONG AddLofiBytesMono( ADDARGS );
+LONG AddLofiBytesStereo( ADDARGS );
+LONG AddLofiWordMono( ADDARGS );
+LONG AddLofiWordStereo( ADDARGS );
+LONG AddLofiWordsMono( ADDARGS );
+LONG AddLofiWordsStereo( ADDARGS );
+
+LONG AddLofiByteMonoB( ADDARGS );
+LONG AddLofiByteStereoB( ADDARGS );
+LONG AddLofiBytesMonoB( ADDARGS );
+LONG AddLofiBytesStereoB( ADDARGS );
+LONG AddLofiWordMonoB( ADDARGS );
+LONG AddLofiWordStereoB( ADDARGS );
+LONG AddLofiWordsMonoB( ADDARGS );
+LONG AddLofiWordsStereoB( ADDARGS );
+
 #endif /* _ADDROUTINES_H_ */

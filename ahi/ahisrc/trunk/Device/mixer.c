@@ -90,6 +90,23 @@ ADDFUNC* AddWordStereoBPtr  = NULL;
 ADDFUNC* AddWordsMonoBPtr   = NULL;
 ADDFUNC* AddWordsStereoBPtr = NULL;
 
+ADDFUNC* AddLofiByteMonoPtr     = NULL;
+ADDFUNC* AddLofiByteStereoPtr   = NULL;
+ADDFUNC* AddLofiBytesMonoPtr    = NULL;
+ADDFUNC* AddLofiBytesStereoPtr  = NULL;
+ADDFUNC* AddLofiWordMonoPtr     = NULL;
+ADDFUNC* AddLofiWordStereoPtr   = NULL;
+ADDFUNC* AddLofiWordsMonoPtr    = NULL;
+ADDFUNC* AddLofiWordsStereoPtr  = NULL;
+ADDFUNC* AddLofiByteMonoBPtr    = NULL;
+ADDFUNC* AddLofiByteStereoBPtr  = NULL;
+ADDFUNC* AddLofiBytesMonoBPtr   = NULL;
+ADDFUNC* AddLofiBytesStereoBPtr = NULL;
+ADDFUNC* AddLofiWordMonoBPtr    = NULL;
+ADDFUNC* AddLofiWordStereoBPtr  = NULL;
+ADDFUNC* AddLofiWordsMonoBPtr   = NULL;
+ADDFUNC* AddLofiWordsStereoBPtr = NULL;
+
 static const UBYTE type2bytes[]=
 {
   1,    // AHIST_M8S  (0)
@@ -427,6 +444,23 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       GetSymbol( AddWordsMonoB   );
       GetSymbol( AddWordsStereoB );
 
+      GetSymbol( AddLofiByteMono     );
+      GetSymbol( AddLofiByteStereo   );
+      GetSymbol( AddLofiBytesMono    );
+      GetSymbol( AddLofiBytesStereo  );
+      GetSymbol( AddLofiWordMono     );
+      GetSymbol( AddLofiWordStereo   );
+      GetSymbol( AddLofiWordsMono    );
+      GetSymbol( AddLofiWordsStereo  );
+      GetSymbol( AddLofiByteMonoB    );
+      GetSymbol( AddLofiByteStereoB  );
+      GetSymbol( AddLofiBytesMonoB   );
+      GetSymbol( AddLofiBytesStereoB );
+      GetSymbol( AddLofiWordMonoB    );
+      GetSymbol( AddLofiWordStereoB  );
+      GetSymbol( AddLofiWordsMonoB   );
+      GetSymbol( AddLofiWordsStereoB );
+
 #undef GetSymbol
 
       // Sucess?
@@ -488,6 +522,23 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
       GetSymbol( AddWordStereoB  );
       GetSymbol( AddWordsMonoB   );
       GetSymbol( AddWordsStereoB );
+
+      GetSymbol( AddLofiByteMono     );
+      GetSymbol( AddLofiByteStereo   );
+      GetSymbol( AddLofiBytesMono    );
+      GetSymbol( AddLofiBytesStereo  );
+      GetSymbol( AddLofiWordMono     );
+      GetSymbol( AddLofiWordStereo   );
+      GetSymbol( AddLofiWordsMono    );
+      GetSymbol( AddLofiWordsStereo  );
+      GetSymbol( AddLofiByteMonoB    );
+      GetSymbol( AddLofiByteStereoB  );
+      GetSymbol( AddLofiBytesMonoB   );
+      GetSymbol( AddLofiBytesStereoB );
+      GetSymbol( AddLofiWordMonoB    );
+      GetSymbol( AddLofiWordStereoB  );
+      GetSymbol( AddLofiWordsMonoB   );
+      GetSymbol( AddLofiWordsStereoB );
 
 #undef GetSymbol
 
@@ -622,124 +673,253 @@ SelectAddRoutine ( Fixed     VolumeLeft,
   VolumeRight = VolumeRight * (audioctrl->ahiac_MasterVolume >> 8) / 
                               (audioctrl->ahiac_Channels2 << 8);
 
-  // Now, check the output format...
+  // First, select HiFi or LoFi...
 
-  switch(audioctrl->ac.ahiac_BuffType)
+  if( audioctrl->ac.ahiac_Flags & AHIACF_HIFI )
   {
 
-    case AHIST_M32S:
+    // Then, check the output format...
 
-      // ...and then the source format.
+    switch(audioctrl->ac.ahiac_BuffType)
+    {
 
-      switch(SampleType)
-      {
-        case AHIST_M8S:
-        case AHIST_BW|AHIST_M8S:
-          *ScaleLeft  = VolumeLeft + VolumeRight;
-          *ScaleRight = 0;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddByteMonoBPtr;
-          else
-            *AddRoutine = AddByteMonoPtr;
-          break;
+      case AHIST_M32S:
 
-        case AHIST_S8S:
-        case AHIST_BW|AHIST_S8S:
-          *ScaleLeft  = VolumeLeft;
-          *ScaleRight = VolumeRight;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddBytesMonoBPtr;
-          else
-            *AddRoutine = AddBytesMonoPtr;
-          break;
+        // ...and then the source format.
 
-        case AHIST_M16S:
-        case AHIST_BW|AHIST_M16S:
-          *ScaleLeft  = VolumeLeft + VolumeRight;
-          *ScaleRight = 0;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordMonoBPtr;
-          else
-            *AddRoutine = AddWordMonoPtr;
-          break;
+        switch(SampleType)
+        {
+          case AHIST_M8S:
+          case AHIST_BW|AHIST_M8S:
+            *ScaleLeft  = VolumeLeft + VolumeRight;
+            *ScaleRight = 0;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddByteMonoBPtr;
+            else
+              *AddRoutine = AddByteMonoPtr;
+            break;
 
-        case AHIST_S16S:
-        case AHIST_BW|AHIST_S16S:
-          *ScaleLeft  = VolumeLeft;
-          *ScaleRight = VolumeRight;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordsMonoBPtr;
-          else
-            *AddRoutine = AddWordsMonoPtr;
-          break;
+          case AHIST_S8S:
+          case AHIST_BW|AHIST_S8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddBytesMonoBPtr;
+            else
+              *AddRoutine = AddBytesMonoPtr;
+            break;
 
-        default:
-          *ScaleLeft  = 0;
-          *ScaleRight = 0;
-          *AddRoutine = NULL;
-          break;
-      }
-      break;
+          case AHIST_M16S:
+          case AHIST_BW|AHIST_M16S:
+            *ScaleLeft  = VolumeLeft + VolumeRight;
+            *ScaleRight = 0;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddWordMonoBPtr;
+            else
+              *AddRoutine = AddWordMonoPtr;
+            break;
 
-    case AHIST_S32S:
+          case AHIST_S16S:
+          case AHIST_BW|AHIST_S16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddWordsMonoBPtr;
+            else
+              *AddRoutine = AddWordsMonoPtr;
+            break;
 
-      // ...and then the source format.
+          default:
+            *ScaleLeft  = 0;
+            *ScaleRight = 0;
+            *AddRoutine = NULL;
+            break;
+        }
+        break;
 
-      switch(SampleType)
-      {
-        case AHIST_M8S:
-        case AHIST_BW|AHIST_M8S:
-          *ScaleLeft  = VolumeLeft;
-          *ScaleRight = VolumeRight;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddByteStereoBPtr;
-          else
-            *AddRoutine = AddByteStereoPtr;
-          break;
+      case AHIST_S32S:
 
-        case AHIST_S8S:
-        case AHIST_BW|AHIST_S8S:
-          *ScaleLeft  = VolumeLeft;
-          *ScaleRight = VolumeRight;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddBytesStereoBPtr;
-          else
-            *AddRoutine = AddBytesStereoPtr;
-          break;
+        // ...and then the source format.
 
-        case AHIST_M16S:
-        case AHIST_BW|AHIST_M16S:
-          *ScaleLeft  = VolumeLeft;
-          *ScaleRight = VolumeRight;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordStereoBPtr;
-          else
-            *AddRoutine = AddWordStereoPtr;
-          break;
+        switch(SampleType)
+        {
+          case AHIST_M8S:
+          case AHIST_BW|AHIST_M8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddByteStereoBPtr;
+            else
+              *AddRoutine = AddByteStereoPtr;
+            break;
 
-        case AHIST_S16S:
-        case AHIST_BW|AHIST_S16S:
-          *ScaleLeft  = VolumeLeft;
-          *ScaleRight = VolumeRight;
-          if(SampleType & AHIST_BW)
-            *AddRoutine = AddWordsStereoBPtr;
-          else
-            *AddRoutine = AddWordsStereoPtr;
-          break;
+          case AHIST_S8S:
+          case AHIST_BW|AHIST_S8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddBytesStereoBPtr;
+            else
+              *AddRoutine = AddBytesStereoPtr;
+            break;
 
-        default:
-          *ScaleLeft  = 0;
-          *ScaleRight = 0;
-          *AddRoutine = NULL;
-          break;
-      }
-      break;
+          case AHIST_M16S:
+          case AHIST_BW|AHIST_M16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddWordStereoBPtr;
+            else
+              *AddRoutine = AddWordStereoPtr;
+            break;
 
-    default:
-      *ScaleLeft  = 0;
-      *ScaleRight = 0;
-      *AddRoutine = NULL;
-      break;
+          case AHIST_S16S:
+          case AHIST_BW|AHIST_S16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddWordsStereoBPtr;
+            else
+              *AddRoutine = AddWordsStereoPtr;
+            break;
+
+          default:
+            *ScaleLeft  = 0;
+            *ScaleRight = 0;
+            *AddRoutine = NULL;
+            break;
+        }
+        break;
+
+      default:
+        *ScaleLeft  = 0;
+        *ScaleRight = 0;
+        *AddRoutine = NULL;
+        break;
+    }
+  }
+  else
+  {
+
+    // Then, check the output format...
+
+    switch(audioctrl->ac.ahiac_BuffType)
+    {
+
+      case AHIST_M32S:
+
+        // ...and then the source format.
+
+        switch(SampleType)
+        {
+          case AHIST_M8S:
+          case AHIST_BW|AHIST_M8S:
+            *ScaleLeft  = VolumeLeft + VolumeRight;
+            *ScaleRight = 0;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiByteMonoBPtr;
+            else
+              *AddRoutine = AddLofiByteMonoPtr;
+            break;
+
+          case AHIST_S8S:
+          case AHIST_BW|AHIST_S8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiBytesMonoBPtr;
+            else
+              *AddRoutine = AddLofiBytesMonoPtr;
+            break;
+
+          case AHIST_M16S:
+          case AHIST_BW|AHIST_M16S:
+            *ScaleLeft  = VolumeLeft + VolumeRight;
+            *ScaleRight = 0;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiWordMonoBPtr;
+            else
+              *AddRoutine = AddLofiWordMonoPtr;
+            break;
+
+          case AHIST_S16S:
+          case AHIST_BW|AHIST_S16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiWordsMonoBPtr;
+            else
+              *AddRoutine = AddLofiWordsMonoPtr;
+            break;
+
+          default:
+            *ScaleLeft  = 0;
+            *ScaleRight = 0;
+            *AddRoutine = NULL;
+            break;
+        }
+        break;
+
+      case AHIST_S32S:
+
+        // ...and then the source format.
+
+        switch(SampleType)
+        {
+          case AHIST_M8S:
+          case AHIST_BW|AHIST_M8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiByteStereoBPtr;
+            else
+              *AddRoutine = AddLofiByteStereoPtr;
+            break;
+
+          case AHIST_S8S:
+          case AHIST_BW|AHIST_S8S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiBytesStereoBPtr;
+            else
+              *AddRoutine = AddLofiBytesStereoPtr;
+            break;
+
+          case AHIST_M16S:
+          case AHIST_BW|AHIST_M16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiWordStereoBPtr;
+            else
+              *AddRoutine = AddLofiWordStereoPtr;
+            break;
+
+          case AHIST_S16S:
+          case AHIST_BW|AHIST_S16S:
+            *ScaleLeft  = VolumeLeft;
+            *ScaleRight = VolumeRight;
+            if(SampleType & AHIST_BW)
+              *AddRoutine = AddLofiWordsStereoBPtr;
+            else
+              *AddRoutine = AddLofiWordsStereoPtr;
+            break;
+
+          default:
+            *ScaleLeft  = 0;
+            *ScaleRight = 0;
+            *AddRoutine = NULL;
+            break;
+        }
+        break;
+
+      default:
+        *ScaleLeft  = 0;
+        *ScaleRight = 0;
+        *AddRoutine = NULL;
+        break;
+    }
   }
 }
 
