@@ -44,6 +44,7 @@
 #include "ahi_def.h"
 #include "database.h"
 #include "debug.h"
+#include "header.h"
 #include "misc.h"
 
 
@@ -678,6 +679,9 @@ AddModeFile ( UBYTE *filename )
 
             if(name != NULL)
             {
+              char            driver_name[ 128 ];
+              struct Library* driver_base;
+
               rc = FALSE;
 
               if( name->sp_Size <= 0 )
@@ -710,8 +714,24 @@ AddModeFile ( UBYTE *filename )
                 }
               }
               
-
               extratags[0].ti_Data = (ULONG) name->sp_Data;
+
+              // Now verify that the driver can really be opened
+              
+              strcpy( driver_name, "DEVS:AHI/" );
+              strncat( driver_name, name->sp_Data, 100 );
+              strcat( driver_name, ".audio" );
+              
+              driver_base = OpenLibrary( driver_name, DriverVersion );
+              
+              if( driver_base == NULL )
+              {
+                rc = FALSE;
+              }
+              else
+              {
+                CloseLibrary( driver_base );
+              }
             }
 
             if(data != NULL)

@@ -1,3 +1,13 @@
+2001-12-14  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.19.
+	
+	* When adding an audio mode file, ahi.device now verifies that the
+	driver can be opened before adding the modes to the database. If a
+	driver refuses to load if its hardware is not present, the useless
+	modes will thus not be added. Driver authors, feel free to make sure
+	your drivers behave like this.
+
 2001-12-13  Martin Blom  <martin@blom.org>
 
 	* Released filesave.audio version 2.11.
