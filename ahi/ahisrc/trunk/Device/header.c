@@ -112,32 +112,13 @@ const ULONG			           Revision       = REVISION;
 
 const char DevName[]   = AHINAME;
 const char IDString[]  = "ahi.device " VERS "\r\n";
-const char VersTag[]   = "$VER: ahi.device " VERS " "
-                         "©1994-1999 Martin Blom. "
-#ifdef mc68060
-                         "68060"
-#else
-# ifdef mc68040
-                         "68040"
-# else
-#  ifdef mc68030
-                         "68030"
-#  else
-#   ifdef mc68020
-                         "68020"
-#   else
-#    ifdef mc68000
-                         "68000"
-#    endif /* mc68000 */
-#   endif /* mc68020 */
-#  endif /* mc68030 */
-# endif /* mc68040 */
-#endif /* mc68060 */
-
+static const char VersTag[] =
+ "$VER: ahi.device " VERS " ©1994-1999 Martin Blom. "
+ CPU 
 #ifndef VERSION68K
-                         "/PPC"
+ "/PPC"
 #endif
-                         " version.\r\n";
+ " version.\r\n";
 
 
 /******************************************************************************

@@ -21,6 +21,8 @@ include Makefile.opt
 
 @SET_MAKE@
 
+VPATH		= @srcdir@
+
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 prefix		= @prefix@
@@ -31,33 +33,57 @@ CATDIR		= ${DISTDIR}/User/Catalogs
 build_os	= @build_os@
 host_cpu	= @host_cpu@
 
-CC		= @CC@
-AS		= @AS@
-INSTALL		= @INSTALL@
-INSTALL_PROGRAM	= @INSTALL_PROGRAM@
-INSTALL_DATA	= @INSTALL_DATA@
-FLEXCAT		= @FLEXCAT@
-ASM		= @ASM@
+
 
 CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir} -DVERSION$(VER)
-CFLAGS		= @CFLAGS@ -O3 -m$(CPU)
+
+ifeq ($(VER),PPC)
+
+CC		= ppc-amigaos-gcc
+AS		= ppc-amigaos-as
+AR		= ppc-amigaos-ar
+RANLIB		= ppc-amigaos-ranlib
+CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -O3 -mcpu=$(CPU) -DCPU=\"$(CPU)\"
+ASFLAGS		= @ASFLAGS@ -m$(CPU) -mregnames --defsym CPU=$(CPU)
+LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
+LIBS		=
+
+TARGET		= ahi.elf.$(CPU)
+
+else
+
+CC		= @CC@
+AS		= @AS@
+AR              = @AR@
+RANLIB          = @RANLIB@
+CFLAGS		= @CFLAGS@ -O3 -m$(CPU) -DCPU=\"$(CPU)\"
 ASFLAGS		= @ASFLAGS@ -m$(CPU) --register-prefix-optional --bitwise-or \
 		  --defsym CPU=$(CPU)
 LDFLAGS		= @LDFLAGS@ -nostartfiles
+ARFLAGS         = @ARFLAGS@
 LIBS		= @LIBS@
+
+ASM		= @ASM@
 ASMFLAGS	= I INCLUDE:,@srcdir@ SYMDEBUG LINEDEBUG \
 		  QUIET NOEXE OPT NRQBPSMD \
 		  MACHINE $(CPU) SET "VERSION$(VER)"
 
-VPATH		= @srcdir@
-
-
-ifeq ($(strip $(FLEXCAT)),)
-FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
-endif
+TARGET		= ahi.device.$(VER)-$(CPU)
 
 ifeq ($(strip $(ASM)),)
 ASM		= @echo 'No suitable assembler found; cannot make $@!'; false \#
+endif
+
+endif
+
+INSTALL		= @INSTALL@
+INSTALL_PROGRAM	= @INSTALL_PROGRAM@
+INSTALL_DATA	= @INSTALL_DATA@
+
+FLEXCAT		= @FLEXCAT@
+
+ifeq ($(strip $(FLEXCAT)),)
+FLEXCAT		= @echo 'FlexCat not found; cannot make $@!'; false \#
 endif
 
 
@@ -65,39 +91,36 @@ endif
 # Files
 ########################################
 
+LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
+CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
+
 OBJECTS		= header.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o\
 		  elfloader.o
 
+
 ifeq ($(VER),68K)
 OBJECTS		+= dspecho_68k.o mixer_68k.o
 else
+OBJECTS		+= mixer.o
 endif
 
 ifeq ($(VER),GEN)
+
 ifeq ($(host_cpu),m68k)
-#OBJECTS		+= dspecho.o mixer.o addroutines_68k.o
-OBJECTS		+= dspecho.o mixer.o addroutines.o
-else
-OBJECTS		+= dspecho.o mixer.o addroutines.o
-endif
+#OBJECTS		+= addroutines_68k.o
 endif
 
-TARGET		= ahi.device.$(VER)-$(CPU)
+ifeq ($(host_cpu),ppc)
+OBJECTS		+= addroutines_ppc.o
+endif
+
+endif
 
 ifeq ($(VER),PPC)
-CC		= ppc-amigaos-gcc
-CFLAGS		= @CFLAGS@ -V egcs-2.91.60 -mcpu=$(CPU)
-LDFLAGS		= -V egcs-2.91.60 -nostartfiles -r 
-LIBS		=
 OBJECTS		= ppcheader.o dspecho.o mixer.o addroutines_ppc.o
-TARGET		= ahi.elf.$(CPU)
 endif
-
-
-LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
-CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
 
 #
@@ -105,7 +128,7 @@ CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 ########################################
 
 .PHONY:		all mostlyclean clean distclean maintainer-clean\
-		bindist bindist-install install revup
+		install revup bindist bindist-install
 
 
 all:		$(TARGET) $(srcdir)/ahi.ct $(CATALOGS)
@@ -115,12 +138,21 @@ mostlyclean:
 
 clean:		mostlyclean
 	$(RM) $(CATALOGS) localize.c localize.h version.h version.i \
-	      ahi.device.*
+	      ahi.device.* ahi.elf.*
 
 distclean:	clean
 	$(RM) Makefile
 
 maintainer-clean: distclean
+
+install:	$(TARGET)
+	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
+
+revup:
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%d.%m.%y > $(srcdir)/version.date
+	@echo -n "New revision: "
+	@cat $(srcdir)/version.rev
 
 bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 	$(INSTALL) --directory $(CATDIR)
@@ -133,23 +165,23 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 
 	$(INSTALL) --directory $(DEVSDIR)
 
-	make clean
-	make bindist-install VER=68K CPU=68000
+#	make clean
+#	make bindist-install VER=68K CPU=68000
 
-	make clean
-	make bindist-install VER=68K CPU=68020
+#	make clean
+#	make bindist-install VER=68K CPU=68020
 
-	make clean
-	make bindist-install VER=68K CPU=68030
+#	make clean
+#	make bindist-install VER=68K CPU=68030
 
-	make clean
-	make bindist-install VER=68K CPU=68040
+#	make clean
+#	make bindist-install VER=68K CPU=68040
 
-	make clean
-	make bindist-install VER=68K CPU=68060
+#	make clean
+#	make bindist-install VER=68K CPU=68060
 
-	make clean
-	make bindist-install VER=GEN CPU=68000
+#	make clean
+#	make bindist-install VER=GEN CPU=68000
 
 	make clean
 	make bindist-install VER=GEN CPU=68020
@@ -164,19 +196,41 @@ bindist:	$(srcdir)/ahi.ct $(CATALOGS)
 	make bindist-install VER=GEN CPU=68060
 
 	make clean
-	make bindist-install VER=PPC CPU=603e
+	make bindist-install VER=PPC CPU=603
 
 	make clean
-	make bindist-install VER=PPC CPU=604e
+	make bindist-install VER=PPC CPU=604
 
 
 bindist-install: $(TARGET)
 	$(INSTALL_PROGRAM) --strip $(TARGET) $(DEVSDIR)/$(TARGET)
 
 
-install:	$(TARGET)
-	$(INSTALL_PROGRAM) $(TARGET) $(PREFIX)/Devs/$(basename $(TARGET))
+#
+# Auto-remake autoconf stuff
+########################################
 
+Makefile: Makefile.in ../config.status
+	(cd .. && ./config.status)
+
+
+#
+# Rules
+########################################
+
+%.o:	%.s
+	gasp $< | $(AS) $(ASFLAGS) -o $@
+	#$(AS) $(ASFLAGS) $< -o $@
+
+asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
+	$(ASM) $(ASMFLAGS) $< TO $@
+
+$(TARGET):		$(OBJECTS) libaddroutines.a
+	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
+
+libaddroutines.a:	addroutines_hifi.o dspecho.o
+	$(AR) $(ARFLAGS) $@ $^
+	$(RANLIB) $@
 
 version.i:	version.rev
 	@echo Creating $@
@@ -194,63 +248,22 @@ version.h:	version.rev version.date
 	 echo "#define REVISION $$rev" >> $@ && \
 	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
 
-revup:
-	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
-	@date +%d.%m.%y > $(srcdir)/version.date
-	@echo -n "New revision: "
-	@cat $(srcdir)/version.rev
-
-#
-# Auto-remake autoconf stuff
-########################################
-
-Makefile: Makefile.in ../config.status
-	(cd .. && ./config.status)
-
-
-#
-# Rules
-########################################
-
-%.o:	%.s
-	$(AS) $(ASFLAGS) $< -o $@
-
-asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
-	$(ASM) $(ASMFLAGS) $< TO $@
-
-addroutines_ppc.o:	addroutines_ppc.s
-	gasp $< | ppc-amigaos-as -mregnames -m$(CPU) -o $@
-
-$(TARGET):	$(OBJECTS)
-	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
-
-
-addtest:	addtest.o addroutines.o
-	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
-	chmod 777 $@
-
-addtest_68k:	addtest.o addroutines_68k.o
-	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
-	chmod 777 $@
-
-addtest_ppc:	addtest.o addroutines_ppc.o
-	$(CC) -V egcs-2.91.60 $^ $(LIBS) -o $@
-	chmod 777 $@
-
-elftest:	elftest.o elfloader.o asmfuncs.o
-	$(CC) $^ $(LIBS) -o $@
-
-localize.c:	ahi.cd C_c_AHI.sd
+localize.c:		ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd localize.c=$(srcdir)/C_c_AHI.sd 
 
-localize.h:	ahi.cd C_c_AHI.sd
+localize.h:		ahi.cd C_c_AHI.sd
 	$(FLEXCAT) $(srcdir)/ahi.cd localize.h=$(srcdir)/C_h_AHI.sd
 
-%.catalog:	translations/%.ct
+%.catalog:		translations/%.ct
 	$(FLEXCAT) $(srcdir)/ahi.cd $< CATALOG $@
 
 %.ct:
 	$(FLEXCAT) $(srcdir)/ahi.cd $@ NEWCTFILE $@
+
+# Just some test code...
+
+elftest:		elftest.o elfloader.o asmfuncs.o
+	$(CC) $^ $(LIBS) -o $@
 
 
 #
@@ -275,6 +288,8 @@ asmfuncs.o:	asmfuncs.s ahi_def.i
 devsupp.o:	devsupp.s
 dspecho_68k.o:	dspecho_68k.s ahi_def.i dsp.i
 mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
+addroutines_ppc.o:	addroutines_ppc.s
+addroutines_68k.o:	addroutines_68k.s
 
 $(wildcard $(srcdir)/translations/*.ct) $(srcdir)/ahi.ct:	ahi.cd
 

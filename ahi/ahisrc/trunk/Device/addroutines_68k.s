@@ -40,18 +40,18 @@ BOOL	  StopAtZero		50(sp) word		StopAtZero
 
 */
 
-Samples		= 11*4 + 4
-ScaleLeft	= 11*4 + 8
-ScaleRight	= 11*4 + 12
-StartPointLeft	= 11*4 + 16
-StartPointRight	= 11*4 + 20
-Src		= 11*4 + 24
-Dst		= 11*4 + 28
-FirstOffsetI	= 11*4 + 32
-AddI		= 11*4 + 36
-AddF		= 11*4 + 40
-Offset		= 11*4 + 44
-StopAtZero	= 11*4 + 50
+Samples		.equ	11*4 + 4
+ScaleLeft	.equ	11*4 + 8
+ScaleRight	.equ	11*4 + 12
+StartPointLeft	.equ	11*4 + 16
+StartPointRight	.equ	11*4 + 20
+Src		.equ	11*4 + 24
+Dst		.equ	11*4 + 28
+FirstOffsetI	.equ	11*4 + 32
+AddI		.equ	11*4 + 36
+AddF		.equ	11*4 + 40
+Offset		.equ	11*4 + 44
+StopAtZero	.equ	11*4 + 50
 
 /*
 
@@ -91,6 +91,7 @@ a6	right lastpoint
 	.globl	_AddWordsMonoB
 	.globl	_AddWordsStereoB
 
+/*
 _AddByteStereo:
 _AddBytesMono:
 _AddBytesStereo:
@@ -109,6 +110,7 @@ _AddWordsStereoB:
 	move.l	(Samples,sp),d0
 	movem.l	(sp)+,d2-d7/a2-a6
 	rts
+*/
 
 AddSilenceMono:
  .if	CPU < 68060
@@ -451,3 +453,5 @@ L01exit:
 	neg.l	d0				/* Return Samples - d0 */
 	movem.l	(sp)+,d2-d7/a2-a6
 	rts
+
+	.end

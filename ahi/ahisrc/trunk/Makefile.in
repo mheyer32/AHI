@@ -63,10 +63,10 @@ bindist:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
 
 revup:
-	@rev=`cat version.rev` && echo `expr $$rev + 1` > version.rev
-	@date +%y.%m.%d > version.date
+	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev
+	@date +%y.%m.%d > $(srcdir)/version.date
 	@echo -n "New revision: "
-	@cat version.rev
+	@cat $(srcdir)/version.rev
 
 #
 # Auto-remake autoconf stuff
