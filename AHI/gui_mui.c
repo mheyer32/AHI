@@ -628,7 +628,7 @@ BOOL BuildGUI(char *screenname)
           MUIA_Numeric_Min, 0,
           MUIA_Numeric_Max, 100,
           MUIA_Numeric_Value,(globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
-          MUIA_Numeric_Format,"%ld% ms",
+          MUIA_Numeric_Format,"%ld ms",
           MUIA_Disabled, AHIBase->lib_Version <= 4,
         End,
       End,
