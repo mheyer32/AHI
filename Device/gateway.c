@@ -24,8 +24,9 @@
 #include <CompilerSpecific.h>
 
 
-#if defined( ENABLE_MORPHOS )
-# include <exec/types.h> 
+#include <exec/types.h> 
+
+#ifdef __morphos__
 # define EMUL_NOQUICKMODE
 # include <emul/emulregs.h>
 #endif
@@ -53,7 +54,7 @@
  *
  */
 
-#if defined( ENABLE_MORPHOS )
+#ifdef __morphos__
 
 /******************************************************************************
 ** MorphOS gateway functions **************************************************
@@ -496,7 +497,8 @@ struct EmulLibEntry m68k_PostTimer =
   TRAP_LIBNR, 0, (void (*)(void)) &gw_PostTimer
 };
 
-#else
+#else // ifdef __morphos__
+
 
 /******************************************************************************
 ** AmigaOS gateway functions **************************************************
@@ -880,4 +882,4 @@ _m68k_PostTimer:
         rts
 ");
 
-#endif // ENABLE_MORPHOS
+#endif // ifdef __morphos__

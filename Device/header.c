@@ -55,7 +55,7 @@ int Start( void )
   return -1;
 }
 
-#if defined( ENABLE_MORPHOS )
+#ifdef __morphos__
 ULONG   __amigappc__=1;
 #endif
 
@@ -72,7 +72,7 @@ static const struct Resident RomTag =
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &RomTag + 1,
-#if defined( ENABLE_MORPHOS )
+#ifdef __morphos__
   RTF_PPC | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
@@ -237,7 +237,7 @@ Null( void )
 static const APTR funcTable[] =
 {
 
-#if defined( ENABLE_MORPHOS )
+#ifdef __morphos__
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
 
@@ -604,7 +604,7 @@ OpenLibs ( void )
       switch( MixBackend )
       {
         case MB_NATIVE:
-#if defined( ENABLE_MORPHOS )
+#ifdef __morphos__
           backend = "MorphOS/" CPU;
 #else
           backend = "AmigaOS/" CPU;
