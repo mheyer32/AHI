@@ -1,5 +1,8 @@
 2003-07-05  Martin Blom  <martin@blom.org>
 
+	* Drivers/Common/library.c: Moved init code to _LibOpen() and
+	cleanup code to _LibClose().
+
 	* emu10kx.audio: The newly added CAMD init code would crash the
 	driver would not load.
 	
