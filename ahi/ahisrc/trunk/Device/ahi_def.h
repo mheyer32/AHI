@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.12  1997/03/24 18:03:10  lcs
+* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
+*
 * Revision 1.11  1997/03/24 12:41:51  lcs
 * Echo rewritten
 *
@@ -75,9 +78,16 @@ extern __far ULONG			 AHIChannelData_SIZEOF;
 extern __far ULONG			 AHISoundData_SIZEOF;
 
 
-extern char __stdargs *Sprintf(char *, const char *, ...);
+extern __stdargs char *Sprintf(char *, const char *, ...);
 
 #define AHI_UNITS	4	/* Normal units, excluding AHI_NO_UNIT */
+
+#define AHIBB_NOSURROUND	(0)
+#define AHIBF_NOSURROUND	(1L<<0)
+#define AHIBB_NOECHO		(1)
+#define AHIBF_NOECHO		(1L<<1)
+#define AHIBB_FASTECHO		(2)
+#define AHIBF_FASTECHO		(1L<<2)
 
 /* AHIBase */
 struct AHIBase
@@ -101,12 +111,6 @@ struct AHIBase
 	Fixed			 ahib_MaxCPU;
 };
 
-#define AHIBB_NOSURROUND	(0)
-#define AHIBF_NOSURROUND	(1L<<0)
-#define AHIBB_NOECHO		(1)
-#define AHIBF_NOECHO		(1L<<1)
-#define AHIBB_FASTECHO		(2)
-#define AHIBF_FASTECHO		(1L<<2)
 
 #define DRIVERNAME_SIZEOF sizeof("DEVS:ahi/                          .audio")
 
@@ -116,6 +120,20 @@ struct Timer
 	struct EClockVal	 ExitTime;
 };
 
+struct AHISoundData
+{
+	ULONG	sd_Type;
+	APTR	sd_Addr;
+	ULONG	sd_Length;
+};
+
+#define AHIACB_NOMIXING	31		/* private ahiac_Flags flag */
+#define AHIACF_NOMIXING	(1L<<31)	/* private ahiac_Flags flag */
+#define AHIACB_NOTIMING	30		/* private ahiac_Flags flag */
+#define AHIACF_NOTIMING	(1L<<30)	/* private ahiac_Flags flag */
+#define AHIACB_POSTPROC 29		/* private ahiac_Flags flag */
+#define AHIACF_POSTPROC	(1L<<29)	/* private ahiac_Flags flag */
+
 /* Private AudioCtrl structure */
 struct AHIPrivAudioCtrl
 {
@@ -123,7 +141,7 @@ struct AHIPrivAudioCtrl
 	struct	Library		*ahiac_SubLib;
 	ULONG			 ahiac_SubAllocRC;
 	APTR			 ahiac_ChannelDatas;
-	APTR			 ahiac_SoundDatas;
+	struct AHISoundData	*ahiac_SoundDatas;
 	ULONG			 ahiac_BuffSizeNow;	/* How many bytes of the buffer are used? */
 
 	APTR			 ahiac_MultTableS;
@@ -145,11 +163,6 @@ struct AHIPrivAudioCtrl
 	char			 ahiac_DriverName[DRIVERNAME_SIZEOF];
 };
 
-#define AHIACB_NOMIXING	31		/* private ahiac_Flags flag */
-#define AHIACF_NOMIXING	(1L<<31)	/* private ahiac_Flags flag */
-#define AHIACB_NOTIMING	30		/* private ahiac_Flags flag */
-#define AHIACF_NOTIMING	(1L<<30)	/* private ahiac_Flags flag */
-#define AHIACB_POSTPROC 29		/* private ahiac_Flags flag */
-#define AHIACF_POSTPROC	(1L<<29)	/* private ahiac_Flags flag */
+
 
 #endif

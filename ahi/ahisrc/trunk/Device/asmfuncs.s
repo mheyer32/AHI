@@ -1,7 +1,7 @@
 * $Id$
 * $Log$
-* Revision 1.20  1997/03/24 12:41:51  lcs
-* Echo rewritten
+* Revision 1.21  1997/03/24 18:03:10  lcs
+* Rewrote AHI_LoadSound() and AHI_UnloadSound() in C
 *
 * Revision 1.19  1997/03/22 18:58:07  lcs
 * --background-- updated + some work on dspecho
@@ -84,8 +84,6 @@
 	XDEF	_SetFreq
 	XDEF	_SetSound
 	XDEF	_SetEffect
-	XDEF	_LoadSound
-	XDEF	_UnloadSound
 
 	XDEF	_RecalcBuff
 	XDEF	_InitMixroutine
@@ -107,8 +105,8 @@
 	XREF	_GetDBTagList
 
 	XREF	SelectAddRoutine
-	XREF	initUnsignedTable
-	XREF	initSignedTable
+;	XREF	initUnsignedTable
+;	XREF	initSignedTable
 	XREF	calcSignedTable
 	XREF	calcUnsignedTable
 	XREF	CalcSamples
@@ -877,6 +875,10 @@ SetSound_nodebug
 *       Previous to V3, this call always returned AHIE_OK.
 *
 *   BUGS
+*       The idea of updating the source structure instead of allocating
+*       a new one that is passed the hook it pretty flawed. The reason is
+*       that AHI_SetEffect() originally could be called from interrupts,
+*       and memory allocation is not allowed from within interrupts.
 *
 *   SEE ALSO
 *       AHI_SetFreq(), AHI_SetSound(), AHI_SetVol(), AHI_LoadSound(),
@@ -1131,266 +1133,6 @@ clear_DSPMask:
 	rts
 
  ENDC * MC020
-
-
-
-****** ahi.device/AHI_LoadSound ********************************************
-*
-*   NAME
-*       AHI_LoadSound -- prepare a sound for playback
-*
-*   SYNOPSIS
-*       error = AHI_LoadSound( sound, type, info, audioctrl );
-*       D0                     D0:16  D1    A0    A2
-*
-*       ULONG AHI_LoadSound( UWORD, ULONG, APTR, struct AHIAudioCtrl * );
-*
-*   FUNCTION
-*       Defines an ID number for the sound and prepares it for playback.
-*
-*   INPUTS
-*       sound - The numeric ID to be used as a reference to this sound.
-*           The ID is a number greater or equal to 0 and less than what you
-*           specified with AHIA_Sounds when you called AHI_AllocAudioA().
-*       type - The type of the sound. Currently four types are supported:
-*           AHIST_SAMPLE - array of 8 or 16 bit samples. Note that the
-*               portion of memory where the sample is stored must NOT be
-*               altered until AHI_UnloadSound() has been called! This is
-*               because some audio drivers may wish to upload the samples
-*               to local RAM. It is ok to read, though.
-*
-*           AHIST_DYNAMICSAMPLE - array of 8 or 16 bit samples, which can be
-*               updated dynamically. Typically used to play data that is
-*               loaded from disk or calculated realtime.
-*               Avoid using this sound type as much as possible; it will
-*               use much more CPU power than AHIST_SAMPLE on a DMA/DSP
-*               sound card.
-*
-*           AHIST_INPUT - The input from your sampler (not fully functional
-*               yet).
-*
-*       info - Depends on type:
-*           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
-*               ahisi_Type - Format of samples (only two supported).
-*                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
-*                   AHIST_S8S: Stereo, 8 bit signed (2×BYTEs) (V3). 
-*                   AHIST_M16S: Mono, 16 bit signed (WORDs).
-*                   AHIST_S16S: Stereo, 16 bit signed (2×WORDs) (V3).
-*               ahisi_Address - Address to the sample array.
-*               ahisi_Length - The size of the array, in samples.
-*               Don't even think of setting ahisi_Address to 0 and
-*               ahisi_Length to 0xffffffff as you can do with
-*               AHIST_DYNAMICSAMPLE! Very few DMA/DSP cards has 4 GB onboard
-*               RAM...
-*
-*           AHIST_DYNAMICSAMPLE A pointer to a struct AHISampleInfo, filled
-*               as described above (AHIST_SAMPLE).
-*               If ahisi_Address is 0 and ahisi_Length is 0xffffffff
-*               AHI_SetSound() can take the real address of an 8 bit sample
-*               to be played as offset argument. Unfortunately, this does not
-*               work for 16 bit samples.
-*
-*           AHIST_INPUT - Allways set info to NULL.
-*               Note that AHI_SetFreq() may only be called with AHI_MIXFREQ
-*               for this sample type.
-*
-*       audioctrl - A pointer to an AHIAudioCtrl structure.
-*
-*   RESULT
-*       An error code, defined in <devices/ahi.h>.
-*
-*   EXAMPLE
-*
-*   NOTES
-*       There is no need to place a sample array in Chip memory, but it
-*       MUST NOT be swapped out! Allocate your sample memory with the
-*       MEMF_PUBLIC flag set. 
-*
-*       SoundFunc will be called in the same manner as Paula interrups
-*       occur; when the device has updated its internal variables and can
-*       accept new commands.
-*
-*   BUGS
-*       AHIST_INPUT does not fully work yet.
-*
-*   SEE ALSO
-*       AHI_UnloadSound(), AHI_SetEffect(), AHI_SetFreq(), AHI_SetSound(),
-*       AHI_SetVol(), <devices/ahi.h>
-*
-****************************************************************************
-*
-*
-
-_LoadSound:
-	cmp.b	#AHI_DEBUG_LOW,ahib_DebugLevel(a6)
-	blo	LoadSound_nodebug1
-	and.l	#$ffff,d0
-	PRINTF	1,"AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)",d0,d1,a0,a2
-LoadSound_nodebug1
-
-	pushm	d1/a0-a1/a6
-	push	d0
-	move.l	ahiac_SubLib(a2),a6
-	call	AHIsub_LoadSound
-	btst.b	#AHIACB_NOMIXING-24,ahiac_Flags(a2)
-	bne	.1
-	cmp.l	#AHIS_UNKNOWN,d0
-	beq	.2
-.1
-	moveq	#0,d0
-	addq.l	#4,sp				;skip d0
-	popm	d1/a0-a1/a6
-	rts
-.2
-	pop	d0
-	popm	d1/a0-a1/a6
-
-	pushm	d2-d7/a2-a6
-	move.l	a6,a5
-	move.l	ahib_SysLib(a5),a6
-
-	mulu.w	#AHISoundData_SIZEOF,d0
-	move.l	ahiac_SoundDatas(a2),a3
-
-*** AHIST_(DYNAMIC)SAMPLE
-	cmp.l	#AHIST_DYNAMICSAMPLE,d1
-	beq	.sample
-	cmp.l	#AHIST_SAMPLE,d1
-	bne	.nosample
-.sample
-	move.l	ahisi_Type(a0),d1
-	cmp.l	#AHIST_M8S,d1
-	beq	.typeok_signed
-	cmp.l	#AHIST_M16S,d1
-	beq	.typeok_signed
- IFGE	__CPU-68020
-	cmp.l	#AHIST_S8S,d1
-	beq	.typeok_signed
-	cmp.l	#AHIST_S16S,d1
-	beq	.typeok_signed
- ENDC
-	cmp.l	#AHIST_M8U,d1
-	beq	.typeok_unsigned
-	moveq	#AHIE_BADSAMPLETYPE,d0
-	bra	.exit
-.typeok_signed
-	move.l	d0,d1
-	bsr	initSignedTable
-	tst.l	d0
-	beq	.error_nomem
-	bra	.typeok
-.typeok_unsigned
-	move.l	d0,d1
-	bsr	initUnsignedTable
-	tst.l	d0
-	beq	.error_nomem
-.typeok
-	move.l	ahisi_Type(a0),sd_Type(a3,d1.l)
-	move.l	ahisi_Address(a0),sd_Addr(a3,d1.l)
-	move.l	ahisi_Length(a0),sd_Length(a3,d1.l)
-	moveq	#AHIE_OK,d0
-	bra	.exit
-.nosample
-	cmp.l	#AHIST_INPUT,d1
-	bne	.noinput
-	move.l	#AHIST_S16S,sd_Type(a3,d0.l)
-;	move.l	ahisi_Address(a0),sd_Addr(a3,d0.l)
-;	move.l	ahisi_Length(a0),sd_Length(a3,d0.l)
-
-.noinput
-
-*** Unknown type
-	moveq	#AHIE_BADSOUNDTYPE,d0
-	bra	.exit
-.error_nomem
-	moveq	#AHIE_NOMEM,d0
-.exit
-	popm	d2-d7/a2-a6
-
-	cmp.b	#AHI_DEBUG_LOW,ahib_DebugLevel(a6)
-	blo	LoadSound_nodebug2
-	PRINTF	2,"=>%ld",d0
-LoadSound_nodebug2
-	rts
-
-
-****** ahi.device/AHI_UnloadSound ******************************************
-*
-*   NAME
-*       AHI_UnloadSound -- discard a sound
-*
-*   SYNOPSIS
-*       AHI_UnloadSound( sound, audioctrl );
-*                        D0:16  A2
-*
-*       void AHI_UnloadSound( UWORD, struct AHIAudioCtrl * );
-*
-*   FUNCTION
-*       Tells 'ahi.device' that this sound will not be used anymore.
-*
-*   INPUTS
-*       sound - The ID of the sound to unload.
-*       audioctrl - A pointer to an AHIAudioCtrl structure.
-*
-*   RESULT
-*
-*   EXAMPLE
-*
-*   NOTES
-*       This call will not break a Forbid() state.
-*
-*   BUGS
-*
-*   SEE ALSO
-*       AHI_LoadSound()
-*
-****************************************************************************
-*
-*
-
-_UnloadSound:
-	cmp.b	#AHI_DEBUG_LOW,ahib_DebugLevel(a6)
-	blo	UnloadSound_nodebug
-	and.l	#$ffff,d0
-	PRINTF	2,"AHI_UnloadSound(%ld, 0x%08lx)",d0,a2
-UnloadSound_nodebug
-
-	pushm	d1/a0-a1/a6
-	push	d0
-	move.l	ahiac_SubLib(a2),a6
-	call	AHIsub_UnloadSound
-	btst.b	#AHIACB_NOMIXING-24,ahiac_Flags(a2)
-	bne	.1
-	cmp.l	#AHIS_UNKNOWN,d0
-	beq	.2
-.1
-	moveq	#0,d0
-	addq.l	#4,sp				;skip d0
-	popm	d1/a0-a1/a6
-	rts
-.2
-	pop	d0
-	popm	d1/a0-a1/a6
-
-	pushm	d2-d7/a2-a6
-	move.l	a6,a5
-	move.l	ahib_SysLib(a5),a6
-	mulu.w	#AHISoundData_SIZEOF,d0
-	move.l	ahiac_SoundDatas(a2),a3
-	move.l	sd_Type(a3,d0.l),d1
-	cmp.l	#AHIST_NOTYPE,d1
-	beq	.exit
-	move.l	#AHIST_NOTYPE,sd_Type(a3,d0.l)
-.exit
-	moveq	#0,d0
-	popm	d2-d7/a2-a6
-	rts
-
-
-
-
-
-
 
 
 
