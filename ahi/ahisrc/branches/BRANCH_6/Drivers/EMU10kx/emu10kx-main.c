@@ -296,10 +296,18 @@ _AHIsub_Start( ULONG                   flags,
     if( AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL )
     {
       num_voices = 4;
+
+      // Disable front-to-center/LFE routing
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_CENTER, 0, VOL_5BIT);
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_LFE,    0, VOL_5BIT);
     }
     else
     {
       num_voices = 1;
+
+      // Enable front-to-center/LFE routing
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_CENTER, 100, VOL_5BIT);
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_LFE,    100, VOL_5BIT);
     }
     
     for( i = 0; i < num_voices; ++i )

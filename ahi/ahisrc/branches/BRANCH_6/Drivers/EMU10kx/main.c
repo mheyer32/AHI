@@ -970,6 +970,17 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	OP(0, RES_AHI_CENTER+base,     zero, AHI_CENTER,     VOL_AHI_CENTER+base);
 	OP(0, RES_AHI_LFE+base,        zero, AHI_LFE,        VOL_AHI_LFE+base);
 
+	/* +12 dB volume correction, to make the streams use the full
+	 * dynamic range (Why, oh why?) */
+	OP(4, RES_AHI_FRONT_L+base,    zero, RES_AHI_FRONT_L+base,    0x44);
+	OP(4, RES_AHI_FRONT_R+base,    zero, RES_AHI_FRONT_R+base,    0x44);
+	OP(4, RES_AHI_REAR_L+base,     zero, RES_AHI_REAR_L,          0x44);
+	OP(4, RES_AHI_REAR_R+base,     zero, RES_AHI_REAR_R+base,     0x44);
+	OP(4, RES_AHI_SURROUND_L+base, zero, RES_AHI_SURROUND_L+base, 0x44);
+	OP(4, RES_AHI_SURROUND_R+base, zero, RES_AHI_SURROUND_R+base, 0x44);
+	OP(4, RES_AHI_CENTER+base,     zero, RES_AHI_CENTER+base,     0x44);
+	OP(4, RES_AHI_LFE+base,        zero, RES_AHI_LFE+base,        0x44);
+	
 	/* Scale digital CD in */
 	OP(0, RES_SPDIF_CD_L+base, zero, spdif_cd_l, VOL_SPDIF_CD_L+base);
 	OP(0, RES_SPDIF_CD_R+base, zero, spdif_cd_r, VOL_SPDIF_CD_R+base);
@@ -986,6 +997,10 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	OP(0, RES_SURROUND_REAR_L+base, zero, RES_AHI_SURROUND_L+base, VOL_SURROUND_REAR_L+base);
 	OP(0, RES_SURROUND_REAR_R+base, zero, RES_AHI_SURROUND_R+base, VOL_SURROUND_REAR_R+base);
 
+	/* Scale AHI_FRONT to center/LFE */
+	OP(0xe, RES_FRONT_MONO+base, RES_AHI_FRONT_L+base, 0xcd, RES_AHI_FRONT_R+base); // Left/2 + Right/2
+	OP(0, RES_FRONT_CENTER+base, zero, RES_FRONT_MONO+base, VOL_FRONT_CENTER+base);
+	OP(0, RES_FRONT_LFE+base,    zero, RES_FRONT_MONO+base, VOL_FRONT_LFE+base);
 
 	/* Sum RES_AHI_FRONT + RES_SPDIF_CD + RES_SPDIF_IN */
 	OP(6, SUM_FRONT_L+base, RES_AHI_FRONT_L+base, RES_SPDIF_CD_L+base, RES_SPDIF_CD_L+base);
@@ -999,9 +1014,9 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	OP(6, SUM_SURROUND_L+base, RES_AHI_SURROUND_L+base, zero, zero);
 	OP(6, SUM_SURROUND_R+base, RES_AHI_SURROUND_R+base, zero, zero);
 
-	/* "Sum" RES_AHI_CENTER/RES_AHI_LFE */
-	OP(6, SUM_CENTER+base, RES_AHI_CENTER+base, zero, zero);
-	OP(6, SUM_LFE+base,    RES_AHI_LFE+base,    zero, zero);
+	/* Sum RES_AHI_CENTER/RES_AHI_LFE + AHI_FRONT mix-in */
+	OP(6, SUM_CENTER+base, RES_AHI_CENTER+base, RES_FRONT_CENTER+base, zero);
+	OP(6, SUM_LFE+base,    RES_AHI_LFE+base,    RES_FRONT_LFE+base,    zero);
 
 		
 	/* Analog output */
@@ -1054,7 +1069,11 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	/* Enable surround-to-rear routing */
 	emu10k1_set_volume_gpr(card, VOL_SURROUND_REAR_L, 100, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, VOL_SURROUND_REAR_R, 100, VOL_5BIT);
-		
+
+	/* Enable front-to-center/LFE routing */
+	emu10k1_set_volume_gpr(card, VOL_FRONT_CENTER, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr(card, VOL_FRONT_LFE,    100, VOL_5BIT);
+	
 	/* Set the digital input volume controls to full volume */
 	emu10k1_set_volume_gpr(card, VOL_SPDIF_CD_L, 100, VOL_5BIT);
 	emu10k1_set_volume_gpr(card, VOL_SPDIF_CD_R, 100, VOL_5BIT);
