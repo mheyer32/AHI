@@ -1629,7 +1629,7 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
       minscale = 0x10000 / c;
     }
 
-    switch( iounit->ScaleMode )
+    switch( AHIBase->ahib_ScaleMode )
     {
       case AHI_SCALE_DYNAMIC_SAFE:
 	if( GetExtras(ioreq1)->VolumeScale > minscale )
@@ -1690,7 +1690,7 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
       0x10000
     };
     
-    switch( iounit->ScaleMode )
+    switch( AHIBase->ahib_ScaleMode )
     {
       case AHI_SCALE_FIXED_SAFE:
 	vol.ahiemv_Volume = 0x10000;

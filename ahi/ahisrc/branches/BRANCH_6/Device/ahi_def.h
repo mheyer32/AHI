@@ -76,6 +76,7 @@ struct AHIBase
   ULONG                    ahib_Output;
   Fixed                    ahib_MaxCPU;
   Fixed                    ahib_AntiClickTime;
+  UWORD                    ahib_ScaleMode;
 };
 
 

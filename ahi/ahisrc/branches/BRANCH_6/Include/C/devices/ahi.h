@@ -2,7 +2,7 @@
 #define DEVICES_AHI_H
 
 /*
-**	$VER: ahi.h 5.4 (25.7.2004)
+**	$VER: ahi.h 5.5 (5.1.2005)
 **
 **	ahi.device definitions
 **
@@ -363,7 +363,7 @@ struct AHIEffChannelInfo
 struct AHIUnitPrefs
 {
 	UBYTE	ahiup_Unit;
-        UBYTE	ahiup_ScaleMode;			/* See below (V6) */
+	UBYTE   ahiup_Obsolete;                         /* Was ahiup_ScaleMode */
         UWORD	ahiup_Channels;
         ULONG	ahiup_AudioMode;
         ULONG	ahiup_Frequency;
@@ -373,13 +373,6 @@ struct AHIUnitPrefs
         ULONG	ahiup_Input;
         ULONG	ahiup_Output;
 };
-
- /* Scale modes */
-#define AHI_SCALE_FIXED_SAFE	(0U)			/* x=y*1/max(ch)	*/
-#define AHI_SCALE_DYNAMIC_SAFE	(1U)			/* x=y*1/ch		*/
-#define AHI_SCALE_FIXED_0_DB	(2U)			/* x=y			*/
-#define AHI_SCALE_FIXED_3_DB	(3U)			/* x=y*1/sqrt(2)	*/
-#define AHI_SCALE_FIXED_6_DB	(4U)			/* x=y*1/2		*/
 
 struct AHIGlobalPrefs
 {
@@ -392,6 +385,7 @@ struct AHIGlobalPrefs
 	BOOL	ahigp_ClipMasterVolume;
 	UWORD	ahigp_Pad;
 	Fixed	ahigp_AntiClickTime;			/* In seconds (V6) */
+	UWORD   ahigp_ScaleMode;			/* See below (V6) */
 };
 
  /* Debug levels */
@@ -399,6 +393,13 @@ struct AHIGlobalPrefs
 #define AHI_DEBUG_LOW		(1U)
 #define AHI_DEBUG_HIGH		(2U)
 #define AHI_DEBUG_ALL		(3U)
+
+ /* Scale modes */
+#define AHI_SCALE_FIXED_SAFE	(0U)			/* x=y*1/max(ch)	*/
+#define AHI_SCALE_DYNAMIC_SAFE	(1U)			/* x=y*1/ch		*/
+#define AHI_SCALE_FIXED_0_DB	(2U)			/* x=y			*/
+#define AHI_SCALE_FIXED_3_DB	(3U)			/* x=y*1/sqrt(2)	*/
+#define AHI_SCALE_FIXED_6_DB	(4U)			/* x=y*1/2		*/
 
  /* AHIRequest */
 

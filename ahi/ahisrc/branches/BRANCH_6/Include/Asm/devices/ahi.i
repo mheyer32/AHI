@@ -2,7 +2,7 @@
 DEVICES_AHI_I		SET	1
 
 **
-**	$VER: ahi.i 5.4 (25.7.2004)
+**	$VER: ahi.i 5.5 (5.1.2005)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi.device definitions
@@ -426,7 +426,7 @@ ID_AHIG 		EQU "AHIG"
 
 	STRUCTURE AHIUnitPrefs,0
 	UBYTE	ahiup_Unit
-        UBYTE	ahiup_ScaleMode				; See below (V6)
+        UBYTE	ahiup_Obsolete				; Was ahiup_ScaleMode
         UWORD	ahiup_Channels
         ULONG	ahiup_AudioMode
         ULONG	ahiup_Frequency
@@ -436,13 +436,6 @@ ID_AHIG 		EQU "AHIG"
         ULONG	ahiup_Input
         ULONG	ahiup_Output
 	LABEL	AHIUnitPrefs_SIZEOF
-
- ; Scale modes
-AHI_SCALE_FIXED_SAFE	EQU (0)			; x=y*1/max(ch)
-AHI_SCALE_DYNAMIC_SAFE	EQU (1)			; x=y*1/ch
-AHI_SCALE_FIXED_0_DB	EQU (2)			; x=y
-AHI_SCALE_FIXED_3_DB	EQU (3)			; x=y*1/sqrt(2)
-AHI_SCALE_FIXED_6_DB	EQU (4)			; x=y*1/2
 
 
 	STRUCTURE AHIGlobalPrefs,0
@@ -455,6 +448,7 @@ AHI_SCALE_FIXED_6_DB	EQU (4)			; x=y*1/2
 	BOOL	ahigp_ClipMasterVolume
 	UWORD	ahigp_Pad;
 	Fixed	ahigp_AntiClickTime;			; In seconds (V6)
+        UWORD	ahigp_ScaleMode				; See below (V6)
 	LABEL	AHIGlobalPrefs_SIZEOF
 
  ; Debug levels
@@ -463,6 +457,14 @@ AHI_DEBUG_NONE		EQU (0)
 AHI_DEBUG_LOW		EQU (1)
 AHI_DEBUG_HIGH		EQU (2)
 AHI_DEBUG_ALL		EQU (3)
+
+ ; Scale modes
+
+AHI_SCALE_FIXED_SAFE	EQU (0)			; x=y*1/max(ch)
+AHI_SCALE_DYNAMIC_SAFE	EQU (1)			; x=y*1/ch
+AHI_SCALE_FIXED_0_DB	EQU (2)			; x=y
+AHI_SCALE_FIXED_3_DB	EQU (3)			; x=y*1/sqrt(2)
+AHI_SCALE_FIXED_6_DB	EQU (4)			; x=y*1/2
 
  ; AHIRequest
 

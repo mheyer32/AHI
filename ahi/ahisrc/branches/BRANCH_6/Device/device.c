@@ -663,6 +663,16 @@ ReadConfig ( struct AHIDevUnit *iounit,
                 AHIBase->ahib_AntiClickTime = 0;
               }
 
+              if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
+                                                    ahigp_ScaleMode ) )
+              {
+                AHIBase->ahib_ScaleMode = globalprefs->ahigp_ScaleMode;
+		EndianSwap( sizeof (UWORD), &AHIBase->ahib_ScaleMode );
+              }
+              else
+              {
+                AHIBase->ahib_ScaleMode = AHI_SCALE_FIXED_0_DB;
+              }
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);
             while(ci)
@@ -683,7 +693,6 @@ ReadConfig ( struct AHIDevUnit *iounit,
                   iounit->OutputVolume    = unitprefs->ahiup_OutputVolume;
                   iounit->Input           = unitprefs->ahiup_Input;
                   iounit->Output          = unitprefs->ahiup_Output;
-		  iounit->ScaleMode	  = unitprefs->ahiup_ScaleMode;
 
 		  EndianSwap( sizeof (ULONG), &iounit->AudioMode );
 		  EndianSwap( sizeof (ULONG), &iounit->Frequency );
