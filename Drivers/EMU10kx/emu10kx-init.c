@@ -20,38 +20,41 @@
 #include <config.h>
 
 #include <proto/exec.h>
-#include <proto/powerpci.h>
+#include <proto/openpci.h>
 
 #include "library.h"
 
-/* Global and not in EMU10kxBase, since it's used by linuxsupport.c */
-struct Library* ppcibase;
-struct Library* DOSBase;
+/* We use global library bases instead of storing them in DriverBase, since
+   I don't want to modify the original sources more than necessary. */
 
-/* Global and not in EMU10kxBase, since it's used everywhere ... */
-struct ExecBase* SysBase;
+struct ExecBase*   SysBase;
+struct DosLibrary* DOSBase;
+struct Library*    OpenPciBase;
+struct DriverBase* AHIsubBase;
 
 /******************************************************************************
 ** Custom driver init *********************************************************
 ******************************************************************************/
 
 BOOL
-DriverInit( struct DriverBase* AHIsubBase )
+DriverInit( struct DriverBase* ahisubbase )
 {
-  struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
+  struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) ahisubbase;
 
-  ppcibase = OpenLibrary( "powerpci.library", 1 );
+  AHIsubBase = ahisubbase;
+  
   DOSBase  = (struct DosLibrary*) OpenLibrary( DOSNAME, 37 );
-
-  if( ppcibase == NULL )
-  {
-    Req( "Unable to open 'powerpci.library' version 1.\n" );
-    return FALSE;
-  }
+  OpenPciBase = OpenLibrary( "openpci.library", 1 );
 
   if( DOSBase == NULL )
   {
     Req( "Unable to open 'dos.library' version 37.\n" );
+    return FALSE;
+  }
+
+  if( OpenPciBase == NULL )
+  {
+    Req( "Unable to open 'openpci.library' version 1.\n" );
     return FALSE;
   }
 
@@ -79,6 +82,6 @@ DriverCleanup( struct DriverBase* AHIsubBase )
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
-  CloseLibrary( ppcibase );
+  CloseLibrary( OpenPciBase );
   CloseLibrary( (struct Library*) DOSBase );
 }

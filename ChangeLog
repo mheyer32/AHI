@@ -1,3 +1,9 @@
+2003-06-22  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.3.
+
+	* emu10kx.audio: Ported to openpci.library.
+
 2003-06-20  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.2.
