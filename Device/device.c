@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.6  1997/05/11 01:06:46  lcs
+* Forgot to remove debug statements...
+*
 * Revision 4.5  1997/05/08 23:59:58  lcs
 * Fixed problem with IO/Requests that didn't get replied, and
 * lockup problem with CMD_START.
@@ -1046,21 +1049,29 @@ static __asm __interrupt void SoundFunc(
   switch(voice->NextOffset)
   {
     case FREE:
+#ifdef DEBUG
       KPrintF("Ch %ld FREE\n",sndmsg->ahism_Channel);
+#endif
       break;
     case MUTE:
+#ifdef DEBUG
       KPrintF("Ch %ld MUTE->FREE\n",sndmsg->ahism_Channel);
+#endif
       /* A AHI_NOSOUND is done, channel is silent */
       voice->NextOffset = FREE;
       break;
     case PLAY:
-      KPrintF("Ch %ld PLAT->MUTE\n",sndmsg->ahism_Channel);
+#ifdef DEBUG
+      KPrintF("Ch %ld PLAY->MUTE\n",sndmsg->ahism_Channel);
+#endif
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,NULL);
       voice->NextOffset = MUTE;
       break;
     default:
+#ifdef DEBUG
       KPrintF("Ch %ld 0x%08lx->PLAY\n",sndmsg->ahism_Channel,voice->NextOffset);
+#endif
       /* A normal sound is done, and another is waiting */
       AHI_SetSound(sndmsg->ahism_Channel,
           voice->NextSound,
