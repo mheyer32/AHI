@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:08:47  lcs
+* *** empty log message ***
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -8,11 +11,6 @@
 /*** Debug stuff ***/
 
 extern void KPrintF(char *fmt,...);
-
-
-/*** Global macros ***/
-
-#define EQ ==
 
 
 /*** AHI include files ***/
