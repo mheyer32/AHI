@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.8  1997/02/09 18:12:23  lcs
+* Default audio mode added? Don't remember...
+*
 * Revision 1.7  1997/02/04 22:14:27  lcs
 * The users preffered audio mode can now be selected in the requester
 *
@@ -641,13 +644,13 @@ static BOOL HandleReq( struct AHIAudioModeRequesterExt *req )
     }
   }
   req->Req.ahiam_AudioID = req->tempAudioID;
-  if(req->tempAudioID != AHI_DEFAULT_FREQ)
+  if(req->tempAudioID != AHI_DEFAULT_ID)
   {
     req->Req.ahiam_MixFreq = req->tempFrequency;
   }
   else
   {
-    req->Req.ahiam_MixFreq = AHIBase->ahib_Frequency;
+    req->Req.ahiam_MixFreq = AHI_DEFAULT_FREQ;
   }
   return rc;
 }
@@ -780,7 +783,7 @@ __asm BOOL AudioRequestA( register __a0 struct AHIAudioModeRequester *req_in, re
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID = AHI_DEFAULT_ID;
-      Sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog),id);
+      Sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog));
       AddTail((struct List *) req->list, (struct Node *)node);
     }
   } while(FALSE);
