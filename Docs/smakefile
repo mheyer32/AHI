@@ -1,0 +1,70 @@
+# $Id$
+# $Log$
+# Revision 4.1  1997/05/04 15:53:37  lcs
+# Initial revision.
+#
+#
+
+##
+## Definitions
+##
+###############################################################################
+
+RCSFILES= ahidev.texinfo ahiusr.texinfo smakefile
+
+
+##
+## Everything!
+##
+###############################################################################
+
+dist:	hyperdoc printeddoc readme 
+
+
+##
+## Build the readme files
+##
+###############################################################################
+
+readme:
+	type readme.dev readme.main > Projekt:AHI/AHI/ahidev.readme
+	type readme.usr readme.main > Projekt:AHI/AHI/ahiusr.readme
+	type readme.man readme.main > Projekt:AHI/AHI-Manual/ahiusr.readme
+	rep Projekt:AHI/AHI/ahidev.readme REVISION `type Projekt:AHI/rev`
+	rep Projekt:AHI/AHI/ahiusr.readme REVISION `type Projekt:AHI/rev`
+	rep Projekt:AHI/AHI-Manual/ahiusr.readme REVISION `type Projekt:AHI/rev`
+
+##
+## Build hypertext documentation
+##
+###############################################################################
+
+hyperdoc:
+	makeinfo --amiga --output AHI:User/Help/ahi.guide ahiusr.texinfo
+	makeinfo --amiga --output AHI:Developer/docs/devguide.guide ahidev.texinfo
+
+
+##
+## Build printed documentation
+##
+###############################################################################
+
+printeddoc:
+	execute MakeManual
+
+
+##
+## Check in all files
+##
+###############################################################################
+
+ci:
+	ci -l $(RCSFILES)
+
+
+##
+## Remove all objects
+##
+###############################################################################
+
+clean:
