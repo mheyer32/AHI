@@ -15,3 +15,7 @@ AddAudioModes.o: AddAudioModes.c
 
 clean:
 	delete \#?.(o|lnk|map|info) AddAudioModes QUIET
+
+ci:
+	ci -l AddAudioModes.c SCOPTIONS smakefile
+
