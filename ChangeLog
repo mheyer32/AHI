@@ -1,3 +1,10 @@
+2003-04-23  Martin Blom  <martin@blom.org>
+
+	* Released void.audio 5.3.
+
+	* void.audio: Moved generic code parts to Drivers/Common, which
+	can now be used by other drivers too.
+
 2003-04-22  Martin Blom  <martin@blom.org>
 
 	* Released void.audio 5.2.

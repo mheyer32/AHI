@@ -15,13 +15,12 @@
 #include <proto/dos.h>
 #include <proto/utility.h>
 
-#include "library.h"
-#include "DriverBase.h"
-#include "DriverData.h"
-
 #include <stddef.h>
 
-#define dd ((struct DriverData*) AudioCtrl->ahiac_DriverData)
+#include "library.h"
+#include "DriverData.h"
+
+#define dd ((struct VoidData*) AudioCtrl->ahiac_DriverData)
 
 void
 SlaveEntry( void );
@@ -78,7 +77,9 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 		    struct AHIAudioCtrlDrv* AudioCtrl,
 		    struct DriverBase*      AHIsubBase )
 {
-  dd = AllocVec( sizeof( struct DriverData ),
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+  
+  dd = AllocVec( sizeof( struct VoidData ),
 		 MEMF_CLEAR | MEMF_PUBLIC );
 
   if( dd != NULL )
@@ -86,7 +87,7 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     dd->slavesignal      = -1;
     dd->mastersignal     = AllocSignal( -1 );
     dd->mastertask       = (struct Process*) FindTask( NULL );
-    dd->ahisubbase       = AHIsubBase;
+    dd->ahisubbase       = VoidBase;
   }
   else
   {
@@ -113,6 +114,8 @@ void
 _AHIsub_FreeAudio( struct AHIAudioCtrlDrv* AudioCtrl,
 		   struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   if( AudioCtrl->ahiac_DriverData != NULL )
   {
     FreeSignal( dd->mastersignal );
@@ -130,6 +133,8 @@ void
 _AHIsub_Disable( struct AHIAudioCtrlDrv* AudioCtrl,
 		 struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   // V6 drivers do not have to preserve all registers
 
   Forbid();
@@ -144,6 +149,8 @@ void
 _AHIsub_Enable( struct AHIAudioCtrlDrv* AudioCtrl,
 		struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   // V6 drivers do not have to preserve all registers
 
   Permit();
@@ -159,6 +166,8 @@ _AHIsub_Start( ULONG                   flags,
 	       struct AHIAudioCtrlDrv* AudioCtrl,
 	       struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   AHIsub_Stop( flags, AudioCtrl );
 
   if(flags & AHISF_PLAY)
@@ -220,6 +229,8 @@ _AHIsub_Update( ULONG                   flags,
 		struct AHIAudioCtrlDrv* AudioCtrl,
 		struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   // Empty function
 }
 
@@ -233,6 +244,8 @@ _AHIsub_Stop( ULONG                   flags,
 	      struct AHIAudioCtrlDrv* AudioCtrl,
 	      struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   if( flags & AHISF_PLAY )
   {
     if( dd->slavetask != NULL )
@@ -269,6 +282,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
 		 struct AHIAudioCtrlDrv* AudioCtrl,
 		 struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
   size_t i;
 
   switch( attribute )
@@ -348,6 +362,8 @@ _AHIsub_HardwareControl( ULONG                   attribute,
 			 struct AHIAudioCtrlDrv* AudioCtrl,
 			 struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return 0;
 }
 
@@ -364,11 +380,13 @@ SlaveEntry( void )
   struct ExecBase*        SysBase = *SysBasePtr;
   struct AHIAudioCtrlDrv* AudioCtrl;
   struct DriverBase*      AHIsubBase;
+  struct VoidBase*        VoidBase;
   BOOL                    running;
   ULONG                   signals;
 
   AudioCtrl  = (struct AHIAudioCtrlDrv*) FindTask( NULL )->tc_UserData;
-  AHIsubBase = dd->ahisubbase;
+  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
+  VoidBase   = (struct VoidBase*) AHIsubBase;
 
   dd->slavesignal = AllocSignal( -1 );
 

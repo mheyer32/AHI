@@ -2,7 +2,6 @@
 #include <devices/ahi.h>
 #include <libraries/ahi_sub.h>
 
-#include "DriverBase.h"
 #include "DriverData.h"
 
 /******************************************************************************
@@ -17,6 +16,8 @@ _AHIsub_SetVol( UWORD                   channel,
 		ULONG                   flags,
 		struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return AHIS_UNKNOWN;
 }
 
@@ -32,6 +33,8 @@ _AHIsub_SetFreq( UWORD                   channel,
 		 ULONG                   flags,
 		 struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return AHIS_UNKNOWN;
 }
 
@@ -49,6 +52,8 @@ _AHIsub_SetSound( UWORD                   channel,
 		  ULONG                   flags,
 		  struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return AHIS_UNKNOWN;
 }
 
@@ -62,6 +67,8 @@ _AHIsub_SetEffect( APTR                    effect,
 		   struct AHIAudioCtrlDrv* AudioCtrl,
 		   struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return AHIS_UNKNOWN;
 }
 
@@ -77,6 +84,8 @@ _AHIsub_LoadSound( UWORD                   sound,
 		   struct AHIAudioCtrlDrv* AudioCtrl,
 		   struct DriverBase*      AHIsubBase )
 { 
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return AHIS_UNKNOWN;
 }
 
@@ -90,5 +99,7 @@ _AHIsub_UnloadSound( UWORD                   sound,
 		     struct AHIAudioCtrlDrv* AudioCtrl,
 		     struct DriverBase*      AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   return AHIS_UNKNOWN;
 }

@@ -1,5 +1,5 @@
-#ifndef CLIB_LIB_PROTOS_H
-#define CLIB_LIB_PROTOS_H
+#ifndef AHI_Drivers_Common_lib_protos_h
+#define AHI_Drivers_Common_lib_protos_h
 
 #ifndef EXEC_TYPES_H
 #include <exec/types.h>
@@ -29,4 +29,4 @@ BPTR LibExpunge( struct Library* LibBase );
 
 ULONG LibNull( struct Library* LibBase );
 
-#endif /* CLIB_LIB_PROTOS_H */
+#endif /* AHI_Drivers_Common_lib_protos_h */
