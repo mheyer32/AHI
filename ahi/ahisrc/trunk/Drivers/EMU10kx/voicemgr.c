@@ -62,7 +62,7 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 			DPF(1, "couldn't allocate dma memory\n");
 			return -1;
 		}
-		for(i=0;i<PAGE_SIZE;++i){((char*)(mem->addr[pagecount]))[i]=i;}
+
 		DPD(2, "Virtual Addx: %p\n", mem->addr[pagecount]);
 
 		for (i = 0; i < PAGE_SIZE / EMUPAGESIZE; i++) {

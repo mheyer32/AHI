@@ -8,6 +8,10 @@
 #undef REG    // Be gone!
 #undef SAVEDS // Go away!
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <CompilerSpecific.h>
 
 #include "EMU10kx.h"
@@ -34,6 +38,8 @@ AllocEMU10kx( ULONG card_num );
 
 void
 FreeEMU10kx( struct EMU10kx* driver_data );
+
+void __chkabort(void) {}
 
 static BOOL
 OpenLibs( void )
@@ -822,8 +828,8 @@ AllocEMU10kx( ULONG card_num )
     }
     else
     {
-      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0a0a );
-      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0a0a );
+      emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
+      emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0000 );
       emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x000a );
       emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0a0a );
       emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE );
@@ -889,8 +895,30 @@ FreeEMU10kx( struct EMU10kx* dd )
 
 
 int
-main( void )
+main( int argc, char* argv[] )
 {
+  FILE*       file = NULL;
+  struct stat st;
+  int         sample_rate;
+  
+  if( argc != 3 )
+  {
+    printf( "Usage: emu10kx.audio <16 bit stereo sound file> <sample rate>\n" );
+    return 10;
+  }
+
+  sample_rate = atoi( argv[ 2 ] );
+  
+  file = fopen( argv[ 1 ], "rb" );
+
+  if( file == NULL )
+  {
+    printf( "Unable to open sample file.\n" );
+    return 20;
+  }
+
+  stat( argv[ 1 ], &st );
+
   if( OpenLibs() )
   {
     struct EMU10kx* dd = AllocEMU10kx( 0 );
@@ -910,8 +938,6 @@ main( void )
 	      dd->card.chiprev,
 	      dd->card.model );
 
-      Delay( 50 );
-
       printf( "Starting sound.\n" );
 
       {
@@ -921,14 +947,49 @@ main( void )
 	
 	if( emu10k1_voice_alloc_buffer( &dd->card,
 					&voice.mem,
-					4096 / PAGE_SIZE ) < 0 )
+					( ( st.st_size + PAGE_SIZE - 1 )
+					  / PAGE_SIZE ) ) < 0 )
 	{
 	  printf( "Unable to allocate voice buffer" );
 	}
 	else
 	{
+	  int i;
+	  
+	  for( i = 0; i < st.st_size / PAGE_SIZE; ++i )
+	  {
+	    size_t j;
+	    size_t bytes;
+	    UWORD* ptr;
+	    
+	    bytes = fread( voice.mem.addr[ i ], 1, PAGE_SIZE, file );
+
+	    // Byte-swap buffers
+	    
+	    for( j = 0, ptr = voice.mem.addr[ i ]; j < PAGE_SIZE / 2; ++j )
+	    {
+	      if( j < bytes / 2 )
+	      {
+		*ptr = ( ( ( *ptr & 0xff00 ) >> 8 ) | 
+			 ( ( *ptr & 0x00ff ) << 8 ) );
+	      }
+	      else
+	      {
+		*ptr = 0;
+	      }
+
+	      ++ptr;
+	    }
+	    
+	    if( bytes != PAGE_SIZE && ! feof( file ) )
+	    {
+	      printf( "Warning: Unable to read file (%d)!\n", bytes );
+	      break;
+	    }
+	  }
+		 
 	  voice.usage = VOICE_USAGE_PLAYBACK;
-	  voice.flags = 0; //VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
+	  voice.flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
 
 	  if( emu10k1_voice_alloc( &dd->card, &voice ) < 0 )
 	  {
@@ -936,13 +997,13 @@ main( void )
 	  }
 	  else
 	  {
-	    voice.initial_pitch = (u16) ( srToPitch( 8000 ) >> 8 );
-	    voice.pitch_target  = samplerate_to_linearpitch( 8000 );
+	    voice.initial_pitch = (u16) ( srToPitch( sample_rate ) >> 8 );
+	    voice.pitch_target  = samplerate_to_linearpitch( sample_rate );
 
 	    DPD(2, "Initial pitch --> %#x\n", voice.initial_pitch);
 
-	    voice.startloop = (voice.mem.emupageindex << 12) / 1; // bytespervoicesample
-	    voice.endloop = voice.startloop + 4096 / 1;
+	    voice.startloop = (voice.mem.emupageindex << 12) / 4; // bytespervoicesample
+	    voice.endloop = voice.startloop + st.st_size / 4;
 	    voice.start = voice.startloop;
 
 	    if( voice.flags & VOICE_FLAGS_STEREO )
@@ -992,13 +1053,16 @@ main( void )
 
 	    emu10k1_voices_start( &voice, 1, 0 );
 
-	    printf( "Voice is at $%08x\n", &voice );
-	    Delay( 50 );
 	    printf( "hw_pos = %08x\n", sblive_readptr( &dd->card,
 						       CCCA_CURRADDR,
 						       voice.num ) );
+	    printf( "Voice is at $%08x\n", &voice );
 
-	    Delay( 50 );
+	    printf( "Playing %d samples at %d Hz. Press CTRL-C to exit.\n",
+		    st.st_size / 4, sample_rate );
+
+	    Wait( SIGBREAKF_CTRL_C );
+
 	    emu10k1_voices_stop(&voice, 1);
 
 	    emu10k1_voice_free( &voice );
@@ -1007,9 +1071,6 @@ main( void )
 	  emu10k1_voice_free_buffer( &dd->card, &voice.mem );
 	}
       }
-     
-      
-      Delay( 50 );
       
       FreeEMU10kx( dd );
     }
