@@ -1,89 +1,14 @@
 /* $Id$
 * $Log$
+* Revision 4.11  1997/12/21 17:41:50  lcs
+* Major source cleanup, moved some functions to separate files.
+* Fixed a bug that showed up when C optimizing was turned on.
+*
 * Revision 4.10  1997/10/23 01:10:03  lcs
 * Better debug output.
 *
 * Revision 4.9  1997/10/16 10:20:56  lcs
 * Removed a KPrintF("Oops!");.... SIGH!
-*
-* Revision 4.8  1997/08/02 11:24:29  lcs
-* CMD_START was never executed, the distpatched didn't understand that
-* command!
-* NSCMD_DEVICEQUERY didn't know about CMD_START and CMD_STOP.
-*
-* Revision 4.7  1997/06/02 18:15:02  lcs
-* Added optional clipping when using master volume > 100%.
-*
-* Revision 4.6  1997/05/08 23:59:58  lcs
-* Fixed problem with IO/Requests that didn't get replied, and
-* lockup problem with CMD_START.
-*
-* Revision 4.5  1997/05/03 19:59:56  lcs
-* Fixed a race condition (happened with small CMD_WRITE's).
-*
-* Revision 4.4  1997/04/14 01:50:39  lcs
-* Spellchecked
-*
-* Revision 4.3  1997/04/09 02:25:23  lcs
-* Added AHIE_HALFDUPLEX
-*
-* Revision 4.2  1997/04/07 13:12:35  lcs
-* Removed some KPrintFs :(
-*
-* Revision 4.1  1997/04/02 22:28:11  lcs
-* Bumped to version 4
-*
-* Revision 1.17  1997/03/27 12:16:27  lcs
-* Major bug in the device interface code fixed.
-*
-* Revision 1.16  1997/03/20 02:07:02  lcs
-* Weiﬂ nicht?
-*
-* Revision 1.15  1997/03/15 09:51:52  lcs
-* Dynamic sample loading in the device: No more alignment restrictions.
-*
-* Revision 1.14  1997/03/13 00:19:43  lcs
-* Up to 4 device units are now available.
-*
-* Revision 1.13  1997/02/18 22:26:49  lcs
-* Fixed a bug in CMD_READ?
-*
-* Revision 1.12  1997/02/12 15:43:30  lcs
-* Added autodocs for CMD_START and CMD_STOP
-*
-* Revision 1.11  1997/02/12 15:32:45  lcs
-* Moved each autodoc header to the file where the function is
-*
-* Revision 1.10  1997/02/01 19:44:18  lcs
-* Added stereo samples
-*
-* Revision 1.9  1997/01/31 20:22:24  lcs
-* Enabled stereo samples
-*
-* Revision 1.8  1997/01/30 19:51:20  lcs
-* Removed code for unsigned samples
-*
-* Revision 1.7  1997/01/29 13:44:33  lcs
-* Fixed a race condition in PlayRequest()
-*
-* Revision 1.6  1997/01/15 14:59:50  lcs
-* Added CMD_FLUSH, CMD_START, CMD_STOP and CMD_RESET
-*
-* Revision 1.5  1997/01/05 13:38:01  lcs
-* Fixed a bug (attaching a iorequest to a silent one) in NewWriter()
-*
-* Revision 1.4  1997/01/04 20:19:56  lcs
-* Changed the AHI_DEBUG levels
-* CMD_WRITE seem to work as supposed now
-*
-* Revision 1.3  1997/01/04 13:26:41  lcs
-* Debugged CMD_WRITE
-*
-* Revision 1.2  1996/12/21 23:06:35  lcs
-* "Finished" the code for CMD_WRITE
-*
-* Revision 1.1  1996/12/21 13:05:12  lcs
-* Initial revision
 *
 */
 
@@ -96,6 +21,7 @@
 #include <exec/devices.h>
 #include <exec/memory.h>
 #include <proto/exec.h>
+#include <proto/dos.h>
 
 #include <math.h>
 
@@ -143,9 +69,9 @@ struct Node *FindNode(struct List *, struct Node *);
 // This function is called by the system each time exec.library/DoIO()
 // is called.
 
-__asm void DevBeginIO(
-    register __a1 struct AHIRequest *ioreq,
-    register __a6 struct AHIBase *AHIBase)
+ASMCALL void
+DevBeginIO ( REG(a1, struct AHIRequest *ioreq),
+             REG(a6, struct AHIBase *AHIBase) )
 {
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -189,9 +115,9 @@ __asm void DevBeginIO(
 // This function is called by the system each time exec.library/AbortIO()
 // is called.
 
-__asm ULONG DevAbortIO(
-    register __a1 struct AHIRequest *ioreq,
-    register __a6 struct AHIBase *AHIBase)
+ASMCALL ULONG
+DevAbortIO ( REG(a1, struct AHIRequest *ioreq),
+             REG(a6, struct AHIBase *AHIBase) )
 {
   ULONG rc = NULL;
   struct AHIDevUnit *iounit;
@@ -273,7 +199,9 @@ __asm ULONG DevAbortIO(
 
 // This functions returns an IO request back to the sender.
 
-static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+TermIO ( struct AHIRequest *ioreq,
+         struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
   ULONG error = ioreq->ahir_Std.io_Error;
@@ -314,7 +242,9 @@ static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 ** PerformIO ******************************************************************
 ******************************************************************************/
 
-void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+void
+PerformIO ( struct AHIRequest *ioreq,
+            struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
 
@@ -368,8 +298,9 @@ void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 
 // Find a node in a list
 
-struct Node *FindNode(struct List *list, struct Node *node)
-
+struct Node *
+FindNode ( struct List *list,
+           struct Node *node )
 {
   struct Node *currentnode;
 
@@ -435,7 +366,8 @@ struct Node *FindNode(struct List *list, struct Node *node)
 *
 */
 
-static UWORD commandlist[] =
+static UWORD
+commandlist[] =
 {
   NSCMD_DEVICEQUERY,
   CMD_RESET,
@@ -447,7 +379,9 @@ static UWORD commandlist[] =
   NULL
 };
 
-static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+Devicequery ( struct AHIRequest *ioreq,
+              struct AHIBase *AHIBase )
 {
   struct NSDeviceQueryResult *dqr;
 
@@ -517,7 +451,9 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 */
 
-static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+StopCmd ( struct AHIRequest *ioreq, 
+          struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
 
@@ -570,7 +506,9 @@ static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 */
 
-static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+FlushCmd ( struct AHIRequest *ioreq,
+           struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
   struct AHIRequest *ior;
@@ -650,7 +588,9 @@ static void FlushCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 */
 
-static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+ResetCmd ( struct AHIRequest *ioreq,
+           struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
 
@@ -715,7 +655,9 @@ static void ResetCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 */
 
-static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void 
+ReadCmd ( struct AHIRequest *ioreq,
+          struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
   ULONG error,mixfreq = 0;
@@ -837,7 +779,9 @@ static void ReadCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 */
 
-static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+WriteCmd ( struct AHIRequest *ioreq,
+           struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
   ULONG error = 0;
@@ -960,7 +904,9 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 *
 */
 
-static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
+static void
+StartCmd ( struct AHIRequest *ioreq,
+           struct AHIBase *AHIBase )
 {
   struct AHIDevUnit *iounit;
   struct AHIPrivAudioCtrl *audioctrl;
@@ -1010,7 +956,9 @@ static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 // readers, and fill their buffers. When a buffer is full, the IORequest is
 // terminated.
 
-void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
+void
+FeedReaders ( struct AHIDevUnit *iounit,
+              struct AHIBase *AHIBase )
 {
   struct AHIRequest *ioreq;
 
@@ -1060,8 +1008,10 @@ void FeedReaders(struct AHIDevUnit *iounit,struct AHIBase *AHIBase)
 // Handles a read request. Note that the request MUST be in a list, and the
 // list must be semaphore locked!
 
-static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
-    struct AHIBase *AHIBase)
+static void 
+FillReadBuffer ( struct AHIRequest *ioreq,
+                 struct AHIDevUnit *iounit,
+                 struct AHIBase *AHIBase )
 {
   ULONG length,length2;
   APTR  oldaddress;
@@ -1177,8 +1127,10 @@ static void FillReadBuffer(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 
 // This function is called by WriteCmd when a new write request comes.
 
-static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
-    struct AHIBase *AHIBase)
+static void
+NewWriter ( struct AHIRequest *ioreq,
+            struct AHIDevUnit *iounit,
+            struct AHIBase *AHIBase )
 {
   int channel, sound;
   BOOL delay = FALSE;
@@ -1330,8 +1282,10 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 // initialized request to either the playing or waiting list, and starts
 // the sound it if possible
 
-static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
-    struct AHIBase *AHIBase)
+static void
+AddWriter ( struct AHIRequest *ioreq,
+            struct AHIDevUnit *iounit,
+            struct AHIBase *AHIBase )
 {
   int channel;
 
@@ -1401,8 +1355,11 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 
 // This begins to play an AHIRequest (starting at sample io_Actual).
 
-static void PlayRequest(int channel, struct AHIRequest *ioreq,
-    struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
+static void
+PlayRequest ( int channel,
+              struct AHIRequest *ioreq,
+              struct AHIDevUnit *iounit,
+              struct AHIBase *AHIBase )
 {
   struct Library *AHIsubBase;
 
@@ -1470,7 +1427,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
   // marked as finished, and the application will wait forever on the
   // IO Request. Quite ugly, no?
 
-  while((iounit->Voices[channel].Flags & VF_STARTED) == 0);
+  while((iounit->Voices[channel].Flags & VF_STARTED) == 0) Delay(1);
 #ifdef DEBUG
   KPrintF("Exiting PlayRequest()\n");
 #endif
@@ -1486,7 +1443,9 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
 // from the waiting list.
 // Then it tries to restart all silent sounds.
 
-void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
+void
+RethinkPlayers ( struct AHIDevUnit *iounit,
+                 struct AHIBase *AHIBase )
 {
   struct MinList templist;
   struct AHIRequest *ioreq;
@@ -1525,8 +1484,10 @@ void RethinkPlayers(struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
 
 // Removes all finished play requests from a list. The lists must be locked!
 
-static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
-    struct AHIBase *AHIBase)
+static void
+RemPlayers ( struct List *list,
+             struct AHIDevUnit *iounit,
+             struct AHIBase *AHIBase )
 {
   struct AHIRequest *ioreq, *node;
 
@@ -1577,7 +1538,9 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
 // Updates the io_Actual field of all silent requests. The lists must be locked.
 // This function is either called from the interrupt or DevProc.
 
-void UpdateSilentPlayers( struct AHIDevUnit *iounit, struct AHIBase *AHIBase)
+void 
+UpdateSilentPlayers ( struct AHIDevUnit *iounit,
+                      struct AHIBase *AHIBase )
 {
   struct AHIRequest *ioreq;
 
