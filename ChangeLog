@@ -1,3 +1,12 @@
+2001-03-11  Martin Blom  <martin@blom.org>
+
+        * Release ahi.device 5.5.
+
+	* Nuked one more m68k assembler source file and moved the code
+	to C.
+
+	* Stopped using dprintf in MorphOS.
+
 2001-03-04  Martin Blom  <martin@blom.org>
 
         * Release ahi.device 5.4.
