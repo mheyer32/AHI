@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.9  1997/02/01 23:54:26  lcs
+* Rewrote the library open code in C and removed the library bases
+* from AHIBase
+*
 * Revision 1.8  1997/02/01 19:44:18  lcs
 * Added stereo samples
 *
@@ -51,30 +55,146 @@
 #include "devcommands_protos.h"
 #endif
 
-static struct AHIDevUnit *InitUnit( ULONG unit, struct AHIBase *AHIBase );
-static void ExpungeUnit(struct AHIDevUnit *iounit, struct AHIBase *AHIBase );
-BOOL ReadConfig( struct AHIDevUnit *iounit, struct AHIBase *AHIBase );
+__asm BOOL OpenLibs(register __a6 struct ExecBase *);
+__asm void CloseLibs(register __a6 struct ExecBase *);
+static struct AHIDevUnit *InitUnit(ULONG , struct AHIBase *);
+static void ExpungeUnit(struct AHIDevUnit *, struct AHIBase *);
+BOOL ReadConfig( struct AHIDevUnit *, struct AHIBase *);
 BOOL AllocHardware(struct AHIDevUnit *,struct AHIBase *);
 void FreeHardware(struct AHIDevUnit *,struct AHIBase *);
 static __asm __interrupt void PlayerFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 APTR null);
+    register __a0 struct Hook *,
+    register __a2 struct AHIAudioCtrl *,
+    register __a1 APTR);
 static __asm __interrupt BOOL RecordFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 struct AHIRecordMessage *recmsg);
+    register __a0 struct Hook *,
+    register __a2 struct AHIAudioCtrl *,
+    register __a1 struct AHIRecordMessage *);
 static __asm __interrupt void SoundFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 struct AHISoundMessage *sndmsg);
+    register __a0 struct Hook *,
+    register __a2 struct AHIAudioCtrl *,
+    register __a1 struct AHISoundMessage *);
 static __asm __interrupt void ChannelInfoFunc(
-    register __a0 struct Hook *hook,
-    register __a2 struct AHIAudioCtrl *actrl,
-    register __a1 struct AHIEffChannelInfo *cimsg);
+    register __a0 struct Hook *,
+    register __a2 struct AHIAudioCtrl *,
+    register __a1 struct AHIEffChannelInfo *);
 
 extern __asm BPTR DevExpunge( register __a6 struct AHIBase * );
 extern __asm void DevProcEntry(void);
+
+
+/******************************************************************************
+** OpenLibs *******************************************************************
+******************************************************************************/
+
+// This function is called by the device startup code when the device is
+// first loaded into memory.
+
+extern struct timerequest *TimerIO;
+extern struct timeval     *timeval;
+
+__asm BOOL OpenLibs(register __a6 struct ExecBase *SysBase)
+{
+
+  /* DOS Library */
+
+  if((DOSBase = (struct DosLibrary *) OpenLibrary("dos.library", 37)) == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_DOSLib);
+    return FALSE;
+  }
+
+  /* Graphics Library */
+
+  if((GfxBase = (struct GfxBase *) OpenLibrary("graphics.library", 37)) == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_GraphicsLib);
+    return FALSE;
+  }
+
+  /* GadTools Library */
+
+  if((GadToolsBase = OpenLibrary("gadtools.library", 37)) == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_GadTools);
+    return FALSE;
+  }
+
+  /* IFFParse Library */
+
+  if((IFFParseBase = OpenLibrary("iffparse.library", 37)) == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_Unknown);
+    return FALSE;
+  }
+
+  /* Intuition Library */
+
+  if((IntuitionBase = (struct IntuitionBase *) 
+      OpenLibrary("intuition.library", 37)) == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_Intuition);
+    return FALSE;
+  }
+
+  /* Timer Device */
+
+  if((TimerIO = (struct timerequest *) AllocVec(sizeof(struct timerequest),
+      MEMF_PUBLIC | MEMF_CLEAR)) == NULL)
+  {
+    Alert(AN_Unknown|AG_NoMemory);
+    return FALSE;
+  }
+
+  if((timeval = (struct timeval *) AllocVec(sizeof(struct timeval),
+      MEMF_PUBLIC | MEMF_CLEAR)) == NULL)
+  {
+    Alert(AN_Unknown|AG_NoMemory);
+    return FALSE;
+  }
+
+  if(OpenDevice("timer.device", UNIT_MICROHZ, (struct IORequest *) TimerIO, 0))
+  {
+    Alert(AN_Unknown|AG_OpenDev|AO_TimerDev);
+    return FALSE;
+  }
+
+  TimerBase = (struct Library *) TimerIO->tr_node.io_Device;
+
+  /* Utility Library */
+
+  if((UtilityBase = OpenLibrary("utility.library", 37)) == NULL)
+  {
+    Alert(AN_Unknown|AG_OpenLib|AO_UtilityLib);
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+
+/******************************************************************************
+** CloseLibs *******************************************************************
+******************************************************************************/
+
+// This function is called by DevExpunge() when the device is about to be
+// flushed
+
+__asm void CloseLibs(register __a6 struct ExecBase *SysBase)
+{
+
+  CloseLibrary(UtilityBase);
+  if(TimerIO)
+    CloseDevice((struct IORequest *) TimerIO);
+  FreeVec(timeval);
+  FreeVec(TimerIO);
+  CloseLibrary((struct Library *) IntuitionBase);
+  CloseLibrary(IFFParseBase);
+  CloseLibrary(GadToolsBase);
+  CloseLibrary((struct Library *) GfxBase);
+  CloseLibrary((struct Library *) DOSBase);
+
+}
 
 
 /******************************************************************************

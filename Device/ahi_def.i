@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 1.4  1997/02/01 23:54:26  lcs
+* Rewrote the library open code in C and removed the library bases
+* from AHIBase
+*
 * Revision 1.3  1997/02/01 19:44:18  lcs
 * *** empty log message ***
 *
@@ -32,11 +36,6 @@ AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
 	UBYTE	ahib_Flags
 	UBYTE	ahib_DebugLevel
 	APTR	ahib_SysLib
-	APTR	ahib_DosLib
-	APTR	ahib_UtilityLib
-	APTR	ahib_GadToolsLib
-	APTR	ahib_IntuitionLib
-	APTR	ahib_GraphicsLib
 	ULONG	ahib_SegList
 	APTR	ahib_AudioCtrl
 	STRUCT	ahib_DevUnits,AHI_UNITS*4

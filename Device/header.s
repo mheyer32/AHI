@@ -1,11 +1,16 @@
 * $Id$
 * $Log$
+* Revision 1.2  1997/02/01 23:54:26  lcs
+* Rewrote the library open code in C and removed the library bases
+* from AHIBase
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
 
 	incdir	include:
 
+	include	devices/timer.i
 	include	exec/exec.i
 	include dos/dos.i
 	include	graphics/gfxbase.i
@@ -20,9 +25,19 @@
 
 ;	section	text,code
 
+*******************************************************************************
+** Start **********************************************************************
+*******************************************************************************
+
 Start:
 	moveq	#-1,d0
 	rts
+
+*******************************************************************************
+** RomTag *********************************************************************
+*******************************************************************************
+
+	XREF	EndCode
 
 RomTag:
 	DC.W	RTC_MATCHWORD
@@ -36,20 +51,21 @@ RomTag:
 	DC.L	_IDString
 	DC.L	InitTable
 
+	XDEF	_DevName
+	XDEF	_IDString
+
 _DevName:	AHINAME
 _IDString:	VSTRING
 
-dosName:	DOSNAME
-gadtoolsName:	dc.b	"gadtools.library",0
-gfxName:	GRAPHICSNAME
-iffparseName:	dc.b	"iffparse.library",0
-intuiName:	dc.b	"intuition.library",0
-utilName:	UTILITYNAME
 	VERSTAG
+
+
+*******************************************************************************
+** Init & function tables *****************************************************
+*******************************************************************************
 
 	cnop	0,2
 
-* Device functions
 	XREF	_DevOpen
 	XREF	_DevClose
 	XREF	_DevBeginIO
@@ -76,29 +92,6 @@ utilName:	UTILITYNAME
 	XREF	_AddAudioMode
 	XREF	_RemoveAudioMode
 	XREF	_LoadModeFile
-
-	XREF	initcode
-	XREF	EndCode
-
-	XREF	_DevProc
-	XDEF	_DevProcEntry
-
-* Used by the C functions
-	XDEF	_AHIBase
-	XDEF	_DOSBase
-	XDEF	_GadToolsBase
-	XDEF	_GfxBase
-	XDEF	_IFFParseBase
-	XDEF	_IntuitionBase
-	XDEF	_UtilityBase
-
-	XDEF	_DevExpunge
-
-	XDEF	_DriverVersion
-	XDEF	_Version
-	XDEF	_Revision
-	XDEF	_DevName
-	XDEF	_IDString
 
 InitTable:
 	DC.L	AHIBase_SIZEOF
@@ -147,17 +140,50 @@ dataTable:
 	INITLONG	LIB_IDSTRING,_IDString
 	DC.L		0
 
+	XDEF	_AHIBase
+	XDEF	_DOSBase
+	XDEF	_GadToolsBase
+	XDEF	_GfxBase
+	XDEF	_IFFParseBase
+	XDEF	_IntuitionBase
+	XDEF	_TimerBase
+	XDEF	_UtilityBase
+
+
+*******************************************************************************
+** Globals ********************************************************************
+*******************************************************************************
+
 _AHIBase:	dc.l	0
 _DOSBase:	dc.l	0
 _GadToolsBase:	dc.l	0
 _GfxBase:	dc.l	0
 _IFFParseBase:	dc.l	0
 _IntuitionBase:	dc.l	0
+_TimerBase:	dc.l	0
 _UtilityBase:	dc.l	0
+
+	XDEF	_DriverVersion
+	XDEF	_Version
+	XDEF	_Revision
 
 _DriverVersion:	dc.l	2
 _Version:	dc.l	VERSION
 _Revision:	dc.l	REVISION
+
+	XDEF	_TimerIO
+	XDEF	_timeval
+
+_TimerIO:	dc.l	0
+_timeval:	dc.l	0
+
+
+*******************************************************************************
+** initRoutine ****************************************************************
+*******************************************************************************
+
+	XREF	initcode
+	XREF	_OpenLibs
 
 initRoutine:
 	movem.l	d1-d2/a0-a1/a5-a6,-(sp)
@@ -181,70 +207,9 @@ initRoutine:
 	lea	ahib_Lock(a5),a0
 	call	InitSemaphore
 
-	lea	dosName(pc),a1
-	moveq	#0,d0
-	call	OpenLibrary
-	move.l	d0,_DOSBase
-	move.l	d0,ahib_DosLib(a5)
-	bne.b	.dosOK
-	ALERT	(AN_Unknown|AG_OpenLib|AO_DOSLib)
-	moveq	#0,d0
-	bra.w	.exit
-.dosOK
-
-	lea	utilName(pc),a1
-	moveq	#37,d0
-	call	OpenLibrary
-	move.l	d0,_UtilityBase
-	move.l	d0,ahib_UtilityLib(a5)
-	bne.b	.utilOK
-	ALERT	(AN_Unknown|AG_OpenLib|AO_UtilityLib)
-	moveq	#0,d0
-	bra.w	.exit
-.utilOK
-
-	lea	gadtoolsName(pc),a1
-	moveq	#37,d0
-	call	OpenLibrary
-	move.l	d0,_GadToolsBase
-	move.l	d0,ahib_GadToolsLib(a5)
-	bne.b	.gadtoolsOK
-	ALERT	(AN_Unknown|AG_OpenLib|AO_GadTools)
-	moveq	#0,d0
-	bra.b	.exit
-.gadtoolsOK
-
-	lea	iffparseName(pc),a1
-	moveq	#37,d0
-	call	OpenLibrary
-	move.l	d0,_IFFParseBase
-	bne.b	.iffparseOK
-	ALERT	(AN_Unknown|AG_OpenLib|AO_Unknown)
-	moveq	#0,d0
-	bra.b	.exit
-.iffparseOK
-
-	lea	intuiName(pc),a1
-	moveq	#37,d0
-	call	OpenLibrary
-	move.l	d0,_IntuitionBase
-	move.l	d0,ahib_IntuitionLib(a5)
-	bne.b	.intuiOK
-	ALERT	(AN_Unknown|AG_OpenLib|AO_Intuition)
-	moveq	#0,d0
-	bra.b	.exit
-.intuiOK
-
-	lea	gfxName(pc),a1
-	moveq	#37,d0
-	call	OpenLibrary
-	move.l	d0,_GfxBase
-	move.l	d0,ahib_GraphicsLib(a5)
-	bne.b	.gfxOK
-	ALERT	(AN_Unknown|AG_OpenLib|AO_GraphicsLib)
-	moveq	#0,d0
-	bra.b	.exit
-.gfxOK
+	jsr	_OpenLibs(pc)
+	tst.l	d0
+	beq	.exit
 
 	bsr	initcode
 
@@ -253,6 +218,13 @@ initRoutine:
 	movem.l	(sp)+,d1-d2/a0-a1/a5-a6
 	rts
 
+
+*******************************************************************************
+** DevExpunge *****************************************************************
+*******************************************************************************
+
+	XDEF	_DevExpunge
+	XREF	_CloseLibs
 ;in:
 * a6	device
 _DevExpunge:
@@ -269,16 +241,7 @@ _DevExpunge:
 	move.l	a5,a1
 	call	Remove
 
-	move.l	ahib_DosLib(a5),a1
-	call	CloseLibrary
-	move.l	ahib_GraphicsLib(a5),a1
-	call	CloseLibrary
-	move.l	_IFFParseBase,a1
-	call	CloseLibrary
-	move.l	ahib_IntuitionLib(a5),a1
-	call	CloseLibrary
-	move.l	ahib_UtilityLib(a5),a1
-	call	CloseLibrary
+	jsr	_CloseLibs(pc)
 
 	moveq	#0,d0
 	move.l	a5,a1
@@ -295,9 +258,22 @@ Null:
 	moveq	#0,d0
 	rts
 
+
+*******************************************************************************
+** DevProcEntry ***************************************************************
+*******************************************************************************
+
+	XREF	_DevProc
+	XDEF	_DevProcEntry
+
 _DevProcEntry:
 	move.l	_AHIBase(pc),a6
 	jmp	_DevProc(pc)
+
+
+*******************************************************************************
+** kprint_macro ***************************************************************
+*******************************************************************************
 
 	XDEF	kprint_macro
 	XREF	KPrintF
