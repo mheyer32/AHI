@@ -64,6 +64,8 @@ static void AddWriter(struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *
 static void PlayRequest(int, struct AHIRequest *, struct AHIDevUnit *, struct AHIBase *);
 static void RemPlayers( struct List *, struct AHIDevUnit *, struct AHIBase *);
 
+static void UpdateMasterVolume( struct AHIDevUnit *, struct AHIBase * );
+
 #define MultFixed( a, b ) ( (unsigned long) ( ( ( (unsigned long long) a ) << 16 ) / b ) )
 
 /******************************************************************************
@@ -258,6 +260,12 @@ TermIO ( struct AHIRequest *ioreq,
     FreeVec( extras );
   }
 
+  if( ioreq->ahir_Std.io_Command == CMD_WRITE )
+  {
+    // Update master volume if we're terminating a write request
+    UpdateMasterVolume( iounit, AHIBase );
+  }
+  
   if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
   {
       ReplyMsg(&ioreq->ahir_Std.io_Message);
@@ -1324,6 +1332,7 @@ AddWriter ( struct AHIRequest *ioreq,
     if(iounit->Voices[channel].NextOffset == (ULONG) FREE)
     {
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
+      UpdateMasterVolume( iounit, AHIBase );
       PlayRequest(channel, ioreq, iounit, AHIBase);
       break;
     }
@@ -1566,4 +1575,58 @@ UpdateSilentPlayers ( struct AHIDevUnit *iounit,
       Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
     }
   }
+}
+
+
+/******************************************************************************
+** UpdateMasterVolume  ********************************************************
+******************************************************************************/
+
+// Updated the master volume so all sounds are played as loud as possible
+// without risking clipping.
+// This function is called from AddWriter() and TermIO().
+
+static void UpdateMasterVolume( struct AHIDevUnit *iounit,
+				struct AHIBase    *AHIBase )
+{
+  struct AHIRequest *ioreq;
+  UWORD              c;
+  
+  AHIObtainSemaphore(&iounit->Lock);
+
+  c = 0;
+  
+  for(ioreq = (struct AHIRequest *)iounit->PlayingList.mlh_Head;
+      ioreq->ahir_Std.io_Message.mn_Node.ln_Succ;
+      ioreq = (struct AHIRequest *)ioreq->ahir_Std.io_Message.mn_Node.ln_Succ)
+  {
+    ++c;
+  }
+
+  if( c != iounit->ChannelsInUse )
+  {
+    struct AHIEffMasterVolume vol;
+    
+    iounit->ChannelsInUse = c;
+
+    if( c == 0 )
+    {
+      vol.ahie_Effect   = AHIET_MASTERVOLUME | AHIET_CANCEL;
+      vol.ahiemv_Volume = 0x10000;
+    }
+    else
+    {
+      vol.ahie_Effect   = AHIET_MASTERVOLUME;
+      vol.ahiemv_Volume = iounit->Channels * 0x10000 / c;
+
+      if( iounit->PseudoStereo )
+      {
+	vol.ahiemv_Volume = vol.ahiemv_Volume / 2;
+      }
+    }
+
+    AHI_SetEffect( &vol, iounit->AudioCtrl );
+  }
+  
+  AHIReleaseSemaphore(&iounit->Lock);
 }

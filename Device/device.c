@@ -467,6 +467,8 @@ InitUnit ( ULONG unit,
             v->NextOffset = FREE;
             v++;
           }
+
+	  iounit->ChannelsInUse = 0;
           
           replyport = CreateMsgPort();
 
@@ -722,7 +724,9 @@ AllocHardware ( struct AHIDevUnit *iounit,
                 struct AHIBase *AHIBase )
 {
   BOOL rc = FALSE;
-  ULONG fullduplex=FALSE;
+  ULONG fullduplex = FALSE;
+  ULONG stereo     = FALSE;
+  ULONG panning    = FALSE;
 
   /* Allocate the hardware */
   iounit->AudioCtrl = AHI_AllocAudio(
@@ -740,8 +744,11 @@ AllocHardware ( struct AHIDevUnit *iounit,
     /* Full duplex? */
     AHI_GetAudioAttrs(AHI_INVALID_ID,iounit->AudioCtrl,
       AHIDB_FullDuplex, (ULONG) &fullduplex,
+      AHIDB_Stereo,     (ULONG) &stereo,
+      AHIDB_Panning,    (ULONG) &panning,
       TAG_DONE);
-    iounit->FullDuplex = fullduplex;
+    iounit->FullDuplex   = fullduplex;
+    iounit->PseudoStereo = stereo && !panning;
 
     /* Set hardware properties */
     AHI_ControlAudio(iounit->AudioCtrl,
