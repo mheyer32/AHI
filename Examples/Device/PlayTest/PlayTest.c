@@ -27,8 +27,8 @@ struct AHIRequest *AHIio     = NULL;
 APTR               AHIiocopy = NULL;
 BYTE               AHIDevice = -1;
 
-__far BYTE buffer1[BUFFERSIZE];
-__far BYTE buffer2[BUFFERSIZE];
+BYTE buffer1[BUFFERSIZE];
+BYTE buffer2[BUFFERSIZE];
 
 void cleanup(LONG rc)
 {
