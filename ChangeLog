@@ -1,5 +1,7 @@
 2001-09-29  Martin Blom  <martin@blom.org>
 
+	* Released ahi.device 5.17.
+
 	* I tweaked the build environment somewhat:  makedepend is out; gcc
 	-MM is in, even in AmigaOS.  "make all" now aborts on errors, as it
 	should. All automatically generated files (version.h, localize.*)
