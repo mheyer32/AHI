@@ -23,6 +23,8 @@
 #ifndef ahi_header_h
 #define ahi_header_h
 
+#include <config.h>
+
 #include <exec/types.h>
 #include "addroutines.h"
 
@@ -30,9 +32,10 @@ struct AHIBase;
 
 enum MixBackend_t
 {
-  MB_NATIVE,
-  MB_WARPUP,
-  MB_MORPHOS
+  MB_NATIVE
+#if defined( ENABLE_WARPUP )
+  ,MB_WARPUP
+#endif
 };
 
 
@@ -43,7 +46,10 @@ extern const char		DevName[];
 extern const char		IDString[];
 
 extern enum MixBackend_t	MixBackend;
+
+#if defined( ENABLE_WARPUP )
 extern void*			PPCObject;
+#endif
 
 extern ADDFUNC*                 AddByteMonoPtr;
 extern ADDFUNC*                 AddByteStereoPtr;

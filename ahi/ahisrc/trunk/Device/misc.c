@@ -137,9 +137,9 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       return AllocVec( byteSize, requirements );
 
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
     {
       APTR v;
@@ -148,6 +148,7 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
       CacheClearU();
       return v;
     }
+#endif
   }
 
   Req( "Internal error: Unknown MixBackend in AHIAllocVec()." );
@@ -164,13 +165,14 @@ AHIFreeVec( APTR memoryBlock )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       FreeVec( memoryBlock );
       return;
 
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       FreeVec32( memoryBlock );
       return;
+#endif
   }
 
   Req( "Internal error: Unknown MixBackend in AHIFreeVec()." );
@@ -187,10 +189,10 @@ AHILoadObject( const char* objname )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       Req( "Internal error: Illegal MixBackend in AHILoadObject()" );
       return NULL;
 
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
     {
       void* o;
@@ -200,6 +202,7 @@ AHILoadObject( const char* objname )
 
       return o;
     }
+#endif
   }
 
   Req( "Internal error: Unknown MixBackend in AHILoadObject()." );
@@ -216,13 +219,14 @@ AHIUnloadObject( void* obj )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
       return;
 
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       ELFUnLoadObject( obj );
       return;
+#endif
   }
 
   Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );
@@ -239,12 +243,13 @@ AHIGetELFSymbol( const char* name,
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       Req( "Internal error: Illegal MixBackend in AHIUnloadObject()" );
       return FALSE;
 
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       return ELFGetSymbol( PPCObject, name, ptr );
+#endif
   }
 
   Req( "Internal error: Unknown MixBackend in AHIUnloadObject()" );

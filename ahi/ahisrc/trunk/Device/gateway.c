@@ -24,7 +24,7 @@
 #include <CompilerSpecific.h>
 
 
-#if defined( morphos )
+#if defined( ENABLE_MORPHOS )
 # include <exec/types.h> 
 # define EMUL_NOQUICKMODE
 # include <emul/emulregs.h>
@@ -53,41 +53,7 @@
  *
  */
 
-
-/******************************************************************************
-** Some hardcoded m68k code ***************************************************
-******************************************************************************/
-
-/* Unused...
-
-struct PreserveRegs
-{
-  ULONG pushm;
-  UWORD jsr;
-  APTR  __attribute__((aligned(2))) function;
-  ULONG __attribute__((aligned(2))) popm;
-  UWORD rts;
-} __attribute__((packed));
-
-#define PRESERVE_D0D1A0A1( f ) \
-  {                            \
-    0x48e7c0c0,                \
-    0x4eb9, f,                 \
-    0x4cdf0303,                \
-    0x4e75                     \
-  };
-
-#define PRESERVE_D1A0A1( f ) \
-  {                          \
-    0x48e740c0,              \
-    0x4eb9, f,               \
-    0x4cdf0302,              \
-    0x4e75                   \
-  };
-
-*/
-
-#if defined( morphos )
+#if defined( ENABLE_MORPHOS )
 
 /******************************************************************************
 ** MorphOS gateway functions **************************************************
@@ -914,4 +880,4 @@ _m68k_PostTimer:
         rts
 ");
 
-#endif
+#endif // ENABLE_MORPHOS

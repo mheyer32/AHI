@@ -45,7 +45,10 @@
 #include "misc.h"
 #include "mixer.h"
 #include "sound.h"
-#include "warpup.h"
+
+#if defined( ENABLE_WARPUP )
+# include "warpup.h"
+#endif
 
 
 /******************************************************************************
@@ -78,15 +81,16 @@ CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                    audioctrl,
                    arg );
       break;
 
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       WarpUpCallSoundHook( audioctrl, arg );
       break;
+#endif
   }
 }
 
@@ -99,18 +103,19 @@ MixerFunc( struct Hook*             hook,
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       Mix( hook, audioctrl, dst );
       DoMasterVolume( dst, audioctrl );
       DoOutputBuffer( dst, audioctrl );
       DoChannelInfo( audioctrl );
       break;
       
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       WarpUpCallMixer( audioctrl, dst );
       DoOutputBuffer( dst, audioctrl );
       DoChannelInfo( audioctrl );
       break;
+#endif
   }
 }
 
@@ -135,14 +140,15 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       data_flags = MEMF_PUBLIC | MEMF_CLEAR;
       break;
       
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       // Non-cached from both the PPC and m68k side
       data_flags = MEMF_PUBLIC | MEMF_CLEAR | MEMF_CHIP;
       break;
+#endif
   }
 
   audioctrl->ahiac_ChannelDatas = AHIAllocVec(
@@ -200,13 +206,14 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       rc = TRUE;
       break;
       
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       rc = WarpUpInit( audioctrl );
       break;
+#endif
   }
 
   return rc;
@@ -226,12 +233,13 @@ CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
   switch( MixBackend )
   {
     case MB_NATIVE:
-    case MB_MORPHOS:
       break;
       
+#if defined( ENABLE_WARPUP )
     case MB_WARPUP:
       WarpUpCleanUp( audioctrl );
       break;
+#endif
   }
 
   AHIFreeVec( audioctrl->ahiac_SoundDatas );
