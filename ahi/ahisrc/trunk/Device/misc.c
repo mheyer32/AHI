@@ -28,13 +28,17 @@
 #include <powerup/ppclib/memory.h>
 #include <powerup/ppclib/interface.h>
 #include <powerup/ppclib/object.h>
+#include <powerpc/powerpc.h>
+#include <powerpc/memoryPPC.h>
 #include <intuition/intuition.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/ppc.h>
+#include <proto/powerpc.h>
 
 #include "ahi_def.h"
 #include "header.h"
+#include "elfloader.h"
 
 
 /******************************************************************************
@@ -115,6 +119,26 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
   {
     return PPCAllocVec( byteSize, requirements );
   }
+  else if( PowerPCBase != NULL )
+  {
+    ULONG new_requirements;
+
+    new_requirements = requirements & ~MEMF_PPCMASK;
+
+    if( requirements & MEMF_WRITETHROUGHPPC )
+      new_requirements |= MEMF_WRITETHROUGH;
+
+    if( requirements & MEMF_NOCACHEPPC )
+      new_requirements |= MEMF_CACHEOFF;
+      
+    if( requirements & MEMF_NOCACHESYNCPPC )
+      new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED );
+
+    if( requirements & ( MEMF_NOCACHESYNCPPC | MEMF_NOCACHESYNCM68K ) )
+      new_requirements |= ( MEMF_CACHEOFF | MEMF_GUARDED | MEMF_CHIP ); // Sucks!
+
+    return AllocVec32( byteSize, new_requirements );
+  }
   else
 #endif
   {
@@ -134,9 +158,56 @@ AHIFreeVec( APTR memoryBlock )
   {
     PPCFreeVec( memoryBlock );
   }
+  else if( PowerPCBase != NULL )
+  {
+    FreeVec32( memoryBlock );
+  }
   else
 #endif
   {
     FreeVec( memoryBlock );
   }
 }
+
+
+/******************************************************************************
+** AHILoadObject **************************************************************
+******************************************************************************/
+
+#ifndef VERSION68K
+
+void*
+AHILoadObject( const char* objname )
+{
+  if( PPCLibBase != NULL )
+  {
+    return PPCLoadObject( (char*) objname );
+  }
+  else
+  {
+    return ELFLoadObject( objname );
+  }
+}
+
+#endif
+
+/******************************************************************************
+** AHIUnLoadObject ************************************************************
+******************************************************************************/
+
+#ifndef VERSION68K
+
+void
+AHIUnLoadObject( void* obj )
+{
+  if( PPCLibBase != NULL )
+  {
+    PPCUnLoadObject( obj );
+  }
+  else
+  {
+    ELFUnLoadObject( obj );
+  }
+}
+
+#endif

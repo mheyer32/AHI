@@ -48,5 +48,14 @@ AHIAllocVec( ULONG byteSize, ULONG requirements );
 void
 AHIFreeVec( APTR memoryBlock );
 
+#ifndef VERSION68K
+
+void*
+AHILoadObject( const char* objname );
+
+void
+AHIUnLoadObject( void* obj );
+
+#endif /* VERSION68K */
 
 #endif /* _MISC_H_ */
