@@ -1,3 +1,15 @@
+2005-03-29  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 6.1.
+
+	* Device/header.c: Instead removed the 'static' keyword on RomTag
+	and undid the __attribute__ fix to avoid a warning when using gcc
+	2.x.
+
+	* ahi.device: Applied a patch from Piru that removed the usage of
+	SIGBREAKF_CTRL_F in ahi.device, working around a problem in the
+	latest MorphOS ixemul.library. Thanks! [Harry Sintonen]
+
 2005-03-26  Martin Blom  <martin@blom.org>
 
 	* Device/header.c: Added __attribute__((used)) to RomTag. [Davy
