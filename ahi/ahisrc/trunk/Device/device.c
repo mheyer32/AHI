@@ -137,62 +137,8 @@ void ASMCALL DevProcEntry ( void );
 *
 */
 
-
-/******************************************************************************
-** Globals ********************************************************************
-******************************************************************************/
-
-const char *DevName   = AHINAME;
-const char *IDString  = "ahi.device " VERS "\r\n";
-const char *VersTag   = "$VER: ahi.device " VERS " "
-                        "©1994-1999 Martin Blom. "
-#ifdef mc68060
-                        "68060"
-#else
-# ifdef mc68040
-                        "68040"
-# else
-#  ifdef mc68030
-                        "68030"
-#  else
-#   ifdef mc68020
-                        "68020"
-#   else
-#    ifdef mc68000
-                        "68000"
-#    endif /* mc68000 */
-#   endif /* mc68020 */
-#  endif /* mc68030 */
-# endif /* mc68040 */
-#endif /* mc68060 */
-
-#ifdef VERSIONPOWERUP
-                        "/PowerUp"
-#endif
-#ifdef VERSIONWARPUP
-                        "/WarpUp"
-#endif
-                        " version.\r\n";
-
-
-struct ExecBase           *SysBase        = NULL;
-struct AHIBase            *AHIBase        = NULL;
-struct DosLibrary         *DOSBase        = NULL;
-struct Library            *GadToolsBase   = NULL;
-struct GfxBase            *GfxBase        = NULL;
-struct Library            *IFFParseBase   = NULL;
-struct IntuitionBase      *IntuitionBase  = NULL;
-struct LocaleBase         *LocaleBase     = NULL;
-struct Device             *TimerBase      = NULL;
-struct UtilityBase        *UtilityBase    = NULL;
-
 static struct timerequest *TimerIO        = NULL;
 static struct timeval     *timeval        = NULL;
-
-const ULONG			           DriverVersion  = 2;
-const ULONG			           Version        = VERSION;
-const ULONG			           Revision       = REVISION;
-
 
 /******************************************************************************
 ** OpenLibs *******************************************************************
@@ -201,8 +147,8 @@ const ULONG			           Revision       = REVISION;
 // This function is called by the device startup code when the device is
 // first loaded into memory.
 
-BOOL ASMCALL
-OpenLibs ( REG(a6, struct ExecBase *SysBase) )
+BOOL
+OpenLibs ( void )
 {
 
   /* DOS Library */
@@ -314,10 +260,9 @@ OpenLibs ( REG(a6, struct ExecBase *SysBase) )
 // This function is called by DevExpunge() when the device is about to be
 // flushed
 
-void ASMCALL
-CloseLibs ( REG(a6, struct ExecBase *SysBase) )
+void
+CloseLibs ( void )
 {
-
   CloseahiCatalog();
   CloseLibrary( (struct Library *) UtilityBase );
   if(TimerIO) CloseDevice( (struct IORequest *) TimerIO );

@@ -150,7 +150,11 @@ struct AHIDevUnit
         UBYTE                    Sounds[MAXSOUNDS];
 };
 
+BOOL
+OpenLibs ( void );
 
+void
+CloseLibs ( void );
 
 BOOL
 ReadConfig ( struct AHIDevUnit *iounit,
