@@ -16,8 +16,7 @@
 #include <proto/exec.h>
 #include <proto/utility.h>
 
-#include "gatestubs1.h"
-#include "gatestubs2.h"
+#include "gatestubs.h"
 #include "library.h"
 
 #include "DriverData.h"
