@@ -237,3 +237,6 @@ With clipping
 msgGlobOptACTime (//)
 Default anti-click time
 ;
+msgButtonPlay (//)
+_Play a test sound
+;
