@@ -411,6 +411,58 @@ AHIGetELFSymbol( const char* name,
 }
 
 /******************************************************************************
+**** Endian support code. *****************************************************
+******************************************************************************/
+
+/* See the header file for macros */
+
+#if !defined( WORDS_BIG_ENDIAN )
+
+static UWORD
+EndianSwapUWORD( UWORD x ) {
+  return ((((x) >> 8) & 0x00ffU) |
+	  (((x) << 8) & 0xff00U) );
+}
+
+static ULONG
+EndianSwapULONG( ULONG x ) {
+  return ((((x) >> 24) & 0x000000ffUL) |
+	  (((x) >> 8)  & 0x0000ff00UL) |
+	  (((x) << 8)  & 0x00ff0000UL) |
+	  (((x) << 24) & 0xff000000UL) );
+}
+
+void
+EndianSwap( size_t size, void* data) {
+  switch( size ) {
+    case 1:
+      break;
+
+    case 2:
+      *((UWORD*) data) = EndianSwapUWORD( *((UWORD*) data) );
+      break;
+
+    case 4:
+      *((ULONG*) data) = EndianSwapULONG( *((ULONG*) data) );
+      break;
+
+    case 8: {
+      ULONG tmp;
+
+      tmp = EndianSwapULONG( *((ULONG*) data) );
+      *((ULONG*) data) = EndianSwapULONG( *((ULONG*) (data + 4)) );
+      *((ULONG*) (data + 4)) = tmp;
+      break;
+    }
+      
+    default:
+      break;
+  }
+}
+
+#endif
+
+/******************************************************************************
 ** PreTimer  ******************************************************************
 ******************************************************************************/
 
