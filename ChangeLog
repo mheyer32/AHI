@@ -1,0 +1,13 @@
+2001-03-04  Martin Blom  <martin@blom.org>
+
+        * Release ahi.device 5.4.
+
+	* Fixed a bug that caused clicks on every new sound start,
+	if an end-of-sound had been reached and the last sample in that
+	sound was not 0.
+
+2000-11-28  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.1.
+
+	* Last-minute bugfixing for AmigsOS 3.9 CD.
