@@ -142,5 +142,7 @@ MethodPrepare(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
  
   DoSuperMethod(class, object, OM_NOTIFY, (ULONG) _tags, (ULONG) NULL, 0);
   
-  return DoSuperMethodA(class, object, (Msg) msg);
+  DoSuperMethodA(class, object, (Msg) msg);
+
+  return TRUE; // Something happened
 }
