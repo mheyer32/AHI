@@ -1,6 +1,6 @@
 
-#ifndef EMU10kx_EMU10kx_h
-#define EMU10kx_EMU10kx_h
+#ifndef EMU10kx_DriverData_h
+#define EMU10kx_DriverData_h
 
 #include <exec/types.h>
 #include <exec/interrupts.h>
@@ -9,7 +9,7 @@
 
 #define RECORD_BUFFER_SAMPLES 4096
 
-struct EMU10kx
+struct DriverData
 {
     struct Interrupt    interrupt;
     BOOL                interrupt_added;
@@ -17,4 +17,4 @@ struct EMU10kx
     struct emu10k1_card card;
 };
 
-#endif /* EMU10kx_EMU10kx_h */
+#endif /* EMU10kx_DriverData_h */
