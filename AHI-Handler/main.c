@@ -1,6 +1,9 @@
 /* $Id$
  * $Log$
- * Revision 1.8  1997/03/27 12:11:25  lcs
+ * Revision 4.1  1997/04/02 22:46:37  lcs
+ * Bumped to version 4
+ *
+ * Revision 1.8  1997/03/27  12:11:25  lcs
  * Never mind! Bah.
  *
  * Revision 1.7  1997/03/26  13:32:43  lcs
@@ -104,7 +107,7 @@ void kprintf(char *, ...);
  *  Global variables
  */
 
-const static char ID[] = "$VER: AHI-Handler 1.8 (27.3.97)\r\n";
+const static char ID[] = "$VER: AHI-Handler 4.1 (2.4.97)\r\n";
 
 struct List        HanList;
 struct DeviceNode *DevNode;
@@ -805,7 +808,7 @@ long AllocAudio(int unit) {
   if(++AllocCnt == 1) {
     if(AHImp=CreateMsgPort()) {
       if(AHIio=(struct AHIRequest *)CreateIORequest(AHImp,sizeof(struct AHIRequest))) {
-        AHIio->ahir_Version=3;
+        AHIio->ahir_Version = 4;
         AHIDevice=OpenDevice(AHINAME,unit,(struct IORequest *)AHIio,NULL);
       }
     }

@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.1  1997/04/02 22:44:22  lcs
+* Bumped to version 4
+*
 * Revision 1.5  1997/02/18 22:24:45  lcs
 * Better DBLSCAN handling.
 * The device is now opened with the AHIDF_NOMODESCAN flag.
@@ -28,11 +31,11 @@ struct MsgPort    *AHImp     = NULL;
 struct AHIRequest *AHIio     = NULL;
 BYTE               AHIDevice = -1;
 
-#define AHIVERSION 3
+#define AHIVERSION 4
 
 LONG __OSlibversion=37;
 
-const static UBYTE version[]="$VER: AddAudioModes 1.5 "__AMIGADATE__"\n\r";
+const static UBYTE version[]="$VER: AddAudioModes 4.1 "__AMIGADATE__"\n\r";
 
 void OpenAHI(void) {
   if(AHIDevice) {
