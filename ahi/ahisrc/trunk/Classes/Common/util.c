@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <intuition/intuition.h>
 #include <proto/intuition.h>
 #include <proto/exec.h>

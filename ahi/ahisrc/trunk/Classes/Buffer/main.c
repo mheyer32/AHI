@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <classes/ahi.h>
 #include <classes/ahi/buffer.h>
 

@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <classes/ahi.h>
 #include <classes/ahi/buffer.h>
 #include <classes/ahi/processor.h>
@@ -298,7 +300,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       *msg->opg_Storage = AHIClassData->user_data;
       break;
 
-    case AHIA_ParameterArray:
+    case AHIA_ParameterTags:
     case AHIA_Parameters:
       *msg->opg_Storage = 0;
       break;

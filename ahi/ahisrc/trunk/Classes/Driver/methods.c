@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <math.h>
 
 #include <classes/ahi/driver.h>

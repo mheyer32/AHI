@@ -22,6 +22,7 @@ VPATH		= @srcdir@
 
 SUBDIRS		= AHI Board Buffer Driver LFO Processor \
 		  AdderProcessor GainProcessor SplitterProcessor TickProcessor \
+		  ResamplerProcessor \
 		  test
 
 all:

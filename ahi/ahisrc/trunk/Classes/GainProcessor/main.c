@@ -1,4 +1,6 @@
 
+#include <config.h>
+
 #include <classes/ahi.h>
 #include <classes/ahi/processor.h>
 #include <classes/ahi/processor/gain.h>
