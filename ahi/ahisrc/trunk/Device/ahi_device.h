@@ -1,5 +1,9 @@
 /* $Id$
 * $Log$
+* Revision 1.2  1996/12/21 23:08:47  lcs
+* AHICMD_FINISHED => AHICMD_WRITTEN
+* New stuff in the Voice structure
+*
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision
 *
@@ -58,21 +62,23 @@ struct NSDeviceQueryResult
 
 #define AHICMD_END	CMD_NONSTD
 
-#define AHICMD_FINISHED	0x8000
+#define AHICMD_WRITTEN	(0x8000 | CMD_WRITE)
 
 #define ahir_Channel	ahir_Pad1
 
 struct Voice
 {
-	BYTE			 FIFO[2];
-	UWORD			 Sound;
-	Fixed			 Volume;
-	Fixed			 Pan;
-	ULONG			 Frequency;
-	ULONG			 Offset;
-	ULONG			 Length;
-/* Make size of structure even power of two (for better code generation) */
-	ULONG			 Pad2,Pad3;
+	UWORD			 NextSound;
+	UBYTE			 Pad[2];
+	Fixed			 NextVolume;
+	Fixed			 NextPan;
+	ULONG			 NextFrequency;
+	ULONG			 NextOffset;
+	ULONG			 NextLength;
+	struct AHIRequest	*NextRequest;
+	
+	struct AHIRequest	*QueuedRequest;
+	struct AHIRequest	*PlayingRequest;
 };
 
 /* Special Offset values */
