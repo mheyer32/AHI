@@ -143,7 +143,8 @@ Makefile: Makefile.in ../config.status
 %.o:	%.s
 	$(AS) $(ASFLAGS) $< -o $@
 
-asmfuncs.o devsupp.o dspecho_68k.o header.o mixer_68k.o:
+
+asmfuncs.o devsupp.o dspecho_68k.o mixer_68k.o:
 	$(ASM) $(ASMFLAGS) $<
 	objcopy $@ --output-target=a.out-amiga
 
@@ -185,7 +186,7 @@ asmfuncs.o:	asmfuncs.s ahi_def.i
 devsupp.o:	devsupp.s
 dspecho_68k.o:	dspecho_68k.s ahi_def.i dsp.i
 footer.o:	footer.s
-header.o:	header.s ahi_def.i version.i
+#header.o:	header.s ahi_def.i version.i
 mixer_68k.o:	mixer_68k.s ahi_def.i dsp.i
 
 $(wildcard translations/*.ct) ahi.ct:	ahi.cd

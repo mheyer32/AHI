@@ -44,8 +44,8 @@ extern struct UtilityBase	*UtilityBase;
 extern const ULONG		 DriverVersion;
 extern const ULONG		 Version;
 extern const ULONG		 Revision;
-extern const char		*DevName;
-extern const char		*IDString;
+extern const char		 DevName[];
+extern const char		 IDString[];
 
 
 /*** Definitions ***/
