@@ -1,4 +1,4 @@
-\input eightbit
+\input iso.sty
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header
 @setfilename devguide.guide
@@ -10,11 +10,14 @@
 @c %***end of header
 
 
-@c $VER: ahidev.texinfo 4.1 (2.4.97)
-@set ahiver 4.1
+@c $VER: ahidev.texinfo 4.2 (11.5.97)
+@set ahiver 4.2
 
 @c $Id$
 @c $Log$
+@c Revision 4.2  1997/05/11 12:38:39  lcs
+@c Added note about unrolling short sounds.
+@c
 @c Revision 4.1  1997/05/04 15:52:15  lcs
 @c Initial revision.
 @c
@@ -705,7 +708,7 @@ task to do the transfer, since it may run in supervisor mode (see
 @findex AHI_ControlAudioA()
 @vindex AHIC_Play
 
- After you have allocated the sound hardware and declared all your sounds,
+After you have allocated the sound hardware and declared all your sounds,
 you're ready to start playback.  This is done with a call to
 @code{AHI_ControlAudioA()}, with the @code{AHIC_Play} tag set to
 @code{TRUE}.  When this function returns the @dfn{PlayerFunc} (see
@@ -718,14 +721,14 @@ silence to the sound hardware.
 @findex AHI_SetFreq()
 @findex AHI_SetVol()
 
- All you have to do now is to set the desired sound, it's frequency and
+All you have to do now is to set the desired sound, it's frequency and
 volume.  This is done with @code{AHI_SetSound()}, @code{AHI_SetFreq()} and
 @code{AHI_SetVol()}.  Make sure the @code{AHISF_IMM} flag is set for all
 these function's @var{flag} argument.  And don't try to modify a channel
 that is out of range!  If you have allocated 4 channels you may only modify
 channels 0-3.
 
- The sound will not start until both @code{AHI_SetSound()} and
+The sound will not start until both @code{AHI_SetSound()} and
 @code{SetFreq()} has been called.  The sound will play even if
 @code{AHI_SetVol()} was not called, but it will play completely silent.  If
 you wish to temporary stop a sound, set its frequency to 0.  When you
@@ -733,19 +736,27 @@ change the frequency again, the sound will continue where it were.
 
 @findex AHI_PlayA()
 
- When the sound has been started it will play to the end and then repeat.
+When the sound has been started it will play to the end and then repeat.
 In order to play a one-shot sound you have use the @code{AHI_PlayA()}
 function, or install a sound interrupt using the @code{AHIA_SoundFunc} tag
 with @code{AHI_AllocAudioA()}.  For more information about using sound
 interrupts, see below.
 
- A little note regarding @code{AHI_SetSound()}:  @var{Offset} is the first
+A little note regarding @code{AHI_SetSound()}:  @var{Offset} is the first
 sample that will be played, both when playing backwards and forwards.  This
 means that if you call @code{AHI_SetSound()} with @var{offset} 0 and
 @var{length} 4, sample 0,1,2 and 3 will be played.  If you call
 @code{AHI_SetSound()} with @var{offset} 3 and @var{length} @minus{}4,
 sample 3,2,1 and 0 will be played.
 
+Also note that playing very short sounds will be very CPU intensive, since
+there are many tasks that must be done each time a sound has reached its
+end (like starting the next one, calling the @dfn{SoundFunc}, etc.).
+Therefore, it is recommended that you ``unroll'' short sounds a couple of
+times before you play them.  How many times you should unroll?  Well, it
+depends on the situation, of course, but try making the sound a thousand
+samples long if you can. Naturally, if you need your @dfn{SoundFunc} to
+be called, you cannot unroll.
 
 @subsection Playing One-shot Sounds And Advanced Loops
 
