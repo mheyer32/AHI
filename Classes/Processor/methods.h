@@ -16,7 +16,7 @@ MethodGet(Class* class, Object* object, struct opGet* msg);
 BOOL
 MethodPrepare(Class* class, Object* object, struct AHIP_Processor_Process* msg);
 
-BOOL
+ULONG
 MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg);
 
 BOOL

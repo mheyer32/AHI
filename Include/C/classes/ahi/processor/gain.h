@@ -26,7 +26,7 @@ namespace AHI {
   namespace Processor {
     namespace Gain {
 #else
-# define _P _Processor_Gain
+# define _P _GainProcessor
 #endif /* __cplusplus && !AHI_NO_NAMESPACES */
 
 /*****************************************************************************/
@@ -42,30 +42,37 @@ namespace AHI {
 
       enum {
 
-	/* Set gain for x channels. */
+	/* Set gain for x channels. Returns TRUE on success. */
 	_AHIM(_P, Set,		(_AHIM_Dummy+14)),
 
-	/* Get gain for x channels. */
+	/* Get gain for x channels. Returns TRUE on success. */
 	_AHIM(_P, Get,		(_AHIM_Dummy+15)),
 
 
-	/* Set gain for all channels. */
+	/* Set gain for all channels. Returns TRUE on success. */
 	_AHIM(_P, SetAll,	(_AHIM_Dummy+27))
 
       };
 
 
-      /* AHIM_Processor_Gain_Set and AHIM_Processor_Gain_Get */
+      /* AHIM_GainProcessor_Set and AHIM_GainProcessor_Get */
       struct _AHIP(_P, Gain) {
 	ULONG		MethodID;
 	ULONG		Channels;
-	dBFixed*	Gains;
+	Fixed*		Gains;
       };
 
-      /* AHIM_Processor_Gain_SetAll */
+      /* AHIM_GainProcessor_SetAll */
       struct _AHIP(_P, GainAll ) {
 	ULONG		MethodID;
-	dBFixed		Gain;
+	Fixed		Gain;
+      };
+
+/*****************************************************************************/
+
+      enum {
+	_AHIE(_P, TooManyChannels,	(_AHIE_Dummy+7)),
+	_AHIE(_P, InvalidSampleType,	(_AHIE_Dummy+8))
       };
 
 /*****************************************************************************/

@@ -162,6 +162,7 @@ AC_CONFIG_FILES([AHI/Makefile
                  Classes/Common/Makefile.common
                  Classes/AHI/Makefile
                  Classes/Buffer/Makefile
+                 Classes/GainProcessor/Makefile
                  Classes/Processor/Makefile
                  Device/Makefile
                  Docs/Makefile

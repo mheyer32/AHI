@@ -1,3 +1,7 @@
+2004-06-07  Martin Blom  <martin@blom.org>
+
+	* Implemented gain.ahi-processor.
+
 2004-06-06  Martin Blom  <martin@blom.org>
 
 	* Added error codes and handling.

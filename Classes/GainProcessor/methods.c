@@ -1,5 +1,8 @@
 
-#include <classes/ahi/processor.h>
+#include <math.h>
+
+#include <classes/ahi/buffer.h>
+#include <classes/ahi/processor/gain.h>
 
 #include <clib/alib_protos.h>
 #include <proto/intuition.h>
@@ -8,6 +11,16 @@
 #include "methods.h"
 #include "util.h"
 #include "version.h"
+
+static inline float
+fixed2float(Fixed x) {
+  return x / 65536.0;
+}
+
+static inline Fixed
+float2fixed(float x) {
+  return (Fixed) (x * 65536.0);
+}
 
 
 /******************************************************************************
@@ -18,12 +31,13 @@ LONG
 MethodNew(Class* class, Object* object, struct opSet* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-
-  NewList((struct List*) &AHIClassData->members);
+  ULONG result = 0;
 
   MethodUpdate(class, object, (struct opUpdate*) msg);
 
-  return 0;
+  GetAttr(AHIA_Error, object, &result);
+
+  return result;
 }
 
 
@@ -36,13 +50,7 @@ MethodDispose(Class* class, Object* object, Msg msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  Object* ostate = (Object*) AHIClassData->members.mlh_Head;
-  Object* member;
-
-  while ((member = NextObject(&ostate)) != NULL) {
-    DoMethod(member, OM_REMOVE);
-    DoMethodA(member, msg);
-  }
+  FreeVec(AHIClassData->gains);
 }
 
 
@@ -61,31 +69,50 @@ MethodUpdate(Class* class, Object* object, struct opUpdate* msg)
 
   while ((tag = NextTagItem(&tstate))) {
     switch (tag->ti_Tag) {
-      case AHIA_Processor_Buffer:
-	AHIClassData->buffer = (Object*) tag->ti_Data;
-	NotifySuper(class, object, msg, tag->ti_Tag, tag->ti_Data);
-	break;
+      case AHIA_Processor_Buffer: {
+	Object* buffer = (Object*) tag->ti_Data;
 
-      case AHIA_Processor_Parent:
-	AHIClassData->parent = (Object*) tag->ti_Data;
-	break;
+	if (buffer != NULL) {
+	  ULONG st  = AHIST_NOTYPE;
 
-      case AHIA_Processor_Disabled:
-	AHIClassData->disabled = tag->ti_Data;
-	break;
-	
-      case AHIA_Processor_AddChild: {
-	struct opMember om = {
-	  OM_ADDMEMBER, (Object*) tag->ti_Data
-	};
+	  GetAttr(AHIA_Buffer_Data, buffer, (ULONG*) &AHIClassData->data);
+	  GetAttr(AHIA_Buffer_Length, buffer, &AHIClassData->length);
+	  GetAttr(AHIA_Buffer_SampleType, buffer, &st);
 
-	MethodAddMember(class, object, &om);
+	  if ((st & AHIST_TYPE_MASK) ==
+	      (AHIST_T_FLOAT | AHIST_D_DISCRETE | AHIST_FE)) {
+	    AHIClassData->channels = AHIST_C_DECODE(st);
+	    AHIClassData->gains = AllocVec( sizeof (float) * AHIClassData->channels,
+					    MEMF_PUBLIC);
+
+	    if (AHIClassData->gains != NULL) {
+	      ULONG c;
+
+	      for (c = 0; c < AHIClassData->channels; ++c) {
+		AHIClassData->gains[c] = 1.0f;
+	      }
+	      
+	      // Leave now
+	      break;
+	    }
+	    else {
+	      SetAttrs(object, AHIA_Error, ERROR_NO_FREE_STORE,
+		       TAG_DONE);
+	    }
+	  }
+	  else {
+	    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_InvalidSampleType,
+		     TAG_DONE);
+	  }
+	}
+
+	AHIClassData->channels = 0;
+	FreeVec(AHIClassData->gains);
+	AHIClassData->gains = NULL;
+	AHIClassData->data = NULL;
+	AHIClassData->length = 0;
 	break;
       }
-
-      case AHIA_Processor_Busy:
-	AHIClassData->busy = tag->ti_Data;
-	break;
 
       default:
 	break;
@@ -109,11 +136,11 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
   switch (msg->opg_AttrID)
   {
     case AHIA_Title:
-      *msg->opg_Storage = (ULONG) "AHI Processor Base Class";
+      *msg->opg_Storage = (ULONG) "AHI Gain Processor";
       break;
 
     case AHIA_Description:
-      *msg->opg_Storage = (ULONG) "The mother of all processor classes.";
+      *msg->opg_Storage = (ULONG) "Controls the volume of the channels.";
       break;
       
     case AHIA_DescriptionURL:
@@ -136,20 +163,8 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
       *msg->opg_Storage = 0;
       break;
       
-    case AHIA_Processor_Buffer:
-      *msg->opg_Storage = (ULONG) AHIClassData->buffer;
-      break;
-
-    case AHIA_Processor_Parent:
-      *msg->opg_Storage = (ULONG) AHIClassData->parent;
-      break;
-
-    case AHIA_Processor_Disabled:
-      *msg->opg_Storage = AHIClassData->disabled;
-      break;
-	
-    case AHIA_Processor_Busy:
-      *msg->opg_Storage = AHIClassData->busy;
+    case AHIA_GainProcessor_Channels:
+      *msg->opg_Storage = AHIClassData->channels;
       break;
 
     default:
@@ -157,34 +172,6 @@ MethodGet(Class* class, Object* object, struct opGet* msg)
   }
 
   return TRUE;
-}
-
-
-/******************************************************************************
-** MethodPrepare **************************************************************
-******************************************************************************/
-
-BOOL
-MethodPrepare(Class* class, Object* object, struct AHIP_Processor_Process* msg) {
-  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
-  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-
-  Object* ostate = (Object*) AHIClassData->members.mlh_Head;
-  Object* member;
-
-  BOOL result = FALSE;
-
-  if (!AHIClassData->busy) {
-    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
-//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
-    return FALSE;
-  }
-  
-  while ((member = NextObject(&ostate)) != NULL) {
-    result |= DoMethodA(member, (Msg) msg);
-  }
-
-  return result != FALSE;
 }
 
 
@@ -197,70 +184,99 @@ MethodProcess(Class* class, Object* object, struct AHIP_Processor_Process* msg) 
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
 
-  Object* ostate = (Object*) AHIClassData->members.mlh_Head;
-  Object* member;
-
-  ULONG result = AHIV_Processor_Process_PERFORM;
+  ULONG result = DoSuperMethodA(class, object, (Msg) msg);
   
-  if (!AHIClassData->busy) {
-    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
-//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectNotReady, TAG_DONE);
-    return AHIV_Processor_Process_FAIL;
-  }
-  
-  while ((member = NextObject(&ostate)) != NULL) {
-    if (DoMethodA(member, (Msg) msg) == AHIV_Processor_Process_FAIL) {
-      result = AHIV_Processor_Process_FAIL;
+  switch (result) {
+    case AHIV_Processor_Process_FAIL:
+    case AHIV_Processor_Process_SKIP:
       break;
-    }
+
+    case AHIV_Processor_Process_PERFORM:
+      if (AHIClassData->gains != NULL &&
+	  AHIClassData->data != NULL &&
+	  AHIClassData->length > 0 &&
+	  AHIClassData->channels > 0) {
+	ULONG  c;
+	ULONG  s;
+	float* data = AHIClassData->data;
+
+	for (s = 0; s < AHIClassData->length; ++s) {
+	  for (c = 0; c < AHIClassData->channels; ++c) {
+	    *data++ *= AHIClassData->gains[c];
+	  }
+	}
+      }
+      break;
   }
 
-  if (result == AHIV_Processor_Process_PERFORM && AHIClassData->disabled) {
-    return AHIV_Processor_Process_SKIP;
-  }
-  else {
-    return result;
-  }
+  return result;
 }
 
 
 /******************************************************************************
-** MethodAddMember ************************************************************
+** MethodSetGain **************************************************************
 ******************************************************************************/
 
 BOOL
-MethodAddMember(Class* class, Object* object, struct opMember* msg) {
+MethodSetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
-
-  if (!AHIClassData->busy) {
-    DoMethod(msg->opam_Object, OM_ADDTAIL, &AHIClassData->members);
-    return TRUE;
-  }
-  else {
-    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
-//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+  ULONG c;
+  
+  if (msg->Channels > AHIClassData->channels || AHIClassData->gains == NULL) {
+    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
+
+  for (c = 0; c <  msg->Channels; ++c) {
+    AHIClassData->gains[c] = fixed2float(msg->Gains[c]);
+  }
+
+  return TRUE;
 }
 
 
 /******************************************************************************
-** MethodRemMember ************************************************************
+** MethodGetGain **************************************************************
 ******************************************************************************/
 
 BOOL
-MethodRemMember(Class* class, Object* object, struct opMember* msg) {
+MethodGetGain(Class* class, Object* object, struct AHIP_GainProcessor_Gain* msg) {
   struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
   struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  ULONG c;
 
-  if (!AHIClassData->busy) {
-    DoMethod(msg->opam_Object, OM_REMOVE);
-    return TRUE;
-  }
-  else {
-    SetAttrs(object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
-//    SetSuperAttrs(class, object, AHIA_Error, AHIE_Processor_ObjectBusy, TAG_DONE);
+  if (msg->Channels > AHIClassData->channels || AHIClassData->gains == NULL) {
+    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
     return FALSE;
   }
+
+  for (c = 0; c <  msg->Channels; ++c) {
+    msg->Gains[c] = float2fixed(AHIClassData->gains[c]);
+  }
+
+  return TRUE;
+}
+
+
+/******************************************************************************
+** MethodSetAllGain ***********************************************************
+******************************************************************************/
+
+BOOL
+MethodSetAllGain(Class* class, Object* object, struct AHIP_GainProcessor_GainAll* msg) {
+  struct AHIClassBase* AHIClassBase = (struct AHIClassBase*) class->cl_UserData;
+  struct AHIClassData* AHIClassData = (struct AHIClassData*) INST_DATA(class, object);
+  ULONG c;
+  
+  if (AHIClassData->gains == NULL) {
+    SetAttrs(object, AHIA_Error, AHIE_GainProcessor_TooManyChannels, TAG_DONE);
+    return FALSE;
+  }
+
+  for (c = 0; c <  AHIClassData->channels; ++c) {
+    AHIClassData->gains[c] = fixed2float(msg->Gain);
+  }
+
+  return TRUE;
 }
