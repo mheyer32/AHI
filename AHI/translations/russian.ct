@@ -303,3 +303,8 @@ msgGlobOptACTime
 Защитное время блокировки щелчков
 ;Default anti-click time
 ;
+msgButtonPlay
+
+;_Play a test sound
+; ***NEW***
+;

@@ -303,3 +303,8 @@ msgGlobOptACTime
 Maximal antiklick-fördröjning
 ;Default anti-click time
 ;
+msgButtonPlay
+S_pela ett testljud
+;_Play a test sound
+; ***NEW***
+;
