@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.5  1997/01/15 14:59:50  lcs
+* Removed most of the unsigned addroutines
+*
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * Changed the AHI_DEBUG levels
 *
@@ -53,7 +56,6 @@
 	XREF	SelectAddRoutine
 	XREF	initUnsignedTable
 	XREF	initSignedTable
-	XREF	logtable
 	XREF	calcSignedTable
 	XREF	calcUnsignedTable
 	XREF	_Mix
@@ -255,10 +257,13 @@ stuffChar:
 *
 *   TAGS
 *
-*       AHIA_AudioID (ULONG) - The audio mode to use.
+*       AHIA_AudioID (ULONG) - The audio mode to use (AHI_DEFAULT_ID is the
+*           user's default mode. It's a good value to use the first time she
+*           starts your application.
 *
 *       AHIA_MixFreq (ULONG) - Desired mixing frequency. The actual
 *           mixing rate may or may not be exactly what you asked for.
+*           AHI_DEFAULT_FREQ is the user's prefered frequency.
 *
 *       AHIA_Channels (UWORD) - Number of channel to use. The actual
 *           number of channels used will be equal or grater than the
@@ -305,7 +310,8 @@ stuffChar:
 *           frequences. The result of MixFreq/PlayerFreq must fit an UWORD,
 *           ie it must be less or equal to 65535. It is also suggested that
 *           you keep the result over 80. For normal use this should not be a
-*           problem.
+*           problem. Note that the data type is Fixed, not integer. 50 Hz is
+*           50<<16.
 *
 *       AHIA_MinsPlayerFreq (Fixed) - The minimum frequency (AHIA_PlayerFreq)
 *           you will use. You should always supply this if you are using the
@@ -345,12 +351,6 @@ stuffChar:
 *   EXAMPLE
 *
 *   NOTES
-*       The AHIA_RecordFunc function must return NULL!
-*
-*       AHIA_PlayerFreq, AHIA_MinsPlayerFreq and AHIA_MaxPlayerFreq used to
-*       be ULONGs. Now they have been redefined as Fixed. In order not to
-*       break old programs, all values below 65536 (i.e. below 1.0 Hz) will
-*       be treated as ULONGs. This klude will be removed later.
 *
 *   BUGS
 *
@@ -652,10 +652,10 @@ SetVol_nodebug
 	and.l	#1,d2
 	swap.w	d2				;pan=0 or $10000
 .pan
-	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
-	bne	.stereo
-	moveq	#0,d2				;pan=0
-.stereo
+;	btst.b	#AHIACB_STEREO,ahiac_Flags+3(a2)
+;	bne	.stereo
+;	moveq	#0,d2				;pan=0
+;.stereo
 
 	mulu.w	#AHIChannelData_SIZEOF,d0
 	move.l	ahiac_ChannelDatas(a2),a0
@@ -740,7 +740,7 @@ SetVol_nodebug
 *       channel - The channel to set playback frequency for.
 *       freq - The playback frequency in Herz. Can also be AHI_MIXFREQ,
 *           is the current mixing frequency (only usable with AHIST_INPUT
-*           sounds), or 0 to temporary stop the sample (it will restart at
+*           sounds), or 0 to temporary stop the sound (it will restart at
 *           the same point when its frequency changed).
 *       audioctrl - A pointer to an AHIAudioCtrl structure.
 *       flags - Only one flag is defined
@@ -961,17 +961,6 @@ SetSound_nodebug
 	move.l	sd_Type(a1),d0
 	cmp.l	#AHIST_NOTYPE,d0
 	beq.w	.exit
-	and.l	#AHIST_LOOP,d0
-	beq	.noloop
-	move.l	sd_Type(a1),cd_NextType(a0)
-	move.l	sd_Addr(a1),a3
-	move.l	(a3)+,cd_NextDataStart(a0)
-	move.l	a3,cd_LAddress(a0)
-	move.l	(a3)+,cd_LCommand(a0)
-	move.l	(a3)+,d2
-	add.l	(a3)+,d3
-	bra	.11
-.noloop
 	tst.l	d3
 	bne	.10
 	move.l	sd_Length(a1),d3
@@ -1581,8 +1570,8 @@ free_DSPEcho:
 *           AHIST_SAMPLE - array of 8 or 16 bit samples. Note that the
 *               portion of memory where the sample is stored must NOT be
 *               altered until AHI_UnloadSound() has been called! This is
-*               because some audio drivers may wish to upload the sample
-*               to local RAM, or even change format of the sample data!
+*               because some audio drivers may wish to upload the samples
+*               to local RAM. It is ok to read, though.
 *
 *           AHIST_DYNAMICSAMPLE - array of 8 or 16 bit samples, which can be
 *               updated dynamically. Typically used to play data that is
@@ -1594,17 +1583,10 @@ free_DSPEcho:
 *           AHIST_INPUT - The input from your sampler (not fully functional
 *               yet).
 *
-*           AHIST_LOOP - Please don't use this type. I'm trying to decide if
-*               I should keep the loop support or not. For now, use 
-*               AHIA_SoundFunc (see AHI_AllocAudioA()) and handle the loops
-*               yourself.
-*
 *       info - Depends on type:
 *           AHIST_SAMPLE - A pointer to a struct AHISampleInfo, filled with:
 *               ahisi_Type - Format of samples (only two supported).
 *                   AHIST_M8S: Mono, 8 bit signed (BYTEs).
-*                   AHIST_M8U: Mono, 8 bit unsigned (UBYTEs). Avoid using
-*                       this type if possible!
 *                   AHIST_M16S: Mono, 16 bit signed (WORDs).
 *               ahisi_Address - Address to the sample array.
 *               ahisi_Length - The size of the array, in samples.
@@ -1624,8 +1606,6 @@ free_DSPEcho:
 *               Note that AHI_SetFreq() may only be called with AHI_MIXFREQ
 *               for this sample type.
 *
-*           AHIST_LOOP - Temporary (?) removed.
-*
 *       audioctrl - A pointer to an AHIAudioCtrl structure.
 *
 *   RESULT
@@ -1634,12 +1614,13 @@ free_DSPEcho:
 *   EXAMPLE
 *
 *   NOTES
-*       There is no need to place a sample array in Chip memory.
+*       There is no need to place a sample array in Chip memory, but it 
+*       MUST NOT be swapped out! Allocate your sample memory with the
+*       MEMF_PUBLIC flag set. 
 *
 *       SoundFunc will be called in the same manner as Paula interrups
 *       occur; when the device has updated its internal variables and can
-*       accept new commands. Note that SoundFunc will be called for every
-*       loop played in a multi-loop sound.
+*       accept new commands.
 *
 *   BUGS
 *       AHIST_INPUT does not fully work yet.
@@ -1652,27 +1633,11 @@ free_DSPEcho:
 *
 *
 
-
-*           AHIST_LOOP  - Defines loops for a previously loaded sound. Even
-*               if unlimited number of loops are possible, AHI's loop support
-*               is quite limited (for example: no backward playing and  no
-*               ping-pong looping) - and it will remain in that state. If you
-*               need better control, make use of AHI_AllocAudioA()'s
-*               AHIA_SoundFunc tag.
-
-
-*           AHIST_LOOP  - A pointer to struct AHILoopInfo, filled with:
-*               ahili_Sound - The ID of a sound to set loops for.
-*               ahili_Pad - Pad word, must be 0.
-*               ahili_LoopArray - Array of AHIMultiLoop structures, defining
-*                   each loop point (see <devices/ahi.h>). Do not forget
-*                   to terminate the array with a ahisl_Command of 0 or ~0!
-
 _LoadSound:
 	cmp.b	#AHI_DEBUG_LOW,ahib_DebugLevel(a6)
 	blo	LoadSound_nodebug1
 	and.l	#$ffff,d0
-	PRINTF	1,"AHI_LoadSound(%ld, 0x%08lx, 0x%08lx, 0x%08lx)",d0,d1,a0,a2
+	PRINTF	1,"AHI_LoadSound(%ld, %ld, 0x%08lx, 0x%08lx)",d0,d1,a0,a2
 LoadSound_nodebug1
 
 	pushm	d1/a0-a1/a6
@@ -1699,50 +1664,6 @@ LoadSound_nodebug1
 	mulu.w	#AHISoundData_SIZEOF,d0
 	move.l	ahiac_SoundDatas(a2),a3
 
-*** AHIST_LOOP
-	cmp.l	#AHIST_LOOP,d1
-	bne	.noloop
-	move.l	d0,d3
-	moveq.l	#0,d4
-	move.w	ahili_Sound(a0),d4		;get source sound
-	mulu.w	#AHISoundData_SIZEOF,d4
-	or.l	sd_Type(a3,d4.l),d1		;M8S/M8U/M16S
-	move.l	d1,sd_Type(a3,d3.l)
-
-; find length of array
-	lea	ahili_LoopArray(a0),a0
-	move.l	a0,a4
-	moveq	#AHIMultiLoop_SIZEOF,d0
-.scanloop
-	move.l	ahisl_Command(a0),d1
-	beq	.scanned
-	not.l	d1
-	beq	.scanned
-	add.w	#AHIMultiLoop_SIZEOF,a0
-	add.l	#AHIMultiLoop_SIZEOF,d0
-	bra	.scanloop
-.scanned
-	addq.l	#4,d0				;First LW is address to sample/hook
-	move.l	#MEMF_PUBLIC|MEMF_CLEAR,d1
-	call	AllocVec
-	move.l	d0,sd_Addr(a3,d3.l)
-	move.l	d0,a0
-	beq.w	.error_nomem
-	move.l	sd_Addr(a3,d4.l),(a0)+		;save source address
-.copy_array
-	move.l	(a4)+,d0
-	move.l	d0,(a0)+
-	move.l	(a4)+,(a0)+
-	move.l	(a4)+,(a0)+
-	tst.l	d0
-	beq	.copied_array
-	not.l	d0
-	bne	.copy_array
-.copied_array
-	clr.l	sd_Length(a3,d3.l)
-	moveq	#AHIE_OK,d0
-	bra	.exit
-.noloop
 *** AHIST_(DYNAMIC)SAMPLE
 	cmp.l	#AHIST_DYNAMICSAMPLE,d1
 	beq	.sample
@@ -1754,19 +1675,25 @@ LoadSound_nodebug1
 	beq	.typeok_signed
 	cmp.l	#AHIST_M16S,d1
 	beq	.typeok_signed
-	cmp.l	#AHIST_M8U,d1
-	beq	.typeok_unsigned
+;	cmp.l	#AHIST_M8U,d1
+;	beq	.typeok_unsigned
 	moveq	#AHIE_BADSAMPLETYPE,d0
 	bra	.exit
 .typeok_signed
+	move.l	d0,d1
 	bsr	initSignedTable
+;	tst.l	d0
+;	beq	.error_nomem
 	bra	.typeok
 .typeok_unsigned
+	move.l	d0,d1
 	bsr	initUnsignedTable
+;	tst.l	d0
+;	beq	.error_nomem
 .typeok
-	move.l	ahisi_Type(a0),sd_Type(a3,d0.l)
-	move.l	ahisi_Address(a0),sd_Addr(a3,d0.l)
-	move.l	ahisi_Length(a0),sd_Length(a3,d0.l)
+	move.l	ahisi_Type(a0),sd_Type(a3,d1.l)
+	move.l	ahisi_Address(a0),sd_Addr(a3,d1.l)
+	move.l	ahisi_Length(a0),sd_Length(a3,d1.l)
 	moveq	#AHIE_OK,d0
 	bra	.exit
 .nosample
@@ -1850,11 +1777,6 @@ UnloadSound_nodebug
 	move.l	sd_Type(a3,d0.l),d1
 	cmp.l	#AHIST_NOTYPE,d1
 	beq	.exit
-	and.l	#AHIST_LOOP,d1
-	beq	.noloop
-	move.l	sd_Addr(a3,d0.l),a1
-	call	FreeVec				;NULL is ok.
-.noloop
 	move.l	#AHIST_NOTYPE,sd_Type(a3,d0.l)
 .exit
 	moveq	#0,d0
@@ -2696,6 +2618,44 @@ UnloadSound_nodebug
 *
 *
 
+****** ahi.device/CMD_RESET ************************************************
+*
+*   NAME
+*       CMD_RESET -- Restore device to a known state (V3)
+*
+*   FUNCTION
+*       Aborts all current requestes, even other programs requests
+*       (CMD_FLUSH), rereads the configuration file and resets the hardware
+*       to its initial state
+*       
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_RESET
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       This command should only be used in very rare cases, like AHI
+*       system utilities. Never use this command in an application.
+*
+*   BUGS
+*
+*   SEE ALSO
+*       CMD_FLUSH, <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*
+
 ****** ahi.device/CMD_READ *************************************************
 *
 *   NAME
@@ -2785,6 +2745,44 @@ UnloadSound_nodebug
 *
 *   SEE ALSO
 *       <ahi/devices.h>, <exec/errors.h>
+*
+****************************************************************************
+*
+*
+
+****** ahi.device/CMD_FLUSH ************************************************
+*
+*   NAME
+*       CMD_FLUSH -- Cancel all I/O requests (V3)
+*
+*   FUNCTION
+*       Aborts ALL current requestes, both active and waiting, even
+*       other programs requests!
+*
+*   IO REQUEST INPUT
+*       io_Device       Preset by the call to OpenDevice().
+*       io_Unit         Preset by the call to OpenDevice().
+*       io_Command      CMD_FLUSH
+*
+*   IO REQUEST RESULT
+*       io_Error        0 for success, or an error code as defined in
+*                       <ahi/devices.h> and <exec/errors.h>.
+*       io_Actual       If io_Error is 0, number of requests actually
+*                       flushed.
+*
+*       The other fields, except io_Device, io_Unit and io_Command, are
+*       trashed.
+*
+*   EXAMPLE
+*
+*   NOTES
+*       This command should only be used in very rare cases, like AHI
+*       system utilities. Never use this command in an application.
+*
+*   BUGS
+*
+*   SEE ALSO
+*       CMD_RESET, <ahi/devices.h>, <exec/errors.h>
 *
 ****************************************************************************
 *
