@@ -1,6 +1,6 @@
 2001-03-11  Martin Blom  <martin@blom.org>
 
-        * Release ahi.device 5.5.
+        * Released ahi.device 5.5.
 
 	* Nuked one more m68k assembler source file and moved the code
 	to C.
@@ -9,7 +9,7 @@
 
 2001-03-04  Martin Blom  <martin@blom.org>
 
-        * Release ahi.device 5.4.
+        * Released ahi.device 5.4.
 
 	* Fixed a bug that caused clicks on every new sound start,
 	if an end-of-sound had been reached and the last sample in that
