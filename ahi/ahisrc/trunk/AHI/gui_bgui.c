@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.5  1997/05/04 02:33:07  lcs
+ * Changed name to gui_bgui.c
+ *
  * Revision 4.4  1997/04/27 16:16:06  lcs
  * Added "Mastervolume with(out) clipping".
  *
