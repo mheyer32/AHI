@@ -245,6 +245,7 @@ struct AHIPrivAudioCtrl
   volatile void             *ahiac_PPCArgument;
   APTR                       ahiac_PPCMixBuffer;
   struct Interrupt          *ahiac_PPCMixInterrupt;
+  struct PowerUpContext     *ahiac_PPCPowerUpContext;
   struct WarpUpContext      *ahiac_PPCWarpUpContext;
   APTR                       ahiac_M68KPort;
   APTR                       ahiac_PPCStartupMsg;

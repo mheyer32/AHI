@@ -35,6 +35,7 @@
 # include <powerup/ppclib/memory.h>
 # include <powerup/ppclib/interface.h>
 # include <powerup/ppclib/object.h>
+# include <powerup/ppclib/tasks.h>
 # include <powerpc/powerpc.h>
 
 # include <proto/exec.h>
@@ -53,7 +54,6 @@
 #include "header.h"
 #include "ppcheader.h"
 
-#define GetSymbol( name ) AHIGetELFSymbol( #name, (void*) &name ## Ptr )
 
 /******************************************************************************
 ** Prototypes *****************************************************************
@@ -73,41 +73,6 @@ static void
 DoChannelInfo ( struct AHIPrivAudioCtrl *audioctrl );
 
 #endif /* !defined( VERSIONPPC ) */
-
-ADDFUNC* AddByteMonoPtr     = NULL;
-ADDFUNC* AddByteStereoPtr   = NULL;
-ADDFUNC* AddBytesMonoPtr    = NULL;
-ADDFUNC* AddBytesStereoPtr  = NULL;
-ADDFUNC* AddWordMonoPtr     = NULL;
-ADDFUNC* AddWordStereoPtr   = NULL;
-ADDFUNC* AddWordsMonoPtr    = NULL;
-ADDFUNC* AddWordsStereoPtr  = NULL;
-ADDFUNC* AddByteMonoBPtr    = NULL;
-ADDFUNC* AddByteStereoBPtr  = NULL;
-ADDFUNC* AddBytesMonoBPtr   = NULL;
-ADDFUNC* AddBytesStereoBPtr = NULL;
-ADDFUNC* AddWordMonoBPtr    = NULL;
-ADDFUNC* AddWordStereoBPtr  = NULL;
-ADDFUNC* AddWordsMonoBPtr   = NULL;
-ADDFUNC* AddWordsStereoBPtr = NULL;
-
-ADDFUNC* AddLofiByteMonoPtr     = NULL;
-ADDFUNC* AddLofiByteStereoPtr   = NULL;
-ADDFUNC* AddLofiBytesMonoPtr    = NULL;
-ADDFUNC* AddLofiBytesStereoPtr  = NULL;
-ADDFUNC* AddLofiWordMonoPtr     = NULL;
-ADDFUNC* AddLofiWordStereoPtr   = NULL;
-ADDFUNC* AddLofiWordsMonoPtr    = NULL;
-ADDFUNC* AddLofiWordsStereoPtr  = NULL;
-ADDFUNC* AddLofiByteMonoBPtr    = NULL;
-ADDFUNC* AddLofiByteStereoBPtr  = NULL;
-ADDFUNC* AddLofiBytesMonoBPtr   = NULL;
-ADDFUNC* AddLofiBytesStereoBPtr = NULL;
-ADDFUNC* AddLofiWordMonoBPtr    = NULL;
-ADDFUNC* AddLofiWordStereoBPtr  = NULL;
-ADDFUNC* AddLofiWordsMonoBPtr   = NULL;
-ADDFUNC* AddLofiWordsStereoBPtr = NULL;
-
 
 static const UBYTE type2bytes[]=
 {
@@ -179,7 +144,6 @@ static inline void
 CallSoundHook( struct AHIPrivAudioCtrl *audioctrl,
                void* arg )
 {
-//kprintf("CallSoundHook\n");
   CallHookPkt( audioctrl->ac.ahiac_SoundFunc,
                audioctrl,
                arg );
@@ -265,7 +229,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   int                  i;
   BOOL                 flushed = FALSE;
 
-//kprintf("M");
+kprintf("M");
   // Flush all DYNAMICSAMPLE's
 
   sd = audioctrl->ahiac_SoundDatas;
@@ -276,7 +240,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
     {
       if( sd->sd_Addr == NULL )
       {
-//kprintf("a");
+kprintf("a");
         // Flush all and exit
         CacheClearU();
         flushed = TRUE;
@@ -284,7 +248,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
       }
       else
       {
-//kprintf("b");
+kprintf("b");
         switch( MixBackend )
         {
           case MB_POWERUP:
@@ -307,16 +271,16 @@ MixPowerUp( REG(a0, struct Hook *Hook),
             break;
         }
       }
-//kprintf("c");
+kprintf("c");
     }
     sd++;
   }
 
-//kprintf("d");
+kprintf("d");
 #ifdef WARPUP_INVALIDATE_CACHE
   if( ! flushed && MixBackend == MB_WARPUP )
   {
-//kprintf( "0x%08lx, 0x%08lx, %ld\n", audioctrl, audioctrl->ahiac_PPCMixBuffer, audioctrl->ahiac_BuffSizeNow );
+kprintf( "0x%08lx, 0x%08lx, %ld\n", audioctrl, audioctrl->ahiac_PPCMixBuffer, audioctrl->ahiac_BuffSizeNow );
     /* Since the PPC mix buffer is m68k cacheable in WarpUp, we have to
        flush, or better, *invalidate* the cache before mixing starts. */
 
@@ -329,7 +293,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
 //                 audioctrl->ahiac_BuffSizeNow );
   }
 #endif
-//kprintf("e");
+kprintf("e");
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_NONE;
 
@@ -337,6 +301,15 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   {
     case MB_POWERUP:
     {
+#ifdef POWERUP_USE_MIXTASK
+      audioctrl->ahiac_PPCPowerUpContext->Hook = Hook;
+      audioctrl->ahiac_PPCPowerUpContext->Dst  = audioctrl->ahiac_PPCMixBuffer;
+
+      audioctrl->ahiac_PPCCommand = AHIAC_COM_START;
+
+      PPCSignalTask( audioctrl->ahiac_PPCPowerUpContext->Task,
+                     SIGBREAKF_CTRL_F );
+#else
       struct ModuleArgs mod =
       {
         IF_CACHEFLUSHNO, 0, 0,
@@ -351,11 +324,13 @@ MixPowerUp( REG(a0, struct Hook *Hook),
         0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
       };
 
-      //kprintf("K");
+      kprintf("K");
       PPCRunKernelObject( PPCObject, &mod );
-      //kprintf("k");
+      kprintf("k");
 
       audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // I like it better after
+#endif
+
       break;
     }
 
@@ -369,9 +344,9 @@ MixPowerUp( REG(a0, struct Hook *Hook),
       audioctrl->ahiac_PPCWarpUpContext->Active       = TRUE;
 
       audioctrl->ahiac_PPCCommand = AHIAC_COM_START; // Must be before
-      //kprintf("C");
+      kprintf("C");
       CausePPCInterrupt();
-      //kprintf("c");
+      kprintf("c");
       break;
 
     case MB_NATIVE:
@@ -379,9 +354,9 @@ MixPowerUp( REG(a0, struct Hook *Hook),
       break;
   }
 
-//kprintf("f");
+kprintf("f");
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_FINISHED );
-//kprintf("g");
+kprintf("g");
 
   // The PPC mix buffer is either not m68k-cachable or cleared;
   // just read from it.
@@ -395,7 +370,7 @@ MixPowerUp( REG(a0, struct Hook *Hook),
   /*** AHIET_CHANNELINFO ***/
 
   DoChannelInfo(audioctrl);
-//kprintf("m");
+kprintf("m");
 
   return;
 }
@@ -458,7 +433,6 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
             );
         break;
     }
-//kprintf( "PPCMixBuffer: 0x%08lx (%ld)\n", audioctrl->ahiac_PPCMixBuffer, audioctrl->ac.ahiac_BuffSize );
     audioctrl->ahiac_PPCMixInterrupt = AllocVec(
         sizeof( struct Interrupt ),
         MEMF_PUBLIC | MEMF_CLEAR );
@@ -507,177 +481,156 @@ InitMixroutine ( struct AHIPrivAudioCtrl *audioctrl )
 
     if( PPCObject != NULL )
     {
-      int r = ~0;
-
-      r &= GetSymbol( AddByteMono     );
-      r &= GetSymbol( AddByteStereo   );
-      r &= GetSymbol( AddBytesMono    );
-      r &= GetSymbol( AddBytesStereo  );
-      r &= GetSymbol( AddWordMono     );
-      r &= GetSymbol( AddWordStereo   );
-      r &= GetSymbol( AddWordsMono    );
-      r &= GetSymbol( AddWordsStereo  );
-      r &= GetSymbol( AddByteMonoB    );
-      r &= GetSymbol( AddByteStereoB  );
-      r &= GetSymbol( AddBytesMonoB   );
-      r &= GetSymbol( AddBytesStereoB );
-      r &= GetSymbol( AddWordMonoB    );
-      r &= GetSymbol( AddWordStereoB  );
-      r &= GetSymbol( AddWordsMonoB   );
-      r &= GetSymbol( AddWordsStereoB );
-
-      r &= GetSymbol( AddLofiByteMono     );
-      r &= GetSymbol( AddLofiByteStereo   );
-      r &= GetSymbol( AddLofiBytesMono    );
-      r &= GetSymbol( AddLofiBytesStereo  );
-      r &= GetSymbol( AddLofiWordMono     );
-      r &= GetSymbol( AddLofiWordStereo   );
-      r &= GetSymbol( AddLofiWordsMono    );
-      r &= GetSymbol( AddLofiWordsStereo  );
-      r &= GetSymbol( AddLofiByteMonoB    );
-      r &= GetSymbol( AddLofiByteStereoB  );
-      r &= GetSymbol( AddLofiBytesMonoB   );
-      r &= GetSymbol( AddLofiBytesStereoB );
-      r &= GetSymbol( AddLofiWordMonoB    );
-      r &= GetSymbol( AddLofiWordStereoB  );
-      r &= GetSymbol( AddLofiWordsMonoB   );
-      r &= GetSymbol( AddLofiWordsStereoB );
-
-      // Sucess?
-
-      if( r != 0 )
+      switch( MixBackend )
       {
-        switch( MixBackend )
+        case MB_NATIVE:
+          Req( "Internal error: Illegal MixBackend in InitMixroutine()" );
+          break;
+
+        case MB_POWERUP:
         {
-          case MB_NATIVE:
-            Req( "Internal error: Illegal MixBackend in InitMixroutine()" );
-            break;
-
-          case MB_POWERUP:
-            rc = TRUE;
-            break;
-
-          case MB_WARPUP:
-          {
-            // Initialize the WarpUp side
-        
-            struct PPCArgs args = 
-            {
-              NULL,
-              0,
-              0,
-              NULL,
-              0,
-              { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-              { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
-            };
-
-            audioctrl->ahiac_PPCWarpUpContext = AHIAllocVec(
-                sizeof( struct WarpUpContext ), 
+#ifdef POWERUP_USE_MIXTASK
+            audioctrl->ahiac_PPCPowerUpContext = AHIAllocVec(
+                sizeof( struct PowerUpContext ),
                 MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEPPC | MEMF_NOCACHEM68K );
-
-            if( audioctrl->ahiac_PPCWarpUpContext != NULL )
+                
+            if( audioctrl->ahiac_PPCPowerUpContext != NULL )
             {
-#ifndef WARPUP_INVALIDATE_CACHE
-              audioctrl->ahiac_PPCWarpUpContext->MixBuffer = 
-                AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
-                             MEMF_PUBLIC );
-
-              // Set a default value, just in case...
-
-              audioctrl->ahiac_PPCWarpUpContext->MixLongWords = 
-                  ( audioctrl->ac.ahiac_BuffSize + 3 ) / 4;
-
-              if( audioctrl->ahiac_PPCWarpUpContext->MixBuffer != NULL )
+              audioctrl->ahiac_PPCPowerUpContext->Port = 
+                  PPCCreatePortTags( TAG_DONE );
+                  
+              if( audioctrl->ahiac_PPCPowerUpContext->Port != NULL )
               {
-#endif
-                audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
-
-                args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
-
-                if( AHIGetELFSymbol( "InitWarpUp", &args.PP_Code ) )
+                audioctrl->ahiac_PPCPowerUpContext->Msg = 
+                    PPCCreateMessage( audioctrl->ahiac_PPCPowerUpContext->Port,
+                                      0 );
+                                      
+                if( audioctrl->ahiac_PPCPowerUpContext->Msg != NULL )
                 {
-                  if( RunPPC( &args ) == PPERR_SUCCESS )
+                  audioctrl->ahiac_PPCPowerUpContext->Task =
+                      PPCCreateTaskTags( 
+                          PPCObject,
+                          PPCTASKTAG_NAME,              (ULONG) DevName,
+                          PPCTASKTAG_PRIORITY,          127,
+                          PPCTASKTAG_STARTUP_MSG,       (ULONG) audioctrl->ahiac_PPCPowerUpContext->Msg,
+                          PPCTASKTAG_STARTUP_MSGDATA,   (ULONG) audioctrl,
+                          PPCTASKTAG_STARTUP_MSGLENGTH, 0,
+                          PPCTASKTAG_STARTUP_MSGID,     0,
+                          TAG_DONE );
+                          
+                  if( audioctrl->ahiac_PPCPowerUpContext->Task != NULL )
                   {
                     rc = TRUE;
                   }
                   else
                   {
-                    Req( "Call to InitWarpUp() failed." );
+                    Req( "Unable to create PPC task." );
                   }
                 }
                 else
                 {
-                  Req( "Unable to fetch symbol 'InitWarpUp'." );
+                  Req( "Unable to allocate PPC message." );
                 }
-#ifndef WARPUP_INVALIDATE_CACHE
               }
               else
               {
-                Req( "Out of memory in InitMixroutine()." );
+                Req( "Unable to allocate PPC port." );
               }
+            }
+            else
+            {
+              Req( "Unable to allocate PowerUpContext." );
+            }
+#else
+          rc = TRUE;
 #endif
+          break;
+        }
+
+        case MB_WARPUP:
+        {
+          // Initialize the WarpUp side
+      
+          struct PPCArgs args = 
+          {
+            NULL,
+            0,
+            0,
+            NULL,
+            0,
+            { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+            { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 }
+          };
+
+          audioctrl->ahiac_PPCWarpUpContext = AHIAllocVec(
+              sizeof( struct WarpUpContext ), 
+              MEMF_PUBLIC | MEMF_CLEAR | MEMF_NOCACHEPPC | MEMF_NOCACHEM68K );
+
+          if( audioctrl->ahiac_PPCWarpUpContext != NULL )
+          {
+#ifndef WARPUP_INVALIDATE_CACHE
+            audioctrl->ahiac_PPCWarpUpContext->MixBuffer = 
+              AHIAllocVec( audioctrl->ac.ahiac_BuffSize,
+                           MEMF_PUBLIC );
+
+            // Set a default value, just in case...
+
+            audioctrl->ahiac_PPCWarpUpContext->MixLongWords = 
+                ( audioctrl->ac.ahiac_BuffSize + 3 ) / 4;
+
+            if( audioctrl->ahiac_PPCWarpUpContext->MixBuffer != NULL )
+            {
+#endif
+              audioctrl->ahiac_PPCWarpUpContext->PowerPCBase = PowerPCBase;
+
+              args.PP_Regs[ 0 ] = (ULONG) audioctrl->ahiac_PPCWarpUpContext;
+
+              if( AHIGetELFSymbol( "InitWarpUp", &args.PP_Code ) )
+              {
+                if( RunPPC( &args ) == PPERR_SUCCESS )
+                {
+                  rc = TRUE;
+                }
+                else
+                {
+                  Req( "Call to InitWarpUp() failed." );
+                }
+              }
+              else
+              {
+                Req( "Unable to fetch symbol 'InitWarpUp'." );
+              }
+#ifndef WARPUP_INVALIDATE_CACHE
             }
             else
             {
               Req( "Out of memory in InitMixroutine()." );
             }
-
-            break;
+#endif
           }
-        }
+          else
+          {
+            Req( "Out of memory in InitMixroutine()." );
+          }
 
-        if( rc )
-        {
-          audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Type = NT_INTERRUPT;
-          audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Pri  = 127;
-          audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Name = (STRPTR) DevName;
-          audioctrl->ahiac_PPCMixInterrupt->is_Data         = audioctrl;
-          audioctrl->ahiac_PPCMixInterrupt->is_Code         = (void(*)(void)) Interrupt;
-
-          AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
+          break;
         }
       }
-      else
+
+      if( rc )
       {
-        Req( "Unable to fetch all symbols from ELF object." );
+        audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Type = NT_INTERRUPT;
+        audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Pri  = 127;
+        audioctrl->ahiac_PPCMixInterrupt->is_Node.ln_Name = (STRPTR) DevName;
+        audioctrl->ahiac_PPCMixInterrupt->is_Data         = audioctrl;
+        audioctrl->ahiac_PPCMixInterrupt->is_Code         = (void(*)(void)) Interrupt;
+
+        AddIntServer( INTB_PORTS, audioctrl->ahiac_PPCMixInterrupt );
       }
+      
     }
     else // PPCObject
     {
-      AddByteMonoPtr         = AddByteMono;
-      AddByteStereoPtr       = AddByteStereo;
-      AddBytesMonoPtr        = AddBytesMono;
-      AddBytesStereoPtr      = AddBytesStereo;
-      AddWordMonoPtr         = AddWordMono;
-      AddWordStereoPtr       = AddWordStereo;
-      AddWordsMonoPtr        = AddWordsMono;
-      AddWordsStereoPtr      = AddWordsStereo;
-      AddByteMonoBPtr        = AddByteMonoB;
-      AddByteStereoBPtr      = AddByteStereoB;
-      AddBytesMonoBPtr       = AddBytesMonoB;
-      AddBytesStereoBPtr     = AddBytesStereoB;
-      AddWordMonoBPtr        = AddWordMonoB;
-      AddWordStereoBPtr      = AddWordStereoB;
-      AddWordsMonoBPtr       = AddWordsMonoB;
-      AddWordsStereoBPtr     = AddWordsStereoB;
-
-      AddLofiByteMonoPtr     = AddLofiByteMono;
-      AddLofiByteStereoPtr   = AddLofiByteStereo;
-      AddLofiBytesMonoPtr    = AddLofiBytesMono;
-      AddLofiBytesStereoPtr  = AddLofiBytesStereo;
-      AddLofiWordMonoPtr     = AddLofiWordMono;
-      AddLofiWordStereoPtr   = AddLofiWordStereo;
-      AddLofiWordsMonoPtr    = AddLofiWordsMono;
-      AddLofiWordsStereoPtr  = AddLofiWordsStereo;
-      AddLofiByteMonoBPtr    = AddLofiByteMonoB;
-      AddLofiByteStereoBPtr  = AddLofiByteStereoB;
-      AddLofiBytesMonoBPtr   = AddLofiBytesMonoB;
-      AddLofiBytesStereoBPtr = AddLofiBytesStereoB;
-      AddLofiWordMonoBPtr    = AddLofiWordMonoB;
-      AddLofiWordStereoBPtr  = AddLofiWordStereoB;
-      AddLofiWordsMonoBPtr   = AddLofiWordsMonoB;
-      AddLofiWordsStereoBPtr = AddLofiWordsStereoB;
 
       // Sucess!
     
@@ -706,7 +659,49 @@ CleanUpMixroutine( struct AHIPrivAudioCtrl *audioctrl )
   switch( MixBackend )
   {
     case MB_NATIVE:
+      break;
+
     case MB_POWERUP:
+#ifdef POWERUP_USE_MIXTASK
+      if( audioctrl->ahiac_PPCPowerUpContext != NULL )
+      {
+        if( audioctrl->ahiac_PPCPowerUpContext->Task != NULL )
+        {
+          void* msg;
+
+          PPCSignalTask( audioctrl->ahiac_PPCPowerUpContext->Task,
+                         SIGBREAKF_CTRL_C );
+          
+          while( TRUE )
+          {
+            msg = PPCGetMessage( audioctrl->ahiac_PPCPowerUpContext->Port );
+            
+            if( msg == audioctrl->ahiac_PPCPowerUpContext->Msg )
+            {
+              break;
+            }
+            else
+            {
+              PPCWaitPort( audioctrl->ahiac_PPCPowerUpContext->Port );
+            }
+          }
+        }
+        
+        if( audioctrl->ahiac_PPCPowerUpContext->Msg != NULL )
+        {
+          PPCDeleteMessage( audioctrl->ahiac_PPCPowerUpContext->Msg );
+        }
+        
+        if( audioctrl->ahiac_PPCPowerUpContext->Port != NULL )
+        {
+          PPCDeletePort( audioctrl->ahiac_PPCPowerUpContext->Port );
+        }
+        
+        AHIFreeVec( audioctrl->ahiac_PPCPowerUpContext );
+        audioctrl->ahiac_PPCPowerUpContext = NULL;
+      }
+                     
+#endif
       break;
 
     case MB_WARPUP:

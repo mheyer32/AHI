@@ -27,6 +27,7 @@
 #include <hardware/intbits.h>
 #include <powerup/ppclib/tasks.h>
 #include <powerpc/powerpc.h>
+#include <powerup/gcclib/powerup_protos.h>
 
 #include "version.h"
 #include "ahi_def.h"
@@ -36,6 +37,13 @@
 /******************************************************************************
 ** Prototypes *****************************************************************
 ******************************************************************************/
+
+int
+CallMixroutine( unsigned int             magic,
+                struct Hook*             Hook, 
+                void*                    dst, 
+                struct AHIPrivAudioCtrl* audioctrl,
+                int                      flush_result );
 
 void
 FlushCache( void* address, unsigned long length );
@@ -51,6 +59,42 @@ void WarpUpInt( void );
 /******************************************************************************
 ** First address **************************************************************
 ******************************************************************************/
+
+#ifdef POWERUP_USE_MIXTASK
+void main( void )
+{  
+  struct AHIPrivAudioCtrl* audioctrl;
+  ULONG                    signals;
+
+  audioctrl = (struct AHIPrivAudioCtrl*) 
+      PPCGetTaskAttr( PPCTASKTAG_STARTUP_MSGDATA );
+
+//  PPCkprintf( "Got here.... 0x%08lx\n", audioctrl );
+  
+  while( TRUE )
+  {
+    signals = PPCWait( SIGBREAKF_CTRL_C | SIGBREAKF_CTRL_F );
+
+//    PPCkprintf( "Got signal!\n" );
+
+    if( signals & SIGBREAKF_CTRL_C )
+    {
+//      PPCkprintf( "***Break\n" );
+      break;
+    }
+    else if( signals & SIGBREAKF_CTRL_F )
+    {
+//      PPCkprintf( "***Mix\n" );
+      CallMixroutine( 0xC0DECAFE,
+                      audioctrl->ahiac_PPCPowerUpContext->Hook,
+                      audioctrl->ahiac_PPCPowerUpContext->Dst,
+                      audioctrl,
+                      TRUE );
+    }
+  }
+}
+
+#else
 
 // This must be the first code in the ELF object due to a bug in
 // ppc.library < 46.26
@@ -83,6 +127,8 @@ KernelObject:
 
 ");
 
+#endif
+
 
 /******************************************************************************
 ** Function used to call the actual mixing routine ****************************
@@ -105,16 +151,19 @@ CallMixroutine( unsigned int             magic,
     return 20; // RETURN_FAIL
   }
 
-
+//PPCkprintf( "Start?\n" );
   // Wait for start signal...
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_START );
 
+//PPCkprintf( "Start!\n" );
 
   // Start m68k interrupt handler
 
   audioctrl->ahiac_PPCCommand = AHIAC_COM_INIT;
   *((WORD*) 0xdff09C)  = INTF_SETCLR | INTF_PORTS;
+
+//PPCkprintf( "Int trigger!\n" );
 
   // Invalidate dynamic sample sounds (which is faster than flushing).
   // Currently, the PPC is assumed not to modify dynamic samples.
@@ -135,24 +184,39 @@ CallMixroutine( unsigned int             magic,
       {
         // *Flush* all and exit (add an L2 cache and watch this code break!)
 
+#ifdef POWERUP_USE_MIXTASK
+        PPCCacheFlushAll();
+#else
         FlushCacheAll();
+#endif
         break;
       }
       else
       {
+#ifdef POWERUP_USE_MIXTASK
+        // Flushing the block block is the best we can do as task....
+
+        PPCCacheFlush( sd->sd_Addr,
+                       sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+#else
         // *Invalidate* block
 
         InvalidateCache( sd->sd_Addr,
                          sd->sd_Length * InternalSampleFrameSize( sd->sd_Type ) );
+#endif
       }
     }
     sd++;
   }
 
+
+//PPCkprintf( "Wait!\n" );
+
   // Wait for m68k interrupt handler to go active
 
   while( audioctrl->ahiac_PPCCommand != AHIAC_COM_ACK );
 
+//PPCkprintf( "Mixing...!\n" );
   // Mix
 
   MixGeneric( Hook, dst, audioctrl );
