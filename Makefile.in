@@ -16,6 +16,7 @@ CATDIR		= ${DISTDIR}/User/Catalogs
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
+LHA		= @LHA@
 
 CPPFLAGS	= @CPPFLAGS@
 CFLAGS		= @CFLAGS@
@@ -40,20 +41,24 @@ all:
 
 clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	$(RM) ahi6dev.lha ahi6dev.readme ahi6usr.lha ahi6usr.readme
 
 distclean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) config.log config.cache config.status config.h\
+	$(RM) ahi6dev.lha ahi6dev.readme ahi6usr.lha ahi6usr.readme \
+	      config.log config.cache config.status config.h\
 	      stamp-h stamp-h.in Makefile
 
 maintainer-clean:
 	-@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
-	$(RM) config.log config.cache config.status config.h\
-	      stamp-h stamp-h.in Makefile configure config.h.in
+	$(RM) ahi6dev.lha ahi6dev.readme ahi6usr.lha ahi6usr.readme \
+	      config.log config.cache config.status config.h\
+	      stamp-h stamp-h.in Makefile \
+	      configure config.h.in
 
 bindist:
+	$(RM) -r $(DISTDIR)
 	$(INSTALL) --directory $(DISTDIR)
-	rm -rf $(DISTDIR)/*
 	$(INSTALL_DATA) ${srcdir}/COPYING $(DISTDIR)
 	$(INSTALL_DATA) ${srcdir}/COPYING.LIB $(DISTDIR)
 	$(INSTALL_DATA) ${srcdir}/COPYING.DRIVERS $(DISTDIR)
@@ -63,8 +68,19 @@ bindist:
 	$(INSTALL_DATA) ${srcdir}/README.ATO $(CATDIR)
 	$(INSTALL_DATA) ${srcdir}/README.TRANSLATIONS $(CATDIR)
 
-	@cd Include && make gcc-include
-	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@); done
+	cd Include && make gcc-include
+	for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
+
+	-$(RM) ahi6dev.lha ahi6usr.lha
+	pwd=`pwd` && ( cd $(DISTDIR) && $(LHA) -a $${pwd}/ahi6dev.lha \
+	  ahidev* ChangeLog COPYING* Developer )
+	cp $(DISTDIR)/ahidev.readme ahi6dev.readme
+
+	pwd=`pwd` && ( cd $(DISTDIR) && $(LHA) -a $${pwd}/ahi6usr.lha \
+	  ahiusr* ChangeLog COPYING* User )
+	cp $(DISTDIR)/ahiusr.readme ahi6usr.readme
+
+	$(RM) -r $(DISTDIR)
 
 revup:
 	@rev=`cat $(srcdir)/version.rev` && echo `expr $$rev + 1` > $(srcdir)/version.rev

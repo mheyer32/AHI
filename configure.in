@@ -92,6 +92,7 @@ AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROG( FLEXCAT, flexcat, flexcat )
 AC_CHECK_PROG( FD2INLINE, fd2inline, fd2inline )
 AC_CHECK_PROG( FD2PRAGMA, fd2pragma, fd2pragma )
+AC_CHECK_PROG( LHA, lha, lha )
 
 if test -z "$FD2INLINE"; then
  AC_MSG_ERROR( fd2inline missing. )
@@ -105,6 +106,9 @@ else
  fi
 fi
 
+if test -z "$LHA"; then
+ AC_MSG_WARN( lha missing. )
+fi
 
 dnl Checks for libraries.
 
