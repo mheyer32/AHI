@@ -55,11 +55,12 @@ CFILES		= C/clib/ahi_protos.h C/clib/ahi_sub_protos.h \
 		  C/libraries/ahi_sub.h C/devices/ahi.h
 
 FDFILES		= FD/ahi_lib.fd  FD/ahi_sub_lib.fd
+SFDFILES	= SFD/ahi_lib.sfd  SFD/ahi_sub_lib.sfd
 
 
 
 TARGETS		= $(GCCTARGETS)
-FILES		= $(CFILES) $(FDFILES)
+FILES		= $(CFILES) $(FDFILES) $(SFDFILES)
 
 ifeq ($(host_cpu),m68k)
 TARGETS		+= $(ASMTARGETS) $(STORMTARGETS) $(SASTARGETS)
