@@ -1,4 +1,12 @@
+2002-07-07  Martin Blom  <martin@blom.org>
+
+	* Released AHI preferences 5.7.
+
+	* AHI: No enforcer hits if no modes are available. [Don Cox]
+
 2002-07-06  Martin Blom  <martin@blom.org>
+
+	* Released AHI preferences 5.6.
 
 	* AHI: Don't crash if no modes are available. [Don Cox]
 
