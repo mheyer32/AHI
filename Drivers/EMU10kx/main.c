@@ -562,7 +562,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	u32 pc = 0;
 	u32 patch_n=0;
 
-	u32 base, zero, half;
+	u32 base, zero, half, four;
 	u32 analog_front_l, analog_front_r, analog_rear_l, analog_rear_r;
 	u32 analog_surround_l, analog_surround_r, analog_center, analog_lfe;
 	u32 spdif_front_l, spdif_front_r, spdif_rear_l, spdif_rear_r;
@@ -897,6 +897,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	   base              = A_GPR_BASE;
 	   zero              = 0xc0;
 	   half              = 0xcd;
+	   four              = 0xc4;
 	   analog_front_l    = A_ANALOG_FRONT_L;
 	   analog_front_r    = A_ANALOG_FRONT_R;
 	   analog_rear_l     = A_ANALOG_REAR_L;
@@ -934,6 +935,7 @@ static int __devinit fx_init(struct emu10k1_card *card)
 	   base              = GPR_BASE;
 	   zero              = 0x40;
 	   half              = 0x4d;
+	   four              = 0x44;
 	   analog_front_l    = L_ANALOG_FRONT_L;
 	   analog_front_r    = L_ANALOG_FRONT_R;
 	   analog_rear_l     = L_ANALOG_REAR_L;
@@ -974,14 +976,14 @@ static int __devinit fx_init(struct emu10k1_card *card)
 
 	/* +12 dB volume correction, to make the streams use the full
 	 * dynamic range (Why, oh why?) */
-	OP(4, RES_AHI_FRONT_L+base,    zero, RES_AHI_FRONT_L+base,    0x44);
-	OP(4, RES_AHI_FRONT_R+base,    zero, RES_AHI_FRONT_R+base,    0x44);
-	OP(4, RES_AHI_REAR_L+base,     zero, RES_AHI_REAR_L+base,     0x44);
-	OP(4, RES_AHI_REAR_R+base,     zero, RES_AHI_REAR_R+base,     0x44);
-	OP(4, RES_AHI_SURROUND_L+base, zero, RES_AHI_SURROUND_L+base, 0x44);
-	OP(4, RES_AHI_SURROUND_R+base, zero, RES_AHI_SURROUND_R+base, 0x44);
-	OP(4, RES_AHI_CENTER+base,     zero, RES_AHI_CENTER+base,     0x44);
-	OP(4, RES_AHI_LFE+base,        zero, RES_AHI_LFE+base,        0x44);
+	OP(4, RES_AHI_FRONT_L+base,    zero, RES_AHI_FRONT_L+base,    four);
+	OP(4, RES_AHI_FRONT_R+base,    zero, RES_AHI_FRONT_R+base,    four);
+	OP(4, RES_AHI_REAR_L+base,     zero, RES_AHI_REAR_L+base,     four);
+	OP(4, RES_AHI_REAR_R+base,     zero, RES_AHI_REAR_R+base,     four);
+	OP(4, RES_AHI_SURROUND_L+base, zero, RES_AHI_SURROUND_L+base, four);
+	OP(4, RES_AHI_SURROUND_R+base, zero, RES_AHI_SURROUND_R+base, four);
+	OP(4, RES_AHI_CENTER+base,     zero, RES_AHI_CENTER+base,     four);
+	OP(4, RES_AHI_LFE+base,        zero, RES_AHI_LFE+base,        four);
 	
 	/* Scale digital CD in */
 	OP(0, RES_SPDIF_CD_L+base, zero, spdif_cd_l, VOL_SPDIF_CD_L+base);
