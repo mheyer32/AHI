@@ -57,6 +57,7 @@ MyKPrintFArgs( UBYTE*           fmt,
 	__asm(#n "=" #f "+1");						\
 	q t n(void);
 #elif defined(__AROS__)
+# include <aros/asmcall.h>
 # define INTGW(q,t,n,f)							\
 	q AROS_UFH4(t, n,						\
 	  AROS_UFHA(ULONG, _a, A0),					\
@@ -65,7 +66,7 @@ MyKPrintFArgs( UBYTE*           fmt,
 	  AROS_UFHA(struct ExecBase *, sysbase, A6)) {			\
       AROS_USERFUNC_INIT return f(d); AROS_USERFUNC_EXIT }
 # define PROCGW(q,t,n,f)						\
-	q AROS_UFH0(t, n,						\
+	q AROS_UFH0(t, n) {						\
       AROS_USERFUNC_INIT return f(); AROS_USERFUNC_EXIT }
 #elif defined(__amiga__) && defined(__mc68000__)
 # define INTGW(q,t,n,f)							\
