@@ -1,3 +1,8 @@
+2005-04-03  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Applied an old clean-up patch from Gunther Nikl to
+	header.c.
+
 2005-03-29  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 6.1.
