@@ -10,9 +10,10 @@ AC_INIT( TODO )
 
 dnl General
 
+AC_CANONICAL_SYSTEM
 AC_PROG_MAKE_SET
 AC_CONFIG_HEADER( config.h )
-: ${CFLAGS='-V egcs-2.90.27 -noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
+: ${CFLAGS='-noixemul -g -O2 -W -Wall -Wstrict-prototypes'}
 : ${LDFLAGS='-noixemul'}
 AC_PREFIX_DEFAULT( /tmp/ahi ) 
 
