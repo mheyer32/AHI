@@ -63,6 +63,10 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.5  2005/01/08 22:38:09  martin
+Added note about the volume scaling.
+Removed list of names in Honourable mention.
+
 Revision 5.9.2.4  2004/11/02 13:18:53  martin
 Updated copyright year and removed almost all CVS/RCS tags from the
 source code.
@@ -699,6 +703,24 @@ it's the applications job to specify the maximum time the sounds may
 be delayed, but not all applications provide this information. By
 setting this slider to the desired value, all applications not
 specifying their own limit will will default to this value instead.
+
+@cindex Volume scaling
+
+@item Volume scaling
+When more than one application is using @sc{Ahi} at the same time,
+care has to be taken so no audible distortion is created. In @sc{Ahi}
+V4 and before, this implied that the volume was lowered in such a way
+that there were never any distortion. Since ``clipping'' (see above)
+was optional, this was the only sensible thing to do. In @sc{Ahi} V6,
+clipping is always used and the distortion created is often not
+audible. Because of this, all sounds are now played at full volume.
+
+However, should you wish so, it's possible to manually select that
+strategy to use. The available options are @samp{Safe} (as in @sc{Ahi}
+V4), @samp{Safe, Dynamic} (volume is dynamically adjusted based on how
+many sounds are curreltly being played), @samp{Full volume} (the new
+default) and finally @samp{-3 dB} and @samp{-6 dB}, which plays all
+sounds at -3 or -6 dB.
 
 @end table
 
@@ -1659,70 +1681,8 @@ still get mail from people who want me to publish their music now and
 then!}).
 
 Some people actually took their time to fill in the source code
-registration form:
-
-Agneta Nord,
-Andrea Favini,
-Andreas Johansson,
-Benoit Deschenes,
-Bernardo Innocenti,
-Bob Rutkowski,
-Chioccioli Guido,
-Christian Leon Christensen,
-DHR A.Roell,
-Daichi Shinozaki,
-Dan Anderson,
-Daniel Schubert,
-Darrell Swan,
-David Gerber,
-Ed Vishoot,
-Enrique Ortegón Moreno,
-Eric Keisler,
-Hyrum Summerhays,
-Iain Tyrrell,
-Ian Fletcher,
-Ilya Sharin,
-J. Stronks,
-Jack Sauce,
-James Diffendaffer,
-Jeff Brown,
-Johan Hofmeyer,
-John Klos,
-Jonathan Adamczewski,
-Jyrki Saarinen,
-Kai Weber,
-Kent Seaton,
-Kirk Strauser,
-Manos S. Pappas,
-Mark van Oudheusden,
-Murat Oezkilic,
-Niels Froehling,
-Pampuch Marek,
-Pete Wason,
-Rainer Haiduga,
-Richard Griffith,
-Risto Mäki-Petäys,
-Robert A. Salzer,
-Ron Ethridge,
-S van der Linden,
-Salvatore Bavastrelli,
-Serge,
-Sergio Corda,
-Simon Parry,
-Steven Solie,
-Stian Strøm,
-Stuart Smith,
-Ted Nilsen,
-Terme Vigliatore,
-Tero Peippola,
-Thomas Krafzik,
-Trevor Johnson,
-Vincent Gouret,
-Vincenzo Sanfilippo and
-William W. Toner II.
-
-Thank you! I'm sure I'll figure out what to do will all addresses real
-soon now.
+registration form. You know who you are. Thank you! I'm sure I'll
+figure out what to do will all addresses real soon now.
 
 But here comes the best part: Benoit Deschenes (Quebec, Canada),
 Thomas Houlberg (Sdr. Bjert, Denmark) and Patrice Machin (Paris,
@@ -1733,8 +1693,6 @@ this unusually long delivery delay, I've decided to produce three
 extra copies and send them to you for free. Benoit, Thomas and
 Patrice, if you read this and have moved since 1999, please let me
 know of your new address as soon as possible!
-
-Thanks guys! You really made my day @enddots{}
 
 
 @c ***********************************************************************
