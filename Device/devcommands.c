@@ -185,6 +185,7 @@ DevAbortIO( struct AHIRequest* ioreq,
             ioreq = nextreq;
           }
         }
+        break;
 
       default:
         rc = IOERR_NOCMD;
