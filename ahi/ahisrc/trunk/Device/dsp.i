@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.3  1997/08/02 17:11:59  lcs
+* Right. Now echo should work!
+*
 * Revision 4.2  1997/08/02 16:32:39  lcs
 * Fixed a memory trashing error. Will change it yet again now...
 *
@@ -28,9 +31,9 @@ AHI_DSP_I	SET	1
 	ULONG	ahiecho_Offset		;(&Buffer-&SrcPtr)/sizeof(ahiecho_Buffer[0])
 	APTR	ahiecho_SrcPtr		;Pointer to &Buffer
 	APTR	ahiecho_DstPtr		;Pointer to &(Buffer[Delay])
-	APTR	ahiecho_EndPtr		;Pointer to address after buffer (floating)
-	ULONG	ahiecho_SampleSize	;Delay buffer sample size in bytes
-	ULONG	ahiecho_BufferSize	;Delay buffer size in bytes (floating)
+	APTR	ahiecho_EndPtr		;Pointer to address after buffer
+	ULONG	ahiecho_BufferLength	;Delay buffer length in samples
+	ULONG	ahiecho_BufferSize	;Delay buffer size in bytes
 	LABEL	ahiecho_Buffer		;Delay buffer
 	LABEL	Echo_SIZEOF
 

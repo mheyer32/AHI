@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1997/08/02 17:11:59  lcs
+* Right. Now echo should work!
+*
 * Revision 4.3  1997/08/02 16:32:39  lcs
 * Fixed a memory trashing error. Will change it yet again now...
 *
@@ -60,24 +63,42 @@ __asm BOOL update_DSPEcho(
     register __a2 struct AHIPrivAudioCtrl *actrl,
     register __a5 struct AHIBase *AHIBase)
 {
-  ULONG length;
+  ULONG length, samplesize;
   struct Echo *es;
 
   free_DSPEcho(actrl, AHIBase);
 
-  length = AHI_SampleFrameSize(actrl->ac.ahiac_BuffType) *
-           (echo->ahiede_Delay + actrl->ac.ahiac_MaxBuffSamples);
+  switch(actrl->ac.ahiac_BuffType)
+  {
+    case AHIST_M16S:
+    case AHIST_M32S:
+      samplesize = 2;
+      break;
 
-  es = AllocVec(sizeof(struct Echo) + length + 10000, MEMF_PUBLIC|MEMF_CLEAR);
+    case AHIST_S16S:
+    case AHIST_S32S:
+      samplesize = 4;
+      break;
+
+    default:
+      return FALSE;
+      break;
+  }
+
+  length = samplesize * (echo->ahiede_Delay + actrl->ac.ahiac_MaxBuffSamples);
+
+  es = AllocVec(sizeof(struct Echo) + length, MEMF_PUBLIC|MEMF_CLEAR);
   
   if(es)
   {
     ULONG mode = 0;
 
-    es->ahiecho_SampleSize = AHI_SampleFrameSize(actrl->ac.ahiac_BuffType);
-    es->ahiecho_SrcPtr     = es->ahiecho_Buffer;
-    es->ahiecho_DstPtr     = es->ahiecho_Buffer +
-                             (es->ahiecho_SampleSize * echo->ahiede_Delay);
+    es->ahiecho_Offset       = 0;
+    es->ahiecho_SrcPtr       = es->ahiecho_Buffer;
+    es->ahiecho_DstPtr       = es->ahiecho_Buffer + (samplesize * echo->ahiede_Delay);
+    es->ahiecho_EndPtr       = es->ahiecho_Buffer + length;
+    es->ahiecho_BufferLength = echo->ahiede_Delay + actrl->ac.ahiac_MaxBuffSamples;
+    es->ahiecho_BufferSize   = length;
 
     switch(actrl->ac.ahiac_BuffType)
     {
