@@ -734,10 +734,8 @@ ReadCmd ( struct AHIRequest *ioreq,
       error = AHIE_HALFDUPLEX;   // FIXIT!
     }
     else
-    {
-      error = AHI_ControlAudio(iounit->AudioCtrl,
-         AHIC_Record,TRUE,
-         TAG_DONE);
+    { static const Tag tags[] = { AHIC_Record,TRUE,TAG_DONE };
+      error = AHI_ControlAudioA(iounit->AudioCtrl, (struct TagItem *)tags);
     }
 
     if( ! error)
@@ -857,10 +855,8 @@ WriteCmd ( struct AHIRequest *ioreq,
       error = AHIE_HALFDUPLEX;   // FIXIT!
     }
     else
-    {
-      error = AHI_ControlAudio(iounit->AudioCtrl,
-         AHIC_Play,TRUE,
-         TAG_DONE);
+    { static const Tag tags[] = { AHIC_Play,TRUE,TAG_DONE };
+      error = AHI_ControlAudioA(iounit->AudioCtrl, (struct TagItem *)tags);
     }
 
     if( ! error)
@@ -1031,10 +1027,8 @@ FeedReaders ( struct AHIDevUnit *iounit,
   if( ! iounit->ReadList.mlh_Head->mln_Succ )
   {
     if(--iounit->RecordOffDelay == 0)
-    {
-      AHI_ControlAudio(iounit->AudioCtrl,
-          AHIC_Record,FALSE,
-          TAG_DONE);
+    { static const Tag tags[] = { AHIC_Record,FALSE,TAG_DONE };
+      AHI_ControlAudioA(iounit->AudioCtrl, (struct TagItem *)tags);
       iounit->IsRecording = FALSE;
     }
   }
