@@ -53,6 +53,15 @@ case $host in
   resident="-resident"
   stripflag=""
  ;;
+ powerpc-unknown-amigaos)
+  : ${CPU="603"}
+  AC_DEFINE(__USE_INLINE__)
+  linkerflags="-noixemul"
+  optflags="-mcpu=${CPU} -O2"
+  asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
+  resident="-mresident32"
+  stripflag=""
+ ;;
  powerpc-unknown-morphos)
   : ${CPU="603"}
   AC_DEFINE(USE_INLINE_STDARG)
@@ -135,7 +144,7 @@ fi
 
 dnl Checks for libraries.
 
-AC_CHECK_LIB( amiga, NewList,,      AC_MSG_ERROR( "libamiga is missing." ) )
+AC_SEARCH_LIBS( NewList, amiga,,    AC_MSG_WARN( "libamiga is missing." ) )
 AC_CHECK_LIB( mui,   MUI_NewObject,,AC_MSG_WARN(  "Who cares?" ) )
 AC_SEARCH_LIBS( floor, m,,	    AC_MSG_ERROR( "libm is missing." ) )
 
@@ -148,7 +157,6 @@ esac
 
 dnl Checks for header files.
 
-AC_CHECK_HEADER( CompilerSpecific.h, , AC_MSG_ERROR( "CompilerSpecific.h is missing." ))
 AC_CHECK_HEADERS( libraries/openpci.h, HAVE_OPENPCI=1, AC_MSG_WARN( "libraries/openpci.h is missing." ))
 
 AC_SUBST(HAVE_OPENPCI)

@@ -1,3 +1,12 @@
+2003-09-22  Martin Blom  <martin@blom.org>
+
+	* Applied initial AmigaOS4 patches from Davy Wentzler.
+
+	* Does not use CompilerSpecific.h anymore.
+
+	* Now uses the sfdc switch --addvectors instead of ugly
+	internal .sfd files.
+
 2003-07-30  Martin Blom  <martin@blom.org>
 
 	* Bumped revision of emu10kx.audio to 5.7.

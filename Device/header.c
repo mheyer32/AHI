@@ -26,8 +26,12 @@
 #include <exec/resident.h>
 #include <exec/alerts.h>
 #include <exec/execbase.h>
-#include <proto/exec.h>
 #include <proto/dos.h>
+#include <proto/exec.h>
+#include <proto/gadtools.h>
+#include <proto/graphics.h>
+#include <proto/iffparse.h>
+
 
 #include "ahi_def.h"
 
@@ -76,6 +80,10 @@ extern const char DevName[];
 extern const char IDString[];
 static const APTR InitTable[4];
 
+#if defined( __amigaos4__  )
+static struct TagItem libCreateTags[];
+#endif
+
 // This structure must reside in the text segment or the read-only data segment!
 // "const" makes it happen.
 static const struct Resident RomTag =
@@ -85,6 +93,8 @@ static const struct Resident RomTag =
   (struct Resident *) &RomTag + 1,
 #if defined( __MORPHOS__ ) || defined( __amithlon__ )
   RTF_PPC | RTF_AUTOINIT,
+#elif defined( __amigaos4__ )
+  RTF_NATIVE | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
 #endif
@@ -93,7 +103,11 @@ static const struct Resident RomTag =
   0,                      /* priority */
   (BYTE *) DevName,
   (BYTE *) IDString,
+#if defined( __amigaos4__ )
+  libCreateTags
+#else
   (APTR) &InitTable
+#endif
 };
 
 
@@ -111,7 +125,22 @@ struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
+
+#if defined( __amigaos4__ )
+struct ExecIFace          *IExec          = NULL;
+struct AHIIFace           *IAHI           = NULL;
+struct DOSIFace           *IDOS           = NULL;
+struct GadToolsIFace      *IGadTools      = NULL;
+struct GraphicsIFace      *IGraphics      = NULL;
+struct IFFParseIFace      *IIFFParse      = NULL;
+struct IntuitionIFace     *IIntuition     = NULL;
+struct LocaleIFace        *ILocale        = NULL;
+struct TimerIFace         *ITimer         = NULL;
+struct UtilityIFace       *IUtility       = NULL;
+#endif
+
 struct Resident           *MorphOSRes     = NULL;
+static struct timerequest *TimerIO        = NULL;
 
 #if defined( ENABLE_WARPUP )
 struct Library            *PowerPCBase    = NULL;
@@ -202,12 +231,17 @@ _DevInit( struct AHIBase*  device,
   SysBase = sysbase;
   AHIBase = device;
 
+#if defined( __amigaos4__ )
+  IExec = SysBase->MainInterface;
+#else
   AHIBase->ahib_Library.lib_Node.ln_Type = NT_DEVICE;
   AHIBase->ahib_Library.lib_Node.ln_Name = (STRPTR) DevName;
   AHIBase->ahib_Library.lib_Flags        = LIBF_SUMUSED | LIBF_CHANGED;
   AHIBase->ahib_Library.lib_Version      = VERSION;
-  AHIBase->ahib_Library.lib_Revision     = REVISION;
   AHIBase->ahib_Library.lib_IdString     = (STRPTR) IDString;
+#endif
+  AHIBase->ahib_Library.lib_Revision     = REVISION;
+  
   AHIBase->ahib_SysLib  = sysbase;
   AHIBase->ahib_SegList = (BPTR) seglist;
 
@@ -320,7 +354,106 @@ static const APTR InitTable[4] =
 };
 
 
-static struct timerequest *TimerIO        = NULL;
+#if defined( __amigaos4__ )
+static ULONG generic_Obtain (struct Interface *Self)
+{
+  return Self->Data.RefCount++;
+}
+
+
+static ULONG generic_Release (struct Interface *Self)
+{
+  return Self->Data.RefCount--;
+}
+
+
+static APTR dev_manager_vectors[] =
+{
+  generic_Obtain,
+  generic_Release,
+  NULL,
+  NULL,
+  gwDevOpen,
+  gwDevClose,
+  gwDevExpunge,
+  NULL,
+  gwDevBeginIO,
+  gwDevAbortIO,
+  (APTR) -1
+};
+
+
+static struct TagItem devmanagerTags[] =
+{
+  {MIT_Name,             (ULONG)"_ device"},
+  {MIT_VectorTable,      (ULONG)dev_manager_vectors},
+  {MIT_Version,          1},
+  {TAG_DONE,             0}
+};
+
+
+static APTR main_vectors[] = {
+  generic_Obtain,
+  generic_Release,
+  NULL,
+  NULL,
+  gwAHI_AllocAudioA,
+  gwAHI_FreeAudio,
+  gwAHI_KillAudio,
+  gwAHI_ControlAudioA,
+  gwAHI_SetVol,
+  gwAHI_SetFreq,
+  gwAHI_SetSound,
+  gwAHI_SetEffect,
+  gwAHI_LoadSound,
+  gwAHI_UnloadSound,
+  gwAHI_NextAudioID,
+  gwAHI_GetAudioAttrsA,
+  gwAHI_BestAudioIDA,
+  gwAHI_AllocAudioRequestA,
+  gwAHI_AudioRequestA,
+  gwAHI_FreeAudioRequest,
+  gwAHI_PlayA,
+  gwAHI_SampleFrameSize,
+  gwAHI_AddAudioMode,
+  gwAHI_RemoveAudioMode,
+  gwAHI_LoadModeFile,
+  (APTR) -1
+};
+
+
+static struct TagItem mainTags[] =
+{
+  {MIT_Name,              (ULONG)"main"},
+  {MIT_VectorTable,       (ULONG)main_vectors},
+  {MIT_Version,           1},
+  {TAG_DONE,              0}
+};
+
+
+/* MLT_INTERFACES array */
+
+static ULONG devInterfaces[] =
+{
+  (ULONG)devmanagerTags,
+  (ULONG)mainTags,
+  0
+};
+
+extern ULONG VecTable68K;
+// tbd extern
+
+
+/* CreateLibrary tag list */
+static struct TagItem libCreateTags[] =
+{
+  {CLT_DataSize,         (ULONG)sizeof(struct AHIBase)},
+  {CLT_Interfaces,       (ULONG)devInterfaces},
+  {CLT_Vector68K,        (ULONG)&VecTable68K},
+  {CLT_InitFunc,         (ULONG)dev_init},
+  {TAG_DONE,             0}
+};
+#endif
 
 /******************************************************************************
 ** OpenLibs *******************************************************************
@@ -421,6 +554,56 @@ OpenLibs ( void )
     return FALSE;
   }
 
+#if defined( __amigaos4__ )
+  if ((IIntuition = (struct IntuitionIFace *) GetInterface((struct Library *) IntuitionBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open IIntuition interface!\n");
+       return FALSE;
+  }
+
+  if ((IDOS = (struct DOSIFace *) GetInterface((struct Library *) DOSBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open IDOS interface!\n");
+       return FALSE;
+  }
+  
+  if ((IGraphics = (struct GraphicsIFace *) GetInterface((struct Library *) GfxBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open Graphics interface!\n");
+       return FALSE;
+  }
+
+  if ((IGadTools = (struct GadToolsIFace *) GetInterface((struct Library *) GadToolsBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open IGadTools interface!\n");
+       return FALSE;
+  }
+
+  if ((IIFFParse = (struct IFFParseIFace *) GetInterface((struct Library *) IFFParseBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open IFFParse interface!\n");
+       return FALSE;
+  }
+
+  if ((ILocale = (struct LocaleIFace *) GetInterface((struct Library *) LocaleBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open ILocale interface!\n");
+       return FALSE;
+  }
+
+  if ((ITimer = (struct TimerIFace *) GetInterface((struct Library *) TimerBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open Timer interface!\n");
+       return FALSE;
+  }
+
+  if ((IUtility = (struct UtilityIFace *) GetInterface((struct Library *) UtilityBase, "main", 1, NULL)) == NULL)
+  {
+       Req("Couldn't open Utility interface!\n");
+       return FALSE;
+  }
+#endif
+  
   // Fill in some defaults...
 
   AddByteMonoPtr         = AddByteMono;
