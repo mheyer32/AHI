@@ -133,6 +133,7 @@ GetTagName( Tag tag )
     case AHIDB_Outputs: return "AHIDB_Outputs";
     case AHIDB_OutputArg: return "AHIDB_OutputArg";
     case AHIDB_Output: return "AHIDB_Output";
+    case AHIDB_MultiChannel: return "AHIDB_MultiChannel";
 //    case AHIDB_OutputArray: return "AHIDB_OutputArray";
 //    case AHIDB_MonitorVolumesLeft: return "AHIDB_MonitorVolumesLeft";
 //    case AHIDB_MonitorVolumeLeftArg: return "AHIDB_MonitorVolumeLeftArg";
@@ -327,6 +328,7 @@ GetDatatype( Tag tag )
     case AHIDB_Outputs: return dt_Hex;
     case AHIDB_OutputArg: return dt_Dec;
     case AHIDB_Output: return dt_Hex;
+    case AHIDB_MultiChannel: return dt_Hex;
 //    case AHIDB_OutputArray: return dt_Hex;
 //    case AHIDB_MonitorVolumesLeft: return dt_Hex;
 //    case AHIDB_MonitorVolumeLeftArg: return dt_Dec;

@@ -16,7 +16,7 @@ DISTDIR		= @DISTDIR@
 DEVDIR		= ${DISTDIR}/Developer
 DRIVERDIR	= ${DEVDIR}/Drivers
 
-build_os	= @build_os@
+host		= @host@
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -42,6 +42,14 @@ ifneq ($(strip $(HAVE_OPENPCI)),)
 SUBDIRS		+= EMU10kx
 endif
 
+ifeq ($(strip $(host)),powerpc-unknown-amigaos)
+SUBDIRS		+= EMU10kx
+endif
+
+ifeq ($(patsubst %-aros,yes,$(host)),yes)
+SUBDIRS		+= EMU10kx
+endif
+
 all:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
@@ -60,7 +68,7 @@ maintainer-clean: distclean
 
 bindist:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
-	$(INSTALL) --directory $(DRIVERDIR) 
+	$(INSTALL) -d $(DRIVERDIR) 
 	for d in $(SUBDIRS) Paula Toccata Void Wavetools; do \
 	  cd $(srcdir) && find $${d} -type f -and -not -path '*CVS*' \
 	    -exec $(INSTALL_DATA) -D {} $(DRIVERDIR)/{} \; ; \

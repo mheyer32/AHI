@@ -1,4 +1,4 @@
-## version $VER: ahiprefs.catalog 4.5 (29.11.2000)
+## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
 ## language svenska
 ## codeset 0
 ;
@@ -306,4 +306,28 @@ Maximal antiklick-fördröjning
 msgButtonPlay
 S_pela ett testljud
 ; _Play a test sound
+;
+msgOptScalemode
+Volym_justering
+; Volume sc_aling
+;
+msgSMFixedSafe
+Fast säker skalning
+; Safe
+;
+msgSMDynSafe
+Dynamisk säker skalning
+; Safe, dynamic
+;
+msgSM0dB
+Full volym
+; Full volume
+;
+msgSM3dB
+-3 dB
+; -3 dB
+;
+msgSM6dB
+-6 dB
+; -6 dB
 ;

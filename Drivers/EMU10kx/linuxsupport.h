@@ -20,6 +20,8 @@
 #ifndef AHI_Drivers_EMU10kx_linuxsupport_h
 #define AHI_Drivers_EMU10kx_linuxsupport_h
 
+#include <config.h>
+
 #include <stdlib.h>
 #include <proto/exec.h>
 
@@ -116,6 +118,7 @@ static __inline__ void set_bit(int nr, volatile void * addr)
   (((volatile unsigned int *) addr)[nr >> 5]) |= (1UL << (nr & 31));
 }
 
+#ifdef WORDS_BIGENDIAN
 static __inline__ u32 cpu_to_le32( u32 x )
 {
   u32 res = ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
@@ -123,5 +126,8 @@ static __inline__ u32 cpu_to_le32( u32 x )
 
   return res;
 }
+#else
+#define cpu_to_le32(x)  x
+#endif
 
 #endif /* AHI_Drivers_EMU10kx_linuxsupport_h */
