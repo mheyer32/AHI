@@ -1,5 +1,7 @@
 2003-01-22  Martin Blom  <martin@blom.org>
 
+	* Docs: Now builds AutoDocs for ahi.device and drivers.
+
 	* Released AHI-Handler 5.1.
 
 	* Drivers: source code for a couple of drivers now included in
