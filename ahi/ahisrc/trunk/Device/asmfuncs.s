@@ -1,5 +1,9 @@
 * $Id$
 * $Log$
+* Revision 1.6  1997/01/15 18:35:07  lcs
+* AHIB_Dizzy has a better implementation and definition now.
+* (Was BOOL, now pointer to a second tag list)
+*
 * Revision 1.5  1997/01/15 14:59:50  lcs
 * Removed most of the unsigned addroutines
 *
@@ -2076,12 +2080,12 @@ UnloadSound_nodebug
 *       AHIDB_MaxMixFreq (ULONG) - Highest mixing frequency must be greater
 *           or equal.
 *
-*       AHIB_Dizzy (BOOL) - If you set this tag to TRUE, the mode that
-*           matches the other tags best is returned, i.e. the one that has
-*           most of the features you ask for, and least of the ones you
-*           don't want. Be careful when using this tag, you might for
-*           example end up with a non-realtime mode even if you asked for
-*           one. (V3)
+*       AHIB_Dizzy (struct TagItem *) - This tag points to a second tag list.
+*           After all other tags has been tested, the mode that matches these
+*           tags best is returned, i.e. the one that has most of the features
+*           you ask for, and least of the ones you don't want. Without this
+*           second tag list, this function hardly does what its name
+*           suggests. (V3)
 *
 *   RESULT
 *       ID - The best AudioID to use or AHI_INVALID_ID if none of the modes
