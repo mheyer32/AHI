@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.13  1998/03/13 10:16:48  lcs
+* Now uses signals in PlayRequest(), instead of busy-waiting or Delay().
+*
 * Revision 4.12  1998/01/12 20:05:03  lcs
 * More restruction, mixer in C added. (Just about to make fraction 32 bit!)
 *
@@ -16,6 +19,7 @@
 */
 
 //#define DEBUG
+//#define DEBUG_R
 
 #include <CompilerSpecific.h>
 #include "ahi_def.h"
@@ -1424,7 +1428,12 @@ PlayRequest ( int channel,
   // marked as finished, and the application will wait forever on the
   // IO Request. Quite ugly, no?
 
-  while((iounit->Voices[channel].Flags & VF_STARTED) == 0) Delay(1);
+  Wait(1L << iounit->SampleSignal);
+
+  // Set signal again...
+  Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
+  
+//  while(((volatile UBYTE) (iounit->Voices[channel].Flags) & VF_STARTED) == 0);
 #ifdef DEBUG
   KPrintF("Exiting PlayRequest()\n");
 #endif
