@@ -133,7 +133,9 @@ static const struct Resident RomTag =
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
   (struct Resident *) &_etext,
-#if defined( __MORPHOS__ ) || defined( __amithlon__ )
+#if defined( __MORPHOS__ ) 
+  RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
+#elif defined( __amithlon__ )
   RTF_PPC | RTF_AUTOINIT,
 #else
   RTF_AUTOINIT,
