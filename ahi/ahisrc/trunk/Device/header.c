@@ -138,14 +138,12 @@ ADDFUNC* AddLofiWordStereoBPtr            = NULL;
 ADDFUNC* AddLofiWordsMonoBPtr             = NULL;
 ADDFUNC* AddLofiWordsStereoBPtr           = NULL;
 
-/* linker can use symbol b for symbol a if a is not defined */
-#define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
+const ULONG  DriverVersion  = 2;
+const ULONG  Version        = VERSION;
+const ULONG  Revision       = REVISION;
 
-ALIAS( __UtilityBase, UtilityBase );
-
-const ULONG                                DriverVersion  = 2;
-const ULONG                                Version        = VERSION;
-const ULONG                                Revision       = REVISION;
+const ULONG	 __LIB_Version  = VERSION;
+const ULONG	 __LIB_Revision = REVISION;
 
 const char DevName[]   = AHINAME;
 const char IDString[]  = AHINAME " " VERS "\r\n";
@@ -157,6 +155,11 @@ static const char VersTag[] =
  " version.\r\n";
 
 enum MixBackend_t          MixBackend     = MB_NATIVE;
+
+/* linker can use symbol b for symbol a if a is not defined */
+#define ALIAS(a,b) asm(".stabs \"_" #a "\",11,0,0,0\n.stabs \"_" #b "\",1,0,0,0")
+
+ALIAS( __UtilityBase, UtilityBase );
 
 /******************************************************************************
 ** Device code ****************************************************************
