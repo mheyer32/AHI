@@ -30,7 +30,8 @@ enum MixBackend_t
 {
   MB_NATIVE,
   MB_POWERUP,
-  MB_WARPUP
+  MB_WARPUP,
+  MB_MORPHOS
 };
 
 

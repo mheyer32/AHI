@@ -23,6 +23,7 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
+#include <exec/memory.h>
 #include <exec/resident.h>
 #include <exec/alerts.h>
 #include <exec/execbase.h>
@@ -31,7 +32,6 @@
 
 #include <powerup/ppclib/object.h>
 #include <powerup/ppclib/interface.h>
-#include <proto/ppc.h>
 
 #include "ahi_def.h"
 #include "header.h"
@@ -98,6 +98,7 @@ struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
+struct Resident           *MorphOSRes     = NULL;
 struct Library            *PowerPCBase    = NULL;
 struct Library            *PPCLibBase     = NULL;
 void                      *PPCObject      = NULL;
@@ -141,9 +142,9 @@ ADDFUNC* AddLofiWordsStereoBPtr           = NULL;
 
 ALIAS( __UtilityBase, UtilityBase );
 
-const ULONG			           DriverVersion  = 2;
-const ULONG			           Version        = VERSION;
-const ULONG			           Revision       = REVISION;
+const ULONG                                DriverVersion  = 2;
+const ULONG                                Version        = VERSION;
+const ULONG                                Revision       = REVISION;
 
 const char DevName[]   = AHINAME;
 const char IDString[]  = AHINAME " " VERS "\r\n";
@@ -162,8 +163,8 @@ enum MixBackend_t          MixBackend     = MB_NATIVE;
 
 static struct AHIBase * ASMCALL
 initRoutine( REG( d0, struct AHIBase* device ),
-	     REG( a0, APTR seglist ),
-	     REG( a6, struct ExecBase* sysbase ) )
+             REG( a0, APTR seglist ),
+             REG( a6, struct ExecBase* sysbase ) )
 {
   SysBase = sysbase;
   AHIBase = device;
@@ -212,7 +213,7 @@ DevExpunge( REG( a6, struct AHIBase* device ) )
     CloseLibs();
 
     FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
-	     device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
+             device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
   }
 
   return seglist;
@@ -445,14 +446,15 @@ OpenLibs ( void )
   AddLofiWordsMonoBPtr   = AddLofiWordsMonoB;
   AddLofiWordsStereoBPtr = AddLofiWordsStereoB;
 
-  /* PPC/PowerPC library loading
+  /* MorphOS/PowerUp/WarpOS loading
 
      Strategy:
 
-      1) If WarpUp is running, use it.
-      2) If WarpUp is is not running, but PowerUp is, use it
-      3) If neither of them are running, try WarpUp.
-      4) Finally, try PowerUp.
+      1) If MorphOS is running, use it.
+      2) If WarpUp is running, use it.
+      3) If WarpUp is is not running, but PowerUp is, use it
+      4) If neither of them are running, try WarpUp.
+      5) Finally, try PowerUp.
 
      Result:
 
@@ -471,6 +473,8 @@ OpenLibs ( void )
   // Check if WarpUp or PowerUp are already installed...
 
   Forbid();
+  MorphOSRes  = FindResident( "MorphOS" );
+
   PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
                                              "powerpc.library" );
   PPCLibBase  = (struct Library *) FindName( &SysBase->LibList,
@@ -501,12 +505,15 @@ OpenLibs ( void )
     return FALSE;
   }
 
-  if( PPCLibBase != NULL )
+  if( MorphOSRes != NULL )
+  {
+    MixBackend  = MB_MORPHOS;
+  }
+  else if( PPCLibBase != NULL )
   {
     MixBackend  = MB_POWERUP;
   }
-  
-  if( PowerPCBase != NULL )
+  else if( PowerPCBase != NULL )
   {
     MixBackend  = MB_WARPUP;
   }
@@ -601,7 +608,8 @@ OpenLibs ( void )
            "\n"
            "/Martin Blom <martin@blom.org>\n",
            PPCObject == NULL ? CPU :
-             ( PPCLibBase == NULL ? "WarpUp" : "PowerUp" ) );
+             ( PPCLibBase == NULL ? "WarpUp" : 
+               ( MorphOSRes == NULL ? "PowerUp" : "MorphOS" ) ) );
            
     }
   }
@@ -643,5 +651,4 @@ CloseLibs ( void )
   CloseLibrary( GadToolsBase );
   CloseLibrary( (struct Library *) GfxBase );
   CloseLibrary( (struct Library *) DOSBase );
-
 }

@@ -29,24 +29,30 @@ VPATH		= @srcdir@
 # Files
 ########################################
 
-TARGETS		= Asm-lvo-ahi_lib.i Asm-lvo-ahi_sub_lib.i \
-		  Storm-pragma-ahi_lib.h Storm-pragma-ahi_sub_lib.h \
-		  Storm-proto-ahi.h Storm-proto-ahi_sub.h \
-		  SAS-pragmas-ahi_pragmas.h SAS-pragmas-ahi_sub_pragmas.h \
-		  SAS-proto-ahi.h SAS-proto-ahi_sub.h \
-		  GG-inline-ahi.h GG-inline-ahi_sub.h \
-		  GG-proto-ahi.h GG-proto-ahi_sub.h
+ASMFILES	= Asm-lvo-ahi_lib.i Asm-lvo-ahi_sub_lib.i
+
+STORMFILES	= Storm-pragma-ahi_lib.h Storm-pragma-ahi_sub_lib.h \
+		  Storm-proto-ahi.h Storm-proto-ahi_sub.h
+
+SASFILES	= SAS-pragmas-ahi_pragmas.h SAS-pragmas-ahi_sub_pragmas.h \
+		  SAS-proto-ahi.h SAS-proto-ahi_sub.h
+
+GCCFILES	= gcc-inline-ahi.h gcc-inline-ahi_sub.h \
+		  gcc-ppcinline-ahi.h gcc-ppcinline-ahi_sub.h \
+		  gcc-proto-ahi.h gcc-proto-ahi_sub.h
+
+TARGETS		= $(ASMFILES) $(STORMFILES) $(SASFILES) $(GCCFILES)
 
 #
 # Targets
 ########################################
 
-.PHONY:		all clean distclean maintainer-clean bindist changes
+.PHONY:		all clean distclean maintainer-clean bindist gcc-include
 
 all:		$(TARGETS)
 
 clean:
-	$(RM) $(TARGETS) *.bak *~ \#*\# core
+	$(RM) -r $(TARGETS) *.bak *~ \#*\# core gcc
 
 distclean:	clean
 	$(RM) Makefile
@@ -54,7 +60,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 bindist:	$(TARGETS)
-	$(INSTALL) --directory $(DEVINCDIR) $(DEVINCDIR)/GG \
+	$(INSTALL) --directory $(DEVINCDIR) $(DEVINCDIR)/gcc \
 	           $(DEVINCDIR)/SAS $(DEVINCDIR)/Storm
 
 	cd $(srcdir) && for dir in `find Asm C FD -type d -not -name CVS`; do \
@@ -65,8 +71,21 @@ bindist:	$(TARGETS)
 	done
 
 	for file in $(TARGETS); do \
-	 $(INSTALL) --directory $(DEVINCDIR)/`echo $$file | sed -e 's,\(.*\)-.*,\1,' | sed -e 's,-,/,g'`; \
+	 $(INSTALL) --directory $(DEVINCDIR)/`echo $$file | sed -e 's,\(.*\)-.*.,\1,' | sed -e 's,-,/,g'`; \
 	 $(INSTALL_DATA) $$file $(DEVINCDIR)/`echo $$file | sed -e 's,-,/,g'`; \
+	done
+
+gcc-include:	$(GCCFILES)
+	for dir in `cd $(srcdir)/C && find . -type d -not -name CVS`; do \
+	 $(INSTALL) --directory gcc/$$dir; \
+	done
+	for file in `cd $(srcdir)/C && find . -type f -not -path "*CVS/*"`; do \
+	 $(INSTALL_DATA) $(srcdir)/C/$$file gcc/$$file; \
+	done
+
+	for file in $(GCCFILES); do \
+	 $(INSTALL) --directory `echo $$file | sed -e 's,\(.*\)-.*.,\1,' | sed -e 's,-,/,g'`; \
+	 $(INSTALL_DATA) $$file `echo $$file | sed -e 's,-,/,g'`; \
 	done
 
 #
@@ -111,18 +130,20 @@ SAS-proto-ahi.h:	FD/ahi_lib.fd
 SAS-proto-ahi_sub.h:	FD/ahi_sub_lib.fd
 	fd2pragma $< 33 TO $@
 
-GG-inline-ahi.h:	FD/ahi_lib.fd C/clib/ahi_protos.h
-#	fd2pragma $< 40 CLIB $(srcdir)/C/clib/ahi_protos.h TO $@
+gcc-inline-ahi.h:	FD/ahi_lib.fd C/clib/ahi_protos.h
 	fd2inline --new $< $(srcdir)/C/clib/ahi_protos.h -o $@
 
-GG-inline-ahi_sub.h:	FD/ahi_sub_lib.fd C/clib/ahi_sub_protos.h
-#	fd2pragma $< 40 CLIB $(srcdir)/C/clib/ahi_sub_protos.h TO $@
+gcc-inline-ahi_sub.h:	FD/ahi_sub_lib.fd C/clib/ahi_sub_protos.h
 	fd2inline --new $< $(srcdir)/C/clib/ahi_sub_protos.h -o $@
 
-GG-proto-ahi.h:		FD/ahi_lib.fd
-#	fd2pragma $< 36 TO $@
-	fd2inline --proto $< -o $@
+gcc-ppcinline-ahi.h:	FD/ahi_lib.fd C/clib/ahi_protos.h
+	fd2inline --new --powerup $< $(srcdir)/C/clib/ahi_protos.h -o $@
 
-GG-proto-ahi_sub.h:	FD/ahi_sub_lib.fd
-#	fd2pragma $< 36 TO $@
-	fd2inline --proto $< -o $@
+gcc-ppcinline-ahi_sub.h:	FD/ahi_sub_lib.fd C/clib/ahi_sub_protos.h
+	fd2inline --new --powerup $< $(srcdir)/C/clib/ahi_sub_protos.h -o $@
+
+gcc-proto-ahi.h:		FD/ahi_lib.fd
+	fd2inline --proto --powerup $< -o $@
+
+gcc-proto-ahi_sub.h:	FD/ahi_sub_lib.fd
+	fd2inline --proto --powerup $< -o $@

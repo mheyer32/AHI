@@ -35,8 +35,8 @@ host_cpu	= @host_cpu@
 
 
 
-CPPFLAGS	= @CPPFLAGS@ -I.. -I${srcdir} -I${top_srcdir} \
-		  -I${top_srcdir}/Include/C -DVERSION$(VER)
+CPPFLAGS	= @CPPFLAGS@ -I..  -I../Include/gcc -I${srcdir} -I${top_srcdir} \
+		  -DVERSION$(VER)
 
 ifeq ($(VER),PPC)
 

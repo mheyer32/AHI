@@ -25,6 +25,7 @@
 
 #include <dos/dos.h>
 #include <exec/execbase.h>
+#include <exec/memory.h>
 #include <exec/interrupts.h>
 #include <hardware/intbits.h>
 #include <powerup/ppclib/interface.h>
