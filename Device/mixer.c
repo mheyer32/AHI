@@ -788,7 +788,7 @@ Mix( struct Hook*             unused_Hook,
             /* Linear interpol. stuff */
 
 	    ULONG lo = (ULONG) (cd->cd_LastOffset >> 32);
-	    KPrintF("lo: %08lx:%08lx\n",lo,(ULONG)cd->cd_LastOffset);
+
 	    switch( cd->cd_Type ) {
 
 	      case AHIST_M8S:

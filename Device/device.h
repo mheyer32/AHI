@@ -181,9 +181,9 @@ struct AHIDevUnit
 };
 
 ULONG
-_DevOpen ( ULONG              unit,
+_DevOpen ( struct AHIRequest* ioreq,
+	   ULONG              unit,
 	   ULONG              flags,
-	   struct AHIRequest* ioreq,
 	   struct AHIBase*    AHIBase );
 
 BPTR
