@@ -17,6 +17,9 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#ifndef AHI_Drivers_EMU10kx_emu10kx_misc_h
+#define AHI_Drivers_EMU10kx_emu10kx_misc_h
+
 #include <config.h>
 
 #include <devices/ahi.h>
@@ -49,3 +52,5 @@ Linear2RecordGain( Fixed  linear,
 
 ULONG
 SamplerateToLinearPitch( ULONG samplingrate );
+
+#endif /* AHI_Drivers_EMU10kx_emu10kx_misc_h */

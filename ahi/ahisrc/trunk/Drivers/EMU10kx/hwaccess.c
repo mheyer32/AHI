@@ -473,7 +473,6 @@ void emu10k1_writeac97(struct emu10k1_card *card, u8 reg, u16 value)
 }
 #endif
 
-#ifdef lcs
 /*********************************************************
 *            MPU access functions                        *
 **********************************************************/
@@ -521,7 +520,9 @@ int emu10k1_mpu_reset(struct emu10k1_card *card)
 
 	DPF(2, "emu10k1_mpu_reset()\n");
 
+#ifdef lcs
 	if (card->mpuacqcount == 0) {
+#endif
 		spin_lock_irqsave(&card->lock, flags);
 		outb(MUCMD_RESET, card->iobase + MUCMD);
 		spin_unlock_irqrestore(&card->lock, flags);
@@ -548,11 +549,13 @@ int emu10k1_mpu_reset(struct emu10k1_card *card)
 			return 0;
 		else
 			return -1;
+#ifdef lcs
 	}
-
+#endif
 	return 0;
 }
 
+#ifdef lcs
 int emu10k1_mpu_acquire(struct emu10k1_card *card)
 {
 	/* FIXME: This should be a macro */

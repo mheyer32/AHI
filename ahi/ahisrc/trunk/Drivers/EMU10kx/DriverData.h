@@ -24,6 +24,7 @@
 #include <exec/interrupts.h>
 #include <devices/ahi.h>
 
+#include "emu10kx-camd.h"
 #include "hwaccess.h"
 #include "voicemgr.h"
 
@@ -53,6 +54,9 @@ struct EMU10kxBase
 
     /** A EMU10kxData structure for each card found */
     struct EMU10kxData**   driverdatas;
+
+    /** The public CAMD interface */
+    struct EMU10kxCamd     camd;
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
@@ -78,6 +82,8 @@ struct EMU10kxData
 
     /*** The driverbase ******************************************************/
 
+    /** This field is also used as a lock and access to is is
+     * semaphore protected. */
     struct DriverBase*  ahisubbase;
 
     /*** The AudioCtrl currently using this DriverData structure *************/
@@ -110,6 +116,13 @@ struct EMU10kxData
     /** TRUE if the hardware interrupt may Cause() playback_interrupt */
     BOOL                record_interrupt_enabled;
 
+    /*** CAMD support functions **********************************************/
+
+    /** CAMD transmitter function wrapped as a Hook */
+    struct Hook*           camd_transmitfunc;
+
+    /** CAMD receiver function wrapped as a Hook */
+    struct Hook*           camd_receivefunc;
     
     /*** EMU10kx structures **************************************************/
     

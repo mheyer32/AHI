@@ -21,10 +21,12 @@
 
 #include <exec/memory.h>
 #include <libraries/openpci.h>
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/openpci.h>
 
 #include "library.h"
+#include "version.h"
 #include "emu10kx-misc.h"
 
 
@@ -36,6 +38,7 @@ struct DosLibrary* DOSBase;
 struct Library*    OpenPciBase;
 struct DriverBase* AHIsubBase;
 
+#include "8010.h"
 
 /******************************************************************************
 ** Custom driver init *********************************************************
@@ -47,6 +50,8 @@ DriverInit( struct DriverBase* ahisubbase )
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) ahisubbase;
   struct pci_dev*     dev;
   int                 card_no;
+
+  /*** Libraries etc. ********************************************************/
 
   AHIsubBase = ahisubbase;
   
@@ -67,6 +72,9 @@ DriverInit( struct DriverBase* ahisubbase )
 
   InitSemaphore( &EMU10kxBase->semaphore );
 
+
+  /*** Count cards ***********************************************************/
+
   EMU10kxBase->cards_found = 0;
   dev = NULL;
 
@@ -86,6 +94,32 @@ DriverInit( struct DriverBase* ahisubbase )
     return FALSE;
   }
 
+  /*** CAMD ******************************************************************/
+  
+  InitSemaphore( &EMU10kxBase->camd.Semaphore );
+  EMU10kxBase->camd.Semaphore.ss_Link.ln_Pri  = 0;
+  EMU10kxBase->camd.Semaphore.ss_Link.ln_Name = EMU10KX_CAMD_SEMAPHORE;
+  AddSemaphore( &EMU10kxBase->camd.Semaphore );
+  
+  EMU10kxBase->camd.Cards    = EMU10kxBase->cards_found;
+  EMU10kxBase->camd.Version  = VERSION;
+  EMU10kxBase->camd.Revision = REVISION;
+
+  EMU10kxBase->camd.OpenPortFunc.h_Entry    = HookEntry;
+  EMU10kxBase->camd.OpenPortFunc.h_SubEntry = OpenCAMDPort;
+  EMU10kxBase->camd.OpenPortFunc.h_Data     = NULL;
+
+  EMU10kxBase->camd.ClosePortFunc.h_Entry    = HookEntry;
+  EMU10kxBase->camd.ClosePortFunc.h_SubEntry = (HOOKFUNC) CloseCAMDPort;
+  EMU10kxBase->camd.ClosePortFunc.h_Data     = NULL;
+
+  EMU10kxBase->camd.ActivateXmitFunc.h_Entry    = HookEntry;
+  EMU10kxBase->camd.ActivateXmitFunc.h_SubEntry = (HOOKFUNC) ActivateCAMDXmit;
+  EMU10kxBase->camd.ActivateXmitFunc.h_Data     = NULL;
+
+  
+  /*** Allocate and init all cards *******************************************/
+
   EMU10kxBase->driverdatas = AllocVec( sizeof( *EMU10kxBase->driverdatas ) *
 				       EMU10kxBase->cards_found,
 				       MEMF_PUBLIC );
@@ -96,7 +130,6 @@ DriverInit( struct DriverBase* ahisubbase )
     return FALSE;
   }
 
-  
   card_no = 0;
 
   while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
@@ -121,13 +154,22 @@ DriverCleanup( struct DriverBase* AHIsubBase )
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
   int i;
 
+  ObtainSemaphore( &EMU10kxBase->camd.Semaphore );
+  RemSemaphore( &EMU10kxBase->camd.Semaphore );
+  ReleaseSemaphore( &EMU10kxBase->camd.Semaphore );
+
   for( i = 0; i < EMU10kxBase->cards_found; ++i )
   {
+    emu10k1_irq_disable( &EMU10kxBase->driverdatas[ i ]->card,
+			 INTE_MIDIRXENABLE );
+    emu10k1_irq_disable( &EMU10kxBase->driverdatas[ i ]->card,
+			 INTE_MIDITXENABLE );
+    
     FreeDriverData( EMU10kxBase->driverdatas[ i ], AHIsubBase );
   }
-  
-  FreeVec( EMU10kxBase->driverdatas );
-  
+
+  FreeVec( EMU10kxBase->driverdatas ); 
+ 
   CloseLibrary( OpenPciBase );
   CloseLibrary( (struct Library*) DOSBase );
 }

@@ -17,8 +17,8 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#ifndef EMU10kx_pcisupport_h
-#define EMU10kx_pcisupport_h
+#ifndef AHI_Drivers_EMU10kx_linuxsupport_h
+#define AHI_Drivers_EMU10kx_linuxsupport_h
 
 #include <stdlib.h>
 #include <proto/exec.h>
@@ -119,4 +119,4 @@ static __inline__ u32 cpu_to_le32( u32 x )
   return res;
 }
 
-#endif /* EMU10kx_pcisupport_h */
+#endif /* AHI_Drivers_EMU10kx_linuxsupport_h */

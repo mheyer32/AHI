@@ -25,10 +25,8 @@
 #include <proto/openpci.h>
 
 #include "library.h"
-#include "emu10kx-interrupt.h"
-
-#include "library.h"
 #include "8010.h"
+#include "emu10kx-interrupt.h"
 #include "emu10kx-misc.h"
 
 /* Global in emu10kx.c */
@@ -56,6 +54,7 @@ AllocDriverData( struct pci_dev*    dev,
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
   struct EMU10kxData* dd;
+  UWORD               command_word;
 
   // FIXME: This shoule be non-cachable, DMA-able memory
   dd = AllocVec( sizeof( *dd ), MEMF_PUBLIC | MEMF_CLEAR );
@@ -63,32 +62,31 @@ AllocDriverData( struct pci_dev*    dev,
   if( dd == NULL )
   {
     Req( "Unable to allocate driver structure." );
+    return NULL;
   }
-  else
-  {
-    UWORD command_word;
 
-    dd->ahisubbase = AHIsubBase;
 
-    dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->interrupt.is_Node.ln_Pri  = 0;
-    dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->interrupt.is_Code         = (void(*)(void)) &emu10kxinterrupt;
-    dd->interrupt.is_Data         = (APTR) dd;
+  dd->ahisubbase = AHIsubBase;
 
-    dd->playback_interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->playback_interrupt.is_Node.ln_Pri  = 0;
-    dd->playback_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->playback_interrupt.is_Code         = (void(*)(void)) &playbackinterrupt;
-    dd->playback_interrupt.is_Data         = (APTR) dd;
+  dd->interrupt.is_Node.ln_Type = NT_INTERRUPT;
+  dd->interrupt.is_Node.ln_Pri  = 0;
+  dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;
+  dd->interrupt.is_Code         = (void(*)(void)) &emu10kxinterrupt;
+  dd->interrupt.is_Data         = (APTR) dd;
 
-    dd->record_interrupt.is_Node.ln_Type = NT_INTERRUPT;
-    dd->record_interrupt.is_Node.ln_Pri  = 0;
-    dd->record_interrupt.is_Node.ln_Name = (STRPTR) LibName;
-    dd->record_interrupt.is_Code         = (void(*)(void)) &recordinterrupt;
-    dd->record_interrupt.is_Data         = (APTR) dd;
+  dd->playback_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+  dd->playback_interrupt.is_Node.ln_Pri  = 0;
+  dd->playback_interrupt.is_Node.ln_Name = (STRPTR) LibName;
+  dd->playback_interrupt.is_Code         = (void(*)(void)) &playbackinterrupt;
+  dd->playback_interrupt.is_Data         = (APTR) dd;
 
-    dd->card.pci_dev = dev;
+  dd->record_interrupt.is_Node.ln_Type = NT_INTERRUPT;
+  dd->record_interrupt.is_Node.ln_Pri  = 0;
+  dd->record_interrupt.is_Node.ln_Name = (STRPTR) LibName;
+  dd->record_interrupt.is_Code         = (void(*)(void)) &recordinterrupt;
+  dd->record_interrupt.is_Data         = (APTR) dd;
+
+  dd->card.pci_dev = dev;
 
 //  if( pci_set_dma_mask(dd->card.pci_dev, EMU10K1_DMA_MASK) )
 //  {
@@ -96,83 +94,82 @@ AllocDriverData( struct pci_dev*    dev,
 //    goto error;
 //  }
 
-    command_word = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
-    command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
-    pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
+  command_word = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
+  command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
+  pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
 
-    dd->pci_master_enabled = TRUE;
+  dd->pci_master_enabled = TRUE;
 
-    // FIXME: How about latency/pcibios_set_master()??
+  // FIXME: How about latency/pcibios_set_master()??
 
-    dd->card.iobase  = dev->base_address[ 0 ];
-    dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
-    dd->card.irq     = dev->irq;
-    dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
-    dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
-    dd->card.isaps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
-					       dd->card.pci_dev )
-			 == EMU_APS_SUBID );
+  dd->card.iobase  = dev->base_address[ 0 ];
+  dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
+  dd->card.irq     = dev->irq;
+  dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
+  dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
+  dd->card.isaps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
+					     dd->card.pci_dev )
+		       == EMU_APS_SUBID );
 
-    pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
+  pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
 
-    dd->interrupt_added = TRUE;
-
-    
-    /* Initialize chip */
-
-    if( emu10k1_init( &dd->card ) < 0 )
-    {
-      Req( "Unable to initialize EMU10kx subsystem.");
-      return NULL;
-    }
-
-    dd->emu10k1_initialized = TRUE;
+  dd->interrupt_added = TRUE;
 
     
-    /* Initialize mixer */
+  /* Initialize chip */
 
-    emu10k1_writeac97( &dd->card, AC97_RESET, 0L);
-
-    Delay( 1 );
-
-    if (emu10k1_readac97( &dd->card, AC97_RESET ) & 0x8000) {
-      Req( "ac97 codec not present.");
-      return NULL;
-    }
-
-    dd->input          = 0;
-    dd->output         = 0;
-    dd->monitor_volume = Linear2MixerGain( 0, &dd->monitor_volume_bits );
-    dd->input_gain     = Linear2RecordGain( 0x10000, &dd->input_gain_bits );
-    dd->output_volume  = Linear2MixerGain( 0x10000, &dd->output_volume_bits );
-
-    // No attenuation and natural tone for all outputs
-    emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
-
-    emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0000 );
-    emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT,     InputBits[ 0 ] );
-
-    emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x0000 );
-
-    emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE | 0x0008 );
-    emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0808 );
-    emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x0008 );
-    emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0808 );
-
-
-    if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
-    {
-      sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
-      emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
-    }
+  if( emu10k1_init( &dd->card ) < 0 )
+  {
+    Req( "Unable to initialize EMU10kx subsystem.");
+    return NULL;
   }
 
+  dd->emu10k1_initialized = TRUE;
+
+    
+  /* Initialize mixer */
+
+  emu10k1_writeac97( &dd->card, AC97_RESET, 0L);
+
+  Delay( 1 );
+
+  if (emu10k1_readac97( &dd->card, AC97_RESET ) & 0x8000) {
+    Req( "ac97 codec not present.");
+    return NULL;
+  }
+
+  dd->input          = 0;
+  dd->output         = 0;
+  dd->monitor_volume = Linear2MixerGain( 0, &dd->monitor_volume_bits );
+  dd->input_gain     = Linear2RecordGain( 0x10000, &dd->input_gain_bits );
+  dd->output_volume  = Linear2MixerGain( 0x10000, &dd->output_volume_bits );
+
+  // No attenuation and natural tone for all outputs
+  emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
+  emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
+  emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
+  emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
+
+  emu10k1_writeac97( &dd->card, AC97_RECORD_GAIN,       0x0000 );
+  emu10k1_writeac97( &dd->card, AC97_RECORD_SELECT,     InputBits[ 0 ] );
+
+  emu10k1_writeac97( &dd->card, AC97_PCMOUT_VOL,        0x0808 );
+  emu10k1_writeac97( &dd->card, AC97_PCBEEP_VOL,        0x0000 );
+
+  emu10k1_writeac97( &dd->card, AC97_LINEIN_VOL,        0x0808 );
+  emu10k1_writeac97( &dd->card, AC97_MIC_VOL,           AC97_MUTE | 0x0008 );
+  emu10k1_writeac97( &dd->card, AC97_CD_VOL,            0x0808 );
+  emu10k1_writeac97( &dd->card, AC97_AUX_VOL,           0x0808 );
+  emu10k1_writeac97( &dd->card, AC97_PHONE_VOL,         0x0008 );
+  emu10k1_writeac97( &dd->card, AC97_VIDEO_VOL,         0x0808 );
+
+
+  if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
+  {
+    sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
+    emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
+  }
+  
   return dd;
 }
 

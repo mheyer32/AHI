@@ -242,9 +242,9 @@ void emu10k1_clear_stop_on_loop(struct emu10k1_card *, u32);
 //void emu10k1_ac97_write(struct ac97_codec *, u8, u16);
 
 /* MPU access function*/
-//int emu10k1_mpu_write_data(struct emu10k1_card *, u8);
-//int emu10k1_mpu_read_data(struct emu10k1_card *, u8 *);
-//int emu10k1_mpu_reset(struct emu10k1_card *);
+int emu10k1_mpu_write_data(struct emu10k1_card *, u8);
+int emu10k1_mpu_read_data(struct emu10k1_card *, u8 *);
+int emu10k1_mpu_reset(struct emu10k1_card *);
 //int emu10k1_mpu_acquire(struct emu10k1_card *);
 //int emu10k1_mpu_release(struct emu10k1_card *);
 
