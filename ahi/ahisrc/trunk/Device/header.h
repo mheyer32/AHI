@@ -26,6 +26,8 @@
 #include <exec/types.h>
 #include "addroutines.h"
 
+struct AHIBase;
+
 enum MixBackend_t
 {
   MB_NATIVE,
@@ -77,6 +79,11 @@ extern ADDFUNC*                  AddLofiWordMonoBPtr;
 extern ADDFUNC*                  AddLofiWordStereoBPtr;
 extern ADDFUNC*                  AddLofiWordsMonoBPtr;
 extern ADDFUNC*                  AddLofiWordsStereoBPtr;
+
+struct AHIBase*
+initRoutine( struct AHIBase*  device,
+             APTR             seglist,
+             struct ExecBase* sysbase );
 
 BPTR
 DevExpunge( struct AHIBase* device );

@@ -27,8 +27,9 @@
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-#include <clib/ahi_protos.h>
-#include <inline/ahi.h>
+#define __NOLIBBASE__
+#include <proto/ahi.h>
+#undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
 #include <stdlib.h>
 

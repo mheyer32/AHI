@@ -97,7 +97,7 @@ endif
 LANGUAGES	= $(notdir $(basename $(wildcard $(srcdir)/translations/*.ct)))
 CATALOGS	= $(addsuffix .catalog, $(LANGUAGES))
 
-OBJECTS		= header.o device.o devcommands.o devsupp.o \
+OBJECTS		= header.o gateway.o device.o devcommands.o devsupp.o \
 		  localize.o modeinfo.o requester.o database.o debug.o\
 		  asmfuncs.o audioctrl.o effectinit.o sound.o misc.o\
 		  mixer.o ppchandler.o elfloader.o

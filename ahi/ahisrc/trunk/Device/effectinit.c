@@ -26,8 +26,9 @@
 #include <exec/memory.h>
 #include <powerup/ppclib/memory.h>
 #include <proto/exec.h>
-#include <clib/ahi_protos.h>
-#include <inline/ahi.h>
+#define __NOLIBBASE__
+#include <proto/ahi.h>
+#undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
 
 #include "ahi_def.h"
