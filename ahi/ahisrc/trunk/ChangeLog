@@ -1,3 +1,20 @@
+2003-11-28  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.15.
+
+	* Clear DMA buffers when they are allocated, in case they
+	are accidentally played before filled (GREX problem??)
+
+	* emu10kx.audio: Detect GREX at loading time, not on every
+	interrupt.
+
+2003-11-24  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.14.
+
+	* emu10kx.audio: Added GREX support (apparently, it has no bus
+	snooping)
+
 2003-11-23  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 5.11, 5.12 and 5.13.
