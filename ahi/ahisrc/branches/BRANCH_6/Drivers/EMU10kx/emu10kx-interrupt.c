@@ -19,20 +19,14 @@
 
 #include <config.h>
 
-#ifdef __AMIGAOS4__
-#include <proto/expansion.h>
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
-#include <clib/alib_protos.h>
-#endif
-
 #include <libraries/ahi_sub.h>
 #include <exec/execbase.h>
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 
 #include "library.h"
 #include "8010.h"
+#include "pci_wrapper.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 
@@ -42,10 +36,10 @@
 
 
 static WORD*
-copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL flush_caches );
+copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches );
 
 static WORD*
-copy_stereo( WORD* lsrc, WORD* rsrc, WORD* dst, int count, int stride, BOOL flush_caches );
+copy_stereo( WORD* lsrc, WORD* rsrc, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches );
 
 
 /******************************************************************************
@@ -67,11 +61,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
   ULONG intreq;
   BOOL  handled = FALSE;
   
-  #ifdef __AMIGAOS4__
-  while ( ( intreq = SWAPLONG( ((struct PCIDevice * ) dd->card.pci_dev)->InLong(dd->card.iobase + IPR ) ) ) != 0 )
-  #else
-   while( ( intreq = SWAPLONG( pci_inl( dd->card.iobase + IPR ) ) ) != 0 )
-  #endif
+  while( ( intreq = ahi_pci_inl( dd->card.iobase + IPR, dd->card.pci_dev ) ) != 0 )
   {
 //    KPrintF("IRQ: %08lx\n", intreq );
     if( intreq & IPR_INTERVALTIMER &&
@@ -174,11 +164,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
     }
 
     /* Clear interrupt pending bit(s) */
-    #ifdef __AMIGAOS4__
-    ((struct PCIDevice * ) dd->card.pci_dev)->OutLong( dd->card.iobase + IPR, SWAPLONG( intreq ) );
-    #else
-    pci_outl( SWAPLONG( intreq ), dd->card.iobase + IPR );
-    #endif
+    ahi_pci_outl( intreq, dd->card.iobase + IPR, dd->card.pci_dev );
 
     handled = TRUE;
   }
@@ -202,7 +188,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
   struct AHIAudioCtrlDrv* AudioCtrl = dd->audioctrl;
   struct DriverBase*  AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
-    
+
   if( dd->mix_buffer != NULL && dd->current_buffers[0] != NULL )
   {
     BOOL   skip_mix;
@@ -233,37 +219,45 @@ PlaybackInterrupt( struct EMU10kxData* dd )
     {
       case AHIST_M16S:
 	dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
-					    s, 1, EMU10kxBase->flush_caches );
+					    s, 1, FALSE,
+					    EMU10kxBase->flush_caches );
 	src += s;
 	break;
 	
       case AHIST_S16S:
 	dd->current_buffers[0] = copy_stereo( src, src + 1, dd->current_buffers[0],
-					      s, 2, EMU10kxBase->flush_caches );
+					      s, 2, FALSE,
+					      EMU10kxBase->flush_caches );
 	src += s * 2;
 	break;
 	
       case AHIST_M32S:
 	dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
-					    s, 2, EMU10kxBase->flush_caches );
+					    s, 2, TRUE,
+					    EMU10kxBase->flush_caches );
 	src += s * 2;
 	break;
 	
       case AHIST_S32S:
 	dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
-					      s, 4, EMU10kxBase->flush_caches );
+					      s, 4, TRUE,
+					      EMU10kxBase->flush_caches );
 	src += s * 4;
 	break;
 	
       case AHIST_L7_1:
 	dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
-					      s, 16, EMU10kxBase->flush_caches );
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
 	dd->current_buffers[1] = copy_stereo( src + 4, src + 6, dd->current_buffers[1],
-					      s, 16, EMU10kxBase->flush_caches );
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
 	dd->current_buffers[2] = copy_stereo( src + 8, src + 10, dd->current_buffers[2],
-					      s, 16, EMU10kxBase->flush_caches );
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
 	dd->current_buffers[3] = copy_stereo( src + 12, src + 14, dd->current_buffers[3],
-					      s, 16, EMU10kxBase->flush_caches );
+					      s, 16, TRUE,
+					      EMU10kxBase->flush_caches );
 	src += s * 16;
 	break;
     }
@@ -288,33 +282,41 @@ PlaybackInterrupt( struct EMU10kxData* dd )
       {
 	case AHIST_M16S:
 	  dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
-					      s, 1, EMU10kxBase->flush_caches );
+					      s, 1, FALSE,
+					      EMU10kxBase->flush_caches );
 	  break;
 	
 	case AHIST_S16S:
 	  dd->current_buffers[0] = copy_stereo( src, src + 1, dd->current_buffers[0],
-						s, 2, EMU10kxBase->flush_caches );
+						s, 2, FALSE,
+						EMU10kxBase->flush_caches );
 	  break;
 	
 	case AHIST_M32S:
 	  dd->current_buffers[0] = copy_mono( src, dd->current_buffers[0],
-					      s, 2, EMU10kxBase->flush_caches );
+					      s, 2, TRUE,
+					      EMU10kxBase->flush_caches );
 	  break;
 	
 	case AHIST_S32S:
 	  dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
-						s, 4, EMU10kxBase->flush_caches );
+						s, 4, TRUE,
+						EMU10kxBase->flush_caches );
 	  break;
 	
 	case AHIST_L7_1:
 	  dd->current_buffers[0] = copy_stereo( src, src + 2, dd->current_buffers[0],
-						s, 16, EMU10kxBase->flush_caches );
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
 	  dd->current_buffers[1] = copy_stereo( src + 4, src + 6, dd->current_buffers[1],
-						s, 16, EMU10kxBase->flush_caches );
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
 	  dd->current_buffers[2] = copy_stereo( src + 8, src + 10, dd->current_buffers[2],
-						s, 16, EMU10kxBase->flush_caches );
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
 	  dd->current_buffers[3] = copy_stereo( src + 12, src + 14, dd->current_buffers[3],
-						s, 16, EMU10kxBase->flush_caches );
+						s, 16, TRUE,
+						EMU10kxBase->flush_caches );
 	  break;
       }
     
@@ -329,15 +331,27 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 
 
 static WORD*
-copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL flush_caches )
+copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches )
 {
   WORD* first = dst;
   WORD* last  = dst + count;
   int x, y;
 
+#ifndef WORDS_BIGENDIAN
+  if( src32 )
+  {
+    // Move to high 16 bits
+    ++src;
+  }
+#endif
+
   for( x = 0, y = 0; y < count; x += stride, ++y )
   {
+#ifndef WORDS_BIGENDIAN
+    dst[y] = src[x];
+#else
     dst[y] = ( ( src[x] & 0xff ) << 8 ) | ( ( src[x] & 0xff00 ) >> 8 );
+#endif
   }
 
   if( flush_caches )
@@ -350,16 +364,30 @@ copy_mono( WORD* src, WORD* dst, int count, int stride, BOOL flush_caches )
 
 
 static WORD*
-copy_stereo( WORD* lsrc, WORD* rsrc, WORD* dst, int count, int stride, BOOL flush_caches )
+copy_stereo( WORD* lsrc, WORD* rsrc, WORD* dst, int count, int stride, BOOL src32, BOOL flush_caches )
 {
   WORD* first = dst;
   WORD* last  = dst + count * 2;
   int x, y;
 
+#ifndef WORDS_BIGENDIAN
+  if( src32 )
+  {
+    // Move to high 16 bits
+    ++lsrc;
+    ++rsrc;
+  }
+#endif
+
   for( x = 0, y = 0; y < count * 2; x += stride, y += 2 )
   {
+#ifndef WORDS_BIGENDIAN
+    dst[y+0] = lsrc[x];
+    dst[y+1] = rsrc[x];
+#else
     dst[y+0] = ( ( lsrc[x] & 0xff ) << 8 ) | ( ( lsrc[x] & 0xff00 ) >> 8 );
     dst[y+1] = ( ( rsrc[x] & 0xff ) << 8 ) | ( ( rsrc[x] & 0xff00 ) >> 8 );
+#endif
   }
 
   if( flush_caches )
@@ -418,13 +446,15 @@ RecordInterrupt( struct EMU10kxData* dd )
   }
 #endif
 
+#ifdef WORDS_BIGENDIAN
   while( i < RECORD_BUFFER_SAMPLES / 2 * 2 )
   {
     *ptr = ( ( *ptr & 0xff ) << 8 ) | ( ( *ptr & 0xff00 ) >> 8 );
-
+    
     ++i;
     ++ptr;
   }
+#endif
 
   CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
 
