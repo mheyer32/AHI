@@ -1,28 +1,35 @@
-#ifndef  DriverData_h
-#define  DriverData_h
+#ifndef AHI_Drivers_Void_DriverData_h
+#define AHI_Drivers_Void_DriverData_h
 
-#include <exec/types.h>
 #include <exec/libraries.h>
+#include <dos/dos.h>
+#include <proto/dos.h>
 
-struct DriverBase;
-struct Process;
+#include "DriverBase.h"
 
-struct DriverData
+struct VoidBase
 {
+    struct DriverBase driverbase;
+    struct Library*   dosbase;
+};
+
+#define DRIVERBASE_SIZEOF (sizeof (struct VoidBase))
+
+
+#define DOSBase           ((struct DosLibrary*)    VoidBase->dosbase)
+
+struct VoidData
+{
+    struct DriverData   driverdata;
     UBYTE		flags;
     UBYTE		pad1;
     BYTE		mastersignal;
     BYTE		slavesignal;
     struct Process*	mastertask;
     struct Process*	slavetask;
-    struct DriverBase*	ahisubbase;
+    struct VoidBase*	ahisubbase;
     APTR		mixbuffer;
 };
 
-BOOL
-DriverInit( struct DriverBase* AHIsubBase );
 
-VOID
-DriverCleanup( struct DriverBase* AHIsubBase );
-
-#endif /* DriverData_h */
+#endif /* AHI_Drivers_Void_DriverData_h */

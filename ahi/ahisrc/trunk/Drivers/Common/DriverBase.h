@@ -1,5 +1,5 @@
-#ifndef DriverBase_h
-#define DriverBase_h
+#ifndef AHI_Drivers_Common_DriverBase_h
+#define AHI_Drivers_Common_DriverBase_h
 
 #include <proto/dos.h>
 #include <proto/exec.h>
@@ -14,14 +14,22 @@ struct DriverBase
     struct Library* sysbase;
     struct Library* intuitionbase;
     struct Library* utilitybase;
-
-    struct Library* dosbase;
 };
 
 #define SysBase       ((struct ExecBase*)      AHIsubBase->sysbase)
 #define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)
 #define UtilityBase   ((struct UtilityBase*)   AHIsubBase->utilitybase)
 
-#define DOSBase       ((struct DosLibrary*)    AHIsubBase->dosbase)
 
-#endif /* DriverBase_h */
+struct DriverData
+{
+};
+
+
+BOOL
+DriverInit( struct DriverBase* AHIsubBase );
+
+VOID
+DriverCleanup( struct DriverBase* AHIsubBase );
+
+#endif /* AHI_Drivers_Common_DriverBase_h */

@@ -2,6 +2,7 @@
 #include <config.h>
 
 #include "library.h"
+#include "DriverData.h"
 
 /******************************************************************************
 ** Custom driver init *********************************************************
@@ -10,7 +11,9 @@
 BOOL
 DriverInit( struct DriverBase* AHIsubBase )
 {
-  AHIsubBase->dosbase       = OpenLibrary( DOSNAME, 37 );
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
+  VoidBase->dosbase = OpenLibrary( DOSNAME, 37 );
 
   if( DOSBase == NULL )
   {
@@ -40,5 +43,7 @@ DriverInit( struct DriverBase* AHIsubBase )
 VOID
 DriverCleanup( struct DriverBase* AHIsubBase )
 {
+  struct VoidBase* VoidBase = (struct VoidBase*) AHIsubBase;
+
   CloseLibrary( (struct Library*) DOSBase );
 }

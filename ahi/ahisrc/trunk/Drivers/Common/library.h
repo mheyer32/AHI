@@ -1,5 +1,5 @@
-#ifndef library_h
-#define library_h
+#ifndef AHI_Drivers_Common_library_h
+#define AHI_Drivers_Common_library_h
 
 #include <exec/types.h>
 #include "DriverBase.h"
@@ -19,4 +19,4 @@ ReqA( const char*        text,
 #define Req(a0, args...) \
         ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args, AHIsubBase);})
 
-#endif /* library_h */
+#endif /* AHI_Drivers_Common_library_h */

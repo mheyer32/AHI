@@ -163,6 +163,7 @@ AC_OUTPUT(Makefile
           Device/Makefile
           Docs/Makefile
           Drivers/Makefile
+          Drivers/Common/Makefile.common
           Drivers/EMU10kx/Makefile
           Drivers/Void/Makefile
 	  Examples/Makefile

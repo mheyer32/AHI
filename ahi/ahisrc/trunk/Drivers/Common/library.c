@@ -123,7 +123,7 @@ static const APTR FuncTable[] =
 
 static const APTR InitTable[4] =
 {
-  (APTR) sizeof( struct DriverBase ),
+  (APTR) DRIVERBASE_SIZEOF,
   (APTR) &FuncTable,
   NULL,
   (APTR) gwLibInit
