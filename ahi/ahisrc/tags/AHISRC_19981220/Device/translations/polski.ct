@@ -1,0 +1,137 @@
+## version $VER: ahi.catalog 4.2 (17.6.97) © Marcin Orîowski <carlos@inet.com.pl>
+## language polski
+## codeset 0
+;
+## chunk AUTH Translated by Marcin Orîowski <carlos@inet.com.pl>
+;
+; $Id$
+; $Log$
+; Revision 1.1  1998/12/20 12:09:29  lcs
+; Initial revision
+;
+; Revision 4.2  1997/05/03 19:59:56  lcs
+; Set version to 4
+;
+; Revision 4.1  1997/04/02 22:29:53  lcs
+; Bumped to version 4
+;
+; Revision 1.4  1997/02/20 10:26:13  lcs
+; New Flexcat caused some problems
+;
+; Revision 1.3  1997/02/10 02:23:06  lcs
+; Infowindow in the requester added.
+;
+; Revision 1.2  1997/02/04 22:14:27  lcs
+; The users preffered audio mode can now be selected in the requester
+;
+; Revision 1.1  1997/02/02 22:37:47  lcs
+; Initial revision
+;
+;
+;
+; Input and Output connector name
+;
+msgDefault
+Domyôlny
+;Default
+;
+; The requesters menu
+msgMenuControl
+\000\000Projekt
+;\000\000Control
+;
+msgMenuLastMode
+L\0Poprzedni tryb
+;L\000Last Mode
+;
+msgMenuNextMode
+N\0Nastëpny tryb
+;N\000Next Mode
+;
+msgMenuPropertyList
+?\0Wîaôciwoôci trybu...
+;?\000Property List...
+;
+msgMenuRestore
+R\0Anuluj zmiany ustawieï
+;R\000Restore
+;
+msgMenuOK
+O\0Ok
+;O\000OK
+;
+msgMenuCancel
+C\0Poniechaj
+;C\000Cancel
+;
+; Mode name in requester whose driver cannot be opened
+;
+msgUnknown
+NIEZNANY:Audio ID 0x%08lx
+;UNKNOWN:Audio ID 0x%08lx
+;
+; The requester gadgets
+;
+msgReqOK
+Ok
+;OK
+;
+msgReqCancel
+Poniechaj
+;Cancel
+;
+msgReqFrequency
+Czëstotliwoôê
+;Frequency
+;
+; Name of default mode in requester
+;
+msgDefaultMode
+Domyôlny tryb audio
+;Default audio mode
+;
+; The requester's info-winodow
+;
+msgReqInfoTitle
+Wîaôciwoôci trybu
+;Mode Properties
+;
+msgReqInfoAudioID
+ID trybu audio: 0x%08lx
+;Audio mode ID: 0x%08lx
+;
+msgReqInfoResolution
+Rozdzielczoôê: %ld bitów %s
+;Resolution: %ld bit %s
+;
+msgReqInfoMono
+mono
+;mono
+;
+msgReqInfoStereo
+stereo
+;stereo
+;
+msgReqInfoStereoPan
+stereo z panningiem
+;stereo with panning
+;
+msgReqInfoChannels
+Kanaîy: %ld
+;Channels: %ld
+;
+msgReqInfoMixrate
+Mixing rates: %ld-%ld Hz
+;Mixing rates: %ld-%ld Hz
+;
+msgReqInfoHiFi
+Miksowanie HiFi
+;HiFi mixing
+;
+msgReqInfoRecordHalf
+Nagrywanie z póî dupleksem
+;Record in half duplex
+;
+msgReqInfoRecordFull
+Nagrywanie z peînym dupleksem
+;Record in full duplex

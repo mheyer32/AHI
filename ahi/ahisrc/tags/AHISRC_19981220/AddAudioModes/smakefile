@@ -1,0 +1,26 @@
+
+OBJS= AddAudioModes.o
+DEST= AHI:User/C/AddAudioModes
+
+AddAudioModes: $(OBJS)
+   sc link to AddAudioModes with <<
+$(OBJS)
+<
+   slink AddAudioModes NOICONS ND TO $(DEST)
+
+AddAudioModes.o: AddAudioModes.c
+
+dist:
+	smake clean
+	smake AddAudioModes
+
+clean:
+	--delete \#?.(o|lnk|map|info) AddAudioModes QUIET
+
+allclean:
+	smake clean
+	--delete $(DEST)
+
+ci:
+	ci -l AddAudioModes.c smakefile
+
