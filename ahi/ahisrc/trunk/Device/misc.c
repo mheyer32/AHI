@@ -187,8 +187,12 @@ AHILoadObject( const char* objname )
   }
   else
   {
-//kprintf( "loading elf object\n" );
-    return ELFLoadObject( objname );
+    void* o;
+
+    o = ELFLoadObject( objname );
+    CacheClearU();
+
+    return o;
   }
 }
 
@@ -199,7 +203,6 @@ AHILoadObject( const char* objname )
 void
 AHIUnLoadObject( void* obj )
 {
-//kprintf( "unloading elf object\n" );
   if( PPCLibBase != NULL )
   {
     PPCUnLoadObject( obj );
@@ -220,7 +223,6 @@ AHIGetELFSymbol( const char* name,
 {
   BOOL rc = FALSE;
 
-//kprintf( "getting symbol %s: ", name );
   if( PPCLibBase != NULL )
   {
     struct PPCObjectInfo oi =
@@ -247,6 +249,5 @@ AHIGetELFSymbol( const char* name,
     rc = ELFGetSymbol( PPCObject, name, ptr );
   }
 
-//kprintf( "%08lx (%ld)\n", *ptr, rc );
   return rc;
 }
