@@ -1,10 +1,10 @@
 /* $Id$
 * $Log$
+* Revision 1.8  1997/03/13 00:19:43  lcs
+* Up to 4 device units are now available.
+*
 * Revision 1.7  1997/01/31 20:23:05  lcs
 * Enabled stereo samples
-*
-* Revision 1.6  1997/01/29 23:34:38  lcs
-* *** empty log message ***
 *
 * Revision 1.5  1997/01/15 14:59:50  lcs
 * Added CMD_FLUSH, CMD_START, CMD_STOP and SMD_RESET
@@ -69,7 +69,6 @@ struct NSDeviceQueryResult
 
 /*** My own stuff ***/
 
-#define AHI_UNITS	1	/* Normal units, excluding AHI_NO_UNIT */
 #define AHI_PRI		50	/* Priority for the device process */
 
 #define SND8  	0
@@ -83,8 +82,15 @@ struct NSDeviceQueryResult
 
 #define AHICMD_WRITTEN	(0x8000 | CMD_WRITE)
 
-#define ahir_Channel	ahir_Pad1
+#define ahir_Extras	ahir_Private[0]
+#define GetExtras(req)	((struct Extras *) req->ahir_Private[0])
 #define NOCHANNEL	65535
+
+struct Extras
+{
+	UWORD	Channel;
+	UWORD	Sound;
+};
 
 struct Voice
 {
@@ -106,6 +112,10 @@ struct Voice
 #define FREE	0	/* Channel is not playing anything */
 #define	MUTE	-1	/* Channel will be muted when current sound is finished */
 #define PLAY	-2	/* Channel will play more when current sound is finished */
+
+#define	MAXSOUNDS	128
+#define SOUND_FREE	0
+#define SOUND_IN_USE	1
 
 struct AHIDevUnit
 {
@@ -153,6 +163,8 @@ struct AHIDevUnit
 	Fixed			 OutputVolume;
 	ULONG			 Input;
 	ULONG			 Output;
+
+	UBYTE			 Sounds[MAXSOUNDS];
 };
 
 /*

@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.6  1997/03/13 00:19:43  lcs
+* Up to 4 device units are now available.
+*
 * Revision 1.5  1997/02/02 18:15:04  lcs
 * Added protection against CPU overload
 *
@@ -22,7 +25,7 @@ DEBUG_DETAIL	SET	2
 	include	libraries/ahi_sub.i
 	include	macros.i
 
-AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
+AHI_UNITS	EQU	4			* Normal units, excluding AHI_NO_UNIT
 
 * Message passed to the Unit Process at
 * startup time.

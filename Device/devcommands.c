@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.14  1997/03/13 00:19:43  lcs
+* Up to 4 device units are now available.
+*
 * Revision 1.13  1997/02/18 22:26:49  lcs
 * Fixed a bug in CMD_READ?
 *
@@ -181,15 +184,15 @@ __asm ULONG DevAbortIO(
           {
             Remove((struct Node *) ioreq);
 
-            if(ioreq->ahir_Channel != NOCHANNEL)
+            if(GetExtras(ioreq)->Channel != NOCHANNEL)
             {
-              iounit->Voices[ioreq->ahir_Channel].PlayingRequest = NULL;
-              iounit->Voices[ioreq->ahir_Channel].QueuedRequest = NULL;
-              iounit->Voices[ioreq->ahir_Channel].NextRequest = NULL;
-              iounit->Voices[ioreq->ahir_Channel].NextOffset = MUTE;
+              iounit->Voices[GetExtras(ioreq)->Channel].PlayingRequest = NULL;
+              iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
+              iounit->Voices[GetExtras(ioreq)->Channel].NextRequest = NULL;
+              iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = MUTE;
               if(iounit->AudioCtrl)
               {
-                AHI_SetSound(ioreq->ahir_Channel,AHI_NOSOUND,0,0,
+                AHI_SetSound(GetExtras(ioreq)->Channel,AHI_NOSOUND,0,0,
                     iounit->AudioCtrl,AHISF_IMM);
               }
             }
@@ -233,8 +236,16 @@ static void TermIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
     KPrintF("Terminating IO Request 0x%08lx", ioreq);
   }
 
+  if(ioreq->ahir_Extras != NULL)
+  {
+    FreeVec((APTR *)ioreq->ahir_Extras);
+    ioreq->ahir_Extras = NULL;
+  }
+
   if( ! (ioreq->ahir_Std.io_Flags & IOF_QUICK))
+  {
       ReplyMsg(&ioreq->ahir_Std.io_Message);
+  }
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
   {
@@ -253,6 +264,9 @@ void PerformIO(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
   ioreq->ahir_Std.io_Error = 0;
+
+  // Just to make sure TermIO won't free a bad address
+  ioreq->ahir_Extras = NULL;
 
   switch(ioreq->ahir_Std.io_Command)
   {
@@ -445,20 +459,10 @@ static void Devicequery (struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 static void StopCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 {
   struct AHIDevUnit *iounit;
-  struct AHIPrivAudioCtrl *audioctrl;
-  struct Library *AHIsubBase;
 
   iounit = (struct AHIDevUnit *) ioreq->ahir_Std.io_Unit;
-  audioctrl = (struct AHIPrivAudioCtrl *) iounit->AudioCtrl;
 
-  if(AHIsubBase = audioctrl->ahiac_SubLib)
-  {
-    iounit->StopCnt++;
-    if(iounit->IsPlaying && (iounit->StopCnt == 1))
-    {
-      AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
-    }
-  }
+  iounit->StopCnt++;
   TermIO(ioreq,AHIBase);
 }
 
@@ -825,27 +829,18 @@ static void WriteCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 
     if( ! error)
     {
-      int i = iounit->StopCnt;
-
-#ifdef DEBUG
-      KPrintF("No error, stopcnt=%ld\n",i);
-#endif
-
       iounit->IsPlaying = TRUE;
-
-      iounit->StopCnt = 0;
-      while(i--)
-      {
-#ifdef DEBUG
-        KPrintF("Stopping\n");
-#endif
-        // beware, invalid IORequest to StopCmd!
-        StopCmd(ioreq, AHIBase);
-      }
     }
   }
 
-  if(iounit->IsPlaying)     // (error == 0)
+  ioreq->ahir_Extras = (ULONG) AllocVec(sizeof(struct Extras), MEMF_PUBLIC|MEMF_CLEAR);
+
+  if(ioreq->ahir_Extras == NULL)
+  {
+    error = AHIE_NOMEM;
+  }
+
+  if(iounit->IsPlaying && !error)
   {
     ioreq->ahir_Std.io_Actual = 0;
 
@@ -941,11 +936,14 @@ static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
 
   if(iounit->StopCnt)
   {
+    iounit->StopCnt--;
     if(AHIsubBase = audioctrl->ahiac_SubLib)
     {
-      if(iounit->StopCnt == 1)
+      if(iounit->StopCnt == 0)
       {
         struct AHIRequest *ior;
+
+        AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
 
         while(ior = (struct AHIRequest *) RemHead(
             (struct List *) &iounit->RequestQueue))
@@ -953,7 +951,6 @@ static void StartCmd(struct AHIRequest *ioreq, struct AHIBase *AHIBase)
           WriteCmd(ior, AHIBase);
         }
 
-        iounit->StopCnt--;
         AHIsub_Enable((struct AHIAudioCtrlDrv *) audioctrl);
       }
     }
@@ -1198,8 +1195,8 @@ static void NewWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
 
     if( ! ioreq->ahir_Link->ahir_Link)
     {
-      channel = ioreq->ahir_Link->ahir_Channel;
-      ioreq->ahir_Channel = channel;
+      channel = GetExtras(ioreq->ahir_Link)->Channel;
+      GetExtras(ioreq)->Channel = channel;
 
       ioreq->ahir_Link->ahir_Link = ioreq;
       ioreq->ahir_Link = NULL;
@@ -1284,8 +1281,8 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     {
       // Let's steal his place!
       RemTail((struct List *) &iounit->PlayingList);
-      channel = ioreq2->ahir_Channel;
-      ioreq2->ahir_Channel = NOCHANNEL;
+      channel = GetExtras(ioreq2)->Channel;
+      GetExtras(ioreq2)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq2);
 
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
@@ -1295,7 +1292,7 @@ static void AddWriter(struct AHIRequest *ioreq, struct AHIDevUnit *iounit,
     {
       // Let's be quiet for a while.
 
-      ioreq->ahir_Channel = NOCHANNEL;
+      GetExtras(ioreq)->Channel = NOCHANNEL;
       Enqueue((struct List *) &iounit->SilentList,(struct Node *) ioreq);
     }
   }
@@ -1318,7 +1315,7 @@ static void PlayRequest(int channel, struct AHIRequest *ioreq,
 
   // Start the sound
 
-  ioreq->ahir_Channel = channel;
+  GetExtras(ioreq)->Channel = channel;
 
   if(ioreq->ahir_Link)
   {
@@ -1445,7 +1442,7 @@ static void RemPlayers( struct List *list, struct AHIDevUnit *iounit,
       {
         // Move the attached one to the list
         Remove((struct Node *) ioreq->ahir_Link);
-        ioreq->ahir_Link->ahir_Channel = ioreq->ahir_Channel;
+        GetExtras(ioreq->ahir_Link)->Channel = GetExtras(ioreq)->Channel;
         Enqueue(list, (struct Node *) ioreq->ahir_Link);
         // We have to go through the whole procedure again, in case
         // the child is finished, too.

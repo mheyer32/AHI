@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.17  1997/03/13 00:19:43  lcs
+* Up to 4 device units are now available.
+*
 * Revision 1.16  1997/03/01 21:36:04  lcs
 * Added docs for OpenDevice() and CloseDevice().
 *
@@ -272,11 +275,6 @@ __asm void CloseLibs(register __a6 struct ExecBase *SysBase)
 *   EXAMPLE
 *
 *   NOTES
-*       Currently, there is only one unit that can be used with
-*       the device style API; AHI_DEFAULT_UNIT. But since this may
-*       very well change in the future, it is a good idea to provide
-*       a way to let the user change it, if only by means of tooltypes
-*       or a command line option.
 *
 *   BUGS
 *

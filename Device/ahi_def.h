@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.9  1997/03/13 00:19:43  lcs
+* Up to 4 device units are now available.
+*
 * Revision 1.8  1997/02/02 22:35:50  lcs
 * Localized it
 *
@@ -63,6 +66,8 @@ extern __far ULONG			 AHISoundData_SIZEOF;
 
 
 extern char __stdargs *Sprintf(char *, const char *, ...);
+
+#define AHI_UNITS	4	/* Normal units, excluding AHI_NO_UNIT */
 
 /* AHIBase */
 struct AHIBase
