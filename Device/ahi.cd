@@ -1,5 +1,8 @@
 ; $Id$
 ; $Log$
+; Revision 1.2  1997/02/04 22:14:27  lcs
+; The users preffered audio mode can now be selected in the requester
+;
 ; Revision 1.1  1997/02/02 22:37:47  lcs
 ; Initial revision
 ;
@@ -31,3 +34,5 @@ msgReqCancel (//)
 Cancel
 msgReqFrequency (//)
 Frequency
+msgDefaultMode (//)
+Default audio mode
