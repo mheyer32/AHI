@@ -35,12 +35,6 @@ ENABLE_WARPUP=${enable_warpup}
 AC_SUBST(ENABLE_WARPUP)
 AC_MSG_RESULT(${enable_warpup})
 
-AC_MSG_CHECKING(if building MorphOS version)
-AC_ARG_ENABLE(morphos,
-[  --enable-morphos        Enable MorphOS support],
-AC_DEFINE(ENABLE_MORPHOS))
-AC_MSG_RESULT(${enable_morphos} )
-
 case $host in
  m68k-unknown-amigaos)
   : ${CPU="68020"}

@@ -44,22 +44,28 @@ the "real" release will come.
 
 How to make your very own version of AHI
 ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
-To configure on an Amiga:
+To configure on an Amiga (for building the AmigaOS version):
 
-sh configure --host=m68k-unknown-amigaos
+sh configure --host=m68k-amigaos
 
 
-To configure on a PC running Linux:
+To configure on an Amiga (for building the MorphOS version):
+
+sh configure --host=ppc-morphos
+
+
+To configure on a PC running Linux (for building the AmigaOS version):
 
 ./configure --host=m68k-amigaos --build=i686-pc-linux-gnu
 
 
-You can build in separate directories, which is very useful when
-working on the PPC version:
+You can build in separate directories, which is very useful when building
+several versions from the same source tree (note:  this requires
+UnixDirs3!):
 
 mkdir build060
 cd build060
-sh ../ahisrc/configure --host=m68k-unknown-amigaos
+sh ../ahisrc/configure --host=m68k-amigaos --with-cpu=68060
 
 
 There are also a few configure options to set:
@@ -67,7 +73,6 @@ There are also a few configure options to set:
   --with-os-includedir    Path to AmigaOS include directory [/gg/os-include]
   --with-cpu              The CPU to optimize for
   --enable-warpup         Enable WarpUp support
-  --enable-morphos        Enable MorphOS support
 
 --with-os-includedir specifies where the AmigaOS include files are located.
 If unspecified, /gg/os-include is assumed.
@@ -77,8 +82,6 @@ legal values include 68020, 68030, 68040 or 68060 for m68k and 603 or 604
 for PPC. The default is either 68020 or 603, depending on the host.
 
 --enable-warpup adds code (that doesn't work, by the way) to support WarpUp.
-
---enable-morphos must be set when building the MorphOS version.
 
 
 The following make targets are available:
