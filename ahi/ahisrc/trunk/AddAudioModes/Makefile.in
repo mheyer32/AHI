@@ -46,7 +46,7 @@ TARGET		= AddAudioModes
 all:		$(TARGET)
 
 clean:
-	$(RM) $(TARGET) version.h *.o *~ \#*\# core Makefile.dep
+	$(RM) $(TARGET) version.h *.o *.bak *~ \#*\# core Makefile.dep
 
 distclean:	clean
 	$(RM) Makefile
@@ -74,9 +74,9 @@ Makefile: Makefile.in ../config.status
 # Dependencies
 ########################################
 
-#Makefile.dep: $(SOURCES)
+Makefile.dep:	$(SOURCES)
 #	-@$(CC) $(CPPFLAGS) $(CFLAGS) -MM $(SOURCES) > $@
-#
-#include Makefile.dep
+	touch $@
+	makedepend -f $@ $(SOURCES)
 
-AddAudioModes.o: AddAudioModes.c version.h
+include Makefile.dep

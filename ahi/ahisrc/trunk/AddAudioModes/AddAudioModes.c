@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 4.4  1999/01/09 23:18:37  lcs
+* Bigger, better, and greater?
+*
 * Revision 4.3  1999/01/08 23:42:55  lcs
 * Switched to gcc and GNU make.
 * Clean-up in source code.
@@ -19,6 +22,8 @@
 *
 */
 
+#include <config.h>
+
 #include <devices/ahi.h>
 #include <graphics/modeid.h>
 #include <graphics/gfxbase.h>
@@ -30,7 +35,6 @@
 #include <proto/intuition.h>
 #include <stdlib.h>
 
-#include "config.h"
 #include "version.h"
 
 struct Library    *AHIBase   = NULL;
