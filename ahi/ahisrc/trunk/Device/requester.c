@@ -184,7 +184,20 @@ static LONG IndexToFrequency_func( struct Gadget *gad, WORD level)
 }
 
 #ifdef morphos
-# error I have no idea...
+
+static LONG gw_IndexToFrequency( void )
+{
+  struct Gadget* gad   = (struct Gadget*) ((ULONG*) REG_A7)[1];
+  WORD           level = (WORD)           ((ULONG*) REG_A7)[2];
+
+  return IndexToFrequency_func( gad , level );
+}
+
+static const struct EmulLibEntry IndexToFrequency =
+{
+  TRAP_LIB, 0, (void (*)(void)) gw_IndexToFrequency
+};
+
 #else
 
 static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
@@ -426,7 +439,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
           GTSL_LevelFormat, (ULONG) FREQTEXT2,
           GTSL_MaxLevelLen,FREQLEN2,
           GTSL_LevelPlace,PLACETEXT_RIGHT,
-          GTSL_DispFunc, (ULONG) IndexToFrequency,
+          GTSL_DispFunc, (ULONG) &IndexToFrequency,
           GA_RelVerify,TRUE,
           GA_Disabled,!sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID),
           TAG_DONE);
