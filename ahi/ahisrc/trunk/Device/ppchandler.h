@@ -20,44 +20,15 @@
      MA 02139, USA.
 */
 
-#ifndef _PPCHEADER_H_
-#define _PPCHEADER_H_
-
-#include <dos/dosextens.h>
+#ifndef _PPCHANDLER_H_
+#define _PPCHANDLER_H_
 
 #include "ahi_def.h"
 
-struct PowerPCContext
-{
-  volatile int              Command;
-  volatile void*            Argument;
+void PPCHandler( void );
 
-  struct Processs*          SlaveProcess;
-  void*                     CurrentMixBuffer;
+void
+FillBuffer( void*                     dst,
+            struct AHIPrivAudioCtrl*  audioctrl );
 
-  int                       Active;
-  struct Hook*              Hook;
-  void*	                    Dst;
-  void*                     XLock;
-
-  struct AHIPrivAudioCtrl*  AudioCtrl;
-  struct Library*           PowerPCBase;
-};
-
-struct PPCHandlerMessage
-{
-  struct Message           Message;
-  struct AHIPrivAudioCtrl* AudioCtrl;
-};
-
-#define PPCC_COM_NONE          0
-#define PPCC_COM_START         1
-#define PPCC_COM_ACK           2
-#define PPCC_COM_INIT          3
-#define PPCC_COM_SOUNDFUNC     4
-#define PPCC_COM_QUIT          5
-#define PPCC_COM_DEBUG         6
-#define PPCC_COM_FINISHED      7
-
-
-#endif /* _PPCHEADER_H_ */
+#endif /* _PPCHANDLER_H_ */

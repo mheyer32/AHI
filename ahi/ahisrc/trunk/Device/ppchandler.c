@@ -42,6 +42,7 @@
 #include "header.h"
 #include "misc.h"
 #include "mixer.h"
+#include "ppcheader.h"
 #include "ppchandler.h"
 
 static void
