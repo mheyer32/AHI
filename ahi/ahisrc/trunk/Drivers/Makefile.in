@@ -37,7 +37,7 @@ TARGETS		=
 
 .PHONY:		all clean distclean maintainer-clean bindist
 
-SUBDIRS		= Void
+SUBDIRS		= Filesave Void
 
 all:		$(TARGETS)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
@@ -59,7 +59,7 @@ maintainer-clean: distclean
 bindist:	$(TARGETS)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 	$(INSTALL) --directory $(DRIVERDIR) 
-	for d in Filesave Paula Toccata Void Wavetools; do \
+	for d in $(SUBDIRS) Paula Toccata Wavetools; do \
 	  cd $(srcdir) && find $${d} -type f -and -not -path '*CVS*' \
 	    -exec $(INSTALL_DATA) -D {} $(DRIVERDIR)/{} \; ; \
 	done
