@@ -351,3 +351,11 @@ msgVolFmt
 
 ; %+4.1f dB
 ;
+msgACTimeFmt
+
+; %ld ms
+;
+msgPercentFmt
+
+; %ld%%
+;

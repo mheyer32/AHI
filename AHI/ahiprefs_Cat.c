@@ -29,7 +29,7 @@
 /*
     Variables
 */
-struct FC_String ahiprefs_Strings[73] = {
+struct FC_String ahiprefs_Strings[75] = {
     { (STRPTR) "\000Project", 0 },
     { (STRPTR) "O\000Open...", 1 },
     { (STRPTR) "A\000Save As...", 2 },
@@ -102,7 +102,9 @@ struct FC_String ahiprefs_Strings[73] = {
     { (STRPTR) "-6 dB", 69 },
     { (STRPTR) "%ld Hz", 70 },
     { (STRPTR) "%ld", 71 },
-    { (STRPTR) "%+4.1f dB", 72 }
+    { (STRPTR) "%+4.1f dB", 72 },
+    { (STRPTR) "%ld ms", 73 },
+    { (STRPTR) "%ld%%", 74 }
 };
 
 STATIC struct Catalog *ahiprefsCatalog = NULL;
@@ -141,7 +143,7 @@ VOID OpenahiprefsCatalog(VOID)
 	    struct FC_String *fc;
 	    int i;
 
-	    for (i = 0, fc = ahiprefs_Strings;  i < 73;  i++, fc++) {
+	    for (i = 0, fc = ahiprefs_Strings;  i < 75;  i++, fc++) {
 		 fc->msg = GetCatalogStr(ahiprefsCatalog, fc->id, (STRPTR) fc->msg);
 	    }
 	}
@@ -242,7 +244,7 @@ VOID InitahiprefsCatalog(STRPTR language)
 				    bytesRemaining -= 8 + (skipSize << 2);
 				    ptr += skipSize;
 
-				    for (i = 0, fc = ahiprefs_Strings;  i < 73;  i++, fc++) {
+				    for (i = 0, fc = ahiprefs_Strings;  i < 75;  i++, fc++) {
 					if (fc->id == id) {
 					    fc->msg = sptr;
 					}
