@@ -2,9 +2,12 @@
 
 * $Id$
 * $Log$
-* Revision 4.19  1998/02/16 02:38:15  lcs
-* Recording didn't work in all modes!
+* Revision 4.20  1998/06/28 09:26:04  lcs
+* The low pass filter state is now restored when the audio is deallocated.
 *
+*
+* Revision 4.17  1998/01/10 19:47:33  lcs
+* Alright, the DMA version is ready for release.
 *
 * Revision 4.16  1997/12/02 09:28:28  lcs
 * Fixed all known problems in the DMA mode.
@@ -193,9 +196,10 @@ AHIDB_Paula14Bit	EQU	AHIDB_UserBase+0	* Boolean
 	UWORD	p_DisableCount			;AHIsub_Enable/AHIsub_Disable cnt
 	UWORD	p_IRQMask
 
+	APTR	p_PaulaBase			;Pointer to library base (DMA only)
+	APTR	p_AudioCtrl			;Backpointer to AudioCtrl struct.
 
 	UBYTE	p_SwapChannels			;TRUE if left/right should be swapped
-	UWORD	p_Pad0
 	UBYTE	p_ScreenIsDouble		;TRUE if screen mode allows >28kHz
 
 	UWORD	p_MixTaskPri
@@ -950,6 +954,10 @@ AHIsub_AllocAudio:
 	btst	#1,$bfe001
 	seq	p_Filter(a3)
 * Check the AHIpaulaFilterFreq variable.
+* If the mixing frequency is higher than this one, set disable the filter,
+* else enable it.
+	moveq	#0,d0				;Default freq
+	lea	filterVar(pc),a0
 	bsr	GetVarInt
 	cmp.l	ahiac_MixFreq(a2),d0
 	bls	.no_filter
@@ -1488,6 +1496,15 @@ AHIsub_FreeAudio:
 	beq	.no_filter
 	bclr	#1,$bfe001			;turn audio filter on
 	bra	.filter_set
+.no_filter
+	bset	#1,$bfe001			;turn audio filter off
+.filter_set
+
+
+	tst.b	p_audiodev(a3)
+	bne.b	.noaudiodev
+	st	p_audiodev(a3)
+	move.l	p_audioreq(a3),a1
 	move.w	#CMD_RESET,IO_COMMAND(a1)	;Restore audio interrupts
 	tst.l	p_audiodev(a3)
 	move.l	p_audioport(a3),a0
