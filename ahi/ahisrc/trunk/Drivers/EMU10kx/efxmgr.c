@@ -30,6 +30,7 @@
  */
 
 #include "linuxsupport.h"
+#include <string.h>
 //#include <linux/bitops.h>
 #include "hwaccess.h"
 #include "efxmgr.h"

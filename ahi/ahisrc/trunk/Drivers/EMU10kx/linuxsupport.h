@@ -20,13 +20,8 @@
 #ifndef EMU10kx_pcisupport_h
 #define EMU10kx_pcisupport_h
 
-#define AMITHLON_AMITHLONSPEC_H // Go away!
-
-#include <stdio.h>
 #include <stdlib.h>
 #include <proto/exec.h>
-#include <proto/dos.h>
-#include <proto/powerpci.h>
 
 typedef unsigned int   u32;
 typedef unsigned short u16;
