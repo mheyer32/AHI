@@ -1,13 +1,13 @@
 /* $Id$
 * $Log$
+* Revision 1.5  1997/02/01 19:44:18  lcs
+* *** empty log message ***
+*
 * Revision 1.4  1997/01/04 20:19:56  lcs
 * ahiac_EffChannelInfoStruct addded
 *
 * Revision 1.3  1997/01/04 13:26:41  lcs
 * Debugged CMD_WRITE
-*
-* Revision 1.2  1996/12/21 23:08:47  lcs
-* *** empty log message ***
 *
 * Revision 1.1  1996/12/21 13:05:12  lcs
 * Initial revision

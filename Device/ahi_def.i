@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 1.3  1997/02/01 19:44:18  lcs
+* *** empty log message ***
+*
 * Revision 1.2  1997/01/04 20:19:56  lcs
 * ahiac_EffChannelInfoStruct added
 *
@@ -147,8 +150,10 @@ AHI_UNITS	EQU	1			* Normal units, excluding AHI_NO_UNIT
 
 	ULONG	cd_Samples		;Samples left to store (down-counter)
 	ULONG	cd_FirstOffsetI		;for linear interpolation routines
-	LONG	cd_LastSample		;for linear interpolation routines
-	LONG	cd_TempLastSample	;for linear interpolation routines
+	LONG	cd_LastSampleL		;for linear interpolation routines
+	LONG	cd_TempLastSampleL	;for linear interpolation routines
+	LONG	cd_LastSampleR		;for linear interpolation routines
+	LONG	cd_TempLastSampleR	;for linear interpolation routines
 
 	APTR	cd_Succ			;For the wet and dry lists
 	UWORD	cd_ChannelNo
