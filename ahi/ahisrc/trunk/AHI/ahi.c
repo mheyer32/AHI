@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.4  1997/04/27 16:16:06  lcs
+ * Added "Mastervolume with(out) clipping".
+ *
  * Revision 4.3  1997/04/09 03:00:06  lcs
  * Fixed globaloptions and "Restore"
  *
@@ -224,6 +227,7 @@ void NewSettings(char *name) {
   globalprefs.ahigp_DisableEcho     = FALSE;
   globalprefs.ahigp_FastEcho        = FALSE;
   globalprefs.ahigp_MaxCPU = (90 << 16) / 100;
+  globalprefs.ahigp_ClipMasterVolume= FALSE;
 
   UnitList = GetUnits(name);
   Units = List2Array((struct List *) UnitList);
