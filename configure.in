@@ -40,7 +40,7 @@ case $host in
   : ${CPU="i686"}
   linkerflags="-noixemul -r"
   optflags="-mcpu=${CPU} -O2"
-  asflags="-m${CPU} --defsym CPU=${CPU}"
+  asflags="--defsym CPU=${CPU}"
   resident=""   dnl *** Not supported (yet?)
  ;;
  m68k-unknown-amigaos)
@@ -58,10 +58,10 @@ case $host in
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
   resident="-mresident32"
  ;;
- i?86-pc-*-aros)
+ i?86-*-aros)
  : ${CPU="i386"}
- optflags="-mcpu=${CPU} -O2"
- asflags="-m${CPU} --defsym CPU=${CPU}"
+ optflags="-mcpu=${CPU} -O2 -fomit-frame-pointer"
+ asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
  resident=""   dnl *** Not supported (yet?)
  ;;
  *)
@@ -158,6 +158,7 @@ AC_OUTPUT(Makefile
           Docs/Makefile
           Drivers/Makefile
           Drivers/EMU10kx/Makefile
+          Drivers/Void/Makefile
 	  Examples/Makefile
 	  Examples/Extras/CloneAudioModes/Makefile
           Include/Makefile,
