@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.11  2000/06/05 20:28:37  lcs
+ * Fixed configure problems with separate build directories.
+ *
  * Revision 4.10  1999/08/29 23:43:54  lcs
  * Added support for ahigp_AntiClickTime.
  *
@@ -65,11 +68,14 @@
 #include <libraries/asl.h>
 #include <libraries/gadtools.h>
 #include <libraries/mui.h>
+
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/intuition.h>
 #include <proto/muimaster.h>
 #include <proto/utility.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

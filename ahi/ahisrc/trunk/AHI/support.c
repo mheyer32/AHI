@@ -19,6 +19,9 @@
 
 /* $Id$
  * $Log$
+ * Revision 4.7  2000/06/05 20:28:37  lcs
+ * Fixed configure problems with separate build directories.
+ *
  * Revision 4.6  1999/04/22 19:41:25  lcs
  * Removed SAS/C smakefile.
  * I had the copyright date screwed up: Changed to 1996-1999 (which is only
@@ -48,12 +51,15 @@
 #include <exec/memory.h>
 #include <prefs/prefhdr.h>
 #include <workbench/workbench.h>
+
+#include <clib/alib_protos.h>
 #include <proto/ahi.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/icon.h>
 #include <proto/iffparse.h>
 #include <proto/utility.h>
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>

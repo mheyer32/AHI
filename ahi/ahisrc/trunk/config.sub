@@ -403,6 +403,10 @@ case $basic_machine in
 	mips3*)
 		basic_machine=`echo $basic_machine | sed -e 's/mips3/mips64/'`-unknown
 		;;
+	morphos)
+		basic_machine=ppc-unknown
+		os=-morphos
+		;;
 	ncr3000)
 		basic_machine=i486-ncr
 		os=-sysv4
@@ -701,7 +705,7 @@ case $os in
 	      | -ptx* | -coff* | -ecoff* | -winnt* | -domain* | -vsta* \
 	      | -udi* | -eabi* | -lites* | -ieee* | -go32* | -aux* \
 	      | -cygwin32* | -pe* | -psos* | -moss* | -proelf* | -rtems* \
-	      | -linux-gnu* | -uxpv* | -beos*)
+	      | -linux-gnu* | -uxpv* | -beos* | -morphos* )
 	# Remember, each alternative MUST END IN *, to match a version number.
 		;;
 	-linux*)
