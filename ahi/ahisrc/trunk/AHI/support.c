@@ -35,7 +35,9 @@
 #include <proto/utility.h>
 
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "ahi.h"
@@ -125,6 +127,70 @@ static struct DiskObject projIcon = {
   NULL,                           /* Tool Window */
   4096                            /* Stack Size */
 };
+
+
+/******************************************************************************
+**** Endian support code. *****************************************************
+******************************************************************************/
+
+/* See the header file for macros */
+
+#if !defined( WORDS_BIG_ENDIAN )
+
+static UWORD
+EndianSwapUWORD( UWORD x ) {
+  return ((((x) >> 8) & 0x00ffU) |
+	  (((x) << 8) & 0xff00U) );
+}
+
+static ULONG
+EndianSwapULONG( ULONG x ) {
+  return ((((x) >> 24) & 0x000000ffUL) |
+	  (((x) >> 8)  & 0x0000ff00UL) |
+	  (((x) << 8)  & 0x00ff0000UL) |
+	  (((x) << 24) & 0xff000000UL) );
+}
+
+void
+EndianSwap( size_t size, void* data) {
+  switch( size ) {
+    case 1:
+      break;
+
+    case 2:
+      *((UWORD*) data) = EndianSwapUWORD( *((UWORD*) data) );
+      break;
+
+    case 4:
+      *((ULONG*) data) = EndianSwapULONG( *((ULONG*) data) );
+      break;
+
+    case 8: {
+      ULONG tmp;
+
+      tmp = EndianSwapULONG( *((ULONG*) data) );
+      *((ULONG*) data) = EndianSwapULONG( *((ULONG*) (data + 4)) );
+      *((ULONG*) (data + 4)) = tmp;
+      break;
+    }
+      
+    default:
+      Printf( "Unknown size: %ld\n", size );
+      abort();
+  }
+}
+
+#else
+# define EndianSwap(s, x)
+#endif
+
+#define CopyIfValid( s, f, from, to, size )		\
+  do {							\
+    if( (size_t) size > offsetof( s, f ) ) {		\
+      (to).f = (from).f;				\
+      EndianSwap( sizeof (to).f, &((to).f) );		\
+    }							\
+  } while( 0 )
 
 
 /******************************************************************************
@@ -232,7 +298,15 @@ struct List *GetUnits(char *name) {
   BOOL lownode = FALSE;
   int i;
 
-  globalprefs.ahigp_MaxCPU = (90 << 16) / 100;
+  // Reasonable defaults
+  globalprefs.ahigp_DebugLevel       = AHI_DEBUG_NONE;
+  globalprefs.ahigp_DisableSurround  = FALSE;
+  globalprefs.ahigp_DisableEcho      = FALSE;
+  globalprefs.ahigp_FastEcho         = FALSE;
+  globalprefs.ahigp_MaxCPU           = (90 << 16) / 100;
+  globalprefs.ahigp_ClipMasterVolume = FALSE;
+  globalprefs.ahigp_Pad              = 0;
+  globalprefs.ahigp_AntiClickTime    = 0;
 
   list = AllocVec(sizeof(struct List), MEMF_CLEAR);
   
@@ -250,11 +324,28 @@ struct List *GetUnits(char *name) {
             if(ParseIFF(iff, IFFPARSE_SCAN) == IFFERR_EOC) {
               struct StoredProperty *global = FindProp(iff, ID_PREF, ID_AHIG);
               struct CollectionItem *ci = FindCollection(iff, ID_PREF, ID_AHIU);
+	      int ci_cnt = 0;
 
               if(global != NULL) {
-                CopyMem(global->sp_Data, &globalprefs, 
-                    min( sizeof(struct AHIGlobalPrefs),
-			 (size_t) global->sp_Size ));
+		struct AHIGlobalPrefs *p = global->sp_Data;
+
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_DebugLevel,
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_DisableSurround,
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_DisableEcho,
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_FastEcho,
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_MaxCPU,
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_ClipMasterVolume, 
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_Pad,
+			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_AntiClickTime,
+			     *p, globalprefs, global->sp_Size );
+
 
 		/* Set upsupported options to their defaults */
 
@@ -279,10 +370,41 @@ struct List *GetUnits(char *name) {
                 u = AllocVec(sizeof(struct UnitNode), MEMF_CLEAR);
                 if(u == NULL)
                   break;
-                CopyMem(p, &u->prefs, 
-                    min( sizeof(struct AHIUnitPrefs),
-			 (size_t) ci->ci_Size ));
 
+		u->prefs.ahiup_Unit          = ci_cnt;
+		u->prefs.ahiup_Pad           = 0;
+		u->prefs.ahiup_Channels      = 1;
+		u->prefs.ahiup_AudioMode     = AHI_DEFAULT_ID;
+		u->prefs.ahiup_Frequency     = AHI_DEFAULT_FREQ;
+		u->prefs.ahiup_MonitorVolume = 0;
+		u->prefs.ahiup_InputGain     = 0;
+		u->prefs.ahiup_OutputVolume  = 0x10000;
+		u->prefs.ahiup_Input         = 0;
+		u->prefs.ahiup_Output        = 0;
+
+		++ci_cnt;
+		
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Unit,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Pad,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Channels,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_AudioMode,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Frequency,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_MonitorVolume,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_InputGain,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_OutputVolume,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Input,
+			     *p, u->prefs, ci->ci_Size );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Output,
+			     *p, u->prefs, ci->ci_Size );
+		
                 FillUnitName(u);
                 
                 u->node.ln_Pri = -(u->prefs.ahiup_Unit);
@@ -487,6 +609,9 @@ BOOL SaveSettings(char *name, struct List *list) {
 
           // Prefs header
           if(! PushChunk(iff, ID_PREF, ID_PRHD, sizeof header)) {
+	    EndianSwap( sizeof (UBYTE), &header.ph_Version );
+	    EndianSwap( sizeof (UBYTE), &header.ph_Type );
+	    EndianSwap( sizeof (ULONG), &header.ph_Flags );
             WriteChunkBytes(iff, &header, sizeof header);
             PopChunk(iff);
           }
@@ -494,7 +619,26 @@ BOOL SaveSettings(char *name, struct List *list) {
 
           // Global prefs
           if(! PushChunk(iff, ID_PREF, ID_AHIG, sizeof globalprefs)) {
-            WriteChunkBytes(iff, &globalprefs, sizeof globalprefs);
+	    struct AHIGlobalPrefs p;
+	    
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_DebugLevel,
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_DisableSurround,
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_DisableEcho,
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_FastEcho,
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_MaxCPU,
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_ClipMasterVolume, 
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_Pad,
+			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_AntiClickTime,
+			 globalprefs, p, sizeof p );
+		
+            WriteChunkBytes(iff, &p, sizeof p);
             PopChunk(iff);
           }
           else success = FALSE;
@@ -503,8 +647,30 @@ BOOL SaveSettings(char *name, struct List *list) {
           if(list != NULL) {    
             for(n = list->lh_Head; n->ln_Succ; n = n->ln_Succ) {
               if(! PushChunk(iff, ID_PREF, ID_AHIU, sizeof(struct AHIUnitPrefs))) {
-                WriteChunkBytes(iff, &((struct UnitNode *) n)->prefs,
-                    sizeof(struct AHIUnitPrefs));
+		struct AHIUnitPrefs p;
+
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Unit,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Pad,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Channels,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_AudioMode,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Frequency,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_MonitorVolume,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_InputGain,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_OutputVolume,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Input,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		CopyIfValid( struct AHIUnitPrefs, ahiup_Output,
+			     ((struct UnitNode *) n)->prefs, p, sizeof p );
+		
+                WriteChunkBytes(iff, &p, sizeof p);
                 PopChunk(iff);
               }
               else success = FALSE;
