@@ -28,6 +28,8 @@
 
 #include <devices/ahi.h>
 
+#if 0
+
 #define RecArgs REG(d0, ULONG size),    \
                 REG(d1, ULONG add),     \
                 REG(a0, APTR src),      \
@@ -49,5 +51,6 @@ void ASMCALL
 asmRecordFunc ( REG(d0, ULONG samples),
                 REG(a0, void *data),
                 REG(a1, void *buffer) );
+#endif
 
 #endif /* ahi_devsupp_h */

@@ -25,9 +25,16 @@
 
 /*** Debug stuff ***/
 
+#if defined( morphos )
+
+# include <public/proto/quark/syscall_protos.h>
+# define KPrintF dprintf
+
+#else
+
 extern void KPrintF(char *fmt,...);
-extern void kprintf(char *fmt,...);
-#define HIT {char *a=0; *a=0;}
+
+#endif
 
 /*** Processor identification ****/
 
@@ -229,11 +236,11 @@ struct AHIPrivAudioCtrl
   struct AHIChannelData*     ahiac_WetList;
   struct AHIChannelData*     ahiac_DryList;
   UBYTE                      ahiac_WetOrDry;
-  UBYTE                      ahiac_MaxCPU;
+  UBYTE                      ahiac_Pad;
   UWORD                      ahiac_Channels2;       /* Max virtual channels/hw channel */
   struct Timer               ahiac_Timer;
   UWORD                      ahiac_UsedCPU;
-  UWORD                      ahiac_Pad;
+  UWORD                      ahiac_MaxCPU;
   struct PowerPCContext*     ahiac_PowerPCContext;
   char                       ahiac_DriverName[ 256 ];
 };

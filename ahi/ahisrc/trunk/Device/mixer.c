@@ -49,12 +49,17 @@
 #include "misc.h"
 #include "header.h"
 #include "ppcheader.h"
-#include "ppchandler.h"
+//#include "ppchandler.h"
 
 
 /******************************************************************************
 ** Prototypes *****************************************************************
 ******************************************************************************/
+
+static void
+Mix( struct Hook*             unused_Hook, 
+     struct AHIPrivAudioCtrl* audioctrl,
+     void*                    dst );
 
 void
 DoMasterVolume ( void *buffer,
@@ -157,7 +162,9 @@ CallDebug( struct AHIPrivAudioCtrl *audioctrl, long value )
 */
 
 
-void ASMCALL
+#if 0
+
+void
 MixPowerPC( REG(a0, struct Hook *Hook), 
             REG(a1, void *dst), 
             REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
@@ -182,12 +189,14 @@ MixPowerPC( REG(a0, struct Hook *Hook),
   return;
 }
 
-void ASMCALL
-MixM68K( REG(a0, struct Hook *Hook), 
-         REG(a1, void *dst), 
-         REG(a2, struct AHIPrivAudioCtrl *audioctrl) )
+#endif
+
+void
+MixerFunc( struct Hook*             hook,
+           struct AHIPrivAudioCtrl* audioctrl,
+           void*                    dst )
 {
-  Mix( Hook, dst, audioctrl );
+  Mix( hook, audioctrl, dst );
 
   /*** AHIET_MASTERVOLUME ***/
 
@@ -273,6 +282,8 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
     }
   }
 
+
+#if 0
   // Allocate structures specific to the PPC version
 
   if( PPCObject != NULL )
@@ -319,6 +330,7 @@ InitMixroutine( struct AHIPrivAudioCtrl *audioctrl )
     }
   }
   else
+#endif
   {
     rc = TRUE;
   }
@@ -653,10 +665,10 @@ SelectAddRoutine ( Fixed     VolumeLeft,
 // There is a stub function in asmfuncs.s called Mix() that saves d0-d1/a0-a1
 // and calls MixGeneric. This stub is only assembled if VERSIONGEN is set.
 
-void
+static void
 Mix( struct Hook*             unused_Hook, 
-     void*                    dst, 
-     struct AHIPrivAudioCtrl* audioctrl )
+     struct AHIPrivAudioCtrl* audioctrl,
+     void*                    dst )
 {
   struct AHIChannelData	*cd;
   void                  *dstptr;

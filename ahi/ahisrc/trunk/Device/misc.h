@@ -40,7 +40,16 @@ int
 Fixed2Shift( Fixed f );
 
 void
-Req( const char* text, ... );
+ReqA( const char* text, APTR args );
+
+#define Req(a0, args...) \
+        ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args);})
+
+char*
+SprintfA( char *dst, const char *fmt, ULONG* args );
+
+#define Sprintf(a0, a1, args...) \
+        ({ULONG _args[] = { args }; SprintfA((a0), (a1), (ULONG*)_args);})
 
 APTR
 AHIAllocVec( ULONG byteSize,
@@ -58,5 +67,11 @@ AHIUnloadObject( void* obj );
 BOOL
 AHIGetELFSymbol( const char* name,
                  void** ptr );
+
+BOOL
+PreTimer( struct AHIPrivAudioCtrl* audioctrl );
+
+void
+PostTimer( struct AHIPrivAudioCtrl* audioctrl );
 
 #endif /* ahi_misc_h */

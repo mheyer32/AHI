@@ -26,6 +26,8 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
+/* Library entry points (native) */
+
 void gw_initRoutine( void );
 void gw_DevExpunge( void );
 void gw_DevOpen( void );
@@ -53,5 +55,19 @@ void gw_NextAudioID( void );
 void gw_AddAudioMode( void );
 void gw_RemoveAudioMode( void );
 void gw_LoadModeFile( void );
+
+void m68k_IndexToFrequency( void );
+
+/* Hook entry points */
+
+void HookEntry( void );
+
+void m68k_HookEntry( void );
+void m68k_HookEntryPreserveAllRegs( void );
+
+/* (Pre|Post)Timer entry points */
+
+void m68k_PreTimer( void );
+void m68k_PostTimer( void );
 
 #endif /* ahi_gateway_h */

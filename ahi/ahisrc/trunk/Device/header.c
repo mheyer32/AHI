@@ -30,9 +30,6 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 
-#include <powerup/ppclib/object.h>
-#include <powerup/ppclib/interface.h>
-
 #include "ahi_def.h"
 
 #include "header.h"
@@ -66,7 +63,6 @@ ULONG   __amigappc__=1;
 ** Device resident structure **************************************************
 ******************************************************************************/
 
-extern void _etext;
 extern const char DevName[];
 extern const char IDString[];
 static const APTR InitTable[4];
@@ -75,7 +71,7 @@ static const struct Resident RomTag =
 {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
-  (APTR) &_etext,
+  (struct Resident *) &RomTag + 1,
 #ifdef morphos
   RTF_PPC | RTF_AUTOINIT,
 #else
@@ -106,7 +102,6 @@ struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 struct Resident           *MorphOSRes     = NULL;
 struct Library            *PowerPCBase    = NULL;
-struct Library            *PPCLibBase     = NULL;
 void                      *PPCObject      = NULL;
 
 ADDFUNC* AddByteMonoPtr                   = NULL;
@@ -172,6 +167,8 @@ initRoutine( struct AHIBase*  device,
              APTR             seglist,
              struct ExecBase* sysbase )
 {
+  KPrintF( "initRoutine( %08lx, %08lx, %08lx )\n", device, seglist, sysbase );
+
   SysBase = sysbase;
   AHIBase = device;
 
@@ -199,6 +196,8 @@ initRoutine( struct AHIBase*  device,
     return NULL;
   }
 
+  KPrintF( "initRoutine returns %08lx\n", AHIBase );
+
   return AHIBase;
 }
 
@@ -208,7 +207,7 @@ DevExpunge( struct AHIBase* device )
 {
   BPTR seglist = 0;
 
-  device->ahib_Library.lib_Flags |= LIBF_DELEXP;
+  KPrintF( "DevExpunge( %08lx )\n", device );
 
   if( device->ahib_Library.lib_OpenCnt == 0)
   {
@@ -216,11 +215,17 @@ DevExpunge( struct AHIBase* device )
 
     Remove( (struct Node *) device );
 
-    CloseLibs();
+//    CloseLibs();
 
     FreeMem( (APTR) ( ( (char*) device ) - device->ahib_Library.lib_NegSize ),
              device->ahib_Library.lib_NegSize + device->ahib_Library.lib_PosSize );
   }
+  else
+  {
+    device->ahib_Library.lib_Flags |= LIBF_DELEXP;
+  }
+
+  KPrintF( "DevExpunge returns %08lx\n", seglist );
 
   return seglist;
 }
@@ -294,6 +299,8 @@ static struct timeval     *timeval        = NULL;
 static BOOL
 OpenLibs ( void )
 {
+  KPrintF( "OpenLibs()\n" );
+
   /* Intuition Library */
 
   IntuitionBase = (struct IntuitionBase *) OpenLibrary( "intuition.library", 37 );
@@ -392,8 +399,6 @@ OpenLibs ( void )
 
   // Fill in some defaults...
 
-  MixBackend = MB_NATIVE;
-
   AddByteMonoPtr         = AddByteMono;
   AddByteStereoPtr       = AddByteStereo;
   AddBytesMonoPtr        = AddBytesMono;
@@ -434,76 +439,32 @@ OpenLibs ( void )
 
       1) If MorphOS is running, use it.
       2) If WarpUp is running, use it.
-      3) If WarpUp is is not running, but PowerUp is, use it
       4) If neither of them are running, try WarpUp.
-      5) Finally, try PowerUp.
-
-     Result:
-
-      If both kernels are running, WarpUp will be used, since the PowerUp
-      kernel is the ppc.library emulation. (This is going to work until
-      somebody writes a WarpUp emulation for ppc.library....)
-
-      If only one kernel is already running, it will be used.
-
-      WarpUp will be used if no kernel is loaded, and WarpUp exists, since
-      WarpUp was selected for OS 3.5.  If WarpUp was not found, PowerUp
-      will be used.
 
   */
 
-  // Check if WarpUp or PowerUp are already installed...
+  // Check if MorpOS is running.
 
   Forbid();
   MorphOSRes  = FindResident( "MorphOS" );
-
-  PowerPCBase = (struct Library *) FindName( &SysBase->LibList,
-                                             "powerpc.library" );
-  PPCLibBase  = (struct Library *) FindName( &SysBase->LibList,
-                                             "ppc.library" );
   Permit();
 
-  if( PowerPCBase != NULL 
-      || ( PowerPCBase == NULL && PPCLibBase == NULL ) )
+  if( MorphOSRes == NULL  )
   {
     // Open WarpUp
     PowerPCBase = OpenLibrary( "powerpc.library", 14 );
-    PPCLibBase  = NULL;
-  }
-
-  if( PPCLibBase != NULL 
-      || ( PPCLibBase == NULL && PowerPCBase == NULL ) )
-  {
-    // Open PoweUp
-    PPCLibBase  = OpenLibrary( "ppc.library", 46 );
-    PowerPCBase = NULL;
-  }
-
-  if( PPCLibBase != NULL 
-      && PPCLibBase->lib_Version == 46 
-      && PPCLibBase->lib_Revision < 24 )
-  {
-    Req( "Need at least version 46.24 of 'ppc.library'." );
-    return FALSE;
   }
 
   if( MorphOSRes != NULL )
   {
     MixBackend  = MB_MORPHOS;
   }
-  else if( PPCLibBase != NULL )
-  {
-    MixBackend  = MB_POWERUP;
-  }
   else if( PowerPCBase != NULL )
-  {
-    MixBackend  = MB_WARPUP;
-  }
-
-  if( PPCLibBase != NULL || PowerPCBase != NULL )
   {
     ULONG* version = NULL;
     ULONG* revision = NULL;
+
+    MixBackend = MB_WARPUP;
 
     /* Load our code to PPC..  */
 
@@ -570,7 +531,7 @@ OpenLibs ( void )
     }
     else
     {
-      // PPC kernel found, but no ELF object. m68k mixing will be used.
+      MixBackend = MB_NATIVE;
     }
   }
 
@@ -581,6 +542,23 @@ OpenLibs ( void )
     
     if( GetVar( "AHINoBetaRequester", buf, sizeof( buf ), 0 ) == -1 )
     {
+      const char* backend = "Internal error";
+
+      switch( MixBackend )
+      {
+        case MB_NATIVE:
+          backend = "AmigaOS/" CPU;
+          break;
+
+        case MB_WARPUP:
+          backend = "WarpUp";
+          break;
+          
+        case MB_MORPHOS:
+          backend = "MorphOS/" CPU;
+          break;
+      }
+
       Req( "This is a beta release of AHI. The latest supported \n"
            "version is 4.180, which can be found at\n"
            "<URL:http://www.lysator.liu.se/~lcs/ahi.html>.\n"
@@ -589,12 +567,11 @@ OpenLibs ( void )
            "Sound kernel in use: %s.\n"
            "\n"
            "/Martin Blom <martin@blom.org>\n",
-           PPCObject == NULL ? CPU :
-             ( PPCLibBase == NULL ? "WarpUp" : 
-               ( MorphOSRes == NULL ? "PowerUp" : "MorphOS" ) ) );
-           
+           backend );
     }
   }
+
+  KPrintF( "OpenLibs returns TRUE\n" );
 
   return TRUE;
 }
@@ -610,6 +587,8 @@ OpenLibs ( void )
 static void
 CloseLibs ( void )
 {
+  KPrintF( "CloseLibs()\n" );
+
   CloseahiCatalog();
 
   if( PPCObject != NULL )
@@ -617,7 +596,6 @@ CloseLibs ( void )
     AHIUnloadObject( PPCObject );
   }
 
-  CloseLibrary( PPCLibBase );
   CloseLibrary( PowerPCBase );
 
   CloseLibrary( (struct Library *) UtilityBase );
@@ -633,4 +611,7 @@ CloseLibs ( void )
   CloseLibrary( GadToolsBase );
   CloseLibrary( (struct Library *) GfxBase );
   CloseLibrary( (struct Library *) DOSBase );
+
+  KPrintF( "CloseLibs returns\n" );
+
 }

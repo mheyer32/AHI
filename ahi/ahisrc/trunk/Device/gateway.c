@@ -23,39 +23,84 @@
 #include <config.h>
 #include <CompilerSpecific.h>
 
-#include "ahi_def.h"
 
 #if defined( morphos )
+# include <exec/types.h> 
+# define EMUL_NOQUICKMODE
 # include <emul/emulregs.h>
 #endif
+
+#include <proto/exec.h>
+
+#include "ahi_def.h"
 
 #include "audioctrl.h"
 #include "database.h"
 #include "devcommands.h"
 #include "device.h"
 #include "header.h"
+#include "misc.h"
+#include "mixer.h"
 #include "modeinfo.h"
 #include "requester.h"
 #include "sound.h"
 
+
+/*
+ * All these functions are supposed to be called by the m68k "processor",
+ * with the arguments in m68k registers d0-d7/a0-a6.
+ * The functions relay each call to a standard C function.
+ *
+ */
+
+
 /******************************************************************************
-** Entry gateway functions ****************************************************
+** Some hardcoded m68k code ***************************************************
 ******************************************************************************/
+
+struct PreserveRegs
+{
+  ULONG pushm;
+  UWORD jsr;
+  APTR  __attribute__((aligned(2))) function;
+  ULONG __attribute__((aligned(2))) popm;
+  UWORD rts;
+} __attribute__((packed));
+
+#define PRESERVE_D0D1A0A1( f ) \
+  {                            \
+    0x48e7c0c0,                \
+    0x4eb9, f,                 \
+    0x4cdf0303,                \
+    0x4e75                     \
+  };
+
+#define PRESERVE_D1A0A1( f ) \
+  {                          \
+    0x48e740c0,              \
+    0x4eb9, f,               \
+    0x4cdf0302,              \
+    0x4e75                   \
+  };
 
 #if defined( morphos )
 
-/* MorphOS *******************************************************************/
+/******************************************************************************
+** MorphOS gateway functions **************************************************
+******************************************************************************/
+
+/* gw_initRoutine ************************************************************/
 
 struct AHIBase*
-gw_initRoutine( void )
+gw_initRoutine( struct AHIBase*  device,
+                APTR             seglist,
+                struct ExecBase* sysbase )
 {
-  struct AHIBase*  device  = (struct AHIBase*)  REG_D0;
-  APTR             seglist = (APTR)             REG_A0;
-  struct ExecBase* sysbase = (struct ExecBase*) REG_A6;
-
   return initRoutine( device, seglist, sysbase );
 }
 
+
+/* gw_DevExpunge *************************************************************/
 
 BPTR 
 gw_DevExpunge( void )
@@ -65,6 +110,8 @@ gw_DevExpunge( void )
   return DevExpunge( device );
 }
 
+
+/* gw_DevOpen ****************************************************************/
 
 ULONG 
 gw_DevOpen( void )
@@ -78,6 +125,8 @@ gw_DevOpen( void )
 }
 
 
+/* gw_DevClose ***************************************************************/
+
 BPTR
 gw_DevClose( void )
 {
@@ -87,6 +136,8 @@ gw_DevClose( void )
   return DevClose( ioreq, AHIBase );
 }
 
+
+/* gw_DevBeginIO *************************************************************/
 
 void 
 gw_DevBeginIO( void )
@@ -98,6 +149,8 @@ gw_DevBeginIO( void )
 }
 
 
+/* gw_DevAbortIO *************************************************************/
+
 ULONG 
 gw_DevAbortIO( void )
 {
@@ -107,6 +160,8 @@ gw_DevAbortIO( void )
   return DevAbortIO( ioreq, AHIBase );
 }
 
+
+/* gw_AllocAudioA ************************************************************/
 
 struct AHIAudioCtrl* 
 gw_AllocAudioA( void )
@@ -118,6 +173,8 @@ gw_AllocAudioA( void )
 }
 
 
+/* gw_FreeAudio **************************************************************/
+
 ULONG 
 gw_FreeAudio( void )
 {
@@ -128,6 +185,8 @@ gw_FreeAudio( void )
 }
 
 
+/* gw_KillAudio **************************************************************/
+
 ULONG 
 gw_KillAudio( void )
 {
@@ -136,6 +195,8 @@ gw_KillAudio( void )
   return KillAudio( AHIBase );
 }
 
+
+/* gw_ControlAudioA **********************************************************/
 
 ULONG 
 gw_ControlAudioA( void )
@@ -147,6 +208,8 @@ gw_ControlAudioA( void )
   return ControlAudioA( audioctrl, tags, AHIBase );
 }
 
+
+/* gw_SetVol *****************************************************************/
 
 ULONG 
 gw_SetVol( void )
@@ -162,6 +225,8 @@ gw_SetVol( void )
 }
 
 
+/* gw_SetFreq ****************************************************************/
+
 ULONG 
 gw_SetFreq( void )
 {
@@ -174,6 +239,8 @@ gw_SetFreq( void )
   return SetFreq( channel, freq, audioctrl, flags, AHIBase );
 }
 
+
+/* gw_SetSound ***************************************************************/
 
 ULONG 
 gw_SetSound( void )
@@ -190,6 +257,8 @@ gw_SetSound( void )
 }
 
 
+/* gw_SetEffect **************************************************************/
+
 ULONG 
 gw_SetEffect( void )
 {
@@ -200,6 +269,8 @@ gw_SetEffect( void )
   return SetEffect( effect, audioctrl, AHIBase );
 }
 
+
+/* gw_LoadSound **************************************************************/
 
 ULONG 
 gw_LoadSound( void )
@@ -214,6 +285,8 @@ gw_LoadSound( void )
 }
 
 
+/* gw_UnloadSound ************************************************************/
+
 ULONG 
 gw_UnloadSound( void )
 {
@@ -224,6 +297,8 @@ gw_UnloadSound( void )
   return UnloadSound( sound, audioctrl, AHIBase );
 }
 
+
+/* gw_PlayA ******************************************************************/
 
 ULONG  
 gw_PlayA( void )
@@ -236,6 +311,8 @@ gw_PlayA( void )
 }
 
 
+/* gw_SampleFrameSize ********************************************************/
+
 ULONG 
 gw_SampleFrameSize( void )
 {
@@ -245,6 +322,8 @@ gw_SampleFrameSize( void )
   return SampleFrameSize( sampletype, AHIBase );
 }
 
+
+/* gw_GetAudioAttrsA *********************************************************/
 
 ULONG  
 gw_GetAudioAttrsA( void )
@@ -258,6 +337,8 @@ gw_GetAudioAttrsA( void )
 }
 
 
+/* gw_BestAudioIDA ***********************************************************/
+
 ULONG  
 gw_BestAudioIDA( void )
 {
@@ -268,6 +349,8 @@ gw_BestAudioIDA( void )
 }
 
 
+/* gw_AllocAudioRequestA *****************************************************/
+
 struct AHIAudioModeRequester* 
 gw_AllocAudioRequestA( void )
 {
@@ -277,6 +360,8 @@ gw_AllocAudioRequestA( void )
   return AllocAudioRequestA( tags, AHIBase );
 }
 
+
+/* gw_AudioRequestA **********************************************************/
 
 ULONG  
 gw_AudioRequestA( void )
@@ -289,6 +374,8 @@ gw_AudioRequestA( void )
 }
 
 
+/* gw_FreeAudioRequest *******************************************************/
+
 void  
 gw_FreeAudioRequest( void )
 {
@@ -298,6 +385,8 @@ gw_FreeAudioRequest( void )
   FreeAudioRequest( req, AHIBase );
 }
 
+
+/* gw_NextAudioID ************************************************************/
 
 ULONG 
 gw_NextAudioID( void )
@@ -309,6 +398,8 @@ gw_NextAudioID( void )
 }
 
 
+/* gw_AddAudioMode ***********************************************************/
+
 ULONG 
 gw_AddAudioMode( void )
 {
@@ -318,6 +409,8 @@ gw_AddAudioMode( void )
   return AddAudioMode( DBtags, AHIBase );
 }
 
+
+/* gw_RemoveAudioMode ********************************************************/
 
 ULONG 
 gw_RemoveAudioMode( void )
@@ -329,6 +422,8 @@ gw_RemoveAudioMode( void )
 }
 
 
+/* gw_LoadModeFile ***********************************************************/
+
 ULONG 
 gw_LoadModeFile( void )
 {
@@ -339,9 +434,101 @@ gw_LoadModeFile( void )
 }
 
 
+/* m68k_IndexToFrequency *****************************************************/
+
+static LONG gw_IndexToFrequency( void )
+{
+  struct Gadget* gad   = (struct Gadget*) ((ULONG*) REG_A7)[1];
+  WORD           level = (WORD)           ((ULONG*) REG_A7)[2];
+
+  return IndexToFrequency( gad , level );
+}
+
+const struct EmulLibEntry m68k_IndexToFrequency =
+{
+  TRAP_LIB, 0, (void (*)(void)) gw_IndexToFrequency
+};
+
+
+/* HookEntry *****************************************************************/
+
+ULONG
+HookEntry( struct Hook* h,
+           void*        o, 
+           void*        msg )
+{
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
+
+/* m68k_HookEntry ************************************************************/
+
+static ULONG
+gw_HookEntry( void )
+{
+  struct Hook* h   = (struct Hook*) REG_A0;
+  void*        o   = (void*)        REG_A2; 
+  void*        msg = (void*)        REG_A1;
+
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
+struct EmulLibEntry m68k_HookEntry =
+{
+  TRAP_LIB, 0, (void (*)(void)) &gw_HookEntry
+};
+
+
+/* m68k_HookEntryPreserveAllRegs  ********************************************/
+
+struct PreserveRegs m68k_HookEntryPreserveAllRegs = 
+  PRESERVE_D0D1A0A1( &m68k_HookEntry );
+
+
+/* m68k_PreTimer  ************************************************************/
+
+static BOOL
+gw_PreTimer( void )
+{
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) REG_A2;
+
+  return PreTimer( audioctrl );
+}
+
+static struct EmulLibEntry trap_PreTimer =
+{
+  TRAP_LIB, 0, (void (*)(void)) &gw_PreTimer
+};
+
+struct PreserveRegs m68k_PreTimer = 
+  PRESERVE_D1A0A1( &trap_PreTimer );
+
+
+/* m68k_PostTimer  ***********************************************************/
+
+static void
+gw_PostTimer( void )
+{
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) REG_A2;
+
+  PostTimer( audioctrl );
+}
+
+static struct EmulLibEntry trap_PostTimer =
+{
+  TRAP_LIB, 0, (void (*)(void)) &gw_PostTimer
+};
+
+struct PreserveRegs m68k_PostTimer = 
+  PRESERVE_D0D1A0A1( &trap_PostTimer );
+
 #else
 
-/* AmigaOS *******************************************************************/
+/******************************************************************************
+** AmigaOS gateway functions **************************************************
+******************************************************************************/
+
+/* gw_initRoutine ************************************************************/
 
 struct AHIBase* ASMCALL
 gw_initRoutine( REG( d0, struct AHIBase*  device ),
@@ -352,11 +539,15 @@ gw_initRoutine( REG( d0, struct AHIBase*  device ),
 }
 
 
+/* gw_DevExpunge *************************************************************/
+
 BPTR ASMCALL
 gw_DevExpunge( REG( a6, struct AHIBase* device ) )
 {
   return DevExpunge( device );
 }
+
+/* gw_DevOpen ****************************************************************/
 
 ULONG ASMCALL
 gw_DevOpen( REG( d0, ULONG              unit ),
@@ -368,6 +559,8 @@ gw_DevOpen( REG( d0, ULONG              unit ),
 }
 
 
+/* gw_DevClose ***************************************************************/
+
 BPTR ASMCALL
 gw_DevClose( REG( a1, struct AHIRequest* ioreq ),
              REG( a6, struct AHIBase*    AHIBase ) )
@@ -375,6 +568,8 @@ gw_DevClose( REG( a1, struct AHIRequest* ioreq ),
   return DevClose( ioreq, AHIBase );
 }
 
+
+/* gw_DevBeginIO *************************************************************/
 
 void ASMCALL
 gw_DevBeginIO( REG( a1, struct AHIRequest* ioreq ),
@@ -384,6 +579,8 @@ gw_DevBeginIO( REG( a1, struct AHIRequest* ioreq ),
 }
 
 
+/* gw_DevAbortIO *************************************************************/
+
 ULONG ASMCALL
 gw_DevAbortIO( REG( a1, struct AHIRequest* ioreq ),
                REG( a6, struct AHIBase*    AHIBase ) )
@@ -391,6 +588,8 @@ gw_DevAbortIO( REG( a1, struct AHIRequest* ioreq ),
   return DevAbortIO( ioreq, AHIBase );
 }
 
+
+/* gw_AllocAudioA ************************************************************/
 
 struct AHIAudioCtrl* ASMCALL
 gw_AllocAudioA( REG(a1, struct TagItem* tags),
@@ -400,6 +599,8 @@ gw_AllocAudioA( REG(a1, struct TagItem* tags),
 }
 
 
+/* gw_FreeAudio **************************************************************/
+
 ULONG ASMCALL
 gw_FreeAudio( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
               REG(a6, struct AHIBase*          AHIBase) )
@@ -408,12 +609,16 @@ gw_FreeAudio( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
 }
 
 
+/* gw_KillAudio **************************************************************/
+
 ULONG ASMCALL
 gw_KillAudio( REG(a6, struct AHIBase* AHIBase) )
 {
   return KillAudio( AHIBase );
 }
 
+
+/* gw_ControlAudioA **********************************************************/
 
 ULONG ASMCALL
 gw_ControlAudioA( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
@@ -423,6 +628,8 @@ gw_ControlAudioA( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
   return ControlAudioA( audioctrl, tags, AHIBase );
 }
 
+
+/* gw_SetVol *****************************************************************/
 
 ULONG ASMCALL
 gw_SetVol( REG(d0, UWORD                    channel),
@@ -436,6 +643,8 @@ gw_SetVol( REG(d0, UWORD                    channel),
 }
 
 
+/* gw_SetFreq ****************************************************************/
+
 ULONG ASMCALL
 gw_SetFreq( REG( d0, UWORD                    channel ),
             REG( d1, ULONG                    freq ),
@@ -446,6 +655,8 @@ gw_SetFreq( REG( d0, UWORD                    channel ),
   return SetFreq( channel, freq, audioctrl, flags, AHIBase );
 }
 
+
+/* gw_SetSound ***************************************************************/
 
 ULONG ASMCALL
 gw_SetSound( REG(d0, UWORD                    channel),
@@ -460,6 +671,8 @@ gw_SetSound( REG(d0, UWORD                    channel),
 }
 
 
+/* gw_SetEffect **************************************************************/
+
 ULONG ASMCALL
 gw_SetEffect( REG(a0, ULONG*                   effect),
               REG(a2, struct AHIPrivAudioCtrl* audioctrl),
@@ -468,6 +681,8 @@ gw_SetEffect( REG(a0, ULONG*                   effect),
   return SetEffect( effect, audioctrl, AHIBase );
 }
 
+
+/* gw_LoadSound **************************************************************/
 
 ULONG ASMCALL
 gw_LoadSound( REG(d0, UWORD                    sound),
@@ -480,6 +695,8 @@ gw_LoadSound( REG(d0, UWORD                    sound),
 }
 
 
+/* gw_UnloadSound ************************************************************/
+
 ULONG ASMCALL
 gw_UnloadSound( REG(d0, UWORD                    sound),
                 REG(a2, struct AHIPrivAudioCtrl* audioctrl),
@@ -488,6 +705,8 @@ gw_UnloadSound( REG(d0, UWORD                    sound),
   return UnloadSound( sound, audioctrl, AHIBase );
 }
 
+
+/* gw_PlayA ******************************************************************/
 
 ULONG ASMCALL 
 gw_PlayA( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
@@ -498,6 +717,8 @@ gw_PlayA( REG(a2, struct AHIPrivAudioCtrl* audioctrl),
 }
 
 
+/* gw_SampleFrameSize ********************************************************/
+
 ULONG ASMCALL
 gw_SampleFrameSize( REG(d0, ULONG           sampletype),
                     REG(a6, struct AHIBase* AHIBase) )
@@ -505,6 +726,8 @@ gw_SampleFrameSize( REG(d0, ULONG           sampletype),
   return SampleFrameSize( sampletype, AHIBase );
 }
 
+
+/* gw_GetAudioAttrsA *********************************************************/
 
 ULONG ASMCALL 
 gw_GetAudioAttrsA( REG(d0, ULONG                    id),
@@ -516,6 +739,8 @@ gw_GetAudioAttrsA( REG(d0, ULONG                    id),
 }
 
 
+/* gw_BestAudioIDA ***********************************************************/
+
 ULONG ASMCALL 
 gw_BestAudioIDA( REG(a1, struct TagItem* tags),
                  REG(a6, struct AHIBase* AHIBase) )
@@ -524,6 +749,8 @@ gw_BestAudioIDA( REG(a1, struct TagItem* tags),
 }
 
 
+/* gw_AllocAudioRequestA *****************************************************/
+
 struct AHIAudioModeRequester* ASMCALL
 gw_AllocAudioRequestA( REG(a0, struct TagItem* tags),
                        REG(a6, struct AHIBase* AHIBase) )
@@ -531,6 +758,8 @@ gw_AllocAudioRequestA( REG(a0, struct TagItem* tags),
   return AllocAudioRequestA( tags, AHIBase );
 }
 
+
+/* gw_AudioRequestA **********************************************************/
 
 ULONG ASMCALL 
 gw_AudioRequestA( REG(a0, struct AHIAudioModeRequester* req_in),
@@ -541,13 +770,17 @@ gw_AudioRequestA( REG(a0, struct AHIAudioModeRequester* req_in),
 }
 
 
+/* gw_FreeAudioRequest *******************************************************/
+
 void ASMCALL 
 gw_FreeAudioRequest( REG(a0, struct AHIAudioModeRequester* req),
                      REG(a6, struct AHIBase*               AHIBase) )
 {
-  return FreeAudioRequest( req, AHIBase );
+  FreeAudioRequest( req, AHIBase );
 }
 
+
+/* gw_NextAudioID ************************************************************/
 
 ULONG ASMCALL
 gw_NextAudioID( REG(d0, ULONG           id),
@@ -557,6 +790,8 @@ gw_NextAudioID( REG(d0, ULONG           id),
 }
 
 
+/* gw_AddAudioMode ***********************************************************/
+
 ULONG ASMCALL
 gw_AddAudioMode( REG(a0, struct TagItem* DBtags),
                  REG(a6, struct AHIBase* AHIBase) )
@@ -564,6 +799,8 @@ gw_AddAudioMode( REG(a0, struct TagItem* DBtags),
   return AddAudioMode( DBtags, AHIBase );
 }
 
+
+/* gw_RemoveAudioMode ********************************************************/
 
 ULONG ASMCALL
 gw_RemoveAudioMode( REG(d0, ULONG           id),
@@ -573,12 +810,251 @@ gw_RemoveAudioMode( REG(d0, ULONG           id),
 }
 
 
+/* gw_LoadModeFile ***********************************************************/
+
 ULONG ASMCALL
 gw_LoadModeFile( REG(a0, UBYTE*          name),
                  REG(a6, struct AHIBase* AHIBase) )
 {
   return LoadModeFile( name, AHIBase );
 }
+
+
+/* m68k_IndexToFrequency *****************************************************/
+
+LONG STDARGS SAVEDS
+m68k_IndexToFrequency( struct Gadget *gad, WORD level)
+{
+  return IndexToFrequency( gad, level );
+}
+
+
+/* HookEntry *****************************************************************/
+
+ULONG ASMCALL
+HookEntry( REG( a0, struct Hook* h ),
+           REG( a2, void*        o ), 
+           REG( a1, void*        msg ) )
+{
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
+
+/* m68k_HookEntry ************************************************************/
+
+ULONG ASMCALL
+m68k_HookEntry( REG( a0, struct Hook* h ),
+                REG( a2, void*        o ), 
+                REG( a1, void*        msg ) )
+{
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
+
+/* m68k_HookEntryPreserveAllRegs  ********************************************/
+
+struct PreserveRegs m68k_HookEntryPreserveAllRegs = 
+  PRESERVE_D0D1A0A1( m68k_HookEntry );
+
+
+/* m68k_PreTimer  ************************************************************/
+
+static BOOL ASMCALL
+gw_PreTimer( REG( a2, struct AHIPrivAudioCtrl* audioctrl ) )
+{
+  return PreTimer( audioctrl );
+}
+
+struct PreserveRegs m68k_PreTimer = 
+  PRESERVE_D1A0A1( gw_PreTimer );
+
+
+/* m68k_PostTimer  ***********************************************************/
+
+static void ASMCALL
+gw_PostTimer( REG( a2, struct AHIPrivAudioCtrl* audioctrl ) )
+{
+  PostTimer( audioctrl );
+}
+
+struct PreserveRegs m68k_PostTimer = 
+  PRESERVE_D0D1A0A1( gw_PostTimer );
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#if 0
+/* m68k_MixerFunc  ***********************************************************/
+
+static void
+ActualMixerFunc( void )
+{
+  struct Hook*             hook      = (struct Hook*)             REG_A0;
+  void*                    dst       = (void*)                    REG_A1;
+  struct AHIPrivAudioCtrl* audioctrl = (struct AHIPrivAudioCtrl*) REG_A2;
+
+  MixerFunc( hook, dst, audioctrl );
+}
+
+
+static struct PreserveRegs MixerFuncWrapper = 
+  PRESERVE_D0D1A0A1( ActualMixerFunc );
+
+struct EmulLibEntry m68k_MixerFunc =
+{
+  TRAP_LIB, 0, (void (*)(void)) &MixerFuncWrapper
+};
+
+
+/* m68k_SamplerFunc  *********************************************************/
+
+static void
+ActualSamplerFunc( void )
+{
+  struct Hook*             hook   = (struct Hook*)             REG_A0;
+  struct AHIPrivAudioCtrl* actrl  = (struct AHIPrivAudioCtrl*) REG_A2;
+  struct AHIRecordMessage* recmsg = (struct AHIRecordMessage*) REG_A1;
+
+  SamplerFunc( hook, actrl, recmsg );
+}
+
+struct EmulLibEntry m68k_SamplerFunc =
+{
+  TRAP_LIB, 0, ActualSamplerFunc
+};
+
+
+/* m68k_PlayerFunc  **********************************************************/
+
+static void
+ActualPlayerFunc( void )
+{
+  struct Hook*         hook  = (struct Hook*)         REG_A0;
+  struct AHIAudioCtrl* actrl = (struct AHIAudioCtrl*) REG_A2;
+  APTR                 null  = (APTR)                 REG_A1;
+
+  PlayerFunc( hook, actrl, null );
+
+}
+
+struct EmulLibEntry m68k_PlayerFunc =
+{
+  TRAP_LIB, 0, ActualPlayerFunc
+};
+
+
+/* m68k_RecordFunc  **********************************************************/
+
+static ULONG
+ActualRecordFunc( void )
+{
+  struct Hook*             hook   = (struct Hook*)             REG_A0;
+  struct AHIAudioCtrl*     actrl  = (struct AHIAudioCtrl*)     REG_A2;
+  struct AHIRecordMessage* recmsg = (struct AHIRecordMessage*) REG_A1;
+
+  return RecordFunc( hook, actrl, recmsg );
+
+}
+
+struct EmulLibEntry m68k_RecordFunc =
+{
+  TRAP_LIB, 0, (void (*)(void)) ActualRecordFunc
+};
+
+
+/* m68k_SoundFunc  ***********************************************************/
+
+static void
+ActualSoundFunc( void )
+{
+  struct Hook*            hook   = (struct Hook*)            REG_A0;
+  struct AHIAudioCtrl*    actrl  = (struct AHIAudioCtrl*)    REG_A2;
+  struct AHISoundMessage* sndmsg = (struct AHISoundMessage*) REG_A1;
+
+  SoundFunc( hook, actrl, sndmsg );
+
+}
+
+struct EmulLibEntry m68k_SoundFunc =
+{
+  TRAP_LIB, 0, ActualSoundFunc
+};
+
+
+/* m68k_ChannelInfoFunc  *****************************************************/
+
+static void
+ActualChannelInfoFunc( void )
+{
+  struct Hook*              hook  = (struct Hook*)              REG_A0;
+  struct AHIAudioCtrl*      actrl = (struct AHIAudioCtrl*)      REG_A2;
+  struct AHIEffChannelInfo* cimsg = (struct AHIEffChannelInfo*) REG_A1;
+
+  ChannelInfoFunc( hook, actrl, cimsg );
+
+}
+
+struct EmulLibEntry m68k_ChannelInfoFunc =
+{
+  TRAP_LIB, 0, ActualChannelInfoFunc
+};
+#endif
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 #endif

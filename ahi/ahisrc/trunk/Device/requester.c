@@ -42,21 +42,15 @@
 #undef  __NOLIBBASE__
 #include <proto/ahi_sub.h>
 
-#ifdef morphos
-# include <stdio.h>
-#else
-# include "asmfuncs.h"
-# define sprintf Sprintf
-#endif
-
 #include <math.h>
 #include <string.h>
 
 #include "ahi_def.h"
 #include "localize.h"
+#include "misc.h"
 #include "modeinfo.h"
 #include "debug.h"
-
+#include "gateway.h"
 
 struct AHIAudioModeRequesterExt;
 
@@ -162,7 +156,7 @@ static struct TextAttr Topaz80 = { "topaz.font", 8, 0, 0, };
 #define FREQTEXT2     "%lu Hz"
 #define FREQLEN2      (5+3) // 5 digits + space + "Hz"
 
-static LONG IndexToFrequency_func( struct Gadget *gad, WORD level)
+LONG IndexToFrequency( struct Gadget *gad, WORD level )
 {
   LONG  freq = 0;
   ULONG id;
@@ -183,29 +177,6 @@ static LONG IndexToFrequency_func( struct Gadget *gad, WORD level)
   return freq;
 }
 
-#ifdef morphos
-
-static LONG gw_IndexToFrequency( void )
-{
-  struct Gadget* gad   = (struct Gadget*) ((ULONG*) REG_A7)[1];
-  WORD           level = (WORD)           ((ULONG*) REG_A7)[2];
-
-  return IndexToFrequency_func( gad , level );
-}
-
-static const struct EmulLibEntry IndexToFrequency =
-{
-  TRAP_LIB, 0, (void (*)(void)) gw_IndexToFrequency
-};
-
-#else
-
-static LONG STDARGS SAVEDS IndexToFrequency( struct Gadget *gad, WORD level)
-{
-  return IndexToFrequency_func( gad, level );
-}
-
-#endif
 
 static void FillReqStruct(struct AHIAudioModeRequesterExt *req, struct TagItem *tags)
 {
@@ -439,7 +410,7 @@ static BOOL LayOutReq (struct AHIAudioModeRequesterExt *req, struct TextAttr *Te
           GTSL_LevelFormat, (ULONG) FREQTEXT2,
           GTSL_MaxLevelLen,FREQLEN2,
           GTSL_LevelPlace,PLACETEXT_RIGHT,
-          GTSL_DispFunc, (ULONG) &IndexToFrequency,
+          GTSL_DispFunc, (ULONG) m68k_IndexToFrequency,
           GA_RelVerify,TRUE,
           GA_Disabled,!sliderlevels || (req->tempAudioID == AHI_DEFAULT_ID),
           TAG_DONE);
@@ -872,28 +843,28 @@ static void UpdateInfoWindow( struct AHIAudioModeRequesterExt *req )
 
     i = 0;
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoAudioID, req->Catalog),
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoAudioID, req->Catalog),
         id);
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoResolution, req->Catalog),
         bits, GetString((stereo ?
           (pan ? msgReqInfoStereoPan : msgReqInfoStereo) :
           msgReqInfoMono), req->Catalog));
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoChannels, req->Catalog),
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoChannels, req->Catalog),
         channels);
     AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-    sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoMixrate, req->Catalog),
+    Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoMixrate, req->Catalog),
         minmix, maxmix);
     if(hifi)
     {
       AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-      sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoHiFi, req->Catalog));
+      Sprintf(req->AttrNodes[i++].text, GetString(msgReqInfoHiFi, req->Catalog));
     }
     if(record)
     {
       AddTail((struct List *) &req->InfoList,(struct Node *) &req->AttrNodes[i]);
-      sprintf(req->AttrNodes[i++].text, GetString(
+      Sprintf(req->AttrNodes[i++].text, GetString(
           fullduplex ? msgReqInfoRecordFull : msgReqInfoRecordHalf, req->Catalog));
     }
 
@@ -1260,7 +1231,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID=id;
-      sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
+      Sprintf(node->node.ln_Name, GetString(msgUnknown, req->Catalog),id);
       AHI_GetAudioAttrs(id, NULL,
           AHIDB_BufferLen,80,
           AHIDB_Name, (ULONG) node->node.ln_Name,
@@ -1290,7 +1261,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
       node->node.ln_Pri=0;
       node->node.ln_Name=node->name;
       node->ID = AHI_DEFAULT_ID;
-      sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog));
+      Sprintf(node->node.ln_Name, GetString(msgDefaultMode, req->Catalog));
       AddTail((struct List *) req->list, (struct Node *)node);
     }
   } while(FALSE);

@@ -40,11 +40,11 @@
 #include "ahi_def.h"
 #include "audioctrl.h"
 #include "mixer.h"
-#include "asmfuncs.h"
 #include "database.h"
 #include "debug.h"
 #include "misc.h"
 #include "header.h"
+#include "gateway.h"
 
 
 // Makes 'in' fit the given bounds.
@@ -266,13 +266,14 @@ UpdateAudioCtrl(struct AHIPrivAudioCtrl *audioctrl)
 
 
 /******************************************************************************
-** Sampler ********************************************************************
+** SamplerFunc ****************************************************************
 ******************************************************************************/
 
-static void ASMCALL INTERRUPT 
-Sampler ( REG(a0, struct Hook *hook),
-          REG(a2, struct AHIPrivAudioCtrl *actrl),
-          REG(a1, struct AHIRecordMessage *recmsg) )
+
+static void
+SamplerFunc( struct Hook*             hook,
+             struct AHIPrivAudioCtrl* actrl,
+             struct AHIRecordMessage* recmsg )
 {
   if(actrl->ahiac_RecordFunc)
   {
@@ -564,19 +565,20 @@ AllocAudioA( struct TagItem* tags,
       goto error;
 
 
-    audioctrl->ac.ahiac_MixerFunc->h_Entry = (HOOKFUNC) MixEntry;
+    audioctrl->ac.ahiac_MixerFunc->h_Entry    = (HOOKFUNC) m68k_HookEntryPreserveAllRegs;
+    audioctrl->ac.ahiac_MixerFunc->h_SubEntry = (HOOKFUNC) MixerFunc;
 
     if((AHIBase->ahib_MaxCPU >= 0x10000) || (AHIBase->ahib_MaxCPU <= 0x0))
     {
-      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) DummyPreTimer;
-      audioctrl->ac.ahiac_PostTimer = (void (*)(void)) DummyPostTimer;
+      audioctrl->ahiac_MaxCPU = 0x100;
     }
     else
     {
-      audioctrl->ahiac_MaxCPU       = AHIBase->ahib_MaxCPU >> 8;
-      audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) PreTimer;
-      audioctrl->ac.ahiac_PostTimer = (void (*)(void)) PostTimer;
+      audioctrl->ahiac_MaxCPU = AHIBase->ahib_MaxCPU >> 8;
     }
+
+    audioctrl->ac.ahiac_PreTimer  = (BOOL (*)(void)) m68k_PreTimer;
+    audioctrl->ac.ahiac_PostTimer = (void (*)(void)) m68k_PostTimer;
 
     if( !InitMixroutine( audioctrl ) ) goto error;
   }
@@ -585,7 +587,9 @@ AllocAudioA( struct TagItem* tags,
       MEMF_PUBLIC|MEMF_CLEAR);
   if(!audioctrl->ac.ahiac_SamplerFunc)
     goto error;
-  audioctrl->ac.ahiac_SamplerFunc->h_Entry = (HOOKFUNC) Sampler;
+
+  audioctrl->ac.ahiac_SamplerFunc->h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  audioctrl->ac.ahiac_SamplerFunc->h_SubEntry = (HOOKFUNC) SamplerFunc;
 
   /* Set default hardware properties, only if AHI_DEFAULT_ID was used!*/
   if(GetTagData(AHIA_AudioID, AHI_DEFAULT_ID, tags) == AHI_DEFAULT_ID)

@@ -51,6 +51,7 @@
 #include "ahi_def.h"
 #include "device.h"
 #include "devcommands.h"
+#include "gateway.h"
 #include "header.h"
 #include "misc.h"
 
@@ -75,26 +76,28 @@ ExpungeUnit( struct AHIDevUnit *, struct AHIBase * );
 static void
 DevProc( void );
 
+static void
+PlayerFunc( struct Hook*         hook,
+            struct AHIAudioCtrl* actrl,
+            APTR                 null );
 
-static void ASMCALL INTERRUPT
-PlayerFunc ( REG(a0, struct Hook *hook),
-             REG(a2, struct AHIAudioCtrl *actrl),
-             REG(a1, APTR null) );
 
-static ULONG ASMCALL INTERRUPT
-RecordFunc ( REG(a0, struct Hook *hook),
-             REG(a2, struct AHIAudioCtrl *actrl),
-             REG(a1, struct AHIRecordMessage *recmsg) );
+static ULONG 
+RecordFunc( struct Hook*             hook,
+            struct AHIAudioCtrl*     actrl,
+            struct AHIRecordMessage* recmsg );
 
-static void ASMCALL INTERRUPT
-SoundFunc ( REG(a0, struct Hook *hook),
-            REG(a2, struct AHIAudioCtrl *actrl),
-            REG(a1, struct AHISoundMessage *sndmsg) );
 
-static void ASMCALL INTERRUPT
-ChannelInfoFunc ( REG(a0, struct Hook *hook),
-                  REG(a2, struct AHIAudioCtrl *actrl),
-                  REG(a1, struct AHIEffChannelInfo *cimsg) );
+static void
+SoundFunc( struct Hook*            hook,
+           struct AHIAudioCtrl*    actrl,
+           struct AHISoundMessage* sndmsg );
+
+
+static void
+ChannelInfoFunc( struct Hook*              hook,
+                 struct AHIAudioCtrl*      actrl,
+                 struct AHIEffChannelInfo* cimsg );
 
 
 /***** ahi.device/--background-- *******************************************
@@ -797,17 +800,21 @@ DevProc( void )
 
   iounit->Process = NULL;
 
-  iounit->PlayerHook.h_Entry=(HOOKFUNC)PlayerFunc;
-  iounit->PlayerHook.h_Data=iounit;
+  iounit->PlayerHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->PlayerHook.h_SubEntry = (HOOKFUNC) PlayerFunc;
+  iounit->PlayerHook.h_Data     = iounit;
 
-  iounit->RecordHook.h_Entry=(HOOKFUNC)RecordFunc;
-  iounit->RecordHook.h_Data=iounit;
+  iounit->RecordHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->RecordHook.h_SubEntry = (HOOKFUNC) RecordFunc;
+  iounit->RecordHook.h_Data     = iounit;
 
-  iounit->SoundHook.h_Entry=(HOOKFUNC)SoundFunc;
-  iounit->SoundHook.h_Data=iounit;
+  iounit->SoundHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->SoundHook.h_SubEntry = (HOOKFUNC) SoundFunc;
+  iounit->SoundHook.h_Data     = iounit;
 
-  iounit->ChannelInfoHook.h_Entry=(HOOKFUNC)ChannelInfoFunc;
-  iounit->ChannelInfoHook.h_Data=iounit;
+  iounit->ChannelInfoHook.h_Entry    = (HOOKFUNC) m68k_HookEntry;
+  iounit->ChannelInfoHook.h_SubEntry = (HOOKFUNC) ChannelInfoFunc;
+  iounit->ChannelInfoHook.h_Data     = iounit;
 
   iounit->ChannelInfoStruct = AllocVec(
       sizeof(struct AHIEffChannelInfo) + (iounit->Channels * sizeof(ULONG)),
@@ -917,10 +924,10 @@ DevProc( void )
 ** PlayerFunc *****************************************************************
 ******************************************************************************/
 
-static void ASMCALL INTERRUPT
-PlayerFunc ( REG(a0, struct Hook *hook),
-             REG(a2, struct AHIAudioCtrl *actrl),
-             REG(a1, APTR null) )
+static void
+PlayerFunc( struct Hook*         hook,
+            struct AHIAudioCtrl* actrl,
+            APTR                 null )
 {
   struct AHIDevUnit *iounit = (struct AHIDevUnit *) hook->h_Data;
 
@@ -941,10 +948,10 @@ PlayerFunc ( REG(a0, struct Hook *hook),
 ** RecordFunc *****************************************************************
 ******************************************************************************/
 
-static ULONG ASMCALL INTERRUPT
-RecordFunc ( REG(a0, struct Hook *hook),
-             REG(a2, struct AHIAudioCtrl *actrl),
-             REG(a1, struct AHIRecordMessage *recmsg) )
+static ULONG 
+RecordFunc( struct Hook*             hook,
+            struct AHIAudioCtrl*     actrl,
+            struct AHIRecordMessage* recmsg )
 {
   struct AHIDevUnit *iounit;
   
@@ -966,10 +973,10 @@ RecordFunc ( REG(a0, struct Hook *hook),
 ** SoundFunc ******************************************************************
 ******************************************************************************/
 
-static void ASMCALL INTERRUPT
-SoundFunc ( REG(a0, struct Hook *hook),
-            REG(a2, struct AHIAudioCtrl *actrl),
-            REG(a1, struct AHISoundMessage *sndmsg) )
+static void
+SoundFunc( struct Hook*            hook,
+           struct AHIAudioCtrl*    actrl,
+           struct AHISoundMessage* sndmsg )
 {
   struct AHIDevUnit *iounit;
   struct Voice *voice;  
@@ -1050,10 +1057,10 @@ SoundFunc ( REG(a0, struct Hook *hook),
 
 // This hook keeps updating the io_Actual field of each playing requests
 
-static void ASMCALL INTERRUPT
-ChannelInfoFunc ( REG(a0, struct Hook *hook),
-                  REG(a2, struct AHIAudioCtrl *actrl),
-                  REG(a1, struct AHIEffChannelInfo *cimsg) )
+static void
+ChannelInfoFunc( struct Hook*              hook,
+                 struct AHIAudioCtrl*      actrl,
+                 struct AHIEffChannelInfo* cimsg )
 {
   struct AHIDevUnit *iounit = (struct AHIDevUnit *) hook->h_Data;
   struct Voice      *voice;
