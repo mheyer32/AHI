@@ -1,5 +1,8 @@
 * $Id$
 * $Log$
+* Revision 4.3  1997/04/22 01:35:21  lcs
+* This is release 4! Finally.
+*
 * Revision 4.2  1997/04/14 01:50:39  lcs
 * Spellchecked
 *
@@ -184,7 +187,7 @@
 ;in:
 * a1	Buffer pointer
 * a2	audioctrl
-;Don't trash a2, a4 or a5
+;Don't trash a1, a2, a4
 
 *******************************************************************************
 
