@@ -17,6 +17,9 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
+#ifndef AHI_Drivers_EMU10kx_emu10kx_interrupt_h
+#define AHI_Drivers_EMU10kx_emu10kx_interrupt_h
+
 #include <config.h>
 
 #include "DriverData.h"
@@ -29,3 +32,5 @@ PlaybackInterrupt( struct EMU10kxData* dd );
 
 void
 RecordInterrupt( struct EMU10kxData* dd );
+
+#endif /* AHI_Drivers_EMU10kx_emu10kx_interrupt_h */

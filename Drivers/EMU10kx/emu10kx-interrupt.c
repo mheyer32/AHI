@@ -22,9 +22,9 @@
 #include <libraries/ahi_sub.h>
 #include <libraries/openpci.h>
 
+#include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/openpci.h>
-#include <proto/utility.h>
 
 #include "library.h"
 #include "8010.h"
@@ -73,8 +73,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
       }
     }
 
-    if( intreq & ( IPR_ADCBUFHALFFULL | IPR_ADCBUFFULL ) &&
-	AudioCtrl != NULL )
+    if( intreq & ( IPR_ADCBUFHALFFULL | IPR_ADCBUFFULL ) )
     {
       if( intreq & IPR_ADCBUFHALFFULL )
       {
@@ -94,6 +93,43 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
 	Cause( &dd->record_interrupt );
       }
     }
+
+    if( intreq & IPR_MIDIRECVBUFEMPTY )
+    {
+      unsigned char b;
+
+      KPrintF( "IPR_MIDIRECVBUFEMPTY\n" );
+
+      while( emu10k1_mpu_read_data( &dd->card, &b ) >= 0 )
+      {
+	if( dd->camd_receivefunc == NULL )
+	{
+	  KPrintF( "emu10kx.audio got unexpected IPR_MIDIRECVBUFEMPTY\n" );
+	}
+
+	KPrintF( "Got char %lx\n", (int) b );
+	CallHook( dd->camd_receivefunc, (Object*) EMU10kxBase, (ULONG) b );
+      }
+    }
+ 
+    if( intreq & IPR_MIDITRANSBUFEMPTY )
+    {
+      ULONG b;
+      KPrintF( "IPR_MIDITRANSBUFEMPTY\n" );
+
+      if( dd->camd_transmitfunc == NULL )
+      {
+	KPrintF( "emu10kx.audio got unexpected IPR_MIDITRANSBUFEMPTY\n" );
+      }
+
+      b = CallHookA( dd->camd_transmitfunc, (Object*) EMU10kxBase, NULL );
+
+      if( b != 0x100 )
+      {
+	emu10k1_mpu_write_data( &dd->card, b );
+      }
+    }
+   
 
     /* Clear interrupt pending bit(s) */
     pci_outl( SWAPLONG( intreq ), dd->card.iobase + IPR );
@@ -126,13 +162,13 @@ PlaybackInterrupt( struct EMU10kxData* dd )
     size_t samples;
     int    i;
 
-    skip_mix = CallHookPkt( AudioCtrl->ahiac_PreTimerFunc, AudioCtrl, 0 );
+    skip_mix = CallHookA( AudioCtrl->ahiac_PreTimerFunc, (Object*) AudioCtrl, 0 );
 
-    CallHookPkt( AudioCtrl->ahiac_PlayerFunc, (Object*) AudioCtrl, NULL );
+    CallHookA( AudioCtrl->ahiac_PlayerFunc, (Object*) AudioCtrl, NULL );
 
     if( ! skip_mix )
     {
-      CallHookPkt( AudioCtrl->ahiac_MixerFunc, (Object*) AudioCtrl, dd->mix_buffer );
+      CallHookA( AudioCtrl->ahiac_MixerFunc, (Object*) AudioCtrl, dd->mix_buffer );
     }
 
     /* Now translate and transfer to the DMA buffer */
@@ -199,7 +235,7 @@ PlaybackInterrupt( struct EMU10kxData* dd )
 
     dd->current_buffer = dst;
 
-    CallHookPkt( AudioCtrl->ahiac_PostTimerFunc, AudioCtrl, 0 );
+    CallHookA( AudioCtrl->ahiac_PostTimerFunc, (Object*) AudioCtrl, 0 );
   }
 
   dd->playback_interrupt_enabled = TRUE;
@@ -235,7 +271,7 @@ RecordInterrupt( struct EMU10kxData* dd )
     ++ptr;
   }
 
-  CallHookPkt( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
+  CallHookA( AudioCtrl->ahiac_SamplerFunc, (Object*) AudioCtrl, &rm );
 
   dd->record_interrupt_enabled = TRUE;
 }
