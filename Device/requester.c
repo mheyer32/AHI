@@ -1259,7 +1259,7 @@ AudioRequestA( struct AHIAudioModeRequester* req_in,
       if(!TestAudioID(AHIBase->ahib_AudioMode,req->FilterTags))
         continue;
     if(req->FilterFunc)
-      if(!CallHookPkt(req->FilterFunc,req,(APTR)id))
+      if(!CallHookPkt(req->FilterFunc,req,(APTR)AHIBase->ahib_AudioMode))
         continue;
 
     if((node=AllocVec(sizeof(struct IDnode),MEMF_ANY)))
