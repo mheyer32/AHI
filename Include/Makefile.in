@@ -47,7 +47,7 @@ PRAGMATARGETS	= C-pragmas-ahi_pragmas.h C-pragmas-ahi_sub_pragmas.h
 
 ASMFILES	= Asm/devices/ahi.i Asm/libraries/ahi_sub.i
 
-CFILES		= C/libraries/ahi_sub.h C/devices/ahi.h
+CFILES		= $(shell cd $(srcdir) && find C -name '*.h')
 
 SFDFILES	= SFD/ahi_lib.sfd  SFD/ahi_sub_lib.sfd
 
@@ -95,11 +95,11 @@ bindist:	$(TARGETS)
 gcc-include: gcc-include.stamp
 
 gcc-include.stamp:	SFD/ahi_lib.sfd SFD/ahi_sub_lib.sfd \
-			$(CTARGETS) $(GCCTARGETS)
-	 $(INSTALL) --directory gcc/clib gcc/devices gcc/libraries \
-	                        gcc/inline gcc/proto
+			$(CFILES) $(CTARGETS) $(GCCTARGETS)
+	$(INSTALL) --directory gcc/clib gcc/inline gcc/proto
+	$(INSTALL) --directory $(addprefix gcc/, $(dir $(CFILES:C/%=%)))
 
-	for file in `cd $(srcdir)/C && find . -type f -not -path "*CVS/*"`; do \
+	for file in $(CFILES:C/%=%); do \
 	 $(INSTALL_DATA) $(srcdir)/C/$$file gcc/$$file; \
 	done
 
