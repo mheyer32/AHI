@@ -1,5 +1,8 @@
 /* $Id$
  * $Log$
+ * Revision 4.6  1997/07/15 00:51:28  lcs
+ * Fixed some bugs.
+ *
  * Revision 4.5  1997/07/11 14:25:49  lcs
  * Small bug fix: Wrong order of set() calls in guinewmode()
  *
@@ -809,7 +812,7 @@ void EventLoop(void)
         {
           sigs = Wait(sigs | SIGBREAKF_CTRL_C);
           if (sigs & SIGBREAKF_CTRL_C)
-          break;
+          return;
         }
         break;
     }
