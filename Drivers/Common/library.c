@@ -255,9 +255,31 @@ _LibInit( struct DriverBase* AHIsubBase,
   AHIsubBase->library.lib_IdString     = (STRPTR) LibIDString;
   AHIsubBase->seglist                  = seglist;
 
-  InitSemaphore( &AHIsubBase->opensemaphore );
-  
+  AHIsubBase->intuitionbase = OpenLibrary( INTUITIONNAME, 37 );
+  AHIsubBase->utilitybase   = OpenLibrary( UTILITYNAME, 37 );
+
+  if( IntuitionBase == NULL )
+  {
+    Alert( AN_Unknown|AG_OpenLib|AO_Intuition );
+    goto error;
+  }
+
+  if( UtilityBase == NULL )
+  {
+    Req( "Unable to open 'utility.library' version 37.\n" );
+    goto error;
+  }
+
+  if( ! DriverInit( AHIsubBase ) )
+  {
+    goto error;
+  }
+
   return AHIsubBase;
+
+error:
+  _LibExpunge( AHIsubBase );
+  return NULL;
 }
 
 
@@ -274,7 +296,19 @@ _LibExpunge( struct DriverBase* AHIsubBase )
   {
     seglist = AHIsubBase->seglist;
 
-    Remove( (struct Node *) AHIsubBase );
+    /* Since LibInit() calls us on failure, we have to check if we're
+       really added to the library list before removing us. */
+
+    if( AHIsubBase->library.lib_Node.ln_Succ != NULL )
+    {
+      Remove( (struct Node *) AHIsubBase );
+    }
+
+    DriverCleanup( AHIsubBase );
+    
+    /* Close libraries */
+    CloseLibrary( (struct Library*) IntuitionBase );
+    CloseLibrary( (struct Library*) UtilityBase );
 
     FreeMem( (APTR) ( ( (char*) AHIsubBase ) -
 		      AHIsubBase->library.lib_NegSize ),
@@ -298,45 +332,10 @@ struct DriverBase*
 _LibOpen( ULONG              version,
 	  struct DriverBase* AHIsubBase )
 {
-  ObtainSemaphore( &AHIsubBase->opensemaphore );
-
   AHIsubBase->library.lib_Flags &= ~LIBF_DELEXP;
   AHIsubBase->library.lib_OpenCnt++;
 
-  if( AHIsubBase->library.lib_OpenCnt == 1 )
-  {
-    AHIsubBase->intuitionbase = OpenLibrary( INTUITIONNAME, 37 );
-    AHIsubBase->utilitybase   = OpenLibrary( UTILITYNAME, 37 );
-
-    if( IntuitionBase == NULL )
-    {
-      Alert( AN_Unknown|AG_OpenLib|AO_Intuition );
-      goto error;
-    }
-
-    if( UtilityBase == NULL )
-    {
-      Req( "Unable to open 'utility.library' version 37.\n" );
-      goto error;
-    }
-
-    if( ! DriverInit( AHIsubBase ) )
-    {
-      goto error;
-    }
-  }
-
-  ReleaseSemaphore( &AHIsubBase->opensemaphore );
   return AHIsubBase;
-
-error:
-  AHIsubBase->library.lib_OpenCnt--;
-  DriverCleanup( AHIsubBase );
-  CloseLibrary( (struct Library*) IntuitionBase );
-  CloseLibrary( (struct Library*) UtilityBase );
-
-  ReleaseSemaphore( &AHIsubBase->opensemaphore );
-  return NULL;
 }
 
 
@@ -349,25 +348,15 @@ _LibClose( struct DriverBase* AHIsubBase )
 {
   BPTR seglist = 0;
 
-  ObtainSemaphore( &AHIsubBase->opensemaphore );
-  
   AHIsubBase->library.lib_OpenCnt--;
 
   if( AHIsubBase->library.lib_OpenCnt == 0 )
   {
-    DriverCleanup( AHIsubBase );
-    
-    /* Close libraries */
-    CloseLibrary( (struct Library*) IntuitionBase );
-    CloseLibrary( (struct Library*) UtilityBase );
-
     if( AHIsubBase->library.lib_Flags & LIBF_DELEXP )
     {
       seglist = _LibExpunge( AHIsubBase );
     }
   }
-
-  ReleaseSemaphore( &AHIsubBase->opensemaphore );
 
   return seglist;
 }
