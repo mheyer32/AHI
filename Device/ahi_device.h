@@ -1,5 +1,8 @@
 /* $Id$
 * $Log$
+* Revision 1.4  1997/01/04 20:19:56  lcs
+* PLAYERFREQ added
+*
 * Revision 1.3  1997/01/04 13:26:41  lcs
 * Debugged CMD_WRITE
 *
@@ -63,6 +66,8 @@ struct NSDeviceQueryResult
 #define SND8  0
 #define SND16 1
 
+#define PLAYERFREQ	50	/* How often the PlayerFunc is called */
+
 #define AHICMD_END	CMD_NONSTD
 
 #define AHICMD_WRITTEN	(0x8000 | CMD_WRITE)
@@ -97,11 +102,15 @@ struct AHIDevUnit
 	UBYTE			 UnitNum;
 	BYTE			 PlaySignal;
 	BYTE			 RecordSignal;
-	UBYTE			 Pad1;
+	BYTE			 SampleSignal;
 	struct Process		*Process;
 	struct Process		*Master;
+	struct Hook		 PlayerHook;
 	struct Hook 		 RecordHook;
 	struct Hook 		 SoundHook;
+	struct Hook		 ChannelInfoHook;
+	
+	struct AHIEffChannelInfo *ChannelInfoStruct;
 
 	WORD			*RecordBuffer;
 	ULONG			 RecordSize;
