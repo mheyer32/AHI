@@ -1,3 +1,9 @@
+2003-04-13  Martin Blom  <martin@blom.org>
+
+	* ahi.device: For some weired reason I apparently disabled
+	PreTimer()/PostTimer() support (aka the CPU overload protection)
+	in version 5.29. Now it's enabled again.
+
 2003-04-12  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 5.33.
