@@ -108,7 +108,7 @@ Req( const char* text, ... )
 
   va_list ap;
 
-  va_start( ap, &text );
+  va_start( ap, text );
 
   EasyRequestArgs( NULL, &es, NULL, ap );
   
@@ -122,7 +122,6 @@ Req( const char* text, ... )
 APTR
 AHIAllocVec( ULONG byteSize, ULONG requirements )
 {
-#ifndef VERSION68K
   if( PPCLibBase != NULL )
   {
     return PPCAllocVec( byteSize, requirements );
@@ -148,7 +147,6 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
     return AllocVec32( byteSize, new_requirements );
   }
   else
-#endif
   {
     return AllocVec( byteSize, requirements & ~MEMF_PPCMASK );
   }
@@ -161,7 +159,6 @@ AHIAllocVec( ULONG byteSize, ULONG requirements )
 void
 AHIFreeVec( APTR memoryBlock )
 {
-#ifndef VERSION68K
   if( PPCLibBase != NULL )
   {
     PPCFreeVec( memoryBlock );
@@ -171,7 +168,6 @@ AHIFreeVec( APTR memoryBlock )
     FreeVec32( memoryBlock );
   }
   else
-#endif
   {
     FreeVec( memoryBlock );
   }
@@ -181,8 +177,6 @@ AHIFreeVec( APTR memoryBlock )
 /******************************************************************************
 ** AHILoadObject **************************************************************
 ******************************************************************************/
-
-#ifndef VERSION68K
 
 void*
 AHILoadObject( const char* objname )
@@ -198,13 +192,9 @@ AHILoadObject( const char* objname )
   }
 }
 
-#endif
-
 /******************************************************************************
 ** AHIUnLoadObject ************************************************************
 ******************************************************************************/
-
-#ifndef VERSION68K
 
 void
 AHIUnLoadObject( void* obj )
@@ -220,13 +210,9 @@ AHIUnLoadObject( void* obj )
   }
 }
 
-#endif
-
 /******************************************************************************
 ** AHIGetELFSymbol ************************************************************
 ******************************************************************************/
-
-#ifndef VERSION68K
 
 BOOL
 AHIGetELFSymbol( const char* name,
@@ -264,5 +250,3 @@ AHIGetELFSymbol( const char* name,
 //kprintf( "%08lx (%ld)\n", *ptr, rc );
   return rc;
 }
-
-#endif

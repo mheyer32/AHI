@@ -93,22 +93,7 @@ extern void                     *PPCObject;
 
 /*** Definitions ***/
 
-#ifdef VERSION68K
-
-struct Fixed64
-{
-        LONG    I;
-        ULONG   F;
-};
-
-typedef struct Fixed64  Fixed64;
-
-#else /* VERSION68K */
-
 typedef long long int   Fixed64;
-
-#endif /* VERSION68K */
-
 
 #define AHI_UNITS       4       /* Normal units, excluding AHI_NO_UNIT */
 
@@ -160,52 +145,6 @@ struct AHISoundData
 };
 
 /* Private AHIChannelData */
-
-#ifdef VERSION68K
-
-struct AHIChannelData
-{
-  UWORD   cd_EOS;                 /* $FFFF: Sample has reached end */
-  UBYTE   cd_FreqOK;              /* $00: Freq=0 ; $FF: Freq<>0 */
-  UBYTE   cd_SoundOK;             /* $00: No sound set ; $FF: S. OK. */
-  Fixed64 cd_Offset;
-  Fixed64 cd_Add;
-  APTR    cd_DataStart;
-  Fixed64 cd_LastOffset;
-  Fixed   cd_ScaleLeft;
-  Fixed   cd_ScaleRight;
-  APTR    cd_AddRoutine;
-  Fixed   cd_VolumeLeft;
-  Fixed   cd_VolumeRight;
-  ULONG   cd_Type;
-
-  UWORD   cd_NextEOS;             /* Not in use */
-  UBYTE   cd_NextFreqOK;
-  UBYTE   cd_NextSoundOK;
-  Fixed64 cd_NextOffset;
-  Fixed64 cd_NextAdd;
-  APTR    cd_NextDataStart;
-  Fixed64 cd_NextLastOffset;
-  Fixed   cd_NextScaleLeft;
-  Fixed   cd_NextScaleRight;
-  APTR    cd_NextAddRoutine;
-  Fixed   cd_NextVolumeLeft;
-  Fixed   cd_NextVolumeRight;
-  ULONG   cd_NextType;
-
-  LONG    cd_Samples;             /* Samples left to store (down-counter) */
-  LONG    cd_FirstOffsetI;        /* for linear interpolation routines */
-  LONG    cd_LastSampleL;         /* for linear interpolation routines */
-  LONG    cd_TempLastSampleL;     /* for linear interpolation routines */
-  LONG    cd_LastSampleR;         /* for linear interpolation routines */
-  LONG    cd_TempLastSampleR;     /* for linear interpolation routines */
-
-  struct AHIChannelData *cd_Succ; /* For the wet and dry lists */
-  UWORD   cd_ChannelNo;
-  UWORD   cd_Pad;
-} __attribute__  ((packed));
-
-#else
 
 struct AHIChannelData
 {
@@ -275,8 +214,6 @@ struct AHIChannelData
   UWORD   cd_Pad3;
   LONG    cd_AntiClickCount;
 };
-
-#endif
 
 #define AHIACB_NOMIXING 31              /* private ahiac_Flags flag */
 #define AHIACF_NOMIXING (1L<<31)        /* private ahiac_Flags flag */
