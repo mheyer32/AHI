@@ -1,3 +1,8 @@
+2005-04-13  Martin Blom  <martin@blom.org>
+
+	* AHI preferences: Added updated german translation by Stefan
+	Bojartschuk.
+
 2005-04-06  Martin Blom  <martin@blom.org>
 
 	* ahi.device: Harry's ixemul/SIGBREAKF_CTRL_F fix seem to have
