@@ -63,6 +63,9 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.7  2005/06/19 21:43:57  martin
+AHItoccataPlayBufferSize and AHItoccataRecordBufferSize.
+
 Revision 5.9.2.6  2005/02/02 21:49:52  martin
 * Updated all copyright years to 2005.
 
@@ -1138,6 +1141,23 @@ card each interrupt and defaults to @samp{512}.  It must be one of
 @samp{32}, @samp{64}, @samp{128}, @samp{256} or @samp{512}.  If you
 encounter problems with serial port hardware, you might want to set this
 variable to a lower value than the default.
+
+@cindex AHItoccataPlayBufferSize variable
+
+@file{AHItoccataPlayBufferSize} specifies the number of bytes transferred
+to the card when playing and defaults to @samp{512}.  It must between 512
+and 16384 and also a multiple of 512.  If you encounter problems with
+serial port hardware, you might want to set this variable to a higher value
+than the default.
+
+@cindex AHItoccataRecordBufferSize variable
+
+@file{AHItoccataRecordBufferSize} specifies the number of bytes transferred
+from the card when recording and defaults to @samp{16384}.  It must between
+512 and 16384 and also a multiple of 512.  If you think the latency when
+recording is too high, you might want to set this variable to a lower value
+than the default.
+
 
 Please note that this driver is used for both the DraCo Motion and the
 Toccata.

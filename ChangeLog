@@ -1,3 +1,13 @@
+2005-06-19  Martin Blom  <martin@blom.org>
+
+	* Released toccata.audio 4.7.
+
+	* ahiusr.texinfo: Added notes about AHItoccataPlayBufferSize and
+	AHItoccataRecordBufferSize.
+
+	* toccata.audio:  Added the variables AHItoccataPlayBufferSize and
+	AHItoccataRecordBufferSize.
+
 2005-04-13  Martin Blom  <martin@blom.org>
 
 	* AHI preferences: Added updated german translation by Stefan
