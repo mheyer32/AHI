@@ -8,6 +8,9 @@
 
 @SET_MAKE@
 
+# Make sure we use iso8859-1 encoding
+LANG=en_US.iso8859-1
+
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
 DISTDIR		= @DISTDIR@
