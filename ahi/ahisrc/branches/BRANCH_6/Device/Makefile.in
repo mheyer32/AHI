@@ -118,7 +118,6 @@ bindist:	all
 	$(INSTALL_DATA) ${srcdir}/ahi.ct $(CATSRCDIR)
 	for i in $(LANGUAGES); do \
 	  $(INSTALL) -d $(CATDIR)/$$i; \
-	  $(INSTALL) -d $(CATSRCDIR)/$$i; \
 	  $(INSTALL_DATA) $$i.catalog $(CATDIR)/$$i/ahi.catalog; \
 	  $(INSTALL_DATA) ${srcdir}/translations/$$i.ct \
 			  $(CATSRCDIR)/ahi/$$i.ct; \
