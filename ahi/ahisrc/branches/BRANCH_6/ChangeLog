@@ -1,3 +1,26 @@
+2005-09-11  Martin Blom  <martin@blom.org>
+
+	* Bumped revision of ahi.device to 6.4.
+
+	* Bumped revision of AHI Preferences to 6.1.
+
+	* Bumped revision of AHI-Handler to 6.1.
+
+	* Bumped revision of AddAudioModes to 6.1.
+
+	* Bumped revision of ac97.audio to 6.1.
+
+	* Bumped revision of aros.audio to 6.1.
+
+	* Bumped revision of emu10kx.audio to 6.2.
+
+	* Bumped revision of filesave.audio to 6.1.
+
+	* Bumped revision of void.audio to 6.1.
+
+	* Rebuilt using a gcc that does not have emulated instructions in
+	libgcc.a.
+
 2005-08-11  Martin Blom  <martin@blom.org>
 
 	* Documentation: Added PDF versions of the User's And Developer's
