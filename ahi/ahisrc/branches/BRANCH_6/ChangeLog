@@ -1,10 +1,3 @@
-2005-09-19  Martin Blom  <martin@blom.org>
-
-	* Released emu10kx.audio 6.2.
-
-	* emu10kx.audio: OS4 version use 80 Hz interrupt instead of 1
-	kHz. [Davy Wentzler]
-
 2005-09-11  Martin Blom  <martin@blom.org>
 
 	* Bumped revision of ahi.device to 6.4.
@@ -19,12 +12,21 @@
 
 	* Bumped revision of aros.audio to 6.1.
 
+	* Bumped revision of emu10kx.audio to 6.3.
+
 	* Bumped revision of filesave.audio to 6.1.
 
 	* Bumped revision of void.audio to 6.1.
 
 	* Rebuilt using a gcc that does not have emulated instructions in
 	libgcc.a.
+
+2005-09-11  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.2.
+
+	* emu10kx.audio: OS4 version use 80 Hz interrupt instead of 1
+	kHz. [Davy Wentzler]
 
 2005-08-11  Martin Blom  <martin@blom.org>
 
