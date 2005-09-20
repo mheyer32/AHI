@@ -13,7 +13,7 @@
 #include "pci_wrapper.h"
 #include "library.h"
 
-struct Library*             ExpansionBase = NULL;
+struct ExpansionBase*       ExpansionBase = NULL;
 struct ExpansionIFace*      IExpansion    = NULL;
 struct PCIIFace*            IPCI          = NULL;
 

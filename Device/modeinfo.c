@@ -26,11 +26,11 @@
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
+#define __NOGLOBALIFACE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
-#endif
+#undef  __NOGLOBALIFACE__
 #include <proto/ahi_sub.h>
 
 #include "ahi_def.h"

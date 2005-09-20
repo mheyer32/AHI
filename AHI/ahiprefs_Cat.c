@@ -8,6 +8,8 @@
 /*
     Include files and compiler specific stuff
 */
+#include <config.h>
+
 #include <exec/memory.h>
 #include <libraries/locale.h>
 #include <libraries/iffparse.h>

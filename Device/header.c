@@ -47,11 +47,6 @@
 # define FUNCARRAY_32BIT_NATIVE 0xfffefffe
 #endif
 
-#if defined( __AMIGAOS4__ ) && !defined( CPU )
-// Remove when the build process work on OS4
-# define CPU "603e"
-#endif
-
 static BOOL
 OpenLibs ( void );
 
@@ -140,12 +135,9 @@ const char IDString[] = "$VER: " AHINAME " " VERS
                         " ©1994-2005 Martin Blom. " CPU " version.\r\n";
 
 
-#if !defined( __AMIGAOS4__ )
 struct ExecBase           *SysBase        = NULL;
 struct DosLibrary         *DOSBase        = NULL;
 struct GfxBase            *GfxBase        = NULL;
-#endif
-
 struct AHIBase            *AHIBase        = NULL;
 struct Library            *GadToolsBase   = NULL;
 struct Library            *IFFParseBase   = NULL;
@@ -155,9 +147,6 @@ struct Device             *TimerBase      = NULL;
 struct UtilityBase        *UtilityBase    = NULL;
 
 #if defined( __AMIGAOS4__ )
-struct Library            *SysBase        = NULL;
-struct Library            *DOSBase        = NULL;
-struct Library            *GfxBase        = NULL;
 struct ExecIFace          *IExec          = NULL;
 struct DOSIFace           *IDOS           = NULL;
 struct GadToolsIFace      *IGadTools      = NULL;
@@ -506,8 +495,37 @@ static ULONG devInterfaces[] =
 	0
 };
 
-extern ULONG VecTable68K;
-// tbd extern
+
+CONST CONST_APTR VecTable68K[] = {
+  (CONST_APTR) &m68kgwDevOpen,
+  (CONST_APTR) &m68kgwDevClose,
+  (CONST_APTR) &m68kgwDevExpunge,
+  (CONST_APTR) &m68kgwDevNull,
+  (CONST_APTR) &m68kgwDevBeginIO,
+  (CONST_APTR) &m68kgwDevAbortIO,
+  (CONST_APTR) &m68kgwAHI_AllocAudioA,
+  (CONST_APTR) &m68kgwAHI_FreeAudio,
+  (CONST_APTR) &m68kgwAHI_KillAudio,
+  (CONST_APTR) &m68kgwAHI_ControlAudioA,
+  (CONST_APTR) &m68kgwAHI_SetVol,
+  (CONST_APTR) &m68kgwAHI_SetFreq,
+  (CONST_APTR) &m68kgwAHI_SetSound,
+  (CONST_APTR) &m68kgwAHI_SetEffect,
+  (CONST_APTR) &m68kgwAHI_LoadSound,
+  (CONST_APTR) &m68kgwAHI_UnloadSound,
+  (CONST_APTR) &m68kgwAHI_NextAudioID,
+  (CONST_APTR) &m68kgwAHI_GetAudioAttrsA,
+  (CONST_APTR) &m68kgwAHI_BestAudioIDA,
+  (CONST_APTR) &m68kgwAHI_AllocAudioRequestA,
+  (CONST_APTR) &m68kgwAHI_AudioRequestA,
+  (CONST_APTR) &m68kgwAHI_FreeAudioRequest,
+  (CONST_APTR) &m68kgwAHI_PlayA,
+  (CONST_APTR) &m68kgwAHI_SampleFrameSize,
+  (CONST_APTR) &m68kgwAHI_AddAudioMode,
+  (CONST_APTR) &m68kgwAHI_RemoveAudioMode,
+  (CONST_APTR) &m68kgwAHI_LoadModeFile,
+  (CONST_APTR) -1
+};
 
 /* CreateLibrary tag list */
 static struct TagItem libCreateTags[] =

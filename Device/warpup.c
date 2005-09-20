@@ -35,8 +35,10 @@
 # include <proto/powerpc.h>
 # include <proto/utility.h>
 # define __NOLIBBASE__
+# define __NOGLOBALIFACE__
 # include <proto/ahi.h>
 # undef  __NOLIBBASE__
+# undef  __NOGLOBALIFACE__
 #endif
 
 #include "misc.h"

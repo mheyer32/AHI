@@ -1,6 +1,7 @@
 #ifndef AHI_Drivers_Common_DriverBase_h
 #define AHI_Drivers_Common_DriverBase_h
 
+#include <dos/dos.h>
 #include <proto/exec.h>
 #include <proto/intuition.h>
 #include <proto/utility.h>
