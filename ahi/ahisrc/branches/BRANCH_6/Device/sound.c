@@ -24,11 +24,11 @@
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
+#define __NOGLOBALIFACE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
-#endif
+#undef  __NOGLOBALIFACE__
 #include <proto/ahi_sub.h>
 #include <stdlib.h>
 
@@ -1239,7 +1239,7 @@ _AHI_PlayA( struct AHIPrivAudioCtrl* audioctrl,
       if(setsound)
         AHI_SetSound( channel, sound, offset, length, (struct AHIAudioCtrl*) audioctrl, AHISF_IMM );
       if(loopsetsound)
-        AHI_SetSound( channel, loopsound, loopoffset, looplength, (struct AHIAudioCtrl*) audioctrl, NULL);
+        AHI_SetSound( channel, loopsound, loopoffset, looplength, (struct AHIAudioCtrl*) audioctrl, AHISF_NONE);
       break;
     }
   }

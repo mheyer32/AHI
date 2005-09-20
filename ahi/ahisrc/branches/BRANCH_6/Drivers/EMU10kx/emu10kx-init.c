@@ -34,12 +34,10 @@
 
 struct DriverBase* AHIsubBase;
 
-#ifndef __AMIGAOS4__
 struct ExecBase*   SysBase;
 struct DosLibrary* DOSBase;
-#else
-struct Library*   SysBase;
-struct Library*   DOSBase;
+
+#ifdef __AMIGAOS4__
 struct DOSIFace*            IDOS          = NULL;
 struct AHIsubIFace*         IAHIsub       = NULL;
 struct ExecIFace*           IExec         = NULL;

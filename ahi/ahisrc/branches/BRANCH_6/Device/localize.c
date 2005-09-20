@@ -93,7 +93,7 @@ STRPTR GetahiString(APTR fcstr)
 {
   STRPTR defaultstr = ((struct FC_Type *)fcstr)->Str;
   if (ahi_Catalog)
-    return GetCatalogStr(ahi_Catalog, ((struct FC_Type *)fcstr)->ID, defaultstr);
+    return (STRPTR) GetCatalogStr(ahi_Catalog, ((struct FC_Type *)fcstr)->ID, defaultstr);
   return defaultstr;
 }
 
@@ -101,6 +101,6 @@ STRPTR GetString(APTR fcstr, struct Catalog *catalog)
 {
   STRPTR defaultstr = ((struct FC_Type *)fcstr)->Str;
   if (catalog)
-    return GetCatalogStr(catalog, ((struct FC_Type *)fcstr)->ID, defaultstr);
+    return (STRPTR) GetCatalogStr(catalog, ((struct FC_Type *)fcstr)->ID, defaultstr);
   return defaultstr;
 }

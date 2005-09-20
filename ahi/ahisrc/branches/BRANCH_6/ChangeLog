@@ -1,3 +1,16 @@
+2005-09-20  Martin Blom  <martin@blom.org>
+
+	* Added build environment support for OS4.
+
+	* AHI Preferences (ClassAct): Ported to Reaction. At least it
+	compiles without errors. If I had libreaction.a and libraauto.a
+	for clib2/OS4 it would even link.
+
+	* ahi.device: Now builds for OS4 using the OS4 cross compiler,
+	the OS4 SDK from GoldED and sfdc 1.4.
+
+	* AddAudioModes: Ported to OS4.
+
 2005-09-11  Martin Blom  <martin@blom.org>
 
 	* Bumped revision of ahi.device to 6.4.

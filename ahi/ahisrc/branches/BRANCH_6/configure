@@ -1517,15 +1517,17 @@ echo "${ECHO_T}${enable_warpup}" >&6
 case $host in
  i?86be-pc-amithlon)
   : ${CPU="i686"}
-  linkerflags="-noixemul -mcpu=${CPU} -r"
+  cflags="-noixemul"
   optflags="-mcpu=${CPU} -O2"
+  linkerflags="-noixemul -mcpu=${CPU} -r"
   asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
   resident=""     stripflag=""
  ;;
  m68k-unknown-amigaos)
   : ${CPU="68020-60"}
-  linkerflags="-noixemul -m${CPU}"
+  cflags="-noixemul"
   optflags="-m${CPU} -O2 -fomit-frame-pointer -ffast-math -msoft-float"
+  linkerflags="-noixemul -m${CPU}"
   asCPU=`echo ${CPU} | sed 's/-.*//'`
   asflags="-m${asCPU} --register-prefix-optional --bitwise-or --defsym CPU=${asCPU}"
   resident="-resident"
@@ -1533,31 +1535,42 @@ case $host in
  ;;
  powerpc-unknown-amigaos)
   : ${CPU="603"}
-  cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define __USE_INLINE__ 1
 _ACEOF
 
-  linkerflags="-noixemul -mcpu=${CPU}"
-  optflags="-mcpu=${CPU} -O2 -msoft-float"
+
+cat >>confdefs.h <<\_ACEOF
+#define __USE_BASETYPE__ 1
+_ACEOF
+
+  cflags=""
+  optflags="-mcpu=${CPU} -O2"
+  linkerflags="-mcpu=${CPU}"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
   resident="-mresident32"
   stripflag=""
  ;;
  powerpc-unknown-morphos)
   : ${CPU="603"}
-  cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define USE_INLINE_STDARG 1
 _ACEOF
 
-  linkerflags="-noixemul -mcpu=${CPU}"
+  cflags="-noixemul"
   optflags="-mcpu=${CPU} -O2"
+  linkerflags="-noixemul -mcpu=${CPU}"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
-    resident="-mresident32"
+  resident="-mresident32"
   stripflag=""
  ;;
  i?86-*-aros)
  : ${CPU="i386"}
+  cflags=""
   optflags="-mcpu=${CPU} -O2 -fomit-frame-pointer"
+  linkerflags=""
   asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
   resident=""     stripflag="--strip-unneeded"
  ;;
@@ -1569,7 +1582,7 @@ esac
 
 top_builddir=$(pwd)
 
-: ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${optflags}"}
+: ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${cflags} ${optflags}"}
 : ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc -I${os_includedir}"}
 : ${LDFLAGS="${linkerflags}"}
 : ${ASFLAGS="${asflags}"}
@@ -3511,83 +3524,6 @@ else
 echo "$as_me: WARNING: \"libamiga is missing.\" " >&2;}
 fi
 
-
-echo "$as_me:$LINENO: checking for MUI_NewObject in -lmui" >&5
-echo $ECHO_N "checking for MUI_NewObject in -lmui... $ECHO_C" >&6
-if test "${ac_cv_lib_mui_MUI_NewObject+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  ac_check_lib_save_LIBS=$LIBS
-LIBS="-lmui  $LIBS"
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any gcc2 internal prototype to avoid an error.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-/* We use char because int might match the return type of a gcc2
-   builtin and then its argument prototype would still apply.  */
-char MUI_NewObject ();
-int
-main ()
-{
-MUI_NewObject ();
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_lib_mui_MUI_NewObject=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_lib_mui_MUI_NewObject=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-LIBS=$ac_check_lib_save_LIBS
-fi
-echo "$as_me:$LINENO: result: $ac_cv_lib_mui_MUI_NewObject" >&5
-echo "${ECHO_T}$ac_cv_lib_mui_MUI_NewObject" >&6
-if test $ac_cv_lib_mui_MUI_NewObject = yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBMUI 1
-_ACEOF
-
-  LIBS="-lmui $LIBS"
-
-else
-  { echo "$as_me:$LINENO: WARNING: \"Who cares?\" " >&5
-echo "$as_me: WARNING: \"Who cares?\" " >&2;}
-fi
-
 echo "$as_me:$LINENO: checking for library containing floor" >&5
 echo $ECHO_N "checking for library containing floor... $ECHO_C" >&6
 if test "${ac_cv_search_floor+set}" = set; then
@@ -3716,6 +3652,237 @@ else
   { { echo "$as_me:$LINENO: error: \"libm is missing.\" " >&5
 echo "$as_me: error: \"libm is missing.\" " >&2;}
    { (exit 1); exit 1; }; }
+fi
+
+
+echo "$as_me:$LINENO: checking for MUI_NewObject in -lmui" >&5
+echo $ECHO_N "checking for MUI_NewObject in -lmui... $ECHO_C" >&6
+if test "${ac_cv_lib_mui_MUI_NewObject+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lmui  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char MUI_NewObject ();
+int
+main ()
+{
+MUI_NewObject ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_mui_MUI_NewObject=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_mui_MUI_NewObject=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_mui_MUI_NewObject" >&5
+echo "${ECHO_T}$ac_cv_lib_mui_MUI_NewObject" >&6
+if test $ac_cv_lib_mui_MUI_NewObject = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBMUI 1
+_ACEOF
+
+  LIBS="-lmui $LIBS"
+
+else
+  { echo "$as_me:$LINENO: WARNING: \"Who cares?\" " >&5
+echo "$as_me: WARNING: \"Who cares?\" " >&2;}
+fi
+
+
+echo "$as_me:$LINENO: checking for IDOS in -lauto" >&5
+echo $ECHO_N "checking for IDOS in -lauto... $ECHO_C" >&6
+if test "${ac_cv_lib_auto_IDOS+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lauto  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char IDOS ();
+int
+main ()
+{
+IDOS ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_auto_IDOS=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_auto_IDOS=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_auto_IDOS" >&5
+echo "${ECHO_T}$ac_cv_lib_auto_IDOS" >&6
+if test $ac_cv_lib_auto_IDOS = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBAUTO 1
+_ACEOF
+
+  LIBS="-lauto $LIBS"
+
+else
+  { echo "$as_me:$LINENO: WARNING: \"Who cares?\" " >&5
+echo "$as_me: WARNING: \"Who cares?\" " >&2;}
+fi
+
+
+echo "$as_me:$LINENO: checking for LayoutBase in -lraauto" >&5
+echo $ECHO_N "checking for LayoutBase in -lraauto... $ECHO_C" >&6
+if test "${ac_cv_lib_raauto_LayoutBase+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lraauto  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char LayoutBase ();
+int
+main ()
+{
+LayoutBase ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_raauto_LayoutBase=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_raauto_LayoutBase=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_raauto_LayoutBase" >&5
+echo "${ECHO_T}$ac_cv_lib_raauto_LayoutBase" >&6
+if test $ac_cv_lib_raauto_LayoutBase = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBRAAUTO 1
+_ACEOF
+
+  LIBS="-lraauto $LIBS"
+
+else
+  { echo "$as_me:$LINENO: WARNING: \"Who cares?\" " >&5
+echo "$as_me: WARNING: \"Who cares?\" " >&2;}
 fi
 
 
