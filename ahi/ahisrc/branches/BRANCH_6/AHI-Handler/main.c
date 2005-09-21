@@ -126,7 +126,7 @@ BYTE               AHIDevice = -1;
 struct Library    *AHIBase;
 
 struct AIFCHeader AIFCHeader = {
-  ID_FORM, NULL, ID_AIFC,
+  ID_FORM, 0, ID_AIFC,
   ID_FVER, sizeof(FormatVersionHeader), {
     AIFCVersion1
   },
@@ -139,18 +139,18 @@ struct AIFCHeader AIFCHeader = {
     {sizeof("not compressed")-1,
      'n','o','t',' ','c','o','m','p','r','e','s','s','e','d'}
   },
-  ID_SSND, NULL, {0,0}
+  ID_SSND, 0, {0,0}
 };
 
 struct AIFFHeader AIFFHeader = {
-  ID_FORM, NULL, ID_AIFF,
+  ID_FORM, 0, ID_AIFF,
   ID_COMM, sizeof(CommonChunk),{
     0,
     0,
     0,
     {0,{0,0}}
   },
-  ID_SSND, NULL, {0,0}
+  ID_SSND, 0, {0,0}
 };
 
 

@@ -99,6 +99,8 @@ const struct Resident RomTag __attribute__((used)) =
   (struct Resident *) &RomTag + 1,
 #if defined( __MORPHOS__ ) 
   RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
+#elif defined( __AROS__ )
+  RTF_EXTENDED | RTF_AUTOINIT,
 #elif defined( __amithlon__ )
   RTF_NATIVE | RTF_AUTOINIT,
 #elif defined( __AMIGAOS4__ )
@@ -115,7 +117,7 @@ const struct Resident RomTag __attribute__((used)) =
   libCreateTags
 #else
   (APTR) &InitTable
-# if defined( __MORPHOS__ )
+# if defined( __MORPHOS__ ) || defined( __AROS__ )
   , REVISION, NULL
 # endif
 #endif
