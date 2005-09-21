@@ -16,12 +16,8 @@ ReqA( const char*        text,
       APTR               args,
       struct DriverBase* AHIsubBase );
 
-#if !defined(__AMIGAOS4__)
 #define Req(a0, args...) \
         ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args, AHIsubBase);})
-#else
-#define Req(a0, args...)
-#endif
 
 void
 MyKPrintFArgs( UBYTE*           fmt, 

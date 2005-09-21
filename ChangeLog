@@ -1,3 +1,9 @@
+2005-09-21  Martin Blom  <martin@blom.org>
+
+	* Imported AROS updates to aros.audio.
+
+	* More OS4 porting. 
+
 2005-09-20  Martin Blom  <martin@blom.org>
 
 	* Added build environment support for OS4.

@@ -13,6 +13,7 @@
 #include <clib/alib_protos.h>
 #include <proto/ahi_sub.h>
 #include <proto/exec.h>
+#include <proto/intuition.h>
 #include <proto/utility.h>
 
 #include "gatestubs.h"
@@ -141,6 +142,8 @@ static const struct Resident RomTag =
   (struct Resident *) &_etext,
 #if defined( __MORPHOS__ ) 
   RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
+#elif defined( __AROS__ )
+  RTF_EXTENDED | RTF_AUTOINIT,
 #elif defined( __amithlon__ )
   RTF_NATIVE | RTF_AUTOINIT,
 #else
@@ -152,7 +155,7 @@ static const struct Resident RomTag =
   (BYTE *) LibName,
   (BYTE *) LibIDString,
   (APTR) &InitTable
-#if defined( __MORPHOS__ )
+#if defined( __MORPHOS__ ) || defined( __AROS__ )
   , REVISION, NULL
 #endif
 };
@@ -174,6 +177,9 @@ ReqA( const char*        text,
     (STRPTR) LibName,
     (STRPTR) text,
     "OK"
+#ifdef __AMIGAOS4__
+    , NULL, NULL
+#endif
   };
 
   EasyRequestArgs( NULL, &es, NULL, args );
@@ -255,6 +261,10 @@ _LibInit( struct DriverBase* AHIsubBase,
 {
   SysBase = sysbase;
 
+#ifdef __AMIGAOS4__
+  IExec = (struct ExecIFace*) SysBase->MainInterface; 
+#endif
+  
   AHIsubBase->library.lib_Node.ln_Type = NT_LIBRARY;
   AHIsubBase->library.lib_Node.ln_Name = (STRPTR) LibName;
   AHIsubBase->library.lib_Flags        = LIBF_SUMUSED | LIBF_CHANGED;
@@ -271,6 +281,14 @@ _LibInit( struct DriverBase* AHIsubBase,
     Alert( AN_Unknown|AG_OpenLib|AO_Intuition );
     goto error;
   }
+  
+#ifdef __AMIGAOS4__
+  if ((IIntuition = (struct IntuitionIFace *) GetInterface((struct Library*) IntuitionBase, "main", 1, NULL)) == NULL)
+  {
+    Alert( AN_Unknown|AG_OpenLib|AO_Intuition );
+    goto error;
+  }
+#endif
 
   if( UtilityBase == NULL )
   {
@@ -278,6 +296,20 @@ _LibInit( struct DriverBase* AHIsubBase,
     goto error;
   }
 
+#ifdef __AMIGAOS4__
+  if ((IUtility = (struct UtilityIFace *) GetInterface((struct Library*) UtilityBase, "main", 1, NULL)) == NULL)
+  {
+    Req("Couldn't open IUtility interface!\n");
+    goto error;
+  }
+
+  if ((IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) == NULL)
+  {
+    Req("Couldn't open IAHIsub interface!\n");
+    return FALSE;
+  }
+#endif
+  
   if( ! DriverInit( AHIsubBase ) )
   {
     goto error;
@@ -313,6 +345,12 @@ _LibExpunge( struct DriverBase* AHIsubBase )
     }
 
     DriverCleanup( AHIsubBase );
+
+#ifdef __AMIGAOS4__
+    DropInterface((struct Interface *) IAHIsub);
+    DropInterface((struct Interface *) IIntuition);
+    DropInterface((struct Interface *) IUtility);
+#endif
     
     /* Close libraries */
     CloseLibrary( (struct Library*) IntuitionBase );

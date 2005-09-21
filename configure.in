@@ -42,7 +42,7 @@ case $host in
   optflags="-mcpu=${CPU} -O2"
   linkerflags="-noixemul -mcpu=${CPU} -r"
   asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
-  resident=""   dnl *** Not supported (yet?)
+  resident=""                                      dnl *** Not supported (yet?)
   stripflag=""
  ;;
  m68k-unknown-amigaos)
@@ -63,7 +63,7 @@ case $host in
   optflags="-mcpu=${CPU} -O2"
   linkerflags="-mcpu=${CPU}"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
-  resident="-mresident32"
+  resident=""                                      dnl *** Not supported (yet?)
   stripflag=""
  ;;
  powerpc-unknown-morphos)
@@ -82,7 +82,7 @@ case $host in
   optflags="-mcpu=${CPU} -O2 -fomit-frame-pointer"
   linkerflags=""
   asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
-  resident=""   dnl *** Not supported (yet?)
+  resident=""                                      dnl *** Not supported (yet?)
   stripflag="--strip-unneeded"
  ;;
  *)
@@ -154,7 +154,7 @@ dnl Checks for libraries.
 AC_SEARCH_LIBS( NewList, amiga,,    AC_MSG_WARN( "libamiga is missing." ) )
 AC_SEARCH_LIBS( floor, m,,	    AC_MSG_ERROR( "libm is missing." ) )
 AC_CHECK_LIB( mui,   MUI_NewObject,,AC_MSG_WARN(  "Who cares?" ) )
-AC_CHECK_LIB( auto,  IDOS,,         AC_MSG_WARN(  "Who cares?" ) )
+AC_CHECK_LIB( auto,  DOSBase,,      AC_MSG_WARN(  "Who cares?" ) )
 AC_CHECK_LIB( raauto,LayoutBase,,   AC_MSG_WARN(  "Who cares?" ) )
 
 case $host in

@@ -32,7 +32,7 @@
 /** Make the common library code initialize a global SysBase for us.
     It's required for hwaccess.c */
 
-#define DRIVER_NEED_GLOBAL_EXECBASE
+#define DRIVER_NEEDS_GLOBAL_EXECBASE
 #include "DriverBase.h"
 
 struct EMU10kxData;
