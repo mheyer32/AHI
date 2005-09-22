@@ -41,10 +41,6 @@ struct AHIDevUnit;
 
 extern struct AHIBase           *AHIBase;
 
-#ifdef __AMIGAOS4__
-#define IAHI ((struct AHIIFace*) ((struct ExtendedLibrary*) ((ULONG) AHIBase + AHIBase->ahib_Library.lib_PosSize))->MainIFace)
-#endif
-
 
 /*** Definitions ***/
 
@@ -82,7 +78,15 @@ struct AHIBase
   Fixed                    ahib_MaxCPU;
   Fixed                    ahib_AntiClickTime;
   UWORD                    ahib_ScaleMode;
+
+#ifdef __AMIGAOS4__
+  struct AHIIFace*         ahib_IAHI;
+#endif
 };
+
+#ifdef __AMIGAOS4__
+#define IAHI (AHIBase->ahib_IAHI)
+#endif
 
 
 struct Timer

@@ -623,134 +623,67 @@ OpenLibs ( void )
 #ifdef __AMIGAOS4__
   if ((IIntuition = (struct IntuitionIFace *) GetInterface((struct Library *) IntuitionBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open IIntuition interface!\n");
-       return FALSE;
+    Req("Couldn't open IIntuition interface!\n");
+    return FALSE;
   }
 
   if ((IDOS = (struct DOSIFace *) GetInterface((struct Library *) DOSBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open IDOS interface!\n");
-       return FALSE;
+    Req("Couldn't open IDOS interface!\n");
+    return FALSE;
   }
 
   if ((IGraphics = (struct GraphicsIFace *) GetInterface((struct Library *) GfxBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open Graphics interface!\n");
-       return FALSE;
+    Req("Couldn't open Graphics interface!\n");
+    return FALSE;
   }
   
   if ((IGadTools = (struct GadToolsIFace *) GetInterface((struct Library *) GadToolsBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open IGadTools interface!\n");
-       return FALSE;
+    Req("Couldn't open IGadTools interface!\n");
+    return FALSE;
   }
 
   if ((IIFFParse = (struct IFFParseIFace *) GetInterface((struct Library *) IFFParseBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open IFFParse interface!\n");
-       return FALSE;
+    Req("Couldn't open IFFParse interface!\n");
+    return FALSE;
   }
 
   if ((ILocale = (struct LocaleIFace *) GetInterface((struct Library *) LocaleBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open ILocale interface!\n");
-       return FALSE;
+    Req("Couldn't open ILocale interface!\n");
+    return FALSE;
   }
 
   if ((ITimer = (struct TimerIFace *) GetInterface((struct Library *) TimerBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open Timer interface!\n");
-       return FALSE;
+    Req("Couldn't open Timer interface!\n");
+    return FALSE;
   }
   
   if ((IUtility = (struct UtilityIFace *) GetInterface((struct Library *) UtilityBase, "main", 1, NULL)) == NULL)
   {
-       Req("Couldn't open Utility interface!\n");
-       return FALSE;
+    Req("Couldn't open Utility interface!\n");
+    return FALSE;
+  }
+
+  if ((IAHI = (struct AHIIFace *) GetInterface((struct Library *) AHIBase, "main", 1, NULL)) == NULL)
+  {
+    Req("Couldn't open AHI interface!\n");
+    return FALSE;
   }
 #endif
 
-
-#if 0
-  // Fill in some defaults...
-
-  AddByteMonoPtr         = AddByteMono;
-  AddByteStereoPtr       = AddByteStereo;
-  AddByte71Ptr           = AddByte71;
-  AddBytesMonoPtr        = AddBytesMono;
-  AddBytesStereoPtr      = AddBytesStereo;
-  AddBytes71Ptr          = AddBytes71;
-  AddWordMonoPtr         = AddWordMono;
-  AddWordStereoPtr       = AddWordStereo;
-  AddWord71Ptr           = AddWord71;
-  AddWordsMonoPtr        = AddWordsMono;
-  AddWordsStereoPtr      = AddWordsStereo;
-  AddWords71Ptr          = AddWords71;
-  AddLongMonoPtr         = AddLongMono;
-  AddLongStereoPtr       = AddLongStereo;
-  AddLong71Ptr           = AddLong71;
-  AddLongsMonoPtr        = AddLongsMono;
-  AddLongsStereoPtr      = AddLongsStereo;
-  Add71MonoPtr           = Add71Mono;
-  Add71StereoPtr         = Add71Stereo;
-  AddLongs71Ptr          = AddLongs71;
-  Add7171Ptr             = Add7171;
- 
-  AddByteMonoBPtr        = AddByteMonoB;
-  AddByteStereoBPtr      = AddByteStereoB;
-  AddByte71BPtr          = AddByte71B;
-  AddBytesMonoBPtr       = AddBytesMonoB;
-  AddBytesStereoBPtr     = AddBytesStereoB;
-  AddBytes71BPtr         = AddBytes71B;
-  AddWordMonoBPtr        = AddWordMonoB;
-  AddWordStereoBPtr      = AddWordStereoB;
-  AddWord71BPtr          = AddWord71B;
-  AddWordsMonoBPtr       = AddWordsMonoB;
-  AddWordsStereoBPtr     = AddWordsStereoB;
-  AddWords71BPtr         = AddWords71B;
-  AddLongMonoBPtr        = AddLongMonoB;
-  AddLongStereoBPtr      = AddLongStereoB;
-  AddLong71BPtr          = AddLong71B;
-  AddLongsMonoBPtr       = AddLongsMonoB;
-  AddLongsStereoBPtr     = AddLongsStereoB;
-  AddLongs71BPtr         = AddLongs71B;
-  Add71MonoBPtr          = Add71MonoB;
-  Add71StereoBPtr        = Add71StereoB;
-  Add7171BPtr            = Add7171B;
-
-  AddLofiByteMonoPtr     = AddLofiByteMono;
-  AddLofiByteStereoPtr   = AddLofiByteStereo;
-  AddLofiBytesMonoPtr    = AddLofiBytesMono;
-  AddLofiBytesStereoPtr  = AddLofiBytesStereo;
-  AddLofiWordMonoPtr     = AddLofiWordMono;
-  AddLofiWordStereoPtr   = AddLofiWordStereo;
-  AddLofiWordsMonoPtr    = AddLofiWordsMono;
-  AddLofiWordsStereoPtr  = AddLofiWordsStereo;
-  AddLofiLongMonoPtr     = AddLofiLongMono;
-  AddLofiLongStereoPtr   = AddLofiLongStereo;
-  AddLofiLongsMonoPtr    = AddLofiLongsMono;
-  AddLofiLongsStereoPtr  = AddLofiLongsStereo;
-  AddLofiByteMonoBPtr    = AddLofiByteMonoB;
-  AddLofiByteStereoBPtr  = AddLofiByteStereoB;
-  AddLofiBytesMonoBPtr   = AddLofiBytesMonoB;
-  AddLofiBytesStereoBPtr = AddLofiBytesStereoB;
-  AddLofiWordMonoBPtr    = AddLofiWordMonoB;
-  AddLofiWordStereoBPtr  = AddLofiWordStereoB;
-  AddLofiWordsMonoBPtr   = AddLofiWordsMonoB;
-  AddLofiWordsStereoBPtr = AddLofiWordsStereoB;
-  AddLofiLongMonoBPtr    = AddLofiLongMonoB;
-  AddLofiLongStereoBPtr  = AddLofiLongStereoB;
-  AddLofiLongsMonoBPtr   = AddLofiLongsMonoB;
-  AddLofiLongsStereoBPtr = AddLofiLongsStereoB;
-#endif
-
+  
   /* MorphOS/PowerUp/WarpOS loading
 
-     Strategy:
+  Strategy:
 
-      1) If MorphOS is running, use it.
-      2) If PowerUp is running, but not WarpUp, use the m68k core
-      3) If neither of them are running, try WarpUp.
+  1) If MorphOS is running, use it.
+  2) If PowerUp is running, but not WarpUp, use the m68k core
+  3) If neither of them are running, try WarpUp.
 
   */
 
@@ -959,6 +892,7 @@ CloseLibs ( void )
   DropInterface((struct Interface *) IGraphics );
   DropInterface((struct Interface *) IDOS );
   DropInterface((struct Interface *) IIntuition );
+  DropInterface((struct Interface *) IAHI );
 #endif
 
   CloseLibrary( (struct Library *) UtilityBase );
