@@ -64,11 +64,63 @@ _LibNull( struct DriverBase* AHIsubBase );
 ** Driver entry ***************************************************************
 ******************************************************************************/
 
+#if defined( __amithlon__ )
+__asm( "\n\
+         .text;\n\
+         .byte 0x4e, 0xfa, 0x00, 0x03\n\
+         jmp _start" );
+#endif
+
 int
 _start( void )
 {
   return -1;
 }
+
+#if defined( __MORPHOS__ )
+ULONG   __abox__=1;
+ULONG   __amigappc__=1;  // deprecated, used in MOS 0.4
+#endif
+
+/******************************************************************************
+** Driver resident structure **************************************************
+******************************************************************************/
+
+#if defined( __AMIGAOS4__  )
+static const struct TagItem InitTable[];
+#else
+static const APTR InitTable[4];
+#endif
+
+// This structure must reside in the text segment or the read-only
+// data segment!  "const" makes it happen.
+const struct Resident RomTag __attribute__((used)) =
+{
+  RTC_MATCHWORD,
+  (struct Resident *) &RomTag,
+  (struct Resident *) &_etext,
+#if defined( __MORPHOS__ ) 
+  RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
+#elif defined( __AROS__ )
+  RTF_EXTENDED | RTF_AUTOINIT,
+#elif defined( __amithlon__ )
+  RTF_NATIVE | RTF_AUTOINIT,
+#elif defined( __AMIGAOS4__ )
+  RTF_NATIVE | RTF_AUTOINIT,
+#else
+  RTF_AUTOINIT,
+#endif
+  VERSION,
+  NT_LIBRARY,
+  0,                      /* priority */
+  (BYTE *) LibName,
+  (BYTE *) LibIDString,
+  (APTR) &InitTable
+#if defined( __MORPHOS__ ) || defined( __AROS__ )
+  , REVISION, NULL
+#endif
+};
+
 
 /******************************************************************************
 ** Globals ********************************************************************
@@ -79,14 +131,12 @@ const char  LibIDString[] = DRIVER " " VERS "\r\n";
 const UWORD LibVersion    = VERSION;
 const UWORD LibRevision   = REVISION;
 
-#if defined( __morphos__ ) || defined( __MORPHOS__ )
-ULONG   __abox__=1;
-#endif
-
 
 /******************************************************************************
-** Driver resident structure **************************************************
+** Library stuff **************************************************************
 ******************************************************************************/
+
+#ifndef __AMIGAOS4__
 
 static const APTR FuncTable[] =
 {
@@ -114,6 +164,7 @@ static const APTR FuncTable[] =
   gwAHIsub_UnloadSound,
   gwAHIsub_GetAttr,
   gwAHIsub_HardwareControl,
+
   (APTR) -1
 };
 
@@ -128,37 +179,125 @@ static const APTR InitTable[4] =
 #else
   (APTR) gwLibInit
 #endif
-
 };
 
+#else // __AMIGAOS4__
 
-// This structure must reside in the text segment or the read-only
-// data segment!  "const" makes it happen.
-
-static const struct Resident RomTag =
+static ULONG generic_Obtain(struct Interface *Self)
 {
-  RTC_MATCHWORD,
-  (struct Resident *) &RomTag,
-  (struct Resident *) &_etext,
-#if defined( __MORPHOS__ ) 
-  RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
-#elif defined( __AROS__ )
-  RTF_EXTENDED | RTF_AUTOINIT,
-#elif defined( __amithlon__ )
-  RTF_NATIVE | RTF_AUTOINIT,
-#else
-  RTF_AUTOINIT,
-#endif
-  VERSION,
-  NT_LIBRARY,
-  0,                      /* priority */
-  (BYTE *) LibName,
-  (BYTE *) LibIDString,
-  (APTR) &InitTable
-#if defined( __MORPHOS__ ) || defined( __AROS__ )
-  , REVISION, NULL
-#endif
+  return Self->Data.RefCount++;
+}
+
+
+static ULONG generic_Release(struct Interface *Self)
+{
+  return Self->Data.RefCount--;
+}
+
+
+static const CONST_APTR LibManagerVectors[] =
+{
+  generic_Obtain,
+  generic_Release,
+  NULL,
+  NULL,
+  
+  gwLibOpen,
+  gwLibClose,
+  gwLibExpunge,
+  NULL,
+
+  (CONST_APTR) -1,
 };
+
+static const struct TagItem LibManagerTags[] =
+{
+  { MIT_Name,             (ULONG) "__library"       },
+  { MIT_VectorTable,      (ULONG) LibManagerVectors },
+  { MIT_Version,          1                         },
+  { TAG_DONE,             0                         }
+};
+
+
+static const CONST_APTR MainVectors[] = {
+  generic_Obtain,
+  generic_Release,
+  NULL,
+  NULL,
+  
+  gwAHIsub_AllocAudio,
+  gwAHIsub_FreeAudio,
+  gwAHIsub_Disable,
+  gwAHIsub_Enable,
+  gwAHIsub_Start,
+  gwAHIsub_Update,
+  gwAHIsub_Stop,
+  gwAHIsub_SetVol,
+  gwAHIsub_SetFreq,
+  gwAHIsub_SetSound,
+  gwAHIsub_SetEffect,
+  gwAHIsub_LoadSound,
+  gwAHIsub_UnloadSound,
+  gwAHIsub_GetAttr,
+  gwAHIsub_HardwareControl,
+
+  (CONST_APTR) -1
+};
+
+static const struct TagItem MainTags[] =
+{
+  { MIT_Name,              (ULONG) "main"      },
+  { MIT_VectorTable,       (ULONG) MainVectors },
+  { MIT_Version,           1                   },
+  { TAG_DONE,              0                   }
+};
+
+
+/* MLT_INTERFACES array */
+static const CONST_APTR Interfaces[] =
+{
+  LibManagerTags,
+  MainTags,
+  NULL
+};
+
+/* m68k library vectors */
+static const CONST_APTR VecTable68K[] = {
+  (CONST_APTR) &m68kgwLibOpen,
+  (CONST_APTR) &m68kgwLibClose,
+  (CONST_APTR) &m68kgwLibExpunge,
+  (CONST_APTR) &m68kgwLibNull,
+
+  (CONST_APTR) &m68kgwAHIsub_AllocAudio,
+  (CONST_APTR) &m68kgwAHIsub_FreeAudio,
+  (CONST_APTR) &m68kgwAHIsub_Disable,
+  (CONST_APTR) &m68kgwAHIsub_Enable,
+  (CONST_APTR) &m68kgwAHIsub_Start,
+  (CONST_APTR) &m68kgwAHIsub_Update,
+  (CONST_APTR) &m68kgwAHIsub_Stop,
+  (CONST_APTR) &m68kgwAHIsub_SetVol,
+  (CONST_APTR) &m68kgwAHIsub_SetFreq,
+  (CONST_APTR) &m68kgwAHIsub_SetSound,
+  (CONST_APTR) &m68kgwAHIsub_SetEffect,
+  (CONST_APTR) &m68kgwAHIsub_LoadSound,
+  (CONST_APTR) &m68kgwAHIsub_UnloadSound,
+  (CONST_APTR) &m68kgwAHIsub_GetAttr,
+  (CONST_APTR) &m68kgwAHIsub_HardwareControl,
+
+  (CONST_APTR) -1
+};
+
+/* CreateLibrary() tag list */
+static const struct TagItem InitTable[] =
+{
+  { CLT_DataSize,         DRIVERBASE_SIZEOF   },
+  { CLT_Interfaces,       (ULONG) Interfaces  },
+  { CLT_Vector68K,        (ULONG) VecTable68K },
+  { CLT_InitFunc,         (ULONG) _LibInit    },
+  { TAG_DONE,             0                   }
+};
+
+#endif // __AMIGAOS4__
 
 
 /******************************************************************************
@@ -188,6 +327,8 @@ ReqA( const char*        text,
 /******************************************************************************
 ** Serial port debugging ******************************************************
 ******************************************************************************/
+
+#ifndef __AMIGAOS4__
 
 #if defined( __AROS__ ) && !defined( __mc68000__ )
 
@@ -222,6 +363,7 @@ MyKPrintFArgs( UBYTE*           fmt,
   RawDoFmt( fmt, args, (void(*)(void)) rawputchar_m68k, SysBase );
 }
 
+#endif
 
 /******************************************************************************
 ** HookEntry ******************************************************************
@@ -327,6 +469,12 @@ error:
 ** Library clean-up ***********************************************************
 ******************************************************************************/
 
+#ifndef __AMIGAOS4__
+static inline void DeleteLibrary(struct Library *base) {
+  FreeMem((APTR)(((char*)base)-base->lib_NegSize),base->lib_NegSize+base->lib_PosSize);
+}
+#endif
+
 BPTR
 _LibExpunge( struct DriverBase* AHIsubBase )
 {
@@ -356,10 +504,7 @@ _LibExpunge( struct DriverBase* AHIsubBase )
     CloseLibrary( (struct Library*) IntuitionBase );
     CloseLibrary( (struct Library*) UtilityBase );
 
-    FreeMem( (APTR) ( ( (char*) AHIsubBase ) -
-		      AHIsubBase->library.lib_NegSize ),
-             ( AHIsubBase->library.lib_NegSize +
-	       AHIsubBase->library.lib_PosSize ) );
+    DeleteLibrary((struct Library *) AHIsubBase);
   }
   else
   {
