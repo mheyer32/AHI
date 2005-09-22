@@ -63,6 +63,10 @@ publication, even if advised of the possibility of such damage.}
 
 $Id$
 $Log$
+Revision 5.9.2.8  2005/09/22 20:09:18  martin
+Docs/ahiusr.texinfo: Added Gunther Nikl and Davy Wentzler to
+"Contributors". Removed all contributor e-mail addresses.
+
 Revision 5.9.2.7  2005/06/19 21:43:57  martin
 AHItoccataPlayBufferSize and AHItoccataRecordBufferSize.
 
@@ -1537,82 +1541,88 @@ code or drivers:
 
 @table @asis
 
-@item Stéphane Barbaray @email{opty@@club-internet.fr}
+@item Stéphane Barbaray
 The MUI version of the preferences program.
 
-@item Olaf Barthel @email{olsen@@sourcery.han.de}
+@item Olaf Barthel
 The Concierto driver.
 
-@item Chris Brenner @email{cbrenner@@inreach.com}
+@item Chris Brenner
 A (never finished?) Sunrize driver.
 
-@item Valenta Ferenc @email{vf@@elte.hu}
+@item Valenta Ferenc
 The VSS driver.
 
 @item Ben Fuller
 A never finished Sunrize driver. May he rest in peace.
 
-@item Simon N Goodwin @email{simon@@studio.woden.com}
+@item Simon N Goodwin
 A good attempt on the Silicon Studio driver. :-)
 
-@item Przemyslaw Gruchala @email{sensei@@box43.gnet.pl}
+@item Przemyslaw Gruchala
 A C-Media and a Yet To Be Named driver. :-)
 
-@item Thorsten Hansen @email{hansen_t@@informatik.fh-hamburg.de}
+@item Thorsten Hansen
 The Melody MPEG and Amithlon drivers.
 
-@item Richard Körber @email{shred@@chessy.aworld.de}
+@item Richard Körber
 The Maestro Pro driver.
 
-@item Frank Mariak @email{F.Mariak@@t-online.de}
+@item Frank Mariak
 The GREX and Pegasos drivers.
 
-@item Bernd `Bernie' Meyer @email{bmeyer@@csse.monash.edu.au}
+@item Bernd `Bernie' Meyer
 The---sniff!---never to be released Umilator driver.
 
-@item Kenneth Nilsen @email{kenny@@bgnett.no}
+@item Gunther Nikl
+Patches!
+
+@item Kenneth Nilsen
 A (never finished?) Sunrize driver. And here I was, thinking the
 ``Amiga'' curse was the worst curse of them all @enddots{}
 
-@item Johan Nyblom @email{nyblom@@ludd.luth.se}
+@item Johan Nyblom
 The latest Wavetools driver.
 
-@item Pauli Porkka @email{pporkka@@iki.fi}
+@item Pauli Porkka
 The first version of the Toccata driver.
 
-@item Markus Pöllmann @email{m.poellmann@@haage-partner.com}
+@item Markus Pöllmann
 The AmigaXL driver.
 
-@item Bernd Roesch @email{berndroesch1@@compuserve.de}
+@item Bernd Roesch
 The UAE driver.
 
-@item Harry Sintonen @email{sintonen@@iki.fi}
-The very first (and only, so far) source code patch!
+@item Harry Sintonen
+The very first source code patch!
 
-@item Sigbjørn Skjæret @email{cisc@@broadpark.no}
+@item Sigbjørn Skjæret
 A 'C' version of @code{paula.audio}.
 
-@item Stefan Sommerfeld @email{zerocom@@cs.tu-berlin.de}
+@item Stefan Sommerfeld
 The RePulse driver.
 
 @item Rüdiger Sopp
 The first version of the preferences program.  Too bad things didn't work
 out as planned.
 
-@item Pawel Stypula @email{pawelS@@elbox.com}
+@item Pawel Stypula
 The Mediator drivers.
 
-@item Teemu Suikki @email{tsuikki@@lut.fi}
+@item Teemu Suikki
 The Delfina driver and the first PPC port.
 
-@item Benjamin Vernoux @email{bvernoux@@wanadoo.fr}
+@item Benjamin Vernoux
 An FM801 driver.
 
-@item Thomas Wenzel @email{wenzel@@unixserv.rz.fh-hannover.de}
+@item Davy Wentzler
+The AmigaOS 4.x port and many drivers.
+
+@item Thomas Wenzel
 The Prelude driver.
 
-@item Frank Wille @email{frank@@phoenix.owl.de}
-The ELF loader.
+@item Frank Wille
+The (no longer used) ELF loader.
 
 @end table
 
@@ -1717,8 +1727,8 @@ Thomas Houlberg (Sdr. Bjert, Denmark) and Patrice Machin (Paris,
 France) actually ordered my CD. Unfortunately, I only made a limited
 amount of those CDs (17 plus one pre-production CD, if I remember
 correctly) and have been out of stock ever since. To compensate for
-this unusually long delivery delay, I've decided to produce three
-extra copies and send them to you for free. Benoit, Thomas and
+this unusually long delivery delay, I've decided to try to produce
+three extra copies and send them to you for free. Benoit, Thomas and
 Patrice, if you read this and have moved since 1999, please let me
 know of your new address as soon as possible!
 

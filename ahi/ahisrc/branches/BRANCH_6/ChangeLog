@@ -1,5 +1,8 @@
 2005-09-22  Martin Blom  <martin@blom.org>
 
+	* Docs/ahiusr.texinfo: Added Gunther Nikl and Davy Wentzler to
+	"Contributors". Removed all contributor e-mail addresses.
+
 	* ahi.device, Drivers/*: More OS4 porting.
 
 2005-09-21  Martin Blom  <martin@blom.org>
