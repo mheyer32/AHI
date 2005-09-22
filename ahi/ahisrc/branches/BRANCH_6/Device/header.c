@@ -37,15 +37,21 @@
 #include "localize.h"
 #include "misc.h"
 #include "version.h"
-#ifdef __AMIGAOS4__
-#include "devcommands.h"
-#include "device.h"
-#endif
 
 #ifdef __amithlon__
 # define RTF_NATIVE (1<<3)
 # define FUNCARRAY_32BIT_NATIVE 0xfffefffe
 #endif
+
+#if !defined( __AROS__ ) && !defined( __amithlon__ )
+extern void _etext;
+#else
+# define _etext RomTag+1 // Fake it
+#endif
+
+/******************************************************************************
+** Function prototypes ********************************************************
+******************************************************************************/
 
 static BOOL
 OpenLibs ( void );
@@ -84,19 +90,19 @@ ULONG   __amigappc__=1;  // deprecated, used in MOS 0.4
 ** Device resident structure **************************************************
 ******************************************************************************/
 
-static const APTR InitTable[4];
-
 #if defined( __AMIGAOS4__  )
-static struct TagItem libCreateTags[];
+static const struct TagItem InitTable[];
+#else
+static const APTR InitTable[4];
 #endif
 
-// This structure must reside in the text segment or the read-only data segment!
-// "const" makes it happen.
+// This structure must reside in the text segment or the read-only
+// data segment!  "const" makes it happen.
 const struct Resident RomTag __attribute__((used)) =
 {
   RTC_MATCHWORD,
   (struct Resident *) &RomTag,
-  (struct Resident *) &RomTag + 1,
+  (struct Resident *) &_etext,
 #if defined( __MORPHOS__ ) 
   RTF_EXTENDED | RTF_PPC | RTF_AUTOINIT,
 #elif defined( __AROS__ )
@@ -113,13 +119,9 @@ const struct Resident RomTag __attribute__((used)) =
   0,                      /* priority */
   (BYTE *) &DevName[0],
   (BYTE *) &IDString[6],
-#if defined( __AMIGAOS4__ )
-  libCreateTags
-#else
   (APTR) &InitTable
-# if defined( __MORPHOS__ ) || defined( __AROS__ )
+#if defined( __MORPHOS__ ) || defined( __AROS__ )
   , REVISION, NULL
-# endif
 #endif
 };
 
@@ -246,11 +248,9 @@ ADDFUNC* AddLofiLongsStereoBPtr           = AddLofiLongsStereoB;
 ******************************************************************************/
 
 #ifndef __AMIGAOS4__
-
-static __inline void DeleteLibrary(struct Library *base) {
+static inline void DeleteLibrary(struct Library *base) {
   FreeMem((APTR)(((char*)base)-base->lib_NegSize),base->lib_NegSize+base->lib_PosSize);
 }
-
 #endif
 
 struct AHIBase*
@@ -261,6 +261,10 @@ _DevInit( struct AHIBase*  device,
   AHIBase = device;
   SysBase = sysbase;
 
+#ifdef __AMIGAOS4__
+  IExec = (struct ExecIFace*) SysBase->MainInterface; 
+#endif
+  
   device->ahib_Library.lib_Revision = REVISION;
   
   device->ahib_SysLib  = sysbase;
@@ -320,9 +324,11 @@ _DevNull( void ) {
   return 0;
 }
 
-static const APTR funcTable[] =
-{
 
+#ifndef __AMIGAOS4__
+
+static const APTR FuncTable[] =
+{
 #if defined( __MORPHOS__ ) || defined( __amithlon__ )
   (APTR) FUNCARRAY_32BIT_NATIVE,
 #endif
@@ -356,6 +362,7 @@ static const APTR funcTable[] =
   gwAHI_AddAudioMode,
   gwAHI_RemoveAudioMode,
   gwAHI_LoadModeFile,
+
   (APTR) -1
 };
 
@@ -363,8 +370,8 @@ static const APTR funcTable[] =
 static const APTR InitTable[4] =
 {
   (APTR) sizeof( struct AHIBase ),
-  (APTR) &funcTable,
-  0,
+  (APTR) &FuncTable,
+  NULL,
 #if defined( __MORPHOS__ ) || defined( __amithlon__ )
   (APTR) _DevInit
 #else
@@ -372,137 +379,107 @@ static const APTR InitTable[4] =
 #endif
 };
 
+#else // __AMIGAOS4__
 
-#ifdef __AMIGAOS4__
-struct AHIBase *dev_init(struct AHIBase *dev, APTR seglist, struct ExecIFace *exec)
+static ULONG generic_Obtain(struct Interface *Self)
 {
-    IExec = exec;
-    SysBase = (struct ExecBase *)exec->Data.LibBase;
-    
-    return _DevInit( dev, seglist, SysBase);
+  return Self->Data.RefCount++;
 }
 
-VOID dev_begin_io(struct DeviceManagerInterface *Self, struct IORequest *ior)
+static ULONG generic_Release(struct Interface *Self)
 {
-    _DevBeginIO((struct AHIRequest*) ior, (struct AHIBase*) Self->Data.LibBase);
+  return Self->Data.RefCount--;
 }
 
-LONG dev_abort_io(struct DeviceManagerInterface *Self, struct IORequest *ior)
-{
-    return _DevAbortIO((struct AHIRequest*) ior, (struct AHIBase*) Self->Data.LibBase);
-}
 
-LONG dev_open(struct DeviceManagerInterface *Self,
-              struct IORequest *ior,
-              ULONG unit,
-              ULONG flags)
+static const CONST_APTR DevManagerVectors[] =
 {
-    return _DevOpen((struct AHIRequest *) ior, unit, flags, (struct AHIBase*) Self->Data.LibBase);
-}
+  generic_Obtain,
+  generic_Release,
+  NULL,
+  NULL,
+  
+  gwDevOpen,
+  gwDevClose,
+  gwDevExpunge,
+  NULL,
+  gwDevBeginIO,
+  gwDevAbortIO,
 
-APTR dev_close(struct DeviceManagerInterface *Self, struct IORequest *ior)
-{
-    return (APTR) _DevClose ((struct AHIRequest*) ior, (struct AHIBase*) Self->Data.LibBase);
-
-}
-
-APTR dev_expunge(struct DeviceManagerInterface *Self)
-{
-    return (APTR) _DevExpunge((struct AHIBase*) Self->Data.LibBase);
-}
-
-ULONG generic_Obtain (struct Interface *Self)
-{
-	return Self->Data.RefCount++;
-}
-
-ULONG generic_Release (struct Interface *Self)
-{
-	return Self->Data.RefCount--;
-}
-
-static void *dev_manager_vectors[] =
-{
-	(void *)generic_Obtain,
-	(void *)generic_Release,
-	(void *)NULL,
-	(void *)NULL,
-	(void *)dev_open,
-	(void *)dev_close,
-	(void *)dev_expunge,
-	(void *)NULL,
-	(void *)dev_begin_io,
-	(void *)dev_abort_io,
-	(void *)-1,
+  (CONST_APTR) -1
 };
 
-static struct TagItem devmanagerTags[] = 
+static const struct TagItem DevManagerTags[] = 
 {
-	{MIT_Name,             (ULONG)"__device"},
-	{MIT_VectorTable,      (ULONG)dev_manager_vectors},
-	{MIT_Version,          1},
-	{TAG_DONE,             0}
+  { MIT_Name,             (ULONG) "__device"        },
+  { MIT_VectorTable,      (ULONG) DevManagerVectors },
+  { MIT_Version,          1                         },
+  { TAG_DONE,             0                         }
 };
 
-static void *main_vectors[] = {
-	(void *)generic_Obtain,
-	(void *)generic_Release,
-	(void *)NULL,
-	(void *)NULL,
-	(void *)gwAHI_AllocAudioA,
-	(void *)gwAHI_AllocAudio,
-	(void *)gwAHI_FreeAudio,
-	(void *)gwAHI_KillAudio,
-	(void *)gwAHI_ControlAudioA,
-	(void *)gwAHI_ControlAudio,
-	(void *)gwAHI_SetVol,
-	(void *)gwAHI_SetFreq,
-	(void *)gwAHI_SetSound,
-	(void *)gwAHI_SetEffect,
-	(void *)gwAHI_LoadSound,
-	(void *)gwAHI_UnloadSound,
-	(void *)gwAHI_NextAudioID,
-	(void *)gwAHI_GetAudioAttrsA,
-	(void *)gwAHI_GetAudioAttrs,
-	(void *)gwAHI_BestAudioIDA,
-	(void *)gwAHI_BestAudioID,
-	(void *)gwAHI_AllocAudioRequestA,
-	(void *)gwAHI_AllocAudioRequest,
-	(void *)gwAHI_AudioRequestA,
-	(void *)gwAHI_AudioRequest,
-	(void *)gwAHI_FreeAudioRequest,
-	(void *)gwAHI_PlayA,
-	(void *)gwAHI_Play,
-	(void *)gwAHI_SampleFrameSize,
-	(void *)gwAHI_AddAudioMode,
-	(void *)gwAHI_RemoveAudioMode,
-	(void *)gwAHI_LoadModeFile,
-	(void *)-1
+
+static const CONST_APTR MainVectors[] = {
+  generic_Obtain,
+  generic_Release,
+  NULL,
+  NULL,
+
+  gwAHI_AllocAudioA,
+  gwAHI_AllocAudio,
+  gwAHI_FreeAudio,
+  gwAHI_KillAudio,
+  gwAHI_ControlAudioA,
+  gwAHI_ControlAudio,
+  gwAHI_SetVol,
+  gwAHI_SetFreq,
+  gwAHI_SetSound,
+  gwAHI_SetEffect,
+  gwAHI_LoadSound,
+  gwAHI_UnloadSound,
+  gwAHI_NextAudioID,
+  gwAHI_GetAudioAttrsA,
+  gwAHI_GetAudioAttrs,
+  gwAHI_BestAudioIDA,
+  gwAHI_BestAudioID,
+  gwAHI_AllocAudioRequestA,
+  gwAHI_AllocAudioRequest,
+  gwAHI_AudioRequestA,
+  gwAHI_AudioRequest,
+  gwAHI_FreeAudioRequest,
+  gwAHI_PlayA,
+  gwAHI_Play,
+  gwAHI_SampleFrameSize,
+  gwAHI_AddAudioMode,
+  gwAHI_RemoveAudioMode,
+  gwAHI_LoadModeFile,
+
+  (CONST_APTR) -1
 };
 
-static struct TagItem mainTags[] =
+static const struct TagItem MainTags[] =
 {
-	{MIT_Name,              (ULONG)"main"},
-	{MIT_VectorTable,       (ULONG)main_vectors},
-	{MIT_Version,           1},
-	{TAG_DONE,              0}
+  { MIT_Name,              (ULONG) "main"      },
+  { MIT_VectorTable,       (ULONG) MainVectors },
+  { MIT_Version,           1                   },
+  { TAG_DONE,              0                   }
 };
+
 
 /* MLT_INTERFACES array */
-
-static ULONG devInterfaces[] =
+static const CONST_APTR Interfaces[] =
 {
-	(ULONG)devmanagerTags,
-	(ULONG)mainTags,
-	0
+  DevManagerTags,
+  MainTags,
+  NULL
 };
 
-
-CONST CONST_APTR VecTable68K[] = {
+/* m68k library vectors */
+static const CONST_APTR VecTable68K[] = {
   (CONST_APTR) &m68kgwDevOpen,
   (CONST_APTR) &m68kgwDevClose,
   (CONST_APTR) &m68kgwDevExpunge,
   (CONST_APTR) &m68kgwDevNull,
+
   (CONST_APTR) &m68kgwDevBeginIO,
   (CONST_APTR) &m68kgwDevAbortIO,
   (CONST_APTR) &m68kgwAHI_AllocAudioA,
@@ -526,19 +503,22 @@ CONST CONST_APTR VecTable68K[] = {
   (CONST_APTR) &m68kgwAHI_AddAudioMode,
   (CONST_APTR) &m68kgwAHI_RemoveAudioMode,
   (CONST_APTR) &m68kgwAHI_LoadModeFile,
+
   (CONST_APTR) -1
 };
 
-/* CreateLibrary tag list */
-static struct TagItem libCreateTags[] =
+/* CreateLibrary() tag list */
+static const struct TagItem InitTable[] =
 {
-	{CLT_DataSize,         (ULONG)sizeof(struct AHIBase)},
-	{CLT_Interfaces,       (ULONG)devInterfaces},
-	{CLT_Vector68K,        (ULONG)&VecTable68K},
-	{CLT_InitFunc,         (ULONG)dev_init},
-	{TAG_DONE,             0}
+  { CLT_DataSize,         sizeof(struct AHIBase) },
+  { CLT_Interfaces,       (ULONG) Interfaces     },
+  { CLT_Vector68K,        (ULONG) VecTable68K    },
+  { CLT_InitFunc,         (ULONG) _DevInit       },
+  { TAG_DONE,             0                      }
 };
-#endif
+
+#endif // __AMIGAOS4__
+
 
 /******************************************************************************
 ** OpenLibs *******************************************************************
