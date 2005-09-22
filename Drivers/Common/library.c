@@ -470,9 +470,10 @@ error:
 ******************************************************************************/
 
 #ifndef __AMIGAOS4__
-static inline void DeleteLibrary(struct Library *base) {
-  FreeMem((APTR)(((char*)base)-base->lib_NegSize),base->lib_NegSize+base->lib_PosSize);
-}
+# define DeleteLibrary(base) FreeMem((APTR)(((char*) base) - \
+					    ((struct Library*) base)->lib_NegSize), \
+				     ((struct Library*) base)->lib_NegSize + \
+				     ((struct Library*) base)->lib_PosSize)
 #endif
 
 BPTR
