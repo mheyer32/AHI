@@ -513,7 +513,7 @@ static const struct TagItem InitTable[] =
   { CLT_DataSize,         sizeof(struct AHIBase) },
   { CLT_Interfaces,       (ULONG) Interfaces     },
   { CLT_Vector68K,        (ULONG) VecTable68K    },
-  { CLT_InitFunc,         (ULONG) _DevInit       },
+  { CLT_InitFunc,         (ULONG) gwDevInit      },
   { TAG_DONE,             0                      }
 };
 
