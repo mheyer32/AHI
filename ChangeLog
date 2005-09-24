@@ -1,5 +1,21 @@
 2005-09-22  Martin Blom  <martin@blom.org>
 
+	* Released AddAudioModes 6.2.
+
+	* Released ahi.device 6.5.
+
+	* Released ac97.audio 6.2.
+
+	* Released AROS.audio 6.2.
+
+	* Released device.audio 6.1.
+
+	* Released emu10kx.audio 6.4.
+
+	* Released filesave.audio 6.2.
+
+	* Released void.audio 6.2.
+
 	* Docs/ahiusr.texinfo: Added Gunther Nikl and Davy Wentzler to
 	"Contributors". Removed all contributor e-mail addresses.
 

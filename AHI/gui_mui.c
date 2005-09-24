@@ -76,6 +76,12 @@ struct EmulLibEntry _HookEntry =
 __asm( ".globl HookEntry;HookEntry=_HookEntry" );
 
 
+#elif defined(__AMIGAOS4__)
+
+ULONG HookEntry(struct Hook* h, void* o, void* msg) {
+  return ( ( (ULONG(*)(struct Hook*, void*, void*)) *h->h_SubEntry)( h, o, msg ) );
+}
+
 #endif
 
 
@@ -127,6 +133,10 @@ enum actionIDs {
 #define ItCk(t,s,i,f)   { NM_ITEM, t, s, f, 0, (APTR)i }
 
 struct Library       *MUIMasterBase  = NULL;
+
+#ifdef __AMIGAOS4__
+struct MUIMasterIFace *IMUIMaster = NULL;
+#endif
 
 static struct NewMenu Menus[] = {
   Title( NULL /* Project */ ),
@@ -541,6 +551,18 @@ BOOL BuildGUI(char *screenname)
     return FALSE;
   }
 
+#ifdef __AMIGAOS4__
+  IMUIMaster = (struct MUIMasterIFace *) GetInterface(MUIMasterBase, "main", 1, NULL);
+  if(IMUIMaster == NULL)
+  {
+    Printf((char *) msgTextNoOpen, (ULONG) "MUIMaster main interface", 1);
+    Printf("\n");
+    CloseLibrary((struct Library*) MUIMasterBase);
+    return FALSE;
+  }
+#endif
+  
+  
   page1 = HGroup,
     Child, VGroup,
       Child, MUIUnit = CycleObject,
@@ -757,6 +779,9 @@ void CloseGUI(void)
     MUI_DisposeObject(MUIApp);
   if (MUIMasterBase)
     CloseLibrary(MUIMasterBase);
+#ifdef __AMIGAOS4__
+  DropInterface((struct Interface*) IMUIMaster);
+#endif
 }
 
 
