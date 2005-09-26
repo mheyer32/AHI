@@ -1,6 +1,15 @@
-2005-09-22  Martin Blom  <martin@blom.org>
+2005-09-27  Martin Blom  <martin@blom.org>
 
 	* Released AHI 6.0rc4.
+
+	* Released ahi.device 6.6.
+
+	* ahi.device: Fixed a long-standing bug, first reported on
+	2002-08-17, about an enforcer hit when AbortIO()'ing an I/O
+	request. Thanks for the excellent test program, Harry! [Marcin
+	Kurek, Sensei, Harry Sintonen]
+ 
+2005-09-22  Martin Blom  <martin@blom.org>
 
 	* Released AddAudioModes 6.2.
 
