@@ -1,6 +1,6 @@
 /*
      emu10kx.audio - AHI driver for SoundBlaster Live! series
-     Copyright (C) 2002-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2002-2005 Martin Blom <martin@blom.org>
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -17,48 +17,29 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-
 #include <config.h>
 
 #include <exec/memory.h>
 #include <proto/exec.h>
-
-#ifdef __AMIGAOS4__
-#include <proto/expansion.h>
-#define __NOLIBBASE__
-#include <proto/ahi_sub.h>
-#include <proto/utility.h>
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
 #include <clib/alib_protos.h>
-#endif
 
 
 #include "library.h"
 #include "version.h"
 #include "emu10kx-misc.h"
-
+#include "pci_wrapper.h"
 
 /* We use global library bases instead of storing them in DriverBase, since
    I don't want to modify the original sources more than necessary. */
 
-struct ExecBase*   SysBase;
-struct DosLibrary* DOSBase;
-#ifndef __AMIGAOS4__
-struct Library*    OpenPciBase;
-#endif
-struct DriverBase* AHIsubBase;
+struct DriverBase* AHIsubBase = NULL;
+struct ExecBase*   SysBase    = NULL;
+struct DosLibrary* DOSBase    = NULL;
 
 #ifdef __AMIGAOS4__
-struct ExpansionBase*       ExpansionBase = NULL;
-struct ExpansionIFace*      IExpansion    = NULL;
-struct DOSIFace*            IDOS          = NULL;
-struct AHIsubIFace*         IAHIsub       = NULL;
-struct ExecIFace*           IExec         = NULL;
-struct MMUIFace*            IMMU          = NULL;
-struct UtilityIFace*        IUtility      = NULL;
-struct PCIIFace*            IPCI          = NULL;
+struct DOSIFace*   IDOS       = NULL;
+struct ExecIFace*  IExec      = NULL;
+struct MMUIFace*   IMMU       = NULL;
 #endif
 
 
@@ -75,16 +56,8 @@ BOOL
 DriverInit( struct DriverBase* ahisubbase )
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) ahisubbase;
-#ifdef __AMIGAOS4__
-  struct PCIDevice   *dev;
-#else
-  struct pci_dev*     dev;
-#endif
+  APTR	    	      dev;
   int                 card_no;
-
-#ifdef __AMIGAOS4__
-  SysBase = AbsExecBase;
-#endif
 
   /*** Libraries etc. ********************************************************/
 
@@ -99,59 +72,36 @@ DriverInit( struct DriverBase* ahisubbase )
   }
 
 #ifdef __AMIGAOS4__
-
   if ((IDOS = (struct DOSIFace *) GetInterface((struct Library *) DOSBase, "main", 1, NULL)) == NULL)
   {
        Req("Couldn't open IDOS interface!\n");
        return FALSE;
   }
 
-  ExpansionBase = (struct ExpansionBase*) OpenLibrary( "expansion.library", 1 );
-  if( ExpansionBase == NULL )
-  {
-    Req( "Unable to open 'expansion.library' version 1.\n" );
-    return FALSE;
-  }
-  if ((IExpansion = (struct ExpansionIFace *) GetInterface((struct Library *) ExpansionBase, "main", 1, NULL)) == NULL)
-  {
-       Req("Couldn't open IExpansion interface!\n");
-       return FALSE;
-  }
-
-  if ((IPCI = (struct PCIIFace *) GetInterface((struct Library *) ExpansionBase, "pci", 1, NULL)) == NULL)
-  {
-       Req("Couldn't open IPCI interface!\n");
-       return FALSE;
-  }
-  
-  if ((IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) == NULL)
-  {
-       Req("Couldn't open IAHIsub interface!\n");
-       return FALSE;
-  }
+/*   if ((IAHIsub = (struct AHIsubIFace *) GetInterface((struct Library *) AHIsubBase, "main", 1, NULL)) == NULL) */
+/*   { */
+/*        Req("Couldn't open IAHIsub interface!\n"); */
+/*        return FALSE; */
+/*   } */
   
   if ((IMMU = (struct MMUIFace *) GetInterface((struct Library *) SysBase, "mmu", 1, NULL)) == NULL)
   {
        Req("Couldn't open IMMU interface!\n");
        return FALSE;
   }
-  
-  IUtility = SysBase->UtilityInterface;
 
-#else
-
-  OpenPciBase = OpenLibrary( "openpci.library", 1 );
-  
-  if( OpenPciBase == NULL )
-  {
-    Req( "Unable to open 'openpci.library' version 1.\n" );
-    return FALSE;
-  }
-
-  EMU10kxBase->flush_caches = pci_bus() & ( GrexA1200Bus | GrexA4000Bus );
-
+/*   if ((IUtility = (struct UtilityIFace *) GetInterface((struct Library *) UtilityBase, "main", 1, NULL)) == NULL) */
+/*   { */
+/*        Req("Couldn't open IUtility interface!\n"); */
+/*        return FALSE; */
+/*   } */
 #endif
 
+  if (!ahi_pci_init(ahisubbase))
+  {
+       return FALSE;
+  }
+  
   InitSemaphore( &EMU10kxBase->semaphore );
 
 
@@ -160,53 +110,27 @@ DriverInit( struct DriverBase* ahisubbase )
   EMU10kxBase->cards_found = 0;
   dev = NULL;
 
-#ifdef __AMIGAOS4__
-  // Search for Live! cards, tbd : while
-  if ( (dev = IPCI->FindDeviceTags( FDT_VendorID, PCI_VENDOR_ID_CREATIVE,
-				  FDT_DeviceID, PCI_DEVICE_ID_CREATIVE_EMU10K1,
-				  TAG_DONE ) ) != NULL )
-  {
-    ++EMU10kxBase->cards_found;
-    DebugPrintF("EMU10Kx found! :-)\n");
-  }
-  
-  // Search for Audigy cards
-  if ( (dev = IPCI->FindDeviceTags( FDT_VendorID, PCI_VENDOR_ID_CREATIVE,
-				  FDT_DeviceID, PCI_DEVICE_ID_CREATIVE_AUDIGY,
-				  TAG_DONE ) ) != NULL )
-  {
-    ++EMU10kxBase->cards_found;
-    DebugPrintF("Audigy found! :-)\n");
-  }
-#else
   // Search for Live! cards
-  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
-				  dev ) ) != NULL )
+  while( ( dev = ahi_pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				      PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				      dev ) ) != NULL )
   {
     ++EMU10kxBase->cards_found;
   }
   
   // Search for Audigy cards
-  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-				  PCI_DEVICE_ID_CREATIVE_AUDIGY,
-				  dev ) ) != NULL )
+  while( ( dev = ahi_pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				      PCI_DEVICE_ID_CREATIVE_AUDIGY,
+				      dev ) ) != NULL )
   {
     ++EMU10kxBase->cards_found;
   }
-#endif
   
   // Fail if no hardware (prevents the audio modes form being added to
   // the database if the driver cannot be used).
 
   if( EMU10kxBase->cards_found == 0 )
   {
-//    Req( "No SoundBlaster Live! or Audigy card present.\n" );
-#ifdef __AMIGAOS4__
-    KPrintF( ":No SoundBlaster Live! or Audigy card present.\n" );
-#else
-    KPrintF( DRIVER ":No SoundBlaster Live! or Audigy card present.\n" );
-#endif
     return FALSE;
   }
 
@@ -261,11 +185,11 @@ DriverInit( struct DriverBase* ahisubbase )
   EMU10kxBase->ac97.Revision = REVISION;
 
 #ifdef __AMIGAOS4__
-  EMU10kxBase->ac97.GetFunc.h_Entry    = AC97GetFunc; //HookEntry;
+  EMU10kxBase->ac97.GetFunc.h_Entry    = AC97GetFunc;
   EMU10kxBase->ac97.GetFunc.h_SubEntry = NULL;
   EMU10kxBase->ac97.GetFunc.h_Data     = NULL;
 
-  EMU10kxBase->ac97.SetFunc.h_Entry    = AC97SetFunc; //HookEntry;
+  EMU10kxBase->ac97.SetFunc.h_Entry    = (HOOKFUNC) AC97SetFunc;
   EMU10kxBase->ac97.SetFunc.h_SubEntry = NULL;
   EMU10kxBase->ac97.SetFunc.h_Data     = NULL;
 
@@ -296,45 +220,25 @@ DriverInit( struct DriverBase* ahisubbase )
 
   card_no = 0;
   
-#ifdef __AMIGAOS4__
   // Live! cards ... 
-  if( ( dev = IPCI->FindDeviceTags( FDT_VendorID, PCI_VENDOR_ID_CREATIVE,
-				  FDT_DeviceID, PCI_DEVICE_ID_CREATIVE_EMU10K1,
-				  TAG_DONE ) ) != NULL )
+  while( ( dev = ahi_pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				      PCI_DEVICE_ID_CREATIVE_EMU10K1,
+				      dev ) ) != NULL )
   {
-    //dev->Lock(PCI_LOCK_EXCLUSIVE); tbd
+    // AOS4: dev->Lock(PCI_LOCK_EXCLUSIVE); tbd
     EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
     ++card_no;
   }
   
   // Audigy cards ...
-  if( ( dev = IPCI->FindDeviceTags( FDT_VendorID, PCI_VENDOR_ID_CREATIVE,
-				  FDT_DeviceID, PCI_DEVICE_ID_CREATIVE_AUDIGY,
-				  TAG_DONE ) ) != NULL )
+  while( ( dev = ahi_pci_find_device( PCI_VENDOR_ID_CREATIVE,
+				      PCI_DEVICE_ID_CREATIVE_AUDIGY,
+				      dev ) ) != NULL )
   {
-    //dev->Lock(PCI_LOCK_EXCLUSIVE); tbd
+    // AOS4: dev->Lock(PCI_LOCK_EXCLUSIVE); tbd
     EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
     ++card_no;
   }
-#else
-  // Live! cards ... 
-  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-				  PCI_DEVICE_ID_CREATIVE_EMU10K1,
-				  dev ) ) != NULL )
-  {
-    EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
-    ++card_no;
-  }
-  
-  // Audigy cards ...
-  while( ( dev = pci_find_device( PCI_VENDOR_ID_CREATIVE,
-				  PCI_DEVICE_ID_CREATIVE_AUDIGY,
-				  dev ) ) != NULL )
-  {
-    EMU10kxBase->driverdatas[ card_no ] = AllocDriverData( dev, AHIsubBase );
-    ++card_no;
-  }
-#endif
 
   return TRUE;
 }
@@ -374,15 +278,13 @@ DriverCleanup( struct DriverBase* AHIsubBase )
   }
 
   FreeVec( EMU10kxBase->driverdatas ); 
-  
+    
 #ifdef __AMIGAOS4__
-  DebugPrintF("CLEANING UP!\n");
-  DropInterface( (struct Interface *) IExpansion);
-  DropInterface( (struct Interface *) IPCI);
-  DropInterface( (struct Interface *) IAHIsub);
-  CloseLibrary( (struct Library*) ExpansionBase );    
-#else
-  CloseLibrary( OpenPciBase );
+  DropInterface((struct Interface *) IDOS);
+  DropInterface((struct Interface *) IMMU);
 #endif
+
+  ahi_pci_exit();
+
   CloseLibrary( (struct Library*) DOSBase );
 }

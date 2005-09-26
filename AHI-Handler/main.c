@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI-Handler - The AUDIO: DOS device for AHI
-     Copyright (C) 1997-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1997-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -128,7 +126,7 @@ BYTE               AHIDevice = -1;
 struct Library    *AHIBase;
 
 struct AIFCHeader AIFCHeader = {
-  ID_FORM, NULL, ID_AIFC,
+  ID_FORM, 0, ID_AIFC,
   ID_FVER, sizeof(FormatVersionHeader), {
     AIFCVersion1
   },
@@ -141,18 +139,18 @@ struct AIFCHeader AIFCHeader = {
     {sizeof("not compressed")-1,
      'n','o','t',' ','c','o','m','p','r','e','s','s','e','d'}
   },
-  ID_SSND, NULL, {0,0}
+  ID_SSND, 0, {0,0}
 };
 
 struct AIFFHeader AIFFHeader = {
-  ID_FORM, NULL, ID_AIFF,
+  ID_FORM, 0, ID_AIFF,
   ID_COMM, sizeof(CommonChunk),{
     0,
     0,
     0,
     {0,{0,0}}
   },
-  ID_SSND, NULL, {0,0}
+  ID_SSND, 0, {0,0}
 };
 
 
@@ -774,13 +772,13 @@ void ulong2extended (ULONG in, extended *ex)
 
 void FillAIFFheader(struct HandlerData *data) {
 
-  AIFFHeader.FORMsize = sizeof(AIFFHeader) + data->totallength - 8;
+  AIFFHeader.FORMsize = data->totallength - 8;
   AIFFHeader.COMMchunk.numChannels = data->channels;
   AIFFHeader.COMMchunk.numSampleFrames = 
       data->totallength / AHI_SampleFrameSize(data->type);
   AIFFHeader.COMMchunk.sampleSize = data->bits;
   ulong2extended(data->freq, &AIFFHeader.COMMchunk.sampleRate);
-  AIFFHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength;
+  AIFFHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength - sizeof(AIFFHeader);
 }
 
 
@@ -790,13 +788,13 @@ void FillAIFFheader(struct HandlerData *data) {
 
 void FillAIFCheader(struct HandlerData *data) {
 
-  AIFCHeader.FORMsize = sizeof(AIFCHeader) + data->totallength - 8;
+  AIFCHeader.FORMsize = data->totallength - 8;
   AIFCHeader.COMMchunk.numChannels = data->channels;
   AIFCHeader.COMMchunk.numSampleFrames = 
       data->totallength / AHI_SampleFrameSize(data->type);
   AIFCHeader.COMMchunk.sampleSize = data->bits;
   ulong2extended(data->freq, &AIFCHeader.COMMchunk.sampleRate);
-  AIFCHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength;
+  AIFCHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength - sizeof(AIFFHeader);
 }
 
 

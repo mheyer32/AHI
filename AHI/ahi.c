@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -212,6 +212,7 @@ void NewSettings(char *name) {
   globalprefs.ahigp_MaxCPU           = (90 << 16) / 100;
   globalprefs.ahigp_ClipMasterVolume = FALSE;
   globalprefs.ahigp_AntiClickTime    = 0;
+  globalprefs.ahigp_ScaleMode        = AHI_SCALE_FIXED_0_DB;
 
   UnitList = GetUnits(name);
   Units = List2Array((struct List *) UnitList);
@@ -508,7 +509,7 @@ char *getFreq(void) {
       TAG_DONE);
   }
 
-  sprintf(freqBuffer, "%ld Hz", freq);
+  sprintf(freqBuffer, msgFreqFmt, freq);
   return freqBuffer;
 }
 
@@ -518,7 +519,7 @@ char *getChannels(void) {
     sprintf(chanBuffer, (char *) msgOptNoChannels);
   }
   else {
-    sprintf(chanBuffer, "%ld", state.ChannelsSelected);
+    sprintf(chanBuffer, msgChanFmt, state.ChannelsSelected);
   }
   return chanBuffer;
 }
@@ -536,7 +537,7 @@ char *getOutVol(void) {
     }
   }
 
-  sprintf(outvolBuffer, "%+4.1f dB", state.OutVolOffset + (selected * DBSTEP));
+  sprintf(outvolBuffer, msgVolFmt, state.OutVolOffset + (selected * DBSTEP));
   return outvolBuffer;
 }
 
@@ -553,14 +554,14 @@ char *getMonVol(void) {
     }
   }
 
-  sprintf(monvolBuffer, "%+4.1f dB", state.MonVolOffset + (selected * DBSTEP));
+  sprintf(monvolBuffer, msgVolFmt, state.MonVolOffset + (selected * DBSTEP));
   return monvolBuffer;
 }
 
 char *getGain(void) {
   int selected = state.GainSelected;
 
-  sprintf(gainBuffer, "%+4.1f dB", state.GainOffset + (selected * DBSTEP));
+  sprintf(gainBuffer, msgVolFmt, state.GainOffset + (selected * DBSTEP));
   return gainBuffer;
 }
 
