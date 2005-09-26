@@ -108,7 +108,7 @@ ModeE:
 	dc.l	AHIDB_AudioID,		$00080005
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		FALSE
 	dc.l	AHIDB_MultTable,	FALSE
@@ -127,7 +127,7 @@ ModeF:
 	dc.l	AHIDB_AudioID,		$00080006
 
 	dc.l	AHIDB_Volume,		TRUE
-	dc.l	AHIDB_Panning,		FALSE
+	dc.l	AHIDB_Panning,		TRUE
 	dc.l	AHIDB_Stereo,		FALSE
 	dc.l	AHIDB_HiFi,		FALSE
 	dc.l	AHIDB_MultTable,	TRUE
