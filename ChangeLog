@@ -1,3 +1,15 @@
+2005-09-2  Martin Blom  <martin@blom.org>
+
+	* configure.in: Use AC_SEARCH_LIBS so that -lauto, -lraauto and
+	-lmui only gets added if required. That fixes a potential
+	ixemul/libnix conflict for m68k-amigaos. [Gunther Nikl]
+
+	* configure.in: Don't add include path /gg/os-include per
+	default. [Gunther Nikl]
+
+	* devcommands.h: Removed duped prototype for FindNode(). [Gunther
+	Nikl]
+
 2005-09-27  Martin Blom  <martin@blom.org>
 
 	* Released AHI 6.0rc4.
