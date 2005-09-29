@@ -122,6 +122,8 @@ OpenAHI( void )
   }
 }
 
+// Disable command line processing
+const long __nocommandline=1;
 
 int
 main( void )

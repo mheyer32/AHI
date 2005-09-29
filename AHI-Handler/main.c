@@ -163,7 +163,7 @@ struct AIFFHeader AIFFHeader = {
 ******************************************************************************/
 
 // Disable command line processing
-long __nocommandline=1;
+const long __nocommandline=1;
 
 // We (mis)use this one directly instead
 extern struct Message *_WBenchMsg;
