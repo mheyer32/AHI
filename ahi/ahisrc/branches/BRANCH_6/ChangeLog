@@ -1,3 +1,8 @@
+2005-10-01  Martin Blom  <martin@blom.org>
+
+	* COPYING.DRIVERS: Fixed a typo and added a small plea for open
+	source drivers.
+
 2005-09-28  Martin Blom  <martin@blom.org>
 
 	* Bumped just about every single revision counter ...
