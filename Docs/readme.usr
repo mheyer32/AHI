@@ -18,6 +18,8 @@ At present, not all binaries can be build for all architectures:
     an AmigaOS-style filesystem. As such, it is currently not included
     in the ppc-amigaos, i686be-amithlon and i386-aros builds.
 
+For architectures that also provides m68k emulation, simply grab these
+missing files from the m68k-amigaos archive instead.
 
 Installation
 ¯¯¯¯¯¯¯¯¯¯¯¯
