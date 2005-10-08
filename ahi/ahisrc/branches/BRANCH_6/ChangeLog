@@ -1,3 +1,8 @@
+2005-10-09  Martin Blom  <martin@blom.org>
+
+	* Drivers/Common/library.h: Avoid using assembly symbol
+	redirection in AROS.
+
 2005-10-05  Martin Blom  <martin@blom.org>
 
 	* Docs/readme.changes, Docs/readme.usr: Updated.
