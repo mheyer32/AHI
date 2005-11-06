@@ -1,3 +1,8 @@
+2005-11-06  Martin Blom  <martin@blom.org>
+
+	* Docs/readme.changes: Added note about device.audio's 20 ms
+	limit. [Ian Greenway]
+
 2005-10-09  Martin Blom  <martin@blom.org>
 
 	* Drivers/Common/library.h: Avoid using assembly symbol
