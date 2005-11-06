@@ -17,7 +17,9 @@ Changes since last release
     * A new driver, device.audio, can be used to make all low-level AHI
       applications, which normally open AHI in exclusive mode, behave
       as if they used the high-level API which allows several AHI
-      applications to work simultaneously.
+      applications to work simultaneously. (Note that this driver
+      currently does not work with applications that require less than
+      20 ms latency.)
 
     * The 68000 processor is no longer supported; a 68020 or better is
       required.
