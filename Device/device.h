@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -90,7 +88,7 @@ struct Extras
 {
         UWORD   Channel;
         UWORD   Sound;
-        LONG    VolumeDiv;
+        Fixed   VolumeScale;
 };
 
 /* Voice->Flags definitions */
@@ -133,6 +131,7 @@ struct AHIDevUnit
         BYTE                     RecordSignal;
         BYTE                     SampleSignal;
         struct Process          *Process;
+        BYTE                     SyncSignal;
         struct Process          *Master;
         struct Hook              PlayerHook;
         struct Hook              RecordHook;
@@ -170,7 +169,7 @@ struct AHIDevUnit
         ULONG                    AudioMode;
         ULONG                    Frequency;
         UWORD                    Channels;
-        UWORD                    ChannelsInUse;
+        UWORD                    Pad;
         Fixed                    MonitorVolume;
         Fixed                    InputGain;
         Fixed                    OutputVolume;

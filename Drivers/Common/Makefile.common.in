@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.common.in: Can be included by drivers to simplify
 #  driver development.
@@ -47,7 +46,7 @@ INSTALL_DATA	= @INSTALL_DATA@
 # Files
 ########################################
 
-OBJECTS		+= library.o gatestubs.o
+DRIVER_OBJECTS	= library.o gatestubs.o $(OBJECTS)
 
 
 #
@@ -72,7 +71,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
-	$(INSTALL) --directory $(PREFIX)/Devs/AHI $(PREFIX)/Devs/AudioModes
+	$(INSTALL) -d $(PREFIX)/Devs/AHI $(PREFIX)/Devs/AudioModes
 	$(INSTALL_PROGRAM) $(DRIVER) $(PREFIX)/Devs/AHI/
 	$(INSTALL_DATA) $(MODEFILE) $(PREFIX)/Devs/AudioModes/
 
@@ -83,7 +82,7 @@ revup:
 	@cat $(srcdir)/version.rev
 
 bindist:	all
-	$(INSTALL) --directory $(DRIVERDIR) $(MODEFILEDIR)
+	$(INSTALL) -d $(DRIVERDIR) $(MODEFILEDIR)
 
 	$(INSTALL_PROGRAM) $(DRIVER) $(DRIVERDIR)/$(DRIVER)
 	$(STRIP) $(DRIVERDIR)/$(DRIVER)
@@ -105,7 +104,7 @@ Makefile: Makefile.in Makefile.common.in ../../config.status
 %.o:	%.s
 	$(AS) $(ASFLAGS) $^ -o $@
 
-$(DRIVER):		$(OBJECTS)
+$(DRIVER):		$(DRIVER_OBJECTS)
 	$(CC) $(LDFLAGS) $^ -o $@
 
 $(MODEFILE):	$(MODEFILE).o

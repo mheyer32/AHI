@@ -1,11 +1,13 @@
 
+#include <config.h>
+
 #include <proto/dos.h>
 #include <proto/exec.h>
 
 #include "emu10kx-ac97.h"
 #include "linuxsupport.h"
 
-#define VERSION 5 // Use 6 when released!!
+#define VERSION 6
 
 int
 main( void )

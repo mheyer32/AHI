@@ -2,12 +2,12 @@
 LIBRARIES_AHISUB_I	SET	1
 
 **
-**	$VER: ahi_sub.i 5.3 (29.4.03)
+**	$VER: ahi_sub.i 6.0 (02.02.2005)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi/[driver].audio definitions
 **
-**	(C) Copyright 1994-2003 Martin Blom
+**	(C) Copyright 1994-2005 Martin Blom
 **	All Rights Reserved.
 **
 **
@@ -83,6 +83,7 @@ AHIDB_UserBase	EQU AHI_TagBase+500		; Use for driver specific tags
 	BITDEF	AHIS,KNOWHIFI,4
 	BITDEF	AHIS,CANRECORD,5
 	BITDEF	AHIS,CANPOSTPROCESS,6
+	BITDEF	AHIS,KNOWMULTICHANNEL,7
 
  ; AHIsub_Start() and AHIsub_Stop() flags
 	BITDEF	AHIS,PLAY,0
@@ -96,6 +97,7 @@ AHIDB_UserBase	EQU AHI_TagBase+500		; Use for driver specific tags
 	BITDEF	AHIAC,PINGPONG,4
 	BITDEF	AHIAC,RECORD,5
 	BITDEF	AHIAC,MULTTAB,6			; Private!
+	BITDEF	AHIAC,MULTICHANNEL,7
 
  ; AHIsub_Set#? and AHIsub_(Un)LoadSound return code
 AHIS_UNKNOWN	EQU	~0

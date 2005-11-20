@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI-Handler - The AUDIO: DOS device for AHI
-     Copyright (C) 1997-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1997-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -89,9 +87,11 @@ void UnInitialize (void);
  *  My debug stuff....
  */
 
+#ifdef DEBUG
+
 #define HIT(x) {char *a=NULL; *a=x;}
 
-static UWORD rawputchar_m68k[] = 
+static const UWORD rawputchar_m68k[] = 
 {
   0x2C4B,             // MOVEA.L A3,A6
   0x4EAE, 0xFDFC,     // JSR     -$0204(A6)
@@ -111,6 +111,8 @@ KPrintFArgs( UBYTE* fmt,
   KPrintFArgs( (fmt), _args );     \
 })
 
+#endif /* DEBUG */
+
 
 /*
  *  Global variables
@@ -128,7 +130,7 @@ BYTE               AHIDevice = -1;
 struct Library    *AHIBase;
 
 struct AIFCHeader AIFCHeader = {
-  ID_FORM, NULL, ID_AIFC,
+  ID_FORM, 0, ID_AIFC,
   ID_FVER, sizeof(FormatVersionHeader), {
     AIFCVersion1
   },
@@ -141,18 +143,18 @@ struct AIFCHeader AIFCHeader = {
     {sizeof("not compressed")-1,
      'n','o','t',' ','c','o','m','p','r','e','s','s','e','d'}
   },
-  ID_SSND, NULL, {0,0}
+  ID_SSND, 0, {0,0}
 };
 
 struct AIFFHeader AIFFHeader = {
-  ID_FORM, NULL, ID_AIFF,
+  ID_FORM, 0, ID_AIFF,
   ID_COMM, sizeof(CommonChunk),{
     0,
     0,
     0,
     {0,{0,0}}
   },
-  ID_SSND, NULL, {0,0}
+  ID_SSND, 0, {0,0}
 };
 
 
@@ -161,7 +163,7 @@ struct AIFFHeader AIFFHeader = {
 ******************************************************************************/
 
 // Disable command line processing
-long __nocommandline=1;
+const long __nocommandline=1;
 
 // We (mis)use this one directly instead
 extern struct Message *_WBenchMsg;
@@ -201,7 +203,7 @@ int main(void)
     packet = (struct DosPacket *) msg->mn_Node.ln_Name;
 
 #ifdef DEBUG
-	kprintf ("Got packet: %ld\n", packet->dp_Type);
+    kprintf ("Got packet: %ld\n", packet->dp_Type);
 #endif
     /*
      *  default return value
@@ -774,13 +776,13 @@ void ulong2extended (ULONG in, extended *ex)
 
 void FillAIFFheader(struct HandlerData *data) {
 
-  AIFFHeader.FORMsize = sizeof(AIFFHeader) + data->totallength - 8;
+  AIFFHeader.FORMsize = data->totallength - 8;
   AIFFHeader.COMMchunk.numChannels = data->channels;
   AIFFHeader.COMMchunk.numSampleFrames = 
       data->totallength / AHI_SampleFrameSize(data->type);
   AIFFHeader.COMMchunk.sampleSize = data->bits;
   ulong2extended(data->freq, &AIFFHeader.COMMchunk.sampleRate);
-  AIFFHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength;
+  AIFFHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength - sizeof(AIFFHeader);
 }
 
 
@@ -790,13 +792,13 @@ void FillAIFFheader(struct HandlerData *data) {
 
 void FillAIFCheader(struct HandlerData *data) {
 
-  AIFCHeader.FORMsize = sizeof(AIFCHeader) + data->totallength - 8;
+  AIFCHeader.FORMsize = data->totallength - 8;
   AIFCHeader.COMMchunk.numChannels = data->channels;
   AIFCHeader.COMMchunk.numSampleFrames = 
       data->totallength / AHI_SampleFrameSize(data->type);
   AIFCHeader.COMMchunk.sampleSize = data->bits;
   ulong2extended(data->freq, &AIFCHeader.COMMchunk.sampleRate);
-  AIFCHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength;
+  AIFCHeader.SSNDsize = sizeof(SampledSoundHeader) + data->totallength - sizeof(AIFFHeader);
 }
 
 
@@ -1160,3 +1162,7 @@ void UnInitialize (void) {
 
   dn->dn_Task = NULL;
 }
+
+#if defined(__mc68000__) && defined(__libnix__)
+void __main(void) {}
+#endif

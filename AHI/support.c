@@ -1,6 +1,6 @@
 /*
      AHI - The AHI preferences program
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -29,6 +29,7 @@
 #include <proto/ahi.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
+#include <proto/gadtools.h>
 #include <proto/icon.h>
 #include <proto/iffparse.h>
 #include <proto/utility.h>
@@ -47,6 +48,13 @@ static BOOL AddUnit(struct List *, int);
 static void FillUnitName(struct UnitNode *);
 
 struct AHIGlobalPrefs     globalprefs;
+
+#ifdef __AMIGAOS4__
+struct Library           *GadToolsBase= NULL;
+struct GadToolsIFace     *IGadTools   = NULL;
+struct LocaleIFace       *ILocale     = NULL;
+struct AHIIFace          *IAHI        = NULL;
+#endif
 
 struct Library           *LocaleBase= NULL;
 struct Library           *AHIBase   = NULL;
@@ -199,6 +207,20 @@ EndianSwap( size_t size, void* data) {
 BOOL Initialize(void) {
   LocaleBase = OpenLibrary("locale.library", 38);
 
+#ifdef __AMIGAOS4__
+  ILocale = (struct LocaleIFace *) GetInterface(LocaleBase, "main", 1, NULL);
+
+  GadToolsBase = OpenLibrary("gadtools.library", 37);
+
+  if( GadToolsBase == NULL) {
+    Printf((char *) msgTextNoOpen, (ULONG) "gadtools.library", 37);
+    Printf("\n");
+    return FALSE;
+  }
+  
+  IGadTools = (struct GadToolsIFace *) GetInterface(GadToolsBase, "main", 1, NULL);
+#endif
+  
   OpenahiprefsCatalog();
 
   AHImp=CreateMsgPort();
@@ -212,6 +234,9 @@ BOOL Initialize(void) {
       AHIDevice = OpenDevice(AHINAME,AHI_NO_UNIT,(struct IORequest *)AHIio,0);
       if(AHIDevice == 0) {
         AHIBase   = (struct Library *)AHIio->ahir_Std.io_Device;
+#ifdef __AMIGAOS4__
+	IAHI = (struct AHIIFace *) GetInterface(AHIBase, "main", 1, NULL);
+#endif
         return TRUE;
       }
     }
@@ -227,6 +252,12 @@ BOOL Initialize(void) {
 ******************************************************************************/
 
 void CleanUp(void) {
+#ifdef __AMIGAOS4__
+  DropInterface((struct Interface*) IAHI);
+  DropInterface((struct Interface*) IGadTools);
+  CloseLibrary(GadToolsBase);
+#endif
+
   if(!AHIDevice)
     CloseDevice((struct IORequest *)AHIio);
   DeleteIORequest((struct IORequest *)AHIio);
@@ -306,6 +337,7 @@ struct List *GetUnits(char *name) {
   globalprefs.ahigp_ClipMasterVolume = FALSE;
   globalprefs.ahigp_Pad              = 0;
   globalprefs.ahigp_AntiClickTime    = 0;
+  globalprefs.ahigp_ScaleMode        = AHI_SCALE_FIXED_0_DB;
 
   list = AllocVec(sizeof(struct List), MEMF_CLEAR);
   
@@ -344,6 +376,8 @@ struct List *GetUnits(char *name) {
 			     *p, globalprefs, global->sp_Size );
 		CopyIfValid( struct AHIGlobalPrefs, ahigp_AntiClickTime,
 			     *p, globalprefs, global->sp_Size );
+		CopyIfValid( struct AHIGlobalPrefs, ahigp_ScaleMode,
+			     *p, globalprefs, global->sp_Size );
 
 
 		/* Set upsupported options to their defaults */
@@ -351,6 +385,7 @@ struct List *GetUnits(char *name) {
 		if( AHIBase->lib_Version <= 4 )
 		{
 		  globalprefs.ahigp_AntiClickTime = 0;
+		  globalprefs.ahigp_ScaleMode     = AHI_SCALE_FIXED_SAFE;
 		}
 		
 		if( AHIBase->lib_Version >= 5 )
@@ -371,7 +406,6 @@ struct List *GetUnits(char *name) {
                   break;
 
 		u->prefs.ahiup_Unit          = ci_cnt;
-		u->prefs.ahiup_Pad           = 0;
 		u->prefs.ahiup_Channels      = 1;
 		u->prefs.ahiup_AudioMode     = AHI_DEFAULT_ID;
 		u->prefs.ahiup_Frequency     = AHI_DEFAULT_FREQ;
@@ -384,8 +418,6 @@ struct List *GetUnits(char *name) {
 		++ci_cnt;
 		
 		CopyIfValid( struct AHIUnitPrefs, ahiup_Unit,
-			     *p, u->prefs, ci->ci_Size );
-		CopyIfValid( struct AHIUnitPrefs, ahiup_Pad,
 			     *p, u->prefs, ci->ci_Size );
 		CopyIfValid( struct AHIUnitPrefs, ahiup_Channels,
 			     *p, u->prefs, ci->ci_Size );
@@ -637,6 +669,9 @@ BOOL SaveSettings(char *name, struct List *list) {
 			 globalprefs, p, sizeof p );
 	    CopyIfValid( struct AHIGlobalPrefs, ahigp_AntiClickTime,
 			 globalprefs, p, sizeof p );
+	    CopyIfValid( struct AHIGlobalPrefs, ahigp_ScaleMode,
+			 globalprefs, p, sizeof p );
+
 		
             WriteChunkBytes(iff, &p, sizeof p);
             PopChunk(iff);
@@ -650,8 +685,6 @@ BOOL SaveSettings(char *name, struct List *list) {
 		struct AHIUnitPrefs p;
 
 		CopyIfValid( struct AHIUnitPrefs, ahiup_Unit,
-			     ((struct UnitNode *) n)->prefs, p, sizeof p );
-		CopyIfValid( struct AHIUnitPrefs, ahiup_Pad,
 			     ((struct UnitNode *) n)->prefs, p, sizeof p );
 		CopyIfValid( struct AHIUnitPrefs, ahiup_Channels,
 			     ((struct UnitNode *) n)->prefs, p, sizeof p );
@@ -826,9 +859,37 @@ BOOL PlaySound( struct AHIUnitPrefs* prefs )
                                      AHIC_Output,        prefs->ahiup_Output,
                                      TAG_DONE ) == AHIE_OK )
         {
+	  ULONG volume = 0x10000;
+	  
+	  switch( globalprefs.ahigp_ScaleMode )
+	  {
+	    case AHI_SCALE_DYNAMIC_SAFE:
+	      volume = 0x10000;
+	      break;
+
+	    case AHI_SCALE_FIXED_SAFE:
+	      if( prefs->ahiup_Channels != 0 )
+	      {
+		volume = 0x10000 / prefs->ahiup_Channels;
+	      }
+	      break;
+
+	    case AHI_SCALE_FIXED_0_DB:
+	      volume = 0x10000;
+	      break;
+	
+	    case AHI_SCALE_FIXED_3_DB:
+	      volume = 0xB505;
+	      break;
+
+	    case AHI_SCALE_FIXED_6_DB:
+	      volume = 0x8000;
+	      break;
+	  }
+	  
           AHI_Play( actrl, AHIP_BeginChannel, 0,
                            AHIP_Freq,         48000,
-                           AHIP_Vol,          0x10000,
+                           AHIP_Vol,          volume,
                            AHIP_Pan,          0x8000,
                            AHIP_Sound,        0,
                            AHIP_EndChannel,   0,
@@ -836,7 +897,18 @@ BOOL PlaySound( struct AHIUnitPrefs* prefs )
 
 	  if( AHI_ControlAudio( actrl, AHIC_Play, TRUE, TAG_DONE ) == AHIE_OK )
 	  {
-	    Delay( 50 );
+	    if( globalprefs.ahigp_ScaleMode == AHI_SCALE_DYNAMIC_SAFE )
+	    {
+	      Delay( 10 );
+	      AHI_SetVol( 0, volume / 2, 0x8000, actrl, AHISF_IMM );
+	      Delay( 30 );
+	      AHI_SetVol( 0, volume, 0x8000, actrl, AHISF_IMM );
+	      Delay( 10 );
+	    }
+	    else
+	    {
+	      Delay( 50 );
+	    }
           
 	    AHI_Play( actrl, AHIP_BeginChannel, 0,
                              AHIP_Sound,        AHI_NOSOUND,

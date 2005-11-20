@@ -2,12 +2,12 @@
 #define LIBRARIES_AHISUB_H
 
 /*
-**	$VER: ahi_sub.h 5.3 (29.4.03)
+**	$VER: ahi_sub.h 6.0 (02.02.2005)
 **	:ts=8 (TAB SIZE: 8)
 **
 **	ahi/[driver].audio definitions
 **
-**	(C) Copyright 1994-2003 Martin Blom
+**	(C) Copyright 1994-2005 Martin Blom
 **	All Rights Reserved.
 **
 */
@@ -84,6 +84,7 @@ struct AHIAudioCtrlDrv
 #define AHISF_KNOWHIFI		(1<<4)
 #define AHISF_CANRECORD 	(1<<5)
 #define AHISF_CANPOSTPROCESS	(1<<6)
+#define AHISF_KNOWMULTICHANNEL	(1<<7)
 
 #define AHISB_ERROR		(0)
 #define AHISB_MIXING		(1)
@@ -92,6 +93,7 @@ struct AHIAudioCtrlDrv
 #define AHISB_KNOWHIFI		(4)
 #define AHISB_CANRECORD		(5)
 #define AHISB_CANPOSTPROCESS	(6)
+#define AHISB_KNOWMULTICHANNEL	(7)
 
  /* AHIsub_Start() and AHIsub_Stop() flags */
 #define	AHISF_PLAY		(1<<0)
@@ -108,6 +110,7 @@ struct AHIAudioCtrlDrv
 #define	AHIACF_PINGPONG		(1<<4)
 #define	AHIACF_RECORD		(1<<5)
 #define AHIACF_MULTTAB  	(1<<6)			/* Private!		*/
+#define	AHIACF_MULTICHANNEL	(1<<7)
 
 #define	AHIACB_VOL		(0)
 #define	AHIACB_PAN		(1)
@@ -116,6 +119,7 @@ struct AHIAudioCtrlDrv
 #define	AHIACB_PINGPONG		(4)
 #define	AHIACB_RECORD		(5)
 #define AHIACB_MULTTAB  	(6)			/* Private!		*/
+#define	AHIACB_MULTICHANNEL	(7)
 
  /* AHIsub_Set#? and AHIsub_(Un)LoadSound return code */
 #define AHIS_UNKNOWN		(~0U)

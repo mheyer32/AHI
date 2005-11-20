@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -28,11 +26,11 @@
 #include <utility/tagitem.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
-#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
+#define __NOGLOBALIFACE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
-#endif
+#undef  __NOGLOBALIFACE__
 #include <proto/ahi_sub.h>
 
 #include "ahi_def.h"
@@ -79,7 +77,7 @@ stccpy( char *to, const char *from, int n )
 Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
 {
   ULONG volume=0,stereo=0,panning=0,hifi=0,pingpong=0,record=0,realtime=0,
-        fullduplex=0,bits=0,channels=0,minmix=0,maxmix=0;
+        fullduplex=0,bits=0,channels=0,minmix=0,maxmix=0,multichannel=0;
   ULONG total=0,hits=0;
   struct TagItem *tstate, *tag;
   
@@ -97,6 +95,7 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
                      AHIDB_Volume,      (ULONG) &volume,
                      AHIDB_Stereo,      (ULONG) &stereo,
                      AHIDB_Panning,     (ULONG) &panning,
+                     AHIDB_MultiChannel,(ULONG) &multichannel,
                      AHIDB_HiFi,        (ULONG) &hifi,
                      AHIDB_PingPong,    (ULONG) &pingpong,
                      AHIDB_Record,      (ULONG) &record,
@@ -116,10 +115,11 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
     {
       // Check source mode
 
-      case AHIDB_AudioID:    
-        total++;
+      case AHIDB_AudioID:
+	// Give two points for this
+        total+=2;
         if( ((tag->ti_Data)&0xffff0000) == (id & 0xffff0000) )
-          hits++;
+          hits+=2;
         break;
 
       // Boolean tags
@@ -138,6 +138,11 @@ Fixed DizzyTestAudioID(ULONG id, struct TagItem *tags )
       case AHIDB_Panning:
         total++;
         if(XNOR(tag->ti_Data, panning))
+          hits++;
+        break;
+      case AHIDB_MultiChannel:
+        total++;
+        if(XNOR(tag->ti_Data, multichannel))
           hits++;
         break;
       case AHIDB_HiFi:
@@ -253,6 +258,8 @@ BOOL TestAudioID(ULONG id, struct TagItem *tags )
 *       AHIDB_Stereo (ULONG *) - TRUE if output is in stereo. Unless
 *           AHIDB_Panning (see below) is TRUE, all even channels are played
 *           to the left and all odd to the right.
+*
+*       AHIDB_MultiChannel (ULONG *) - TRUE if output is in 7.1 channels.
 *
 *       AHIDB_Panning (ULONG *) - TRUE if this mode supports stereo panning.
 *
@@ -541,7 +548,9 @@ _AHI_GetAudioAttrsA( ULONG                    id,
               break;
 // Booleans that defaults to TRUE
             case AHIDB_PingPong:
-              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,TRUE,dbtags,audioctrl);
+              *ptr=AHIsub_GetAttr(tag1->ti_Tag,0,
+				  audioctrl->ahiac_BuffType != AHIST_L7_1,
+				  dbtags,audioctrl);
               break;
 // Tags from the database.
             default:
@@ -568,7 +577,7 @@ _AHI_GetAudioAttrsA( ULONG                    id,
     else // no valid audioctrl
        rc=FALSE;
     if(id != AHI_INVALID_ID)
-      FreeVec(audioctrl);
+      AHIFreeVec(audioctrl);
     if(AHIsubBase)
       CloseLibrary(AHIsubBase);
     UnlockDatabase(audiodb);
@@ -624,6 +633,9 @@ _AHI_GetAudioAttrsA( ULONG                    id,
 *
 *       AHIDB_Stereo (BOOL) - If TRUE: mode must have stereo output.
 *           If FALSE: mode must not have stereo output (=mono).
+*
+*       AHIDB_MultiChannel (BOOL) - If TRUE: mode must have 7.1 channel output.
+*           If FALSE: mode must not have 7.1 channel output (=mono or stereo).
 *
 *       AHIDB_Panning (BOOL) - If TRUE: mode must support volume panning.
 *           If FALSE: mode must not support volume panning. 
@@ -690,20 +702,23 @@ _AHI_BestAudioIDA( struct TagItem* tags,
   ULONG id = AHI_INVALID_ID, bestid = 0;
   Fixed score, bestscore = 0;
   struct TagItem *dizzytags;
-  static const struct TagItem defdizzy[] =
+  static const struct TagItem const_defdizzy[] =
   {
-    // Default is off for performance reasons..
-    { AHIDB_Volume,     FALSE },
-    { AHIDB_Stereo,     FALSE },
-    { AHIDB_Panning,    FALSE },
-    { AHIDB_HiFi,       FALSE },
-    { AHIDB_PingPong,   FALSE },
-    // Default is on, 'cause they won't hurt performance (?)
-    { AHIDB_Record,     TRUE  },
+    { AHIDB_Volume,     TRUE },
+    { AHIDB_Stereo,     TRUE },
+    { AHIDB_MultiChannel, FALSE },
+    { AHIDB_Panning,    TRUE },
+    { AHIDB_HiFi,       TRUE  },
     { AHIDB_Realtime,   TRUE  },
-    { AHIDB_FullDuplex, TRUE  },
     // And we don't care about the rest...
     { TAG_DONE,         0     }
+  };
+  
+  const struct TagItem defdizzy[] =
+  {
+    // Give the user's preferred sound card extra points
+    { AHIDB_AudioID,    AHIBase->ahib_AudioMode },
+    { TAG_MORE,         (ULONG) &const_defdizzy }
   };
 
   if(AHIBase->ahib_DebugLevel >= AHI_DEBUG_LOW)
