@@ -22,9 +22,6 @@ $(PDEST): prefsfile.a smakefile
 	basm -ua+ -o$(PDEST) prefsfile.a
 	AHI:User/C/AddAudioModes $(PDEST)
 
-version.i: paula_audio.a version.rexx smakefile
-	grep $$Id: paula_audio.a | rx version.rexx > version.i
-
 paula_audio.o: paula_audio.a version.i smakefile
 	PhxAss $(AFLAGS) TO $@ MACHINE 68020 paula_audio.a
 
@@ -45,7 +42,7 @@ clean:
 
 allclean:
 	smake clean
-	--delete version.i $(DEST) $(DEST000) $(PDEST) 
+	--delete $(DEST) $(DEST000) $(PDEST) 
 
 ci:
 	ci -l paula_audio.a debug.a prefsfile.a smakefile
