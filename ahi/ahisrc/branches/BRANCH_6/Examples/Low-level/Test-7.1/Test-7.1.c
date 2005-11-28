@@ -12,7 +12,7 @@
 
 #include "version.h"
 
-static const char version[] = "$VER: Test-7.1 " VERS "\n\r";
+const char version[] = "$VER: Test-7.1 " VERS "\n\r";
 
 struct Library* AHIBase = NULL;
 
