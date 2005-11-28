@@ -1,3 +1,10 @@
+2005-11-28  Martin Blom  <martin@blom.org>
+
+	* AddAudioModes, AHI-Handler, CAMD/emu10kx, CloneAudioModes,
+	HardDiskRecord, PlaySineEverywhere, Test-7.1: Recent versions of
+	gcc optimized away the embedded version string. Fixed. [Jeff
+	Gilpin]
+
 2005-11-20  Martin Blom  <martin@blom.org>
 
 	* Released AHI 6.0. w00t!

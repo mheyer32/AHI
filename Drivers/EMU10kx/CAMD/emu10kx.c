@@ -70,7 +70,7 @@ static struct Library*     EMU10kxBase     = NULL;
 static struct EMU10kxCamd* EMU10kxCamd     = NULL;
 static struct PortInfo*    PortInfos       = NULL;
 static ULONG               CAMDv40         = FALSE;
-static const char          VersionString[] = "$VER: emu10kx " VERS "\r\n";
+const char                 VersionString[] = "$VER: emu10kx " VERS "\r\n";
 
 
 /*** Debug code ***************************************************************/

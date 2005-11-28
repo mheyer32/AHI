@@ -118,7 +118,7 @@ KPrintFArgs( UBYTE* fmt,
  *  Global variables
  */
 
-static const char ID[] = "$VER: AHI-Handler " VERS "\r\n";
+const char ID[] = "$VER: AHI-Handler " VERS "\r\n";
 
 struct MsgPort    *PktPort;
 struct DeviceNode *DevNode;
