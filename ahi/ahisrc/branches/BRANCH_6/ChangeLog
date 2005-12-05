@@ -1,3 +1,7 @@
+2005-12-05  Martin Blom  <martin@blom.org>
+
+	* Added 'make install' targets (mostly like it is in AROS).
+
 2005-11-28  Martin Blom  <martin@blom.org>
 
 	* AHI Preferences, AHI-Handler, AddAudioModes, ahi.device, all
