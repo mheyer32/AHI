@@ -58,6 +58,7 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
+	$(INSTALL) -d $(PREFIX)/L
 	$(INSTALL_PROGRAM) $(EXECUTABLE) $(PREFIX)/L/$(EXECUTABLE)
 
 revup:
