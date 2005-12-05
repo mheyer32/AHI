@@ -135,14 +135,17 @@ camdstubs.h:	camd_drv.sfd
 camdstubs.o:	camdstubs.c
 	$(CC) $(CFLAGS) $(CPPFLAGS) -D__CLIB_TYPES__ -c $^ $(OUTPUT_OPTION)
 
-version.h:	version.rev version.date
+version.h:	version.rev version.date \
+		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	@echo Creating $@
-	@ver=`cat $(srcdir)/version.ver` \
+	@ahiver=`cat $(top_srcdir)/version.ver` \
+	 ahirev=`cat $(top_srcdir)/version.rev` \
+	 ver=`cat $(srcdir)/version.ver` \
 	 rev=`cat $(srcdir)/version.rev` \
 	 date=`cat $(srcdir)/version.date` && \
 	 echo "#define VERSION $$ver" > $@ && \
 	 echo "#define REVISION $$rev" >> $@ && \
-	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
+	 echo "#define VERS \"$$ver.$$rev ($$date) [AHI release $$ahiver.$$ahirev]\"" >> $@
 
 
 #

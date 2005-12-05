@@ -1,5 +1,10 @@
 2005-11-28  Martin Blom  <martin@blom.org>
 
+	* AHI Preferences, AHI-Handler, AddAudioModes, ahi.device, all
+	open-source drivers, PlayTest, CloneAudioModes,
+	PlaySineEverywhere, ScanAudioModes, Test-7.1: Added tag "[AHI
+	release x.y]" to version string. [Jeff Gilpin]
+
 	* AddAudioModes, AHI-Handler, CAMD/emu10kx, CloneAudioModes,
 	HardDiskRecord, PlaySineEverywhere, Test-7.1: Recent versions of
 	gcc optimized away the embedded version string. Fixed. [Jeff
