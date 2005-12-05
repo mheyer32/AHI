@@ -1,7 +1,5 @@
 *** ScR ***
 
-* $Id$
-
 *** NOTES ***
 
 *  The sampler routines are just for fun. Since interrupts must not be disabled,
