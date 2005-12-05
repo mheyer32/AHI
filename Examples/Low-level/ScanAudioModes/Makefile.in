@@ -87,14 +87,17 @@ $(EXECUTABLE):	$(OBJECTS)
 	$(CC) $(LDFLAGS) $^ $(LIBS) -o $@
 
 
-version.h:	version.rev version.date
+version.h:	version.rev version.date \
+		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	@echo Creating $@
-	@ver=`cat $(top_srcdir)/version.ver` \
+	@ahiver=`cat $(top_srcdir)/version.ver` \
+	 ahirev=`cat $(top_srcdir)/version.rev` \
+	 ver=`cat $(top_srcdir)/version.ver` \
 	 rev=`cat $(srcdir)/version.rev` \
 	 date=`cat $(srcdir)/version.date` && \
 	 echo "#define VERSION $$ver" > $@ && \
 	 echo "#define REVISION $$rev" >> $@ && \
-	 echo "#define VERS \"$$ver.$$rev ($$date)\"" >> $@
+	 echo "#define VERS \"$$ver.$$rev ($$date) [AHI release $$ahiver.$$ahirev]\"" >> $@
 
 #
 # Dependencies
