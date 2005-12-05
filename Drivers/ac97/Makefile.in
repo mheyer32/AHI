@@ -1,6 +1,5 @@
-#  $Id$
 #
-#  Makefile.in for Void sound card driver
+#  Makefile.in for ac97 sound card driver
 #
 
 VPATH		= @srcdir@
