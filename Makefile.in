@@ -13,6 +13,7 @@ LANG=en_US.iso8859-1
 
 top_srcdir	= @top_srcdir@
 srcdir		= @srcdir@
+PREFIX		= @prefix@
 DISTDIR		= @DISTDIR@
 CATDIR		= ${DISTDIR}/User/Catalogs
 CATSRCDIR	= ${DISTDIR}/Developer/Translations
@@ -57,6 +58,7 @@ all:
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
 install:
+	$(INSTALL) -d $(PREFIX)
 	@for i in $(SUBDIRS); do (cd $$i && $(MAKE) $(MFLAGS) $@) || exit; done
 
 clean:
