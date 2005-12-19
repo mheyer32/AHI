@@ -314,6 +314,9 @@ _DevOpen ( struct AHIRequest* ioreq,
     }
     else if(unit == AHI_NO_UNIT)
       InitUnit(unit,AHIBase);
+    else {
+      error=TRUE;
+    }
   }
 
   if(!error)

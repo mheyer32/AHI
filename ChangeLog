@@ -1,3 +1,7 @@
+2005-12-19  Martin Blom  <martin@blom.org>
+
+	* Device/device.c (_DevOpen): Fail if unit >= 4 but not 255. [Chr]
+
 2005-12-05  Martin Blom  <martin@blom.org>
 
 	* Added 'make install' targets (mostly like it is in AROS).
