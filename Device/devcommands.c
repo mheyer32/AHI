@@ -1001,7 +1001,7 @@ StartCmd ( struct AHIRequest *ioreq,
         // audio disabled state (we could miss an interrupt!)
         // and disable audio interrupts.
 
-        old_pri = SetTaskPri( FindTask( NULL ), 128 );
+        old_pri = SetTaskPri( FindTask( NULL ), 127 );
         AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
 //Disable();
 

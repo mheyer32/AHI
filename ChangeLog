@@ -1,3 +1,9 @@
+2005-12-21  Martin Blom  <martin@blom.org>
+
+	* Device/devcommands.c (StartCmd): While I thought I set the task
+	pri to +128, I actually set it to -128. Now it's +127 as it should
+	have been. [Davy Wentzler]
+
 2005-12-19  Martin Blom  <martin@blom.org>
 
 	* Device/device.c (_DevOpen): Fail if unit >= 4 but not 255. [Chr]
