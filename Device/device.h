@@ -91,25 +91,19 @@ struct Extras
         Fixed   VolumeScale;
 };
 
-/* Voice->Flags definitions */
-
-/* Set by the interrupt when a new sound has been started */
-#define VB_STARTED              0
-#define VF_STARTED              (1<<0)
 
 struct Voice
 {
-        UWORD                    NextSound;
-        UBYTE                    Flags;
-        UBYTE                    Pad;
-        Fixed                    NextVolume;
-        Fixed                    NextPan;
-        ULONG                    NextFrequency;
-        ULONG                    NextOffset;
-        ULONG                    NextLength;
-        struct AHIRequest       *NextRequest;
-        
+        UWORD                    QueuedSound;
+        UWORD                    Pad;
+        Fixed                    QueuedVolume;
+        Fixed                    QueuedPan;
+        ULONG                    QueuedFrequency;
+        ULONG                    QueuedOffset;
+        ULONG                    QueuedLength;
         struct AHIRequest       *QueuedRequest;
+        
+        struct AHIRequest       *NextRequest;
         struct AHIRequest       *PlayingRequest;
 };
 

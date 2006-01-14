@@ -22,6 +22,7 @@
 #define ahi_devcommands_h
 
 #include "ahi_def.h"
+#include "device.h"
 
 void
 _DevBeginIO( struct AHIRequest* ioreq,
@@ -46,5 +47,9 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
 void 
 UpdateSilentPlayers ( struct AHIDevUnit *iounit,
                       struct AHIBase *AHIBase );
+
+void
+QueueRequest ( struct AHIRequest *ioreq,
+	       struct Voice* v );
 
 #endif /* ahi_devcommands_h */

@@ -482,7 +482,7 @@ InitUnit ( ULONG unit,
           // Mark all channels as free
           for(i = 0 ; i < iounit->Channels; i++)
           {
-            v->NextOffset = FREE;
+            v->QueuedOffset = FREE;
             v++;
           }
 
@@ -1080,43 +1080,46 @@ SoundFunc( struct Hook*            hook,
 
   Enable();
 
-  voice->PlayingRequest = voice->QueuedRequest;
-  voice->Flags |= VF_STARTED;
-  voice->QueuedRequest  = NULL;
+  voice->PlayingRequest = voice->NextRequest;
+  voice->NextRequest  = NULL;
 
-  switch(voice->NextOffset)
+  switch(voice->QueuedOffset)
   {
     case FREE:
       break;
 
     case MUTE:
       /* A AHI_NOSOUND is done, channel is silent */
-      voice->NextOffset = FREE;
+      voice->QueuedOffset = FREE;
       break;
 
     case PLAY:
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,AHISF_NONE);
-      voice->NextOffset = MUTE;
+      voice->QueuedOffset = MUTE;
       break;
 
     default:
       /* A normal sound is done, and another is waiting */
       AHI_SetSound(sndmsg->ahism_Channel,
-          voice->NextSound,
-          voice->NextOffset,
-          voice->NextLength,
+          voice->QueuedSound,
+          voice->QueuedOffset,
+          voice->QueuedLength,
           actrl,AHISF_NONE);
       AHI_SetFreq(sndmsg->ahism_Channel,
-          voice->NextFrequency,
+          voice->QueuedFrequency,
           actrl,AHISF_NONE);
       AHI_SetVol(sndmsg->ahism_Channel,
-          voice->NextVolume,
-          voice->NextPan,
+          voice->QueuedVolume,
+          voice->QueuedPan,
           actrl,AHISF_NONE);
-      voice->QueuedRequest = voice->NextRequest;
-      voice->NextRequest = NULL;
-      voice->NextOffset = PLAY;
+      voice->NextRequest = voice->QueuedRequest;
+
+      if(voice->QueuedRequest != NULL) 
+      {
+	GetExtras(voice->QueuedRequest)->Channel = sndmsg->ahism_Channel;
+	QueueRequest(voice->QueuedRequest->ahir_Link, voice);
+      }
       break;
   }
 
