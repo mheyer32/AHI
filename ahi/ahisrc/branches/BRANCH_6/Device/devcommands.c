@@ -216,18 +216,18 @@ cleared:
               }
 
               iounit->Voices[GetExtras(ioreq)->Channel].PlayingRequest = NULL;
-              iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].NextRequest = NULL;
+              iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
   
               if(iounit->AudioCtrl)
               {
-                iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = MUTE;
+                iounit->Voices[GetExtras(ioreq)->Channel].QueuedOffset = MUTE;
                 AHI_SetSound(GetExtras(ioreq)->Channel,AHI_NOSOUND,0,0,
                     iounit->AudioCtrl,AHISF_IMM);
               }
               else
               {
-                iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = FREE;
+                iounit->Voices[GetExtras(ioreq)->Channel].QueuedOffset = FREE;
               }
 
               if( AHIsubBase != NULL )
@@ -1272,14 +1272,14 @@ NewWriter ( struct AHIRequest *ioreq,
           }
           else
           {
-            if( iounit->Voices[channel].Flags & VF_STARTED )
+            if(iounit->Voices[channel].PlayingRequest == otherioreq)
             {
-              // There is a sound already playing. Attach this sound
-              // after the current.
+              // The linked sound is already playing. Attach this
+              // sound to it.
 
-              iounit->Voices[channel].QueuedRequest = ioreq;
-              iounit->Voices[channel].NextOffset    = PLAY;
-              iounit->Voices[channel].NextRequest   = NULL;
+	      GetExtras(ioreq)->Channel = channel;
+              iounit->Voices[channel].NextRequest = ioreq;
+	      QueueRequest(NULL, &iounit->Voices[channel]);
 
               AHI_Play(iounit->AudioCtrl,
                   AHIP_BeginChannel,  channel,
@@ -1294,20 +1294,13 @@ NewWriter ( struct AHIRequest *ioreq,
                   AHIP_EndChannel,    0,
                   TAG_DONE);
             }
-            else
+            else if (iounit->Voices[channel].NextRequest == otherioreq)
             {
-              // The current sound has not yet been started, and the loop
-              // part is not set either. Let the SoundFunc() handle the
+              // The linked sound has not yet been started, but is set
+              // as the loop sound. Let the SoundFunc() handle the
               // attaching.
 
-              iounit->Voices[channel].NextSound     = GetExtras( ioreq )->Sound;
-              iounit->Voices[channel].NextVolume    = ioreq->ahir_Volume;
-              iounit->Voices[channel].NextPan       = ioreq->ahir_Position;
-              iounit->Voices[channel].NextFrequency = ioreq->ahir_Frequency;
-              iounit->Voices[channel].NextOffset    = ioreq->ahir_Std.io_Actual;
-              iounit->Voices[channel].NextLength    = ioreq->ahir_Std.io_Length -
-                                                      ioreq->ahir_Std.io_Actual;
-              iounit->Voices[channel].NextRequest   = ioreq;
+	      QueueRequest(ioreq, &iounit->Voices[channel]);
             }
 
             AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
@@ -1365,7 +1358,7 @@ AddWriter ( struct AHIRequest *ioreq,
 
   for(channel = 0; channel < iounit->Channels; channel++)
   {
-    if(iounit->Voices[channel].NextOffset == (ULONG) FREE)
+    if(iounit->Voices[channel].QueuedOffset == (ULONG) FREE)
     {
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
       UpdateMasterVolume( iounit, AHIBase );
@@ -1433,31 +1426,12 @@ PlayRequest ( int channel,
 
   GetExtras(ioreq)->Channel = channel;
 
-  if(ioreq->ahir_Link)
-  {
-    struct Voice        *v = &iounit->Voices[channel];
-    struct AHIRequest   *r = ioreq->ahir_Link;
-
-    v->NextSound     = GetExtras(r)->Sound;
-    v->NextVolume    = r->ahir_Volume;
-    v->NextPan       = r->ahir_Position;
-    v->NextFrequency = r->ahir_Frequency;
-    v->NextOffset    = r->ahir_Std.io_Actual;
-    v->NextLength    = r->ahir_Std.io_Length
-                     - r->ahir_Std.io_Actual;
-    v->NextRequest   = r;
-  }
-  else
-  {
-    iounit->Voices[channel].NextOffset  = PLAY;
-    iounit->Voices[channel].NextRequest = NULL;
-  }
+  QueueRequest(ioreq->ahir_Link, &iounit->Voices[channel]);
 
   AHIsub_Disable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
   iounit->Voices[channel].PlayingRequest = NULL;
-  iounit->Voices[channel].QueuedRequest = ioreq;
-  iounit->Voices[channel].Flags &= ~VF_STARTED;
+  iounit->Voices[channel].NextRequest = ioreq;
 
   AHI_Play(iounit->AudioCtrl,
       AHIP_BeginChannel,  channel,
@@ -1472,22 +1446,37 @@ PlayRequest ( int channel,
       TAG_DONE);
 
   AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
+}
 
-#if 0
-  // This is a workaround for a race condition.
-  // The problem can occur if a delayed request follows immediately after
-  // this one, before the sample interrupt routine has been called, and
-  // overwrites QueuedRequest. The result is that this sound is never
-  // marked as finished, and the application will wait forever on the
-  // IO Request. Quite ugly, no?
 
-  Wait(1L << iounit->SampleSignal);
+/******************************************************************************
+** QueueRequest ***************************************************************
+******************************************************************************/
 
-  // Set signal again...
-  Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
-  
-//  while(((volatile UBYTE) (iounit->Voices[channel].Flags) & VF_STARTED) == 0);
-#endif
+// Queues a request to be played after the request that is currently
+// set as look sound. This must be callable from in interrupt, since
+// it's also used from the SoundFunc.
+
+void
+QueueRequest ( struct AHIRequest *ioreq,
+	       struct Voice* v )
+{
+  if(ioreq)
+  {
+    v->QueuedSound     = GetExtras(ioreq)->Sound;
+    v->QueuedVolume    = ioreq->ahir_Volume;
+    v->QueuedPan       = ioreq->ahir_Position;
+    v->QueuedFrequency = ioreq->ahir_Frequency;
+    v->QueuedOffset    = ioreq->ahir_Std.io_Actual;
+    v->QueuedLength    = ioreq->ahir_Std.io_Length
+                     - ioreq->ahir_Std.io_Actual;
+    v->QueuedRequest   = ioreq;
+  }
+  else
+  {
+    v->QueuedOffset  = PLAY;
+    v->QueuedRequest = NULL;
+  }
 }
 
 
@@ -1570,7 +1559,6 @@ RemPlayers ( struct List *list,
 	// request and possibly even deallocated memory. Now AbortIO()
 	// clears ahir_Link.
 
-        GetExtras(ioreq->ahir_Link)->Channel = GetExtras(ioreq)->Channel;
         Enqueue(list, (struct Node *) ioreq->ahir_Link);
         // We have to go through the whole procedure again, in case
         // the child is finished, too.

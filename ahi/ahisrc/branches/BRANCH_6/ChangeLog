@@ -1,3 +1,11 @@
+2006-01-10  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 6.7.
+
+	* ahi.device: It should now be possible to send more than two
+	buffers at the same time when using CMD_WRITE (for
+	tripple-buffering or more). [Ralph Schmidt]
+
 2005-12-21  Martin Blom  <martin@blom.org>
 
 	* Device/devcommands.c (StartCmd): While I thought I set the task
