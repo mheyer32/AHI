@@ -1,6 +1,6 @@
 /*
      emu10kx - CAMD driver for SoundBlaster Live! series
-     Copyright (C) 2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2003-2005 Martin Blom <martin@blom.org>
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -70,7 +70,7 @@ static struct Library*     EMU10kxBase     = NULL;
 static struct EMU10kxCamd* EMU10kxCamd     = NULL;
 static struct PortInfo*    PortInfos       = NULL;
 static ULONG               CAMDv40         = FALSE;
-static const char          VersionString[] = "$VER: emu10kx " VERS "\r\n";
+const char                 VersionString[] = "$VER: emu10kx " VERS "\r\n";
 
 
 /*** Debug code ***************************************************************/

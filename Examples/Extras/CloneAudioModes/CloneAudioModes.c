@@ -16,7 +16,7 @@
 
 #include "version.h"
 
-static const char version[] = "$VER: CloneAudioModes " VERS "\n\r";
+const char version[] = "$VER: CloneAudioModes " VERS "\n\r";
 
 long __oslibversion = 39;
 

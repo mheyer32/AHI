@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -31,11 +29,26 @@
 
 struct AHIBase;
 
+enum MixBackend_t
+{
+  MB_NATIVE
+#if defined( ENABLE_WARPUP )
+  ,MB_WARPUP
+#endif
+};
+
+
 extern const ULONG		DriverVersion;
 extern const ULONG		Version;
 extern const ULONG		Revision;
 extern const char		DevName[];
 extern const char		IDString[];
+
+extern enum MixBackend_t	MixBackend;
+
+#if defined( ENABLE_WARPUP )
+extern void*			PPCObject;
+#endif
 
 extern ADDFUNC*                 AddByteMonoPtr;
 extern ADDFUNC*                 AddByteStereoPtr;
@@ -49,6 +62,8 @@ extern ADDFUNC*                 AddLongMonoPtr;
 extern ADDFUNC*                 AddLongStereoPtr;
 extern ADDFUNC*                 AddLongsMonoPtr;
 extern ADDFUNC*                 AddLongsStereoPtr;
+extern ADDFUNC*                 Add71MonoPtr;
+extern ADDFUNC*                 Add71StereoPtr;
 extern ADDFUNC*                 AddByteMonoBPtr;
 extern ADDFUNC*                 AddByteStereoBPtr;
 extern ADDFUNC*                 AddBytesMonoBPtr;
@@ -61,6 +76,23 @@ extern ADDFUNC*                 AddLongMonoBPtr;
 extern ADDFUNC*                 AddLongStereoBPtr;
 extern ADDFUNC*                 AddLongsMonoBPtr;
 extern ADDFUNC*                 AddLongsStereoBPtr;
+extern ADDFUNC*                 Add71MonoBPtr;
+extern ADDFUNC*                 Add71StereoBPtr;
+
+extern ADDFUNC*			AddByte71Ptr;
+extern ADDFUNC*			AddBytes71Ptr;
+extern ADDFUNC*			AddWord71Ptr;
+extern ADDFUNC*			AddWords71Ptr;
+extern ADDFUNC*			AddLong71Ptr;
+extern ADDFUNC*			AddLongs71Ptr;
+extern ADDFUNC*			Add7171Ptr;
+extern ADDFUNC*			AddByte71BPtr;
+extern ADDFUNC*			AddBytes71BPtr;
+extern ADDFUNC*			AddWord71BPtr;
+extern ADDFUNC*			AddWords71BPtr;
+extern ADDFUNC*			AddLong71BPtr;
+extern ADDFUNC*			AddLongs71BPtr;
+extern ADDFUNC*			Add7171BPtr;
 
 extern ADDFUNC*                 AddLofiByteMonoPtr;
 extern ADDFUNC*                 AddLofiByteStereoPtr;

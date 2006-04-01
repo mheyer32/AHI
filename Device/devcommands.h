@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -24,6 +22,7 @@
 #define ahi_devcommands_h
 
 #include "ahi_def.h"
+#include "device.h"
 
 void
 _DevBeginIO( struct AHIRequest* ioreq,
@@ -37,10 +36,6 @@ void
 PerformIO ( struct AHIRequest *ioreq,
             struct AHIBase *AHIBase );
 
-struct Node *
-FindNode ( struct List *list,
-           struct Node *node );
-
 void
 FeedReaders ( struct AHIDevUnit *iounit,
               struct AHIBase *AHIBase );
@@ -52,5 +47,9 @@ RethinkPlayers ( struct AHIDevUnit *iounit,
 void 
 UpdateSilentPlayers ( struct AHIDevUnit *iounit,
                       struct AHIBase *AHIBase );
+
+void
+QueueRequest ( struct AHIRequest *ioreq,
+	       struct Voice* v );
 
 #endif /* ahi_devcommands_h */

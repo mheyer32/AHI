@@ -2,6 +2,8 @@
 #include <config.h>
 
 #include <devices/ahi.h>
+#include <dos/dos.h>
+#include <exec/execbase.h>
 #include <libraries/ahi_sub.h>
 #include <proto/ahi.h>
 #include <proto/exec.h>
@@ -58,7 +60,9 @@ Slave( struct ExecBase* SysBase )
   BOOL                    running;
   ULONG                   signals;
 
-  AudioCtrl  = (struct AHIAudioCtrlDrv*) FindTask( NULL )->tc_UserData;
+  /* Note that in OS4, we cannot call FindTask(NULL) here, since IExec
+   * is inside AHIsubBase! */
+  AudioCtrl  = (struct AHIAudioCtrlDrv*) SysBase->ThisTask->tc_UserData;
   AHIsubBase = (struct DriverBase*) dd->ahisubbase;
   DeviceBase = (struct DeviceBase*) AHIsubBase;
 
@@ -80,7 +84,7 @@ Slave( struct ExecBase* SysBase )
 
     if( ahi_mp != NULL )
     {
-      ahi_iorequest = CreateIORequest( ahi_mp, sizeof( struct AHIRequest ) );
+      ahi_iorequest = (struct AHIRequest*) CreateIORequest( ahi_mp, sizeof( struct AHIRequest ) );
 
       if( ahi_iorequest != NULL )
       {
@@ -92,6 +96,9 @@ Slave( struct ExecBase* SysBase )
 	if( ahi_device == 0 )
 	{
 	  struct Library* AHIBase = (struct Library*) ahi_iorequest->ahir_Std.io_Device;
+#ifdef __AMIGAOS4__
+	  struct AHIIFace* IAHI = (struct AHIIFace*) GetInterface(AHIBase, "main", 1, NULL);
+#endif
 
 	  ahi_iocopy = AllocVec( sizeof( *ahi_iorequest ), MEMF_ANY );
 
@@ -203,6 +210,9 @@ Slave( struct ExecBase* SysBase )
 	    FreeVec( ahi_iocopy );
 	  }
 
+#ifdef __AMIGAOS4__
+	  DropInterface((struct Interface*) IAHI);
+#endif
 	  CloseDevice( (struct IORequest*) ahi_iorequest );
 	}
 

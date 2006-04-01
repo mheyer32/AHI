@@ -1,20 +1,6 @@
-/* $Id$
-* $Log$
-* Revision 5.3  2003/04/22 18:19:05  martin
-* Now creates localize.[ch] in srcdir.
-*
-* Revision 5.0  2000/11/28 00:15:18  lcs
-* Bumped CVS revision to 5.0.
-*
-* Revision 4.1  1997/04/02 22:29:53  lcs
-* Bumped to version 4
-*
-* Revision 1.1  1997/02/03 16:22:45  lcs
-* Initial revision
-*
-*/
+
 /****************************************************************
-   This file was created automatically by `FlexCat 2.4'
+   This file was created automatically by `FlexCat 2.6.6'
    from "../../ahisrc/Device/ahi.cd".
 
    Do NOT edit by hand!
@@ -91,5 +77,9 @@ extern const APTR _msgReqInfoRecordHalf;
 #define msgReqInfoRecordHalf ((APTR) &_msgReqInfoRecordHalf)
 extern const APTR _msgReqInfoRecordFull;
 #define msgReqInfoRecordFull ((APTR) &_msgReqInfoRecordFull)
+extern const APTR _msgReqInfoMultiChannel;
+#define msgReqInfoMultiChannel ((APTR) &_msgReqInfoMultiChannel)
+extern const APTR _msgFreqFmt;
+#define msgFreqFmt ((APTR) &_msgFreqFmt)
 
 #endif /*   !ahi_CAT_H  */

@@ -1,48 +1,567 @@
-2004-07-16  Martin Blom  <martin@blom.org>
+2006-01-10  Martin Blom  <martin@blom.org>
 
-	* Implemented ahi-output.class.
+	* Released ahi.device 6.7.
 
-2004-07-06  Martin Blom  <martin@blom.org>
+	* ahi.device: It should now be possible to send more than two
+	buffers at the same time when using CMD_WRITE (for
+	tripple-buffering or more). [Ralph Schmidt]
 
-	* Implemented ahi-board.class.
+2005-12-21  Martin Blom  <martin@blom.org>
 
-	* Implemented ahi-driver.class.
+	* Device/devcommands.c (StartCmd): While I thought I set the task
+	pri to +128, I actually set it to -128. Now it's +127 as it should
+	have been. [Davy Wentzler]
 
-2004-06-21  Martin Blom  <martin@blom.org>
+2005-12-19  Martin Blom  <martin@blom.org>
 
-	* gain.ahi-processor now modifies the gain softly to the new value
-	when changed.
+	* Device/device.c (_DevOpen): Fail if unit >= 4 but not 255. [Chr]
 
-2004-06-20  Martin Blom  <martin@blom.org>
+2005-12-05  Martin Blom  <martin@blom.org>
 
-	* Implemented splitter.ahi-processor.
+	* Added 'make install' targets (mostly like it is in AROS).
 
-	* Implemented adder.ahi-processor.
+2005-11-28  Martin Blom  <martin@blom.org>
 
-	* Bumped a lot of version numbers to 7.0.
+	* AHI Preferences, AHI-Handler, AddAudioModes, ahi.device, all
+	open-source drivers, PlayTest, CloneAudioModes,
+	PlaySineEverywhere, ScanAudioModes, Test-7.1: Added tag "[AHI
+	release x.y]" to version string. [Jeff Gilpin]
 
-	* Implemented tick.ahi-processor and ahi-lfo.class.
+	* AddAudioModes, AHI-Handler, CAMD/emu10kx, CloneAudioModes,
+	HardDiskRecord, PlaySineEverywhere, Test-7.1: Recent versions of
+	gcc optimized away the embedded version string. Fixed. [Jeff
+	Gilpin]
 
-2004-06-07  Martin Blom  <martin@blom.org>
+2005-11-20  Martin Blom  <martin@blom.org>
 
-	* Implemented gain.ahi-processor.
+	* Released AHI 6.0. w00t!
 
-2004-06-06  Martin Blom  <martin@blom.org>
+2005-11-06  Martin Blom  <martin@blom.org>
 
-	* Added error codes and handling.
+	* Docs/readme.changes: Added note about device.audio's 20 ms
+	limit. [Ian Greenway]
 
-	* Implemented ahi.class, ahi-buffer.class and ahi-processor.class.
+2005-10-09  Martin Blom  <martin@blom.org>
 
-2004-06-05  Martin Blom  <martin@blom.org>
+	* Drivers/Common/library.h: Avoid using assembly symbol
+	redirection in AROS.
 
-	* Imported new include files (classes etc).
+2005-10-05  Martin Blom  <martin@blom.org>
+
+	* Docs/readme.changes, Docs/readme.usr: Updated.
+
+2005-10-01  Martin Blom  <martin@blom.org>
+
+	* COPYING.DRIVERS: Fixed a typo and added a small plea for open
+	source drivers.
+
+2005-09-28  Martin Blom  <martin@blom.org>
+
+	* Bumped just about every single revision counter ...
+
+	* Drivers/Common/Makefile.common.in: Arranged to that the
+	"library.o" object comes first when linking, so that the _start()
+	function is at the very beginning of the driver. [Gunther Nikl]
+
+	* Drivers/Common/library.c: Made rawputchar_m68k const. [Gunther
+	Nikl]
+
+	* AHI-Handler: Don't compile debug support code if not debug
+	build. Made rawputchar_m68k const. [Gunther Nikl]
+
+	* AHI Preferences, AddAudioModes, AHI-Handler: Define __main() for
+	libnix to make the binaries smaller. [Gunther Nikl]
+
+2005-09-2  Martin Blom  <martin@blom.org>
+
+	* configure.in: Use AC_SEARCH_LIBS so that -lauto, -lraauto and
+	-lmui only gets added if required. That fixes a potential
+	ixemul/libnix conflict for m68k-amigaos. [Gunther Nikl]
+
+	* configure.in: Don't add include path /gg/os-include per
+	default. [Gunther Nikl]
+
+	* devcommands.h: Removed duped prototype for FindNode(). [Gunther
+	Nikl]
+
+2005-09-27  Martin Blom  <martin@blom.org>
+
+	* Released AHI 6.0rc4.
+
+	* Released ahi.device 6.6.
+
+	* ahi.device: Fixed a long-standing bug, first reported on
+	2002-08-17, about an enforcer hit when AbortIO()'ing an I/O
+	request. Thanks for the excellent test program, Harry! [Marcin
+	Kurek, Sensei, Harry Sintonen]
+ 
+2005-09-22  Martin Blom  <martin@blom.org>
+
+	* Released AddAudioModes 6.2.
+
+	* Released ahi.device 6.5.
+
+	* Released ac97.audio 6.2.
+
+	* Released AROS.audio 6.2.
+
+	* Released device.audio 6.1.
+
+	* Released emu10kx.audio 6.4.
+
+	* Released filesave.audio 6.2.
+
+	* Released void.audio 6.2.
+
+	* Docs/ahiusr.texinfo: Added Gunther Nikl and Davy Wentzler to
+	"Contributors". Removed all contributor e-mail addresses.
+
+	* ahi.device, Drivers/*: More OS4 porting.
+
+2005-09-21  Martin Blom  <martin@blom.org>
+
+	* Imported AROS updates to aros.audio.
+
+2005-09-20  Martin Blom  <martin@blom.org>
+
+	* Added build environment support for OS4.
+
+	* AHI Preferences (ClassAct): Ported to Reaction. At least it
+	compiles without errors. If I had libreaction.a and libraauto.a
+	for clib2/OS4 it would even link.
+
+	* ahi.device: Now builds for OS4 using the OS4 cross compiler,
+	the OS4 SDK from GoldED and sfdc 1.4.
+
+	* AddAudioModes: Ported to OS4.
+
+2005-09-11  Martin Blom  <martin@blom.org>
+
+	* Bumped revision of ahi.device to 6.4.
+
+	* Bumped revision of AHI Preferences to 6.1.
+
+	* Bumped revision of AHI-Handler to 6.1.
+
+	* Bumped revision of AddAudioModes to 6.1.
+
+	* Bumped revision of ac97.audio to 6.1.
+
+	* Bumped revision of aros.audio to 6.1.
+
+	* Bumped revision of emu10kx.audio to 6.3.
+
+	* Bumped revision of filesave.audio to 6.1.
+
+	* Bumped revision of void.audio to 6.1.
+
+	* Rebuilt using a gcc that does not have emulated instructions in
+	libgcc.a.
+
+2005-09-11  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.2.
+
+	* emu10kx.audio: OS4 version use 80 Hz interrupt instead of 1
+	kHz. [Davy Wentzler]
+
+2005-08-11  Martin Blom  <martin@blom.org>
+
+	* Documentation: Added PDF versions of the User's And Developer's
+	guides. [Thor]
+
+2005-06-19  Martin Blom  <martin@blom.org>
+
+	* Released toccata.audio 4.7.
+
+	* ahiusr.texinfo: Added notes about AHItoccataPlayBufferSize and
+	AHItoccataRecordBufferSize.
+
+	* toccata.audio:  Added the variables AHItoccataPlayBufferSize and
+	AHItoccataRecordBufferSize.
+
+2005-04-13  Martin Blom  <martin@blom.org>
+
+	* AHI preferences: Added updated german translation by Stefan
+	Bojartschuk.
+
+2005-04-06  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Harry's ixemul/SIGBREAKF_CTRL_F fix seem to have
+	fixed the infamous DisplayBeep()/IPrefs/sound.datatype/whatever
+	bug that several people have reported. This must be my lucky week.
+	[Luca "Hexaae" Longone]
+
+2005-04-05  Martin Blom  <martin@blom.org>
+
+	* Device/header.c: The __attribute__ is back again. [Davy
+	Wentzler]
+
+	* ahi.device/concierto.audio: Oh, I forgot to mention: That
+	PreTimer/PostTimer fix Gunther helped with in January with made
+	the Concierto driver work again!  Fett med credz till Gunther!!
+
+2005-04-03  Martin Blom  <martin@blom.org>
+
+	* ahi.device: The copyright year accidentally went back to 2004
+	when merging Gunther's patch. Fixed.
+
+	* Released AHI 6.0rc3.
+
+	* Released ahi.device 6.2.
+
+	* ahi.device: Removed the beta requester from the Amithlon build.
+
+	* ahi.device: Applied an old clean-up patch from Gunther Nikl to
+	header.c.
+
+2005-03-29  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 6.1.
+
+	* Device/header.c: Instead removed the 'static' keyword on RomTag
+	and undid the __attribute__ fix to avoid a warning when using gcc
+	2.x.
+
+	* ahi.device: Applied a patch from Piru that removed the usage of
+	SIGBREAKF_CTRL_F in ahi.device, working around a problem in the
+	latest MorphOS ixemul.library. Thanks! [Harry Sintonen]
+
+2005-03-26  Martin Blom  <martin@blom.org>
+
+	* Device/header.c: Added __attribute__((used)) to RomTag. [Davy
+	Wentzler].
+
+	* Released emu10kx.audio 6.1.
+
+	* emu10kx.audio: Added write-only (for now) access to internal
+	DSP volume registers via the AC97 mixer interface.
+
+	* configure.in: Temporarily added -msoft-float to OS4 compiler
+	flags.
+
+	* ac97.audio: Bumped version number to 6.0.
+
+	* ac97.audio: Added this AROS driver to the distribution, with
+	permission from its author Michal Schulz. Thanks Michal!
+
+	* emu10kx.audio: Added small patch from Davy.
+
+2005-03-24  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Removed unnecessary OS4-only interrupt disable
+	code.
+
+2005-03-21  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Applied a fix from Davy for the recording problem
+	on Audigy cards. Thanks!
+
+2005-02-02  Martin Blom  <martin@blom.org>
+
+	* Updated all copyright years to 2005.
+
+	* Bumped all version numbers to 6.0.
+
+	* Docs/ahidev.texinfo (The Author): Updated the authors address (5
+	years later).
+
+	* Added updated/new italian translations by Paolo Besser. Thanks!
+
+	* AHI preferences: Update the strings in the unit cycle gadget
+	when loading new prefs from disk or restoring to the
+	defaults. [Gunther Nikl]
+
+2005-01-28  Martin Blom  <martin@blom.org>
+
+	* Updated the docs and .readme files a bit.
+
+2005-01-23  Martin Blom  <martin@blom.org>
+
+	* ahi.device: That CPU overload protection (PreTimer/PostTimer)
+	thing didn't work ... at all. Duh. [Gunther Nikl]
+
+2005-01-14  Martin Blom  <martin@blom.org>
+
+	* Updated the README files. The language source files are now
+	included in the ahidev archive.
+
+2005-01-13  Martin Blom  <martin@blom.org>
+
+	* AHI preferences: Localized the anti-click time and CPU load
+	values as well. [Michael Malyshev]
+
+	* Added updated Russion translations by Michael Malyshev. Thanks!
+
+2005-01-12  Martin Blom  <martin@blom.org>
+
+	* The binary user archive now includes the .ct files for easy
+	translation updates.
+
+	* Updated to FlexCat 2.6.6-cvs-2005-01-12 and regenerated language
+	files.
+
+	* Released AHI preferences 5.15.
+
+	* Released ahi.device 5.56.
+
+	* Added 'FILL' switch to FlexCat when generating the catalogs in
+	order to make missing strings use the built-in English defaults
+	instead of nothing. [Pierre Giroux]
+
+	* Localized Hz, dB and the number of channels. [Michael Malyshev]
+
+	* Only try to build emu10kx.audio for AROS if <asm/io.h> is found.
+
+2005-01-11  Martin Blom  <martin@blom.org>
+
+	* filesave.audio: Fixed a compiler warning. (No bumprev.) [Gunther
+	Nikl]
+
+	* AHI preferences: Used floating point instruction introduced by
+	the -m68020-60 switch by accident. Added -msoft-float for m68k to
+	prevent this. [Gunther Nikl]
+
+	* ahi.device: Tweaked the m68k gateway stubs so no nops are used
+	anymore. [Gunther Nikl]
+ 
+	* Applied more patches (mainly gcc 3.x-related but also
+	C_c_noauto.sd and gas stab) from Gunther Nikl. Thanks!
+
+2005-01-09  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.15b (ix86be only).
+
+	* Released ahi.device 5.55.
+
+	* ahi.device: Minor modifications to make the ix86be version build
+	again, this time using a non-broken version of the compiler. :-)
+
+2005-01-08  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.15.
+
+	* Released ahi.device 5.54.
+
+	* Released AHI preferences 5.14.
+
+	* AHI preferences: Moved the selection of scale modes to the
+	global, advanced prerference page. Changed the default to "Full".
+
+	* ahi.device: Now used global scale mode settings. Changed the
+	default to AHI_SCALE_FIXED_0_DB.
+
+	* ahi.device: Tweaked the default "dizzy" tags for BestAudioID()
+	to award the user's preferred audio mode. [Fab]
+
+2004-11-08  Martin Blom  <martin@blom.org>
+
+ 	* Released AHI-Handler 5.5.
+
+	* AHI-Handler: Fixed bad IFF chunk lengths for AIFF/AIFC
+	files. [Patch from Stefan Haubenthal]
+
+2004-11-03  Martin Blom  <martin@blom.org>
+
+ 	* Released AHI-Handler 5.4.
+
+	* AHI-Handler: Fixed bad struct alignment for non-m68k
+	builds. [Stefan Haubenthal]
+
+	* Released ahi.device 5.53.
+
+	* ahi.device: 16 bit samples were broken in 7.1 mode. [Marcin
+	'Morgoth' Kurek]
+
+2004-11-02  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.52.
+
+	* ahi.device: DSP echo and master volume did not work in 7.1
+	mode. Fixed now.
+
+	* Updated copyright year and removed almost all CVS/RCS tags from
+	the source code.
+
+2004-11-01  Martin Blom  <martin@blom.org>
+
+	* Released AddAudioModes 5.6.
+
+	* Applied a couple of patches from Gunther Nikl. Thanks Gunther!
+
+2004-10-31  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.14.
+
+	* Imported the rest of the AROS modifications from AROS
+	CVS. Mostly Makefile mods.
+
+	* Released emu10kx.audio 5.22.
+
+	* emu10kx.audio: Reduced the volume boost by 6 dB. According to my
+	voltmeter, the driver now outputs around 2 Vpp when the master
+	volume is set to 0 dB and around 8 Vpp when the master volume is
+	+12 dB. If you have a real oscilloscope, I'd be happy to hear your
+	verification.
+
+	* emu10kx.audio: Merged the AROS port by Georg Steger. Thanks
+	Georg!
+
+2004-10-29  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.21.
+	
+	* emu10kx.audio: Made the +12 dB boost work on Audigy too. [Marcin
+	'Morgoth' Kurek]
+
+2004-10-28  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.20.
+
+	* emu10kx.audio: Added front channel downmix to center and LFE
+	when playing mono or stereo sounds (-3 dB), just like the driver
+	used to do for Audigy cards before. This is disabled in
+	multichannel mode. [Marcin 'Morgoth' Kurek]
+
+	* emu10kx.audio: Boosted AHI output by 12 dB (!).
+
+2004-10-27  Martin Blom  <martin@blom.org>
+
+	* Released ahi.device 5.51.
+
+	* Device/devsupp.c: I obviously have a nasty habit of not testing
+	the code I write. "for (i = 0; i < size; ++size)"?! Yeah,
+	right. And you know what's REALLY scary? It's been like that since
+	late 2001! Anyway, recording in device mode or via AUDIO: should
+	now work again. [Vladimir Javorski, Denis Markovic, Alexey Ivanov,
+	Stefan Haubenthal]
+
+2004-10-23  Martin Blom  <martin@blom.org>
+
+	* Docs/ahiusr.texinfo: Fixed some typos. [Stefan Haubenthal]
+
+2004-09-20  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Minor bugfixes from Davy.
+
+	* emu10kx.audio: Added an OS4 reset handler patch from Davy.
+
+2004-09-08  Martin Blom  <martin@blom.org>
+
+	* Docs/ahiusr.texinfo: Added description of the default anti-click
+	time. [Luca 'Hexaae' Long]
+
+2004-08-13  Martin Blom  <martin@blom.org>
+
+	* Added an updated german ahiprefs translation. [Stefan
+	Bojartschuk]
+
+2004-08-07  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: Applied even more OS4 patches from Davy
+	Wentzler. Thanks!
+
+2004-08-06  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Applied even more OS4 patches from Davy
+	Wentzler. Thanks!
+
+2004-08-05  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 5.18.
+
+	* emu10kx.audio: Remade the routing once again. Tried to make the
+	routing code work on Audigy. Testing required.
+
+2004-08-04  Martin Blom  <martin@blom.org>
+
+	* Added the string "\nAnnotation" to all prefs catalogs'
+	msgProperties string. Real translations are more than
+	welcome. [Michael Malyshev]
+
+	* Pass CPU option to linker when building. [Gunther Nikl]
+
+2004-08-02  Martin Blom  <martin@blom.org>
+
+	* Added updated Russion translations by Michael Malyshev. Thanks!
+
+	* emu10kx.audio: Don't print debug info if no cards found. [Harry
+	Sintonen]
+
+2004-07-27  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.13.
+
+	* Released emu10kx.audio 5.17.
+
+	* Released ahi.device 5.49.
+
+	* ahi.device: Added backward mixing in 7.1 modes.
+
+	* ahi.device: Fixed a couple of bugs in the 7.1 code.
+
+	* emu10kx.audio: Replaced the EMU10k1 routing completely. Disabled
+	most of the patch manager. Somebody needs to fix it for Audigy
+	cards.
+
+	* emu10kx.audio: Added 5.1 multichannel support for Live!
+	cards. And there was much rejoicing.
+
+2004-07-26  Martin Blom  <martin@blom.org>
+
+	* Examples/Low-level/Test-7.1: Added a 7.1 test example.
+
+	* AROS, DEVICE, EMU10KX, FILESAVE, PAULA, TOCCATA, VOID,
+	WAVETOOLS (mode files): Enabled panning for all mono modes.
+
+	* Released void.audio 5.8.
+
+	* void.audio: Added a comment about locking the actual hardware in
+	AHIsub_AllocAudio().
+
+	* void.audio: Added 7.1 "support".
+
+2004-07-25  Martin Blom  <martin@blom.org>
+
+	* Released AHI preferences 5.13.
+
+	* Released ahi.device 5.48.
+
+	* AHI preferences: Added selection of volume scaling mode. And
+	there was much rejoicing.
+
+	* ahi.device: Implemented a couple of alternatives to that
+	horrible "safe scaling" thing. [Daniel Westerberg, Hubert Maier
+	and a thousand others]
+
+2004-07-07  Martin Blom  <martin@blom.org>
+
+	* emu10kx.audio: AHIDB_MaxRecordSamples returned twice the number
+	of samples actually used. [Davy Wentzler]
+
+2004-06-26  Martin Blom  <martin@blom.org>
+
+	* Released AHI 5.12.
+
+2004-06-12  Martin Blom  <martin@blom.org>
+
+	* ahi.device: Avoid memory trashing when opening AHI_NO_UNIT using
+	a V2-sized AHIRequest. [Harry Sintonen]
+
+2004-06-09  Martin Blom  <martin@blom.org>
+
+	* Released device.audio 5.1.
+
+	* device.audio: Clear audio buffers before playing the first time
+	(removes the noise in the beginning). 
+
+2004-06-08  Martin Blom  <martin@blom.org>
+
+	* Added 7.1 multichannel support. And there was much rejoicing.
+
+	* Added missing TAG_DONEs to ScanAudioModes.
 
 2004-06-04  Martin Blom  <martin@blom.org>
-
-	* Removed BGUI and ClassAct preference support (for now at least,
-	ReAction support might be re-added later).
-
-	* Removed WarpUp support.
 
 	* Forked off BRANCH_6.
 

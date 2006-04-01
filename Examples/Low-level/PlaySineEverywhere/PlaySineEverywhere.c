@@ -16,7 +16,7 @@
 
 #include "version.h"
 
-static const char version[] = "$VER: PlaySineEverywhere " VERS "\n\r";
+const char version[] = "$VER: PlaySineEverywhere " VERS "\n\r";
 
 long __oslibversion = 37;
 
@@ -48,7 +48,7 @@ main( int argc, char* argv[] ) {
 
       if( io != NULL ) {
 	// We use 32 bit samples, so we need version 6.
-	io->ahir_Version = 5; // FIXME: Change to 6.
+	io->ahir_Version = 6;
 
 	if( OpenDevice( AHINAME, AHI_NO_UNIT, (struct IORequest *) io, 0 )
 	    == 0 ) {
@@ -59,7 +59,7 @@ main( int argc, char* argv[] ) {
 	  CloseDevice( (struct IORequest *) io );
 	}
 	else {
-	  fprintf( stderr, "Unable to open '" AHINAME "' version 4.\n" );
+	  fprintf( stderr, "Unable to open '" AHINAME "' version 6.\n" );
 	  rc = RETURN_FAIL;
 	}
 	
