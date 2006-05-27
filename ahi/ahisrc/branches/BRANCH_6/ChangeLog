@@ -1,3 +1,8 @@
+2006-04-08  Martin Blom  <martin@blom.org>
+
+	* ahi.device, drivers: Made symbols __abox__ and __amigappc__
+	(MorphOS) const. [Gunther Nikl]
+
 2006-01-10  Martin Blom  <martin@blom.org>
 
 	* Released ahi.device 6.7.
