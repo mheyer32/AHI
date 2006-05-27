@@ -20,10 +20,10 @@ ReqA( const char*        text,
         ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args, AHIsubBase);})
 
 char*
-SprintfA( char *dst, const char *fmt, ULONG* args );
+MySprintfA( char *dst, const char *fmt, ULONG* args, struct DriverBase* AHIsubBase );
 
 #define Sprintf(a0, a1, args...) \
-        ({ULONG _args[] = { args }; SprintfA((a0), (a1), (ULONG*)_args);})
+        ({ULONG _args[] = { args }; MySprintfA((a0), (a1), (ULONG*)_args, AHIsubBase);})
 
 void
 MyKPrintFArgs( UBYTE*           fmt, 
