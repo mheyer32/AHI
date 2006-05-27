@@ -19,6 +19,12 @@ ReqA( const char*        text,
 #define Req(a0, args...) \
         ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args, AHIsubBase);})
 
+char*
+SprintfA( char *dst, const char *fmt, ULONG* args );
+
+#define Sprintf(a0, a1, args...) \
+        ({ULONG _args[] = { args }; SprintfA((a0), (a1), (ULONG*)_args);})
+
 void
 MyKPrintFArgs( UBYTE*           fmt, 
 	       ULONG*           args,
