@@ -43,7 +43,7 @@ case $host in
   linkerflags="-noixemul -mcpu=${CPU} -r"
   asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
   resident=""                                      dnl *** Not supported (yet?)
-  stripflag=""
+  stripflag="-R .comment"
  ;;
  m68k-unknown-amigaos)
   : ${CPU="68020-60"}
@@ -64,7 +64,7 @@ case $host in
   linkerflags="-mcpu=${CPU}"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
   resident=""                                      dnl *** Not supported (yet?)
-  stripflag=""
+  stripflag="-R .comment"
  ;;
  powerpc-unknown-morphos)
   : ${CPU="603"}
@@ -74,7 +74,7 @@ case $host in
   linkerflags="-noixemul -mcpu=${CPU}"
   asflags="-m${CPU} -mregnames --defsym CPU=${CPU}"
   resident="-mresident32"
-  stripflag=""
+  stripflag="-R .comment"
  ;;
  i?86-*-aros)
  : ${CPU="i386"}
@@ -83,7 +83,7 @@ case $host in
   linkerflags=""
   asflags="--defsym CPU=${CPU} --defsym LITTLE_ENDIAN=1"
   resident=""                                      dnl *** Not supported (yet?)
-  stripflag="--strip-unneeded"
+  stripflag="--strip-unneeded -R .comment"
  ;;
  *)
   AC_MSG_WARN(Unknown architecture!)
