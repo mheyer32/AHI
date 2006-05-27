@@ -329,7 +329,7 @@ ReqA( const char*        text,
 ******************************************************************************/
 
 char*
-SprintfA( char *dst, const char *fmt, ULONG* args )
+MySprintfA( char *dst, const char *fmt, ULONG* args, struct DriverBase* AHIsubBase )
 {
 #ifndef __AMIGAOS4__
   static const UWORD struffChar[] =
