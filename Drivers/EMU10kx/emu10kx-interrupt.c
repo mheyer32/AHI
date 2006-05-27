@@ -104,7 +104,7 @@ EMU10kxInterrupt( struct EMU10kxData* dd )
       else
       {
          dd->current_record_buffer = ( dd->record_buffer +
-				      RECORD_BUFFER_SAMPLES * 4 / 2 );
+				      dd->record_buffer_samples * 4 / 2 );
       }
 
       if( dd->record_interrupt_enabled )
@@ -425,7 +425,7 @@ RecordInterrupt( struct EMU10kxData* dd )
   {
     AHIST_S16S,
     dd->current_record_buffer,
-    RECORD_BUFFER_SAMPLES / 2
+    dd->record_buffer_samples / 2
   };
 
   int   i   = 0;
@@ -441,13 +441,13 @@ RecordInterrupt( struct EMU10kxData* dd )
     // This is used to invalidate the cache
 
     CacheClearE( dd->current_record_buffer,
-		 RECORD_BUFFER_SAMPLES / 2 * 4,
+		 dd->record_buffer_samples / 2 * 4,
 		 CacheCommand );
   }
 #endif
 
 #ifdef WORDS_BIGENDIAN
-  while( i < RECORD_BUFFER_SAMPLES / 2 * 2 )
+  while( i < dd->record_buffer_samples / 2 * 2 )
   {
     *ptr = ( ( *ptr & 0xff ) << 8 ) | ( ( *ptr & 0xff00 ) >> 8 );
     
@@ -466,7 +466,7 @@ RecordInterrupt( struct EMU10kxData* dd )
     // in the DMA buffer before or after the current buffer.
     
     CacheClearE( dd->current_record_buffer,
-		 RECORD_BUFFER_SAMPLES / 2 * 4,
+		 dd->record_buffer_samples / 2 * 4,
 		 CacheCommand );
   }
 

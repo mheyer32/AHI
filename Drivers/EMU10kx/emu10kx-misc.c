@@ -70,6 +70,9 @@ AllocDriverData( APTR               dev,
 
   dd->ahisubbase = AHIsubBase;
 
+  dd->record_adcbs_bufsize  = ADCBS_BUFSIZE_16384;
+  dd->record_buffer_samples = 4096;
+
   dd->interrupt.is_Node.ln_Type = INTERRUPT_NODE_TYPE;
   dd->interrupt.is_Node.ln_Pri  = 0;
   dd->interrupt.is_Node.ln_Name = (STRPTR) LibName;

@@ -973,6 +973,35 @@ version of the Delfina software can be found at Petsoff Limited
 Partnership's WWW page:  @url{http://www.sci.fi/~petsoff}.}.
 
 
+@cindex AHIemu10kxRecordBufferSize variable
+
+@item emu10kx.audio
+The default record buffer size is 4096 samples, which results in about
+10 ms latency, depending on the current sample rate. Starting with
+version 6.6 of emu10kx.audio, this can be changed by setting the
+environment variable @file{AHIemu10kxRecordBufferSize}, which takes a
+value between 1 and 31 (inclusive). Any value outside this range will
+be interpreted as the default (23). The available buffer sizes, in
+samples, are as follow (corresponding
+@file{AHIemu10kxRecordBufferSize} value in parenthesis):
+
+96 (1), 112 (2), 128 (3), 160 (4), 192 (5), 224 (6), 256 (7), 320 (8),
+384 (9), 448 (10), 512 (11), 640 (12), 768 (13), 896 (14), 1024 (15),
+1280 (16), 1536 (17), 1792 (18), 2048 (19), 2560 (20), 3072 (21), 3591
+(22), 4096 (23), 5120 (24), 6144 (25), 7168 (26), 8192 (27), 10240
+(28), 12288 (29), 14336 (30) and 16384 (31).
+
+Different cards can have different settings. Before checking
+@file{AHIemu10kxRecordBufferSize}, the first card will check the
+variable @file{AHIemu10kxRecordBufferSize.1}, the second card will
+first check @file{AHIemu10kxRecordBufferSize.2} and so on. Example:
+
+@example
+SetEnv AHIemu10kxRecordBufferSize 15
+Copy ENV:AHIemu10kxRecordBufferSize ENVARC:
+@end example
+
+
 @item maestropro.audio
 Requires @code{maestix.library} version 40.10 or greater @footnote{
 @code{maestix.library} is available from AmiNet, for example @*

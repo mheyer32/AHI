@@ -1,3 +1,11 @@
+2006-05-27  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.6.
+
+	* emu10kx.audio: The record buffer size can now be specified by
+	setting the environment variable AHIemu10kxRecordBufferSize. [Pasi
+	Kujanp‰‰]
+
 2006-04-08  Martin Blom  <martin@blom.org>
 
 	* All ELF targets: The .comment section is now stripped as well.
