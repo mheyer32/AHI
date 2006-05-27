@@ -1,5 +1,8 @@
 2006-04-08  Martin Blom  <martin@blom.org>
 
+	* All ELF targets: The .comment section is now stripped as well.
+	[Gunther Nikl]
+
 	* ahi.device, drivers: Made symbols __abox__ and __amigappc__
 	(MorphOS) const. [Gunther Nikl]
 
