@@ -78,8 +78,8 @@ _start( void )
 }
 
 #if defined( __MORPHOS__ )
-ULONG   __abox__=1;
-ULONG   __amigappc__=1;  // deprecated, used in MOS 0.4
+const ULONG   __abox__=1;
+const ULONG   __amigappc__=1;  // deprecated, used in MOS 0.4
 #endif
 
 /******************************************************************************
