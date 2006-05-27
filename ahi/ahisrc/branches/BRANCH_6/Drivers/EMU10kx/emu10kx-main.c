@@ -36,6 +36,7 @@ driver! Anything that is based on this driver has to be GPL:ed.
 #include <libraries/ahi_sub.h>
 
 #include <proto/ahi_sub.h>
+#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
 
@@ -50,6 +51,44 @@ driver! Anything that is based on this driver has to be GPL:ed.
 /******************************************************************************
 ** Globals ********************************************************************
 ******************************************************************************/
+
+#define SIZES 34
+
+static const ULONG RecordBufferSizes[ SIZES ] =
+{
+  0 / 4,
+  384 / 4,
+  448 / 4,
+  512 / 4,
+  640 / 4,
+  768 / 4,
+  896 / 4,
+  1024 / 4,
+  1280 / 4,
+  1536 / 4,
+  1792 / 4,
+  2048 / 4,
+  2560 / 4,
+  3072 / 4,
+  3584 / 4,
+  4096 / 4,
+  5120 / 4,
+  6144 / 4,
+  7168 / 4,
+  8192 / 4,
+  10240 / 4,
+  12288 / 4,
+  14366 / 4,
+  16384 / 4,
+  20480 / 4,
+  24576 / 4,
+  28672 / 4,
+  32768 / 4,
+  40960 / 4,
+  49152 / 4,
+  57344 / 4,
+  65536 / 4,
+};
 
 #define FREQUENCIES 8
 
@@ -113,6 +152,8 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
+  char env_var[] = "AHIemu10kxRecordBufferSize.00";
+  char env_val[16];
   int   card_num;
   ULONG ret;
   int   i;
@@ -144,20 +185,46 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     {
       return AHISF_ERROR;
     }
-    
-    /* Since the EMU10kx chips can play a voice at any sample rate, we
-       do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
 
-       Had this not been the case, AudioCtrl->ahiac_MixFreq should be
-       set to the frequency we will use.
+    // Check what recording latency the user wants (using ugly
+    // environment variables)
 
-       However, recording can only be performed at the fixed sampling
-       rates.
-    */
+    dd->record_adcbs_bufsize = 0;
+  
+    Sprintf(env_var, "AHIemu10kxRecordBufferSize.%ld", card_num + 1);
+
+    if (GetVar(env_var, env_val, sizeof(env_val), 0) != -1) {
+      StrToLong(env_val, &dd->record_adcbs_bufsize);
+    }
+
+    if (dd->record_adcbs_bufsize == 0) {
+      Sprintf(env_var, "AHIemu10kxRecordBufferSize");
+
+      if( GetVar(env_var, env_val, sizeof(env_val), 0) != -1) {
+	StrToLong(env_val, &dd->record_adcbs_bufsize);
+      }
+    }
+
+    if (dd->record_adcbs_bufsize == 0 ||
+	dd->record_adcbs_bufsize > ADCBS_BUFSIZE_65536) {
+      dd->record_adcbs_bufsize = ADCBS_BUFSIZE_16384;
+    }
+
+    dd->record_buffer_samples = RecordBufferSizes[dd->record_adcbs_bufsize];
   }
 
+  /* Since the EMU10kx chips can play a voice at any sample rate, we
+     do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
+
+     Had this not been the case, AudioCtrl->ahiac_MixFreq should be
+     set to the frequency we will use.
+
+     However, recording can only be performed at the fixed sampling
+     rates.
+  */
+
   ret = AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_KNOWMULTICHANNEL | \
-        AHISF_MIXING | AHISF_TIMING;
+    AHISF_MIXING | AHISF_TIMING;
 
   for( i = 0; i < FREQUENCIES; ++i )
   {
@@ -302,7 +369,7 @@ _AHIsub_Start( ULONG                   flags,
       emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_CENTER, 100, VOL_5BIT);
       emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_LFE,    100, VOL_5BIT);
     }
-    
+
     for( i = 0; i < num_voices; ++i )
     {
       if( emu10k1_voice_alloc_buffer( &dd->card,
@@ -328,7 +395,7 @@ _AHIsub_Start( ULONG                   flags,
 	dd->voices[i].flags = VOICE_FLAGS_16BIT;
       }
     }
-    
+
     dd->voice_buffers_allocated = num_voices;
 
     for( i = 0; i < num_voices; ++i )
@@ -339,7 +406,7 @@ _AHIsub_Start( ULONG                   flags,
 	return AHIE_UNKNOWN;
       }
     }
-    
+
     dd->voices_allocated = num_voices;
 
     for( i = 0; i < num_voices; ++i )
@@ -367,7 +434,7 @@ _AHIsub_Start( ULONG                   flags,
       dd->voices[i].params[0].initial_attn = 0x00;
       dd->voices[i].params[0].byampl_env_sustain = 0x7f;
       dd->voices[i].params[0].byampl_env_decay = 0x7f;
-    
+
       if( dd->voices[i].flags & VOICE_FLAGS_STEREO )
       {
 	if( dd->card.is_audigy )
@@ -403,7 +470,7 @@ _AHIsub_Start( ULONG                   flags,
 	    0x3276, // Send SL/SR to ??/??, AHI_SURROUND_L/AHI_SURROUND_R
 	    0x3298, // Send C/LFE to ??/??, AHI_CENTER,AHI_LFE
 	  };
-	    
+
 	  dd->voices[i].params[0].send_dcba = 0x000000ff;
 	  dd->voices[i].params[0].send_hgfe = 0;
 	  dd->voices[i].params[1].send_dcba = 0x0000ff00;
@@ -425,7 +492,7 @@ _AHIsub_Start( ULONG                   flags,
 	{
 	  dd->voices[i].params[0].send_dcba = 0xffffffff;
 	  dd->voices[i].params[0].send_hgfe = 0x0000ffff;
- 
+
 	  dd->voices[i].params[0].send_routing  = 0x03020100;
 	  dd->voices[i].params[0].send_routing2 = 0x07060504;
 	}
@@ -444,7 +511,7 @@ _AHIsub_Start( ULONG                   flags,
 
       emu10k1_voice_playback_setup( &dd->voices[i] );
     }
-    
+
     dd->playback_interrupt_enabled = TRUE;
 
     /* Enable timer interrupts (TIMER_INTERRUPT_FREQUENCY Hz) */
@@ -509,26 +576,26 @@ _AHIsub_Start( ULONG                   flags,
 
     /* Allocate a new recording buffer (page aligned!) */
     dd->record_buffer = pci_alloc_consistent( dd->card.pci_dev,
-					      RECORD_BUFFER_SAMPLES * 4,
+					      dd->record_buffer_samples * 4,
 					      &dd->record_dma_handle );
 
     if( dd->record_buffer == NULL )
     {
       Req( "Unable to allocate %ld bytes for the recording buffer.",
-	   RECORD_BUFFER_SAMPLES * 4 );
+	   dd->record_buffer_samples * 4 );
       return AHIE_NOMEM;
     }
 
     SaveMixerState( dd );
     UpdateMonitorMixer( dd );
-    
+
     #ifdef __AMIGAOS4__
     // invalidate the whole record_buffer just to be on the safe side
-    CacheClearE( dd->record_buffer, RECORD_BUFFER_SAMPLES * 4, CACRF_InvalidateD );
+    CacheClearE( dd->record_buffer, dd->record_buffer_samples * 4, CACRF_InvalidateD );
     #endif
 
     sblive_writeptr( &dd->card, ADCBA, 0, dd->record_dma_handle );
-    sblive_writeptr( &dd->card, ADCBS, 0, RECORD_BUFFER_SIZE_VALUE );
+    sblive_writeptr( &dd->card, ADCBS, 0, dd->record_adcbs_bufsize );
     sblive_writeptr( &dd->card, ADCCR, 0, adcctl );
 
     dd->record_interrupt_enabled = TRUE;
@@ -639,7 +706,7 @@ _AHIsub_Stop( ULONG                   flags,
     if( dd->record_buffer != NULL )
     {
       pci_free_consistent( dd->card.pci_dev,
-			   RECORD_BUFFER_SAMPLES * 4,
+			   dd->record_buffer_samples * 4,
 			   dd->record_buffer,
 			   dd->record_dma_handle );
     }
@@ -665,6 +732,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
 		 struct DriverBase*      AHIsubBase )
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
+  struct EMU10kxData* dd = (struct EMU10kxData*) AudioCtrl->ahiac_DriverData;
   int i;
 
   switch( attribute )
@@ -730,7 +798,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
       return TRUE;
 
     case AHIDB_MaxRecordSamples:
-      return RECORD_BUFFER_SAMPLES / 2;
+      return dd->record_buffer_samples / 2;
 
     case AHIDB_MinMonitorVolume:
       return 0x00000;

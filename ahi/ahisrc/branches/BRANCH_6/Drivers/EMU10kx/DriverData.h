@@ -68,8 +68,6 @@ struct EMU10kxBase
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
 
-#define RECORD_BUFFER_SAMPLES     4096
-#define RECORD_BUFFER_SIZE_VALUE  ADCBS_BUFSIZE_16384
 #ifndef __AMIGAOS4__
 #define TIMER_INTERRUPT_FREQUENCY 1000
 #else
@@ -168,6 +166,12 @@ struct EMU10kxData
 
 
     /*** Recording interrupt variables ***************************************/
+
+    /** The ADCBS_BUFSIZE_* value (see 8010.h) */
+    ULONG               record_adcbs_bufsize;
+
+    /** The ADCBS_BUFSIZE_* value (see 8010.h) */
+    ULONG               record_buffer_samples;
 
     /** The recording buffer (simple double buffering is used */
     APTR                record_buffer;
