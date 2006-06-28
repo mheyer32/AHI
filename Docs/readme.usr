@@ -1,7 +1,9 @@
-Short:    Retargetable audio vAHIVERSION, User's Archive
-Type:     mus/misc
-Author:   Martin Blom <martin@blom.org>
-Uploader: Martin Blom <martin@blom.org>
+Short:    	Retargetable audio, User's Archive
+Author:   	Martin Blom <martin@blom.org>
+Uploader: 	Martin Blom <martin@blom.org>
+Type:     	hard/drivr
+Version:	AHIVERSION
+Architecture:	AHIARCH
 
 This archive contains the binary distribution of AHI,
 everything you need to use programs that require AHI,

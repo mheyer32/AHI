@@ -111,12 +111,12 @@ SPECIAL REQUIREMENTS
 AVAILABILITY
 
      Aminet, for example:
-     ftp://ftp.germany.aminet.org/pub/aminet/dev/misc/ahi6dev.lha
-     ftp://ftp.germany.aminet.org/pub/aminet/dev/misc/ahi6src.lha
-     ftp://ftp.germany.aminet.org/pub/aminet/mus/misc/ahi6usr.lha
+     http://www.aminet.net/hard/drivr/AHIARCH-ahidev.lha
+     http://www.aminet.net/hard/drivr/AHIARCH-ahiusr.lha
+     http://www.aminet.net/hard/drivr/ahisrc.tar.gz
 
      WWW:
-     http://www.lysator.liu.se/~lcs/ahi.html
+     http://www.lysator.liu.se/ahi/
 
 PRICE
 
@@ -125,7 +125,7 @@ PRICE
 
 DISTRIBUTABILITY
 
-     Copyright ©1994-2005 Martin Blom.
+     Copyright ©1994-2006 Martin Blom.
 
      AHI version 6 is (L)GPL:ed. See COPYING and COPYING.LIB inside the
      archive for more information.
