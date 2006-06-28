@@ -36,6 +36,7 @@ int emu10k1_init(struct emu10k1_card *card);
 void emu10k1_cleanup(struct emu10k1_card *card);
 
 static void AddResetHandler(struct EMU10kxData* dd);
+static void RemResetHandler(struct EMU10kxData* dd);
 
 /******************************************************************************
 ** DriverData allocation ******************************************************
@@ -197,6 +198,10 @@ FreeDriverData( struct EMU10kxData* dd,
 {
   if( dd != NULL )
   {
+#ifdef __AMIGAOS4__
+    RemResetHandler(dd);
+#endif
+
     if( dd->card.pci_dev != NULL )
     {
       if( dd->emu10k1_initialized )
@@ -411,17 +416,23 @@ static ULONG ResetHandler(struct ExceptionContext *ctx, struct ExecBase *pExecBa
     return 0UL;
 }
 
-
 void AddResetHandler(struct EMU10kxData* dd)
 {
-    static struct Interrupt interrupt;
+  dd->reset_interrupt.is_Code = (void (*)())ResetHandler;
+  dd->reset_interrupt.is_Data = (APTR) dd;
+  dd->reset_interrupt.is_Node.ln_Pri  = 0;
+  dd->reset_interrupt.is_Node.ln_Type = NT_EXTINTERRUPT;
+  dd->reset_interrupt.is_Node.ln_Name = "reset handler";
 
-    interrupt.is_Code = (void (*)())ResetHandler;
-    interrupt.is_Data = (APTR) dd;
-    interrupt.is_Node.ln_Pri  = 0;
-    interrupt.is_Node.ln_Type = NT_EXTINTERRUPT;
-    interrupt.is_Node.ln_Name = "reset handler";
+  AddResetCallback( &dd->reset_interrupt );
+}
 
-    AddResetCallback( &interrupt );
+static void RemResetHandler(struct EMU10kxData* dd)
+{
+  if( dd->reset_interrupt.is_Code != NULL )
+  {
+    RemResetCallback( &dd->reset_interrupt );
+    dd->reset_interrupt.is_Code = NULL;
+  }
 }
 #endif

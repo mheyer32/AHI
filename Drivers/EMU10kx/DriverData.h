@@ -89,6 +89,11 @@ struct EMU10kxData
     /** TRUE if the EMU10kx chip has been initialized */
     BOOL                emu10k1_initialized;
 
+#ifdef __AMIGAOS4__
+    /** A reset handler interrupt structure for OS4 */
+    struct Interrupt    reset_interrupt;
+#endif
+
     /*** The driverbase ******************************************************/
 
     /** This field is also used as a lock and access to is is
