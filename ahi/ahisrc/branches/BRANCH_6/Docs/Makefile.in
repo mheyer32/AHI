@@ -19,7 +19,7 @@ USRDIR		= ${DISTDIR}/User
 DEVDOCDIR	= ${DEVDIR}/Docs
 USRDOCDIR	= ${USRDIR}/Docs
 
-build_os	= @build_os@
+host_alias	= @host_alias@
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -98,11 +98,11 @@ tmp-iso.sty:	iso.sty
 ahidev.readme:	readme.dev readme.changes readme.main \
 		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	ver="`cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" &&\
-	cat $(srcdir)/readme.dev $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" > $@
+	cat $(srcdir)/readme.dev $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" | sed -e "s/AHIARCH/$(host_alias)/" > $@
 
 ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
 	ver="`cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" &&\
-	cat $(srcdir)/readme.usr $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" > $@
+	cat $(srcdir)/readme.usr $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" | sed -e "s/AHIARCH/$(host_alias)/"  > $@
 
 
 # AmigaGuide® files
