@@ -1,3 +1,10 @@
+2006-06-28  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.7.
+
+	* emu10kx.audio: In OS4, the reset handler that stops playback on
+	reset was never removed. Fixed now. [Simone Bevilacqua]
+
 2006-05-27  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 6.6.
