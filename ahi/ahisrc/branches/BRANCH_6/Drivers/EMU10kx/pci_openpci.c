@@ -130,3 +130,13 @@ ULONG ahi_pci_get_base_size(WORD which, APTR dev)
 {
   return ((struct pci_dev *)dev)->base_size[which];
 }
+
+APTR ahi_pci_allocdma_mem(ULONG size, ULONG flags) 
+{
+  return pci_allocdma_mem(size, flags);
+}
+
+void ahi_pci_freedma_mem(APTR buffer, ULONG size) 
+{
+  pci_freedma_mem(buffer, size);
+}

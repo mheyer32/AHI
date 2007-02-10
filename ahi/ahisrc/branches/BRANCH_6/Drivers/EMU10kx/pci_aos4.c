@@ -152,3 +152,13 @@ ULONG ahi_pci_get_base_size(WORD which, APTR dev)
 {
   return ((struct PCIDevice * )dev)->GetResourceRange(which)->Size;
 }
+
+APTR ahi_pci_allocdma_mem(ULONG size, ULONG flags) 
+{
+  return AllocMem(size, flags);
+}
+
+void ahi_pci_freedma_mem(APTR buffer, ULONG size) 
+{
+  FreeMem(buffer, size);
+}
