@@ -1,3 +1,11 @@
+2007-02-10  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.7.
+
+	* emu10kx.audio: Now allocates DMA memory using OpenPCI's DMA
+	memory functions. Should make it work on Prometheus too. [Ross
+	Vumbaca]
+
 2006-06-28  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 6.7.

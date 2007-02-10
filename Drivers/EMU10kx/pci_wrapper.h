@@ -61,4 +61,7 @@ APTR ahi_pci_logic_to_physic_addr(APTR addr, APTR dev);
 APTR ahi_pci_get_base_address(WORD which, APTR dev);
 ULONG ahi_pci_get_base_size(WORD which, APTR dev);
 
+APTR ahi_pci_allocdma_mem(ULONG size, ULONG flags);
+void ahi_pci_freedma_mem(APTR buffer, ULONG size);
+
 #endif
