@@ -1,8 +1,8 @@
-## version $VER: ahi.catalog 4.2 (14.06.97)
+## version $VER: ahi.catalog 4.3 (26.4.2007)
 ## language dansk
 ## codeset 0
 ;
-## chunk AUTH Translated by Thomas Petersen/ATO <thomaslp@post1.tele.dk>
+## chunk AUTH Translated by Thomas Petersen/ATO <thomaslp@post1.tele.dk> - from 20070426 maintained by Niels Bache/ATO <nbache2@mail.dk>
 ;#language english
 ;#version 4
 ;
@@ -32,11 +32,11 @@ Standard
 ;
 ; The requesters menu
 msgMenuControl
-\000\000Kontrol
+\000\000Styring
 ; \000\000Control
 ;
 msgMenuLastMode
-S\000Sidste modus
+S\000Forrige modus
 ; L\000Last Mode
 ;
 msgMenuNextMode
@@ -44,7 +44,7 @@ N\000Næste modus
 ; N\000Next Mode
 ;
 msgMenuPropertyList
-?\000Egenskabsliste
+?\000Egenskabsliste...
 ; ?\000Property List...
 ;
 msgMenuRestore
@@ -62,7 +62,7 @@ A\000Afbryde
 ; Mode name in requester whose driver cannot be opened
 ;
 msgUnknown
-UKENDT:Lyd-ID 0x%08lx
+UKENDT:Audio-ID 0x%08lx
 ; UNKNOWN:Audio ID 0x%08lx
 ;
 ; The requester gadgets
@@ -82,17 +82,17 @@ Frekvens
 ; Name of default mode in requester
 ;
 msgDefaultMode
-Standard lydmodus
+Standard-lydmodus
 ; Default audio mode
 ;
 ; The requester's info-winodow
 ;
 msgReqInfoTitle
-Egenskaber
+Egenskaber for modus
 ; Mode Properties
 ;
 msgReqInfoAudioID
-Lydmodus-ID: 0x%08lx
+Audiomodus-ID: 0x%08lx
 ; Audio mode ID: 0x%08lx
 ;
 msgReqInfoResolution
@@ -124,18 +124,18 @@ HiFi-miksning
 ; HiFi mixing
 ;
 msgReqInfoRecordHalf
-Optage i halv duplex
+Optage i halv dupleks
 ; Record in half duplex
 ;
 msgReqInfoRecordFull
-Optage i fuld duplex
+Optage i fuld dupleks
 ; Record in full duplex
 ;
 msgReqInfoMultiChannel
-
+7.1-multikanals
 ; 7.1 multichannel
 ;
 msgFreqFmt
-
+%lu Hz
 ; %lu Hz
 ;
