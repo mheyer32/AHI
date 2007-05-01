@@ -1,0 +1,304 @@
+## version $VER: ahiprefs.catalog 4.1 (27.4.2007)
+## codeset 5
+## language bosanski
+;
+msgMenuProject
+\000Projekt
+;\000Project
+;
+msgItemOpen
+O\000Otvori...
+;O\000Open...
+;
+msgItemSaveAs
+A\000Snimi kao...
+;A\000Save As...
+;
+msgItemAbout
+?\000Informacije...
+;?\000About...
+;
+msgItemQuit
+Q\000Izlaz
+;Q\000Quit
+;
+msgMenuEdit
+\000Edit
+;\000Edit
+;
+msgItemDefaults
+D\000Vrati originalne vrijednosti
+;D\000Reset To Defaults
+;
+msgItemLastSaved
+L\000Vrati zadnje snimljene vrijednosti
+;L\000Last Saved
+;
+msgItemRestore
+R\000Povrati
+;R\000Restore
+;
+msgMenuSettings
+\000Postavke
+;\000Settings
+;
+msgItemCreateIcons
+I\000Snimi ikonu?
+;I\000Create Icons?
+;
+msgMenuHelp
+\000Pomoæ
+;\000Help
+;
+msgItemHelp
+Pomoæ\000Pomoæ...
+;Help\000Help...
+;
+msgItemUsersGuide
+H\000AHI Priruènik...
+;H\000AHI User's guide...
+;
+msgItemConceptIndex
+\000Sadr¾aj pojmova...
+;\000Concept Index...
+;
+msgPageMode
+Postavke naèina
+;Mode settings
+;
+msgPageAdvanced
+Napredne postavke
+;Advanced settings
+;
+msgUnitDevice
+Jedinica %ld
+;Unit %ld
+;
+msgUnitMusic
+Muzièka jedinica
+;Music unit
+;
+msgProperties
+Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
+;Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
+;
+msgPropRecordFull
+Puni dupleks
+;Full duplex
+;
+msgPropRecordHalf
+Polu-dupleks
+;Half duplex
+;
+msgPropRecordNone
+Ni¹ta
+;Nope
+;
+msgOptions
+Opcije
+;Options
+;
+msgOptFrequency
+_Frekvencija
+;_Frequency
+;
+msgOptChannels
+Ka_nala
+;C_hannels
+;
+msgOptNoChannels
+Bez kanala
+;No channels
+;
+msgOptVolume
+Jaèina _zvuka
+;_Volume
+;
+msgOptMonitor
+_Monitor
+;_Monitor
+;
+msgOptGain
+_Pojaèanje
+;_Gain
+;
+msgOptMuted
+Prigu¹eno
+;Muted
+;
+msgOptInput
+_Ulaz
+;_Input
+;
+msgOptNoInputs
+Bez ulaza
+;No inputs
+;
+msgOptOutput
+_Izlaz
+;_Output
+;
+msgOptNoOutputs
+Bez izlaza
+;No outputs
+;
+msgGlobalOptions
+Globalne opcije
+;Global options
+;
+msgGlobOptDebugLevel
+Nivo debu_giranja
+;_Debug level
+;
+msgGlobOptEcho
+_Eho
+;_Echo
+;
+msgGlobOptSurround
+Surround u "_fast" naèinima
+;Surround in "_Fast" modes
+;
+msgGlobOptCPULimit
+_Granica upotrebe procesora
+;CPU usage _limit
+;
+msgDebugNone
+Ni¹ta
+;None
+;
+msgDebugLow
+Nisko
+;Low
+;
+msgDebugHigh
+Visoko
+;High
+;
+msgDebugFull
+Puno
+;Full
+;
+msgEchoEnabled
+Osposobljen
+;Enabled
+;
+msgEchoFast
+Brzi
+;Fast
+;
+msgEchoDisabled
+Onesposobljen
+;Disabled
+;
+msgSurroundEnabled
+Osposobljen
+;Enabled
+;
+msgSurroundDisabled
+Onesposobljen
+;Disabled
+;
+msgButtonSave
+_Snimi
+;_Save
+;
+msgButtonUse
+_Koristi
+;_Use
+;
+msgButtonCancel
+O_dustani
+;_Cancel
+;
+msgButtonOK
+OK
+;OK
+;
+msgTextProgramName
+Prefs: AHI
+;AHI preferences
+;
+;You can use something like "%s%s\nCopyright =(C)%s\nEnglish translation by=ATO BiH
+msgTextCopyright
+%s%s\nCopyright =(C)%s
+;
+msgTextNoWindow
+Ne mogu da otvorim prozor.
+;Unable to open window.
+;
+msgTextNoFileRequester
+Ne mogu da izdvojim fajl zahtjev.
+;Unable to allocate file requester.
+;
+msgTextNoFind
+Ne mogu da naðem `%s'!
+;Unable to find `%s'!
+;
+msgTextNoOpen
+Ne mogu da otvorim `%s' version %ld.
+;Unable to open `%s' version %ld.
+;
+msgGlobOptMasterVol
+Gla_vna jaèina zvuka
+;_Master volume
+;
+msgMVNoClip
+Bez potkraæivanja
+;Without clipping
+;
+msgMVClip
+Sa potkraæivanjem
+;With clipping
+;
+msgGlobOptACTime
+Standardno anti-klik vrijeme
+;Default anti-click time
+;
+msgButtonPlay
+Sviraj _probni ton
+;_Play a test sound
+;
+msgOptScalemode
+Skaliranje jaèine zvuk_a
+;Volume sc_aling
+;
+msgSMFixedSafe
+Sigurno
+;Safe
+;
+msgSMDynSafe
+Sigurno, dinamièno
+;Safe, dynamic
+;
+msgSM0dB
+Puna jaèina zvuka
+;Full volume
+;
+msgSM3dB
+-3 dB
+;-3 dB
+;
+msgSM6dB
+-6 dB
+;-6 dB
+;
+msgFreqFmt
+%ld Hz
+;%ld Hz
+;
+msgChanFmt
+%ld
+;%ld
+;
+msgVolFmt
+%+4.1f dB
+;%+4.1f dB
+;
+msgACTimeFmt
+%ld ms
+;%ld ms
+;
+msgPercentFmt
+%ld%%
+;%ld%%
+;
