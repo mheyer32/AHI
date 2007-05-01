@@ -1,8 +1,8 @@
-## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
+## version $VER: ahiprefs.catalog 4.7 (26.4.2007)
 ## language dansk
 ## codeset 0
 ;
-## chunk AUTH Translated by Thomas Petersen/ATO <thomaslp@post1.tele.dk>
+## chunk AUTH Translated by Thomas Petersen/ATO <thomaslp@post1.tele.dk> - from 20070426 maintained by Niels Bache/ATO <nbache2@mail.dk>
 ;#language english
 ;#version 4
 ;
@@ -31,11 +31,11 @@ msgMenuProject
 ; \000Project
 ;
 msgItemOpen
-Å\000Åbne...
+O\000Åbne...
 ; O\000Open...
 ;
 msgItemSaveAs
-G\000Gemme som...
+A\000Gemme som...
 ; A\000Save As...
 ;
 msgItemAbout
@@ -43,23 +43,23 @@ msgItemAbout
 ; ?\000About...
 ;
 msgItemQuit
-A\000Afslutte
+Q\000Afslutte
 ; Q\000Quit
 ;
 msgMenuEdit
-\000Rette
+\000Redigere
 ; \000Edit
 ;
 msgItemDefaults
-I\000Indstil til standard
+D\000Nulstille til standard
 ; D\000Reset To Defaults
 ;
 msgItemLastSaved
-S\000Sidst gemte
+L\000Sidst gemte
 ; L\000Last Saved
 ;
 msgItemRestore
-E\000Genetablere
+R\000Gendanne
 ; R\000Restore
 ;
 msgMenuSettings
@@ -67,7 +67,7 @@ msgMenuSettings
 ; \000Settings
 ;
 msgItemCreateIcons
-L\000Lave ikoner?
+I\000Oprette ikoner?
 ; I\000Create Icons?
 ;
 msgMenuHelp
@@ -75,7 +75,7 @@ msgMenuHelp
 ; \000Help
 ;
 msgItemHelp
-HELP\000Hjælp...
+Help\000Hjælp...
 ; Help\000Help...
 ;
 msgItemUsersGuide
@@ -89,7 +89,7 @@ msgItemConceptIndex
 ; *** The pages ***
 ;
 msgPageMode
-Modus indstillinger
+Modus-indstillinger
 ; Mode settings
 ;
 msgPageAdvanced
@@ -103,21 +103,21 @@ Enhed %ld
 ; Unit %ld
 ;
 msgUnitMusic
-Musik enhed
+Musikenhed
 ; Music unit
 ;
 ; *** Properties box ***
 ;
 msgProperties
-Modus-ID\nOptager\nProgrammør\nCopyright\nDrivprogram\nVersion\nAnnotation
+Modus-ID\nOptagelse\nProgrammør\nCopyright\nEnhedsdriver\nVersion\nBemærkning
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull
-Fuld duplex
+Fuld dupleks
 ; Full duplex
 ;
 msgPropRecordHalf
-Halv duplex
+Halv dupleks
 ; Half duplex
 ;
 msgPropRecordNone
@@ -127,7 +127,7 @@ Nix
 ; *** Options ***
 ;
 msgOptions
-Muligheder
+Tilvalg
 ; Options
 ;
 msgOptFrequency
@@ -139,11 +139,11 @@ _Kanaler
 ; C_hannels
 ;
 msgOptNoChannels
-(Deaktiveret)
+
 ; 
 ;
 msgOptVolume
-_Styrke
+Lyd_styrke
 ; _Volume
 ;
 msgOptMonitor
@@ -151,34 +151,34 @@ _Monitor
 ; _Monitor
 ;
 msgOptGain
-_Tjent
+Forforstærknin_g
 ; _Gain
 ;
 msgOptMuted
-Nedsat
+Tavs
 ; Muted
 ;
 msgOptInput
-_Inddata
+_Indgang
 ; _Input
 ;
 msgOptNoInputs
-Ingen inddata
+Ingen indgange
 ; No inputs
 ;
 msgOptOutput
-_Uddata
+_Udgang
 ; _Output
 ;
 msgOptNoOutputs
-Ingen uddata
+Ingen udgange
 ; No outputs
 ;
 ;
 ; *** Global Options ***
 ;
 msgGlobalOptions
-Globale muligheder
+Globale tilvalg
 ; Global options
 ;
 msgGlobOptDebugLevel
@@ -200,43 +200,43 @@ _CPU-begrænsning
 ; *** Debug levels ***
 ;
 msgDebugNone
-Ingen
+Intet
 ; None
 ;
 msgDebugLow
-Lav
+Lavt
 ; Low
 ;
 msgDebugHigh
-Høj
+Højt
 ; High
 ;
 msgDebugFull
-Fuld
+Fuldt
 ; Full
 ;
 ; *** Echo ***
 ;
 msgEchoEnabled
-Aktiveret
+Slået til
 ; Enabled
 ;
 msgEchoFast
-Hurtig
+Hurtigt
 ; Fast
 ;
 msgEchoDisabled
-Deaktiveret
+Slået fra
 ; Disabled
 ;
 ; *** Surround ***
 ;
 msgSurroundEnabled
-Aktiveret
+Slået til
 ; Enabled
 ;
 msgSurroundDisabled
-Deaktiveret
+Slået fra
 ; Disabled
 ;
 ; *** Buttons ***
@@ -246,7 +246,7 @@ _Gemme
 ; _Save
 ;
 msgButtonUse
-_Bruge
+_Benytte
 ; _Use
 ;
 msgButtonCancel
@@ -265,15 +265,17 @@ AHI-indstillinger
 ;
 ;You can use something like "%s%s\nCopyright ©%s\nEnglish translation by Your Name" here...
 msgTextCopyright
-%s%s\nCopyright ©%s
+%s%s\nCopyright ©%s\n\
+Dansk oversættelse af Thomas L. Petersen (indtil 26/4-2007)\n\
+og Niels Bache (fra 26/4-2007)
 ; %s%s\nCopyright ©%s
 ;
 msgTextNoWindow
-Ikke i stand til at åbne vindue.
+Fejl ved forsøg på at åbne vindue.
 ; Unable to open window.
 ;
 msgTextNoFileRequester
-Ikke i stand til at allokere filvælger
+Fejl ved forsøg på at allokere fildialog.
 ; Unable to allocate file requester.
 ;
 msgTextNoFind
@@ -287,7 +289,7 @@ Kan ikke åbne '%s' version %ld.
 ; *** Additions
 ;
 msgGlobOptMasterVol
-_Hoved lydstyrke
+_Hoved-lydstyrke
 ; _Master volume
 ;
 msgMVNoClip
@@ -299,54 +301,54 @@ Med klipning
 ; With clipping
 ;
 msgGlobOptACTime
-
+Standardtidsrum for anti-klik
 ; Default anti-click time
 ;
 msgButtonPlay
-
+Afs_pille en testtone
 ; _Play a test sound
 ;
 msgOptScalemode
-
+Sk_alering af lydstyrke
 ; Volume sc_aling
 ;
 msgSMFixedSafe
-
+Sikker
 ; Safe
 ;
 msgSMDynSafe
-
+Sikker, dynamisk
 ; Safe, dynamic
 ;
 msgSM0dB
-
+Fuld lydstyrke
 ; Full volume
 ;
 msgSM3dB
-
+-3 dB
 ; -3 dB
 ;
 msgSM6dB
-
+-6 dB
 ; -6 dB
 ;
 msgFreqFmt
-
+%ld Hz
 ; %ld Hz
 ;
 msgChanFmt
-
+%ld
 ; %ld
 ;
 msgVolFmt
-
+%+4.1f dB
 ; %+4.1f dB
 ;
 msgACTimeFmt
-
+%ld ms
 ; %ld ms
 ;
 msgPercentFmt
-
+%ld%%
 ; %ld%%
 ;
