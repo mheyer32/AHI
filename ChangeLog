@@ -1,5 +1,11 @@
 2007-05-01  Martin Blom  <martin@blom.org>
 
+	* Released paula.audio 4.32.
+
+	* paula.audio: Applied a patch that prevents the driver from
+	crashing if there are no open screens when the driver is
+	loaded. Thanks! [Detlef Würkner]
+
 	* Applied updated Frensh translations. Thanks! [Philippe FERRUCCI]
 
 	* Applied new Bosnian translations. Thanks! [Damir Dardagan]

@@ -1,8 +1,8 @@
 VERSION		EQU 4
-REVISION	EQU 30
+REVISION	EQU 32
 DATE	MACRO
-		dc.b	"29.04.03"
+		dc.b	"01.05.07"
 	ENDM
 VERS	MACRO
-		dc.b	"paula.audio 4.30"
+		dc.b	"paula.audio 4.32"
 	ENDM

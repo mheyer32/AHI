@@ -1342,6 +1342,8 @@ checkvideo:
 	call	LockIBase
 	move.l	d0,d2
 	move.l	ib_FirstScreen(a6),a0
+	tst.l	a0
+	beq	.noscreen
 	lea	sc_ViewPort(a0),a0
 	move.l	pb_GfxLib(a5),a6
 	call	GetVPModeID
@@ -1380,6 +1382,10 @@ checkvideo:
 	cmp.w	#64,d2				; 64 is an round nice number, no?
 	bls	.is31k
 	bra	.no31k
+
+.noscreen
+	move.l	pb_IntuiLib(a5),a6
+	call	UnlockIBase
 
 .gfxcard
 
