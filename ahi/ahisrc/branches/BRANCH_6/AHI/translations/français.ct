@@ -1,8 +1,7 @@
-## version $VER: ahiprefs.catalog 4.6 (4.8.2004)
+## version $VER: ahiprefs.catalog 4.6 (04.02.2007)
 ## language français
 ## codeset 0
 ;
-## chunk AUTH Translated by Stéphane Barbaray <opty@club-internet.fr>
 ;#language english
 ;#version 4
 ;
@@ -35,11 +34,11 @@ O\000Ouvrir...
 ; O\000Open...
 ;
 msgItemSaveAs
-S\000Sauver en...
+S\000Enregistrer sous...
 ; A\000Save As...
 ;
 msgItemAbout
-?\000A propos...
+?\000À propos...
 ; ?\000About...
 ;
 msgItemQuit
@@ -47,7 +46,7 @@ Q\000Quitter
 ; Q\000Quit
 ;
 msgMenuEdit
-\000Editer
+\000Éditer
 ; \000Edit
 ;
 msgItemDefaults
@@ -55,7 +54,7 @@ D\000Réinitialiser au défaut
 ; D\000Reset To Defaults
 ;
 msgItemLastSaved
-L\000Dernier sauvé
+L\000Derniers réglages enregistrés
 ; L\000Last Saved
 ;
 msgItemRestore
@@ -63,7 +62,7 @@ R\000Restaurer
 ; R\000Restore
 ;
 msgMenuSettings
-\000Préférences
+\000Réglages
 ; \000Settings
 ;
 msgItemCreateIcons
@@ -89,11 +88,11 @@ msgItemConceptIndex
 ; *** The pages ***
 ;
 msgPageMode
-Mode de préférences
+Réglages du mode
 ; Mode settings
 ;
 msgPageAdvanced
-Préférences avancées
+Réglages avancés
 ; Advanced settings
 ;
 ; *** The units ***
@@ -103,13 +102,13 @@ Unitée %ld
 ; Unit %ld
 ;
 msgUnitMusic
-Unité musicale
+Unité de musique
 ; Music unit
 ;
 ; *** Properties box ***
 ;
 msgProperties
-Mode ID\nEnregistrement\nAuteur\nCopyright\nControleur\nVersion\nAnnotation
+Mode ID\nEnregistrement\nAuteur\nCopyright\nPilote\nVersion\nAnnotation
 ; Mode ID\nRecording\nAuthor\nCopyright\nDriver\nVersion\nAnnotation
 ;
 msgPropRecordFull
@@ -159,15 +158,15 @@ Muet
 ; Muted
 ;
 msgOptInput
-_Entrée
+E_ntrée
 ; _Input
 ;
 msgOptNoInputs
-Pas d'entrées
+Pas d'entrée
 ; No inputs
 ;
 msgOptOutput
-S_ortie
+_Sortie
 ; _Output
 ;
 msgOptNoOutputs
@@ -182,15 +181,15 @@ Options générales
 ; Global options
 ;
 msgGlobOptDebugLevel
-Mode _Déboggue
+Mode _débogage
 ; _Debug level
 ;
 msgGlobOptEcho
-_Echo
+Ec_ho
 ; _Echo
 ;
 msgGlobOptSurround
-Surround en modes "_Fast"
+Surround en modes « _Fast »
 ; Surround in "_Fast" modes
 ;
 msgGlobOptCPULimit
@@ -242,7 +241,7 @@ Désactivé
 ; *** Buttons ***
 ;
 msgButtonSave
-_Sauver
+_Enregistrer
 ; _Save
 ;
 msgButtonUse
@@ -287,66 +286,66 @@ Incapable d'ouvrir `%s´ version %ld.
 ; *** Additions
 ;
 msgGlobOptMasterVol
-
+Volume _principal
 ; _Master volume
 ;
 msgMVNoClip
-
+Sans coupure
 ; Without clipping
 ;
 msgMVClip
-
+Avec coupure
 ; With clipping
 ;
 msgGlobOptACTime
-
+Temps anti-_clic par défaut
 ; Default anti-click time
 ;
 msgButtonPlay
-
+Jouer un son _test
 ; _Play a test sound
 ;
 msgOptScalemode
-
+_Modification du volume
 ; Volume sc_aling
 ;
 msgSMFixedSafe
-
+Sûr
 ; Safe
 ;
 msgSMDynSafe
-
+Sûr, dynamique
 ; Safe, dynamic
 ;
 msgSM0dB
-
+Volume maximum
 ; Full volume
 ;
 msgSM3dB
-
+-3 dB
 ; -3 dB
 ;
 msgSM6dB
-
+-6 dB
 ; -6 dB
 ;
 msgFreqFmt
-
+%ld Hz
 ; %ld Hz
 ;
 msgChanFmt
-
+%ld
 ; %ld
 ;
 msgVolFmt
-
+%+4.1f dB
 ; %+4.1f dB
 ;
 msgACTimeFmt
-
+%ld ms
 ; %ld ms
 ;
 msgPercentFmt
-
+%ld%%
 ; %ld%%
 ;
