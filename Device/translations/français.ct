@@ -1,8 +1,7 @@
-## version $VER: ahi.catalog 4.2 (13.4.97)
+## version $VER: ahi.catalog 4.2 (13.01.2007)
 ## language français
 ## codeset 0
 ;
-## chunk AUTH Translated by Stéphane Barbaray <opty@club-internet.fr>
 ;#language english
 ;#version 4
 ;
@@ -44,7 +43,7 @@ P\000Prochain mode
 ; N\000Next Mode
 ;
 msgMenuPropertyList
-?\000Liste des Propriétés
+?\000Liste des propriétés
 ; ?\000Property List...
 ;
 msgMenuRestore
@@ -88,15 +87,15 @@ Mode audio par défaut
 ; The requester's info-winodow
 ;
 msgReqInfoTitle
-Mode propriétés
+Propriétés du mode
 ; Mode Properties
 ;
 msgReqInfoAudioID
-Mode audio ID: 0x%08lx
+ID mode audio : 0x%08lx
 ; Audio mode ID: 0x%08lx
 ;
 msgReqInfoResolution
-Résolution: %ld bit %s
+Résolution : %ld bit %s
 ; Resolution: %ld bit %s
 ;
 msgReqInfoMono
@@ -112,30 +111,30 @@ stéréo avec effet panoramique
 ; stereo with panning
 ;
 msgReqInfoChannels
-Canaux: %ld
+Canaux : %ld
 ; Channels: %ld
 ;
 msgReqInfoMixrate
-Niveau de mixage: %ld-%ld Hz
+Niveau de mixage : %ld-%ld Hz
 ; Mixing rates: %ld-%ld Hz
 ;
 msgReqInfoHiFi
-Mélange HiFi
+Mixage HiFi
 ; HiFi mixing
 ;
 msgReqInfoRecordHalf
-Enregistrement en 'half duplex'
+Enregistrement en « half duplex »
 ; Record in half duplex
 ;
 msgReqInfoRecordFull
-Enregistrement en 'full duplex'
+Enregistrement en « full duplex »
 ; Record in full duplex
 ;
 msgReqInfoMultiChannel
-
+7.1 multicanal
 ; 7.1 multichannel
 ;
 msgFreqFmt
-
+%lu Hz
 ; %lu Hz
 ;
