@@ -133,7 +133,12 @@ ULONG ahi_pci_get_base_size(WORD which, APTR dev)
 
 APTR ahi_pci_allocdma_mem(ULONG size, ULONG flags) 
 {
-  return pci_allocdma_mem(size, flags);
+  APTR mem = pci_allocdma_mem(size, MEM_NONCACHEABLE);
+
+  if(mem && (flags & MEMF_CLEAR))
+    memset(mem, 0, size);
+
+  return mem;
 }
 
 void ahi_pci_freedma_mem(APTR buffer, ULONG size) 
