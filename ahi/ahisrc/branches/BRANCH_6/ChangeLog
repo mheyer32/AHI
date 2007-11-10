@@ -1,3 +1,11 @@
+2007-11-10  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.9.
+
+	* emu10kx.audio: Applied patch to fix a problem with the flags
+	sent to pci_allocdma_mem(), caused by the previous EMU10kx
+	patch. Thanks! [Marcin Kurek]
+
 2007-05-01  Martin Blom  <martin@blom.org>
 
 	* Released paula.audio 4.32.
