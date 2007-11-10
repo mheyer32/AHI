@@ -1,5 +1,10 @@
 2007-11-10  Martin Blom  <martin@blom.org>
 
+	* Released paula.audio 4.33.
+
+	* paula.audio: Applied a correction patch. Thanks! [Detlef
+	Würkner]
+
 	* Released emu10kx.audio 6.9.
 
 	* emu10kx.audio: Applied patch to fix a problem with the flags
