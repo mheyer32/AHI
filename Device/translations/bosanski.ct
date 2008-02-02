@@ -1,0 +1,109 @@
+## version $VER: ahi.catalog 4.1 (27.4.2007)
+## codeset 5
+## language bosanski
+;
+msgDefault
+Standardne vrijednosti
+;Default
+;
+; The requesters menu
+msgMenuControl
+\000\000Kontrola
+;\000\000Control
+;
+msgMenuLastMode
+L\000Pro¹li naèin
+;L\000Last Mode
+;
+msgMenuNextMode
+N\000Slijedeæi naèin
+;N\000Next Mode
+;
+msgMenuPropertyList
+?\000Lista karakteristika...
+;?\000Property List...
+;
+msgMenuRestore
+R\000Povrati
+;R\000Restore
+;
+msgMenuOK
+O\000OK
+;O\000OK
+;
+msgMenuCancel
+D\000Odustani
+;C\000Cancel
+;
+msgUnknown
+NEPOZNAT: zvuèni ID 0x%08lx
+;UNKNOWN:Audio ID 0x%08lx
+;
+msgReqOK
+OK
+;OK
+;
+msgReqCancel
+Odustani
+;Cancel
+;
+msgReqFrequency
+Frekvencija
+;Frequency
+;
+msgDefaultMode
+Osnovni zvuèni naèin 
+;Default audio mode
+;
+msgReqInfoTitle
+Karakteristike naèina
+;Mode Properties
+;
+msgReqInfoAudioID
+Zvuèni naèin ID: 0x%08lx
+;Audio mode ID: 0x%08lx
+;
+msgReqInfoResolution
+Rezolucija: %ld bit %s
+;Resolution: %ld bit %s
+;
+msgReqInfoMono
+mono
+;mono
+;
+msgReqInfoStereo
+stereo
+;stereo
+;
+msgReqInfoStereoPan
+stereo sa panoramom
+;stereo with panning
+;
+msgReqInfoChannels
+Kanali: %ld
+;Channels: %ld
+;
+msgReqInfoMixrate
+Stopa mije¹anja: %ld-%ld Hz
+;Mixing rates: %ld-%ld Hz
+;
+msgReqInfoHiFi
+HiFi mije¹anje
+;HiFi mixing
+;
+msgReqInfoRecordHalf
+Snimaj u polu-dupleksu
+;Record in half duplex
+;
+msgReqInfoRecordFull
+Snimaj u punom dupleksu
+;Record in full duplex
+;
+msgReqInfoMultiChannel
+7.1 multikanalni
+;7.1 multichannel
+;
+msgFreqFmt
+%lu Hz
+;%lu Hz
+;

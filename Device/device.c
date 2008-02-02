@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -37,11 +35,11 @@
 #include <proto/exec.h>
 #include <proto/dos.h>
 #include <proto/iffparse.h>
-#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
+#define __NOGLOBALIFACE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
-#endif
+#undef  __NOGLOBALIFACE__
 #include <proto/ahi_sub.h>
 
 #include <stddef.h>
@@ -53,6 +51,12 @@
 #include "gateway.h"
 #include "header.h"
 #include "misc.h"
+
+#ifdef __MORPHOS__
+#define IS_MORPHOS 1
+#else
+#define IS_MORPHOS 0
+#endif
 
 /*
 ** Message passed to the Unit Process at
@@ -128,14 +132,15 @@ ChannelInfoFunc( struct Hook*              hook,
 *  
 *       * Fast, powerful mixing routines (yeah, right... haha)
 *  
-*       The device's mixing routines mix 8- or 16-bit signed samples, both
-*       mono and stereo, located in Fast-RAM and outputs 16-bit mono or stereo
-*       (with stereo panning if desired) data, using any number of channels
-*       (as long as 'any' means less than 128).  Tables can be used speed
-*       the mixing up (especially when using 8-bit samples).  The samples can
-*       have any length (including odd) and can have any number of loops.
-*       There are also so-called HiFi mixing routines that can be used, that
-*       use linear interpolation and gives 32 bit output.
+*       The device's mixing routines mix 8- or 16-bit signed samples,
+*       both mono, stereo and 7.1, located in Fast-RAM and outputs
+*       16-bit mono or stereo (with stereo panning if desired) data,
+*       using any number of channels (as long as 'any' means less than
+*       128).  Tables can be used speed the mixing up (especially when
+*       using 8-bit samples).  The samples can have any length
+*       (including odd) and can have any number of loops.  There are
+*       also so-called HiFi mixing routines that can be used, that use
+*       linear interpolation and gives 32 bit output.
 *       
 *       * Support for non-realtime mixing
 *  
@@ -256,13 +261,18 @@ _DevOpen ( struct AHIRequest* ioreq,
 
 // One more check...
 
-  if((unit != AHI_NO_UNIT) && (ioreq->ahir_Version >= Version))
+  if((unit != AHI_NO_UNIT) && (ioreq->ahir_Version >= 4))
   {
     if(ioreq->ahir_Std.io_Message.mn_Length < sizeof(struct AHIRequest))
     {
       Req( "Bad parameters to OpenDevice()." );
       ioreq->ahir_Std.io_Error=IOERR_OPENFAIL;
       return IOERR_OPENFAIL;
+    }
+    else
+    {
+/*       KPrintF( "Tagging %08lx on task %08lx\n", ioreq, FindTask(0)); */
+      ioreq->ahir_Private[1] = (ULONG) ioreq;
     }
   }
 
@@ -278,22 +288,21 @@ _DevOpen ( struct AHIRequest* ioreq,
     {
       AHI_LoadModeFile("DEVS:AudioModes");
 
-#ifdef __MORPHOS__
       // Be quiet here. - Piru
+      if (IS_MORPHOS)
       {
-        struct Process *Self = (struct Process *) FindTask(NULL);
-        APTR oldwindowptr = Self->pr_WindowPtr;
-        Self->pr_WindowPtr = (APTR) -1;
+        APTR *windowptr = &((struct Process *) FindTask(NULL))->pr_WindowPtr;
+        APTR oldwindowptr = *windowptr;
+        *windowptr = (APTR) -1;
 
         AHI_LoadModeFile("MOSSYS:DEVS/AudioModes");
 
-        Self->pr_WindowPtr = oldwindowptr;
+        *windowptr = oldwindowptr;
       }
-#endif
     }
   }
 
-  if( ioreq->ahir_Version > Version)
+  if( ioreq->ahir_Version > AHIBase->ahib_Library.lib_Version)
     error=TRUE;
   else
   {
@@ -305,12 +314,13 @@ _DevOpen ( struct AHIRequest* ioreq,
     }
     else if(unit == AHI_NO_UNIT)
       InitUnit(unit,AHIBase);
+    else {
+      error=TRUE;
+    }
   }
 
   if(!error)
   {
-/*     KPrintF( "Tagging %08lx on task %08lx\n", ioreq, FindTask(0)); */
-    ioreq->ahir_Private[1] = (ULONG) ioreq;
     ioreq->ahir_Std.io_Unit=(struct Unit *) iounit;
     if(iounit)    // Is NULL for AHI_NO_UNIT
       iounit->Unit.unit_OpenCnt++;
@@ -472,12 +482,10 @@ InitUnit ( ULONG unit,
           // Mark all channels as free
           for(i = 0 ; i < iounit->Channels; i++)
           {
-            v->NextOffset = FREE;
+            v->QueuedOffset = FREE;
             v++;
           }
 
-	  iounit->ChannelsInUse = 0;
-          
           replyport = CreateMsgPort();
 
           if( replyport != NULL )
@@ -532,14 +540,29 @@ ExpungeUnit ( struct AHIDevUnit *iounit,
               struct AHIBase *AHIBase )
 {
   struct Task *unittask;
+  BYTE signal;
+
+  signal = AllocSignal(-1);
+  if(signal == -1)
+  {
+    /* Fallback */
+    signal = SIGB_SINGLE;
+    SetSignal(0, SIGF_SINGLE);
+  }
 
   unittask = (struct Task *) iounit->Process;
   iounit->Process = (struct Process *) FindTask(NULL);
+  iounit->SyncSignal = signal;
   Signal(unittask,SIGBREAKF_CTRL_F);
-  Wait(SIGBREAKF_CTRL_F);
+  Wait(1UL << signal);
   AHIBase->ahib_DevUnits[iounit->UnitNum]=NULL;
   FreeVec(iounit->Voices);
   FreeVec(iounit);
+
+  if(signal != SIGB_SINGLE)
+  {
+    FreeSignal(signal);
+  }
 }
 
 
@@ -556,6 +579,7 @@ ReadConfig ( struct AHIDevUnit *iounit,
   struct IFFHandle *iff;
   struct StoredProperty *prhd,*ahig;
   struct CollectionItem *ci;
+  ULONG *mode;
 
   if(iounit)
   {
@@ -657,6 +681,16 @@ ReadConfig ( struct AHIDevUnit *iounit,
                 AHIBase->ahib_AntiClickTime = 0;
               }
 
+              if( (ULONG) ahig->sp_Size > offsetof( struct AHIGlobalPrefs, 
+                                                    ahigp_ScaleMode ) )
+              {
+                AHIBase->ahib_ScaleMode = globalprefs->ahigp_ScaleMode;
+		EndianSwap( sizeof (UWORD), &AHIBase->ahib_ScaleMode );
+              }
+              else
+              {
+                AHIBase->ahib_ScaleMode = AHI_SCALE_FIXED_0_DB;
+              }
             }
             ci=FindCollection(iff,ID_PREF,ID_AHIU);
             while(ci)
@@ -725,18 +759,12 @@ ReadConfig ( struct AHIDevUnit *iounit,
   // since doesn't open all sub libraries.
 
   if(iounit)
-  {
-    if(iounit->AudioMode == (ULONG) AHI_INVALID_ID)
-    {
-      iounit->AudioMode = AHI_BestAudioID(AHIDB_Realtime, TRUE, TAG_DONE);
-    }
-  }
+    mode = &iounit->AudioMode;
   else
-  {
-    if(AHIBase->ahib_AudioMode == (ULONG) AHI_INVALID_ID)
-    {
-      AHIBase->ahib_AudioMode = AHI_BestAudioID( AHIDB_Realtime, TRUE, TAG_DONE);
-    }
+    mode = &AHIBase->ahib_AudioMode;
+  if(mode[0] == (ULONG) AHI_INVALID_ID)
+  { static const Tag tags[] = { AHIDB_Realtime,TRUE,TAG_DONE };
+    mode[0] = AHI_BestAudioIDA((struct TagItem *)tags);
   }
 
   return TRUE;
@@ -972,7 +1000,7 @@ DevProc( void )
   if(iounit->Process)
   {
     Forbid();
-    Signal((struct Task *) iounit->Process, SIGBREAKF_CTRL_F);
+    Signal((struct Task *) iounit->Process, 1UL << iounit->SyncSignal);
   }
   FreeSignal(signalbit);
 }
@@ -1052,43 +1080,46 @@ SoundFunc( struct Hook*            hook,
 
   Enable();
 
-  voice->PlayingRequest = voice->QueuedRequest;
-  voice->Flags |= VF_STARTED;
-  voice->QueuedRequest  = NULL;
+  voice->PlayingRequest = voice->NextRequest;
+  voice->NextRequest  = NULL;
 
-  switch(voice->NextOffset)
+  switch(voice->QueuedOffset)
   {
     case FREE:
       break;
 
     case MUTE:
       /* A AHI_NOSOUND is done, channel is silent */
-      voice->NextOffset = FREE;
+      voice->QueuedOffset = FREE;
       break;
 
     case PLAY:
       /* A normal sound is done and playing, no other sound is queued */
       AHI_SetSound(sndmsg->ahism_Channel,AHI_NOSOUND,0,0,actrl,AHISF_NONE);
-      voice->NextOffset = MUTE;
+      voice->QueuedOffset = MUTE;
       break;
 
     default:
       /* A normal sound is done, and another is waiting */
       AHI_SetSound(sndmsg->ahism_Channel,
-          voice->NextSound,
-          voice->NextOffset,
-          voice->NextLength,
+          voice->QueuedSound,
+          voice->QueuedOffset,
+          voice->QueuedLength,
           actrl,AHISF_NONE);
       AHI_SetFreq(sndmsg->ahism_Channel,
-          voice->NextFrequency,
+          voice->QueuedFrequency,
           actrl,AHISF_NONE);
       AHI_SetVol(sndmsg->ahism_Channel,
-          voice->NextVolume,
-          voice->NextPan,
+          voice->QueuedVolume,
+          voice->QueuedPan,
           actrl,AHISF_NONE);
-      voice->QueuedRequest = voice->NextRequest;
-      voice->NextRequest = NULL;
-      voice->NextOffset = PLAY;
+      voice->NextRequest = voice->QueuedRequest;
+
+      if(voice->QueuedRequest != NULL) 
+      {
+	GetExtras(voice->QueuedRequest)->Channel = sndmsg->ahism_Channel;
+	QueueRequest(voice->QueuedRequest->ahir_Link, voice);
+      }
       break;
   }
 

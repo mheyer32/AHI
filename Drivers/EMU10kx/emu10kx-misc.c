@@ -1,6 +1,6 @@
 /*
      emu10kx.audio - AHI driver for SoundBlaster Live! series
-     Copyright (C) 2002-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2002-2005 Martin Blom <martin@blom.org>
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -20,20 +20,13 @@
 #include <config.h>
 
 #include <exec/memory.h>
-#ifdef __AMIGAOS4__
-#include <proto/expansion.h>
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
-#endif
-
 #include <proto/dos.h>
 
 #include "library.h"
 #include "8010.h"
 #include "emu10kx-interrupt.h"
 #include "emu10kx-misc.h"
-
+#include "pci_wrapper.h"
 
 /* Global in emu10kx.c */
 extern const UWORD InputBits[];
@@ -41,6 +34,9 @@ extern const UWORD InputBits[];
 /* Public functions in main.c */
 int emu10k1_init(struct emu10k1_card *card);
 void emu10k1_cleanup(struct emu10k1_card *card);
+
+static void AddResetHandler(struct EMU10kxData* dd);
+static void RemResetHandler(struct EMU10kxData* dd);
 
 /******************************************************************************
 ** DriverData allocation ******************************************************
@@ -55,15 +51,9 @@ INTGW( static, void,  recordinterrupt,   RecordInterrupt );
 INTGW( static, ULONG, emu10kxinterrupt,  EMU10kxInterrupt );
 
 
-#ifdef __AMIGAOS4__
 struct EMU10kxData*
-AllocDriverData( struct PCIDevice *    dev,
+AllocDriverData( APTR               dev,
 		 struct DriverBase* AHIsubBase )
-#else
-struct EMU10kxData*
-AllocDriverData( struct pci_dev*    dev,
-		 struct DriverBase* AHIsubBase )
-#endif
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
   struct EMU10kxData* dd;
@@ -80,6 +70,9 @@ AllocDriverData( struct pci_dev*    dev,
 
 
   dd->ahisubbase = AHIsubBase;
+
+  dd->record_adcbs_bufsize  = ADCBS_BUFSIZE_16384;
+  dd->record_buffer_samples = 4096;
 
   dd->interrupt.is_Node.ln_Type = INTERRUPT_NODE_TYPE;
   dd->interrupt.is_Node.ln_Pri  = 0;
@@ -107,47 +100,23 @@ AllocDriverData( struct pci_dev*    dev,
 //    goto error;
 //  }
 
-  #ifdef __AMIGAOS4__
-  command_word = dev->ReadConfigWord( PCI_COMMAND );  
+  command_word = ahi_pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
   command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
-  dev->WriteConfigWord( PCI_COMMAND, command_word );
-  #else
-  command_word = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
-  command_word |= PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER;
-  pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
-  #endif
+  ahi_pci_write_config_word( PCI_COMMAND, command_word, dd->card.pci_dev );
 
   dd->pci_master_enabled = TRUE;
 
   // FIXME: How about latency/pcibios_set_master()??
 
-  #ifdef __AMIGAOS4__
-  dd->card.iobase  = dev->GetResourceRange(0)->BaseAddress;
-  dd->card.length  = ~( dev->GetResourceRange(0)->Size & PCI_BASE_ADDRESS_IO_MASK );
-  dd->card.irq     = dev->MapInterrupt();
-  dd->card.chiprev = dev->ReadConfigByte( PCI_REVISION_ID);
-  dd->card.model   = dev->ReadConfigWord( PCI_SUBSYSTEM_ID);
-  dd->card.is_audigy = ( dev->ReadConfigWord( PCI_DEVICE_ID) == PCI_DEVICE_ID_CREATIVE_AUDIGY );
-  dd->card.is_aps   = ( dev->ReadConfigLong( PCI_SUBSYSTEM_VENDOR_ID)
-		       == EMU_APS_SUBID );
+  dd->card.iobase  = (unsigned long) ahi_pci_get_base_address(0, dev);
+  dd->card.length  = ~( ahi_pci_get_base_size(0, dev) & PCI_BASE_ADDRESS_IO_MASK );
+  dd->card.irq     = ahi_pci_get_irq(dev);
+  dd->card.chiprev = ahi_pci_read_config_byte( PCI_REVISION_ID, dev );
+  dd->card.model   = ahi_pci_read_config_word( PCI_SUBSYSTEM_ID, dev );
+  dd->card.is_audigy = ( ahi_pci_read_config_word(PCI_DEVICE_ID, dev) == PCI_DEVICE_ID_CREATIVE_AUDIGY );
+  dd->card.is_aps   = ( ahi_pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID, dev) == EMU_APS_SUBID );
 
-  dev->OutLong(dd->card.iobase + IPR, 0xffffffff);
-  dev->OutLong(dd->card.iobase + INTE, 0);
-
-  AddIntServer(dev->MapInterrupt(), &dd->interrupt );
-  #else
-  dd->card.iobase  = dev->base_address[ 0 ];
-  dd->card.length  = ~( dev->base_size[ 0 ] & PCI_BASE_ADDRESS_IO_MASK );
-  dd->card.irq     = dev->irq;
-  dd->card.chiprev = pci_read_config_byte( PCI_REVISION_ID, dd->card.pci_dev );
-  dd->card.model   = pci_read_config_word( PCI_SUBSYSTEM_ID, dd->card.pci_dev );
-  dd->card.is_audigy = ( dev->device == PCI_DEVICE_ID_CREATIVE_AUDIGY );
-  dd->card.is_aps   = ( pci_read_config_long( PCI_SUBSYSTEM_VENDOR_ID,
-					     dd->card.pci_dev )
-		       == EMU_APS_SUBID );
-
-  pci_add_intserver( &dd->interrupt, dd->card.pci_dev );
-  #endif
+  ahi_pci_add_intserver( &dd->interrupt, dev);
 
   dd->interrupt_added = TRUE;
 
@@ -181,7 +150,6 @@ AllocDriverData( struct pci_dev*    dev,
 
   // No attenuation and natural tone for all outputs
   emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_STEREO, 0x0000 );
-  emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL,     0x0000 );
   emu10k1_writeac97( &dd->card, AC97_MASTER_VOL_MONO,   0x0000 );
   emu10k1_writeac97( &dd->card, AC97_MASTER_TONE,       0x0f0f );
 
@@ -202,8 +170,17 @@ AllocDriverData( struct pci_dev*    dev,
   if (emu10k1_readac97( &dd->card, AC97_EXTENDED_ID ) & 0x0080 )
   {
     sblive_writeptr( &dd->card, AC97SLOT, 0, AC97SLOT_CNTR | AC97SLOT_LFE);
+
+    // Disable center/LFE to front speakers (Not headphone; it's actially surround mix.)
+    emu10k1_writeac97( &dd->card, AC97_HEADPHONE_VOL, AC97_MUTE | 0x0808 ); 
+
+    // No attenuation for center/LFE
     emu10k1_writeac97( &dd->card, AC97_SURROUND_MASTER, 0x0 );
   }
+
+#ifdef __AMIGAOS4__
+  AddResetHandler(dd);
+#endif
   
   return dd;
 }
@@ -221,6 +198,10 @@ FreeDriverData( struct EMU10kxData* dd,
 {
   if( dd != NULL )
   {
+#ifdef __AMIGAOS4__
+    RemResetHandler(dd);
+#endif
+
     if( dd->card.pci_dev != NULL )
     {
       if( dd->emu10k1_initialized )
@@ -232,25 +213,15 @@ FreeDriverData( struct EMU10kxData* dd,
       {
         UWORD cmd;
 
-        #ifdef __AMIGAOS4__
-        cmd = ((struct PCIDevice * ) dd->card.pci_dev)->ReadConfigWord( PCI_COMMAND );
+        cmd = ahi_pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
         cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
-        ((struct PCIDevice * ) dd->card.pci_dev)->WriteConfigWord( PCI_COMMAND, cmd );
-        #else
-        cmd = pci_read_config_word( PCI_COMMAND, dd->card.pci_dev );
-        cmd &= ~( PCI_COMMAND_IO | PCI_COMMAND_MEMORY | PCI_COMMAND_MASTER );
-        pci_write_config_word( PCI_COMMAND, cmd, dd->card.pci_dev );
-        #endif
+        ahi_pci_write_config_word( PCI_COMMAND, cmd, dd->card.pci_dev );
       }
     }
 
     if( dd->interrupt_added )
     {
-      #ifdef __AMIGAOS4__
-      RemIntServer(((struct PCIDevice * ) dd->card.pci_dev)->MapInterrupt(), &dd->interrupt );
-      #else
-      pci_rem_intserver( &dd->interrupt, dd->card.pci_dev );
-      #endif
+      ahi_pci_rem_intserver( &dd->interrupt, dd->card.pci_dev );
     }
 
     FreeVec( dd );
@@ -434,3 +405,34 @@ SamplerateToLinearPitch( ULONG samplingrate )
   samplingrate = (samplingrate << 8) / 375;
   return (samplingrate >> 1) + (samplingrate & 1);
 }
+
+
+#ifdef __AMIGAOS4__
+static ULONG ResetHandler(struct ExceptionContext *ctx, struct ExecBase *pExecBase, struct EMU10kxData* dd)
+{
+    emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
+    emu10k1_voices_stop( dd->voices, dd->voices_started );
+
+    return 0UL;
+}
+
+void AddResetHandler(struct EMU10kxData* dd)
+{
+  dd->reset_interrupt.is_Code = (void (*)())ResetHandler;
+  dd->reset_interrupt.is_Data = (APTR) dd;
+  dd->reset_interrupt.is_Node.ln_Pri  = 0;
+  dd->reset_interrupt.is_Node.ln_Type = NT_EXTINTERRUPT;
+  dd->reset_interrupt.is_Node.ln_Name = "reset handler";
+
+  AddResetCallback( &dd->reset_interrupt );
+}
+
+static void RemResetHandler(struct EMU10kxData* dd)
+{
+  if( dd->reset_interrupt.is_Code != NULL )
+  {
+    RemResetCallback( &dd->reset_interrupt );
+    dd->reset_interrupt.is_Code = NULL;
+  }
+}
+#endif

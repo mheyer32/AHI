@@ -16,12 +16,14 @@ ReqA( const char*        text,
       APTR               args,
       struct DriverBase* AHIsubBase );
 
-#if !defined(__AMIGAOS4__)
 #define Req(a0, args...) \
         ({ULONG _args[] = { args }; ReqA((a0), (APTR)_args, AHIsubBase);})
-#else
-#define Req(a0, args...)
-#endif
+
+char*
+MySprintfA( char *dst, const char *fmt, ULONG* args, struct DriverBase* AHIsubBase );
+
+#define Sprintf(a0, a1, args...) \
+        ({ULONG _args[] = { args }; MySprintfA((a0), (a1), (ULONG*)_args, AHIsubBase);})
 
 void
 MyKPrintFArgs( UBYTE*           fmt, 
@@ -74,15 +76,13 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 # include <aros/asmcall.h>
 # define INTGW(q,t,n,f)							\
-	q AROS_UFH4(t, n,						\
-	  AROS_UFHA(ULONG, _a, A0),					\
+	q AROS_UFH3(t, n,						\
 	  AROS_UFHA(APTR, d, A1),					\
 	  AROS_UFHA(ULONG, _b, A5),					\
 	  AROS_UFHA(struct ExecBase *, sysbase, A6)) {			\
       AROS_USERFUNC_INIT return f(d); AROS_USERFUNC_EXIT }
 # define PROCGW(q,t,n,f)						\
-	__asm(#n "=" #f );						\
-	q t n(void);
+	q t n(void) { return f(); }
 # define INTERRUPT_NODE_TYPE NT_INTERRUPT
 
 #elif defined(__AMIGAOS4__)
@@ -93,16 +93,14 @@ MyKPrintFArgs( UBYTE*           fmt,
 # define PROCGW(q,t,n,f)						\
 	q t n(void) {f();}
 # define INTERRUPT_NODE_TYPE NT_EXTINTERRUPT
-#define	SWAPLONG(y) y
-#define	SWAPWORD(y) y
 
 #elif defined(__amiga__) && defined(__mc68000__)
 
 # define INTGW(q,t,n,f)                                                 \
        q t n(APTR d __asm("a1")) { return f(d); }
 # define PROCGW(q,t,n,f)						\
-	__asm("_" #n "= _" #f);						\
-	q t n(void);
+	asm(".stabs \"_" #n "\",11,0,0,0;.stabs \"_" #f "\",1,0,0,0");	\
+	/*q*/ t n(void);
 # define INTERRUPT_NODE_TYPE NT_INTERRUPT
 
 #else

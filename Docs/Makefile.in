@@ -1,4 +1,3 @@
-#  $Id$
 #
 #  Makefile.in for the user and developer documentation
 #
@@ -20,7 +19,7 @@ USRDIR		= ${DISTDIR}/User
 DEVDOCDIR	= ${DEVDIR}/Docs
 USRDOCDIR	= ${USRDIR}/Docs
 
-build_os	= @build_os@
+host_alias	= @host_alias@
 
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
@@ -33,10 +32,10 @@ VPATH		= @srcdir@
 # Files
 ########################################
 
-TARGET_DEVDOCS	= ahidev.guide ahidev.dvi ahidev.ps ahidev.html \
+TARGET_DEVDOCS	= ahidev.guide ahidev.dvi ahidev.ps ahidev.pdf ahidev.html \
 		  ahi.doc ahi.guide ahi.html \
 		  ahi_sub.doc ahi_sub.guide ahi_sub.html
-TARGET_USRDOCS	= ahiusr.guide ahiusr.dvi ahiusr.ps ahiusr.html
+TARGET_USRDOCS	= ahiusr.guide ahiusr.dvi ahiusr.ps ahiusr.pdf ahiusr.html
 
 TARGETS		= ahidev.readme ahiusr.readme \
 		  $(TARGET_DEVDOCS) $(TARGET_USRDOCS)
@@ -60,11 +59,11 @@ distclean:	clean
 maintainer-clean: distclean
 
 install:	all
-	$(INSTALL) --directory $(PREFIX)/Help
+	$(INSTALL) -d $(PREFIX)/Help
 	$(INSTALL_DATA) ahiusr.guide $(PREFIX)/Help/ahi.guide
 
 bindist:	$(TARGETS)
-	$(INSTALL) --directory $(USRDOCDIR) $(DEVDOCDIR)
+	$(INSTALL) -d $(USRDOCDIR) $(DEVDOCDIR)
 	$(INSTALL_DATA) ahidev.readme $(DISTDIR)
 	$(INSTALL_DATA) $(srcdir)/ahidev.readme.info $(DISTDIR)
 	$(INSTALL_DATA) ahiusr.readme $(DISTDIR)
@@ -99,11 +98,11 @@ tmp-iso.sty:	iso.sty
 ahidev.readme:	readme.dev readme.changes readme.main \
 		$(top_srcdir)/version.ver $(top_srcdir)/version.rev
 	ver="`cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" &&\
-	cat $(srcdir)/readme.dev $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" > $@
+	cat $(srcdir)/readme.dev $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" | sed -e "s/AHIARCH/$(host_alias)/" > $@
 
 ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
 	ver="`cat $(top_srcdir)/version.ver`.`cat $(top_srcdir)/version.rev`" &&\
-	cat $(srcdir)/readme.usr $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" > $@
+	cat $(srcdir)/readme.usr $(srcdir)/readme.changes $(srcdir)/readme.main | sed -e "s/AHIVERSION/$$ver/" | sed -e "s/AHIARCH/$(host_alias)/"  > $@
 
 
 # AmigaGuide® files
@@ -133,13 +132,22 @@ ahiusr.ps:	ahiusr.dvi
 	dvips -o $@ $<
 
 
+# PDF files
+
+ahidev.pdf:	ahidev.texinfo-exp tmp-iso.sty
+	texi2pdf $<
+
+ahiusr.pdf:	ahiusr.texinfo-exp tmp-iso.sty
+	texi2pdf $<
+
+
 # HTML files
 
 ahidev.html:	ahidev.texinfo ahidev.ver
-	texi2html -glossary -monolithic -verbose $<
+	texi2html -monolithic -verbose $<
 
 ahiusr.html:	ahiusr.texinfo ahiusr.ver
-	texi2html -glossary -monolithic -verbose $<
+	texi2html -monolithic -verbose $<
 
 
 # Macro-expanded files

@@ -42,7 +42,7 @@
 #include "HardDiskRecord.h"
 
 #define VERSION_STRING {"\0$VER: HardDiskRecord 1.1 "__AMIGADATE__"\r\n"}
-static char VerString[] = VERSION_STRING;
+char VerString[] = VERSION_STRING;
 
 //extern void KPrintF(char *fmt,...);
 

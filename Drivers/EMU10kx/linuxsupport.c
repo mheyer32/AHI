@@ -1,6 +1,6 @@
 /*
      emu10kx.audio - AHI driver for SoundBlaster Live! series
-     Copyright (C) 2002-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2002-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -17,14 +17,10 @@
      Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
 */
 
-#include <exec/memory.h>
+#include <config.h>
 
-#ifdef __AMIGAOS4__
-#include <proto/expansion.h>
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
-#endif
+#include <exec/memory.h>
+#include <utility/hooks.h>
 
 #include <proto/exec.h>
 
@@ -32,45 +28,46 @@
 #include <string.h>
 
 #include "emu10kx-misc.h"
+#include "pci_wrapper.h"
 
+struct page_header {
+    APTR  address;
+    ULONG size;
+};
 
-static void*
+static APTR
 AllocPages( size_t size, ULONG req )
 {
-  void* address;
+  size_t alignment = PAGE_SIZE;
+  size_t extra = sizeof (struct page_header) + alignment;
 
-#ifdef __AMIGAOS4__
-  unsigned long a;
-  // FIXME: This should be non-cachable, DMA-able memory
-  address = AllocVec( size + PAGE_SIZE, MEMF_PUBLIC );
+  APTR address = ahi_pci_allocdma_mem( size + extra, req );
 
   if( address != NULL )
   {
-    a = (unsigned long) address;
-    a = (a + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1); //(((unsigned long) (a + 4096)) / 4096) * 4096; // get a 4K-aligned memory pointer
-    address = (void *) a; // tbd: we just lost a couple of bytes
-  }
-#else
-  // FIXME: This should be non-cachable, DMA-able memory
-  address = AllocMem( size + PAGE_SIZE - 1, req & ~MEMF_CLEAR );
+    unsigned long a = (unsigned long) address;
 
-  if( address != NULL )
-  {
-    Forbid();
-    FreeMem( address, size + PAGE_SIZE - 1 );
-    address = AllocAbs( size,
-			(void*) ((ULONG) ( address + PAGE_SIZE - 1 )
-				 & ~(PAGE_SIZE-1) ) );
-    Permit();
-  }
-#endif
+    // get a 4K-aligned memory pointer
+    a = (a + extra - 1) & ~(PAGE_SIZE - 1); 
 
-  if( address != NULL && ( req & MEMF_CLEAR ) )
-  {
-    memset( address, 0, size );
+    ((struct page_header*) a)[-1].address = address;
+    ((struct page_header*) a)[-1].size    = size + extra;
+
+    address = (void*) a;
   }
 
   return address;
+}
+
+static void
+FreePages( APTR address )
+{
+  if( address != NULL ) 
+  {
+    struct page_header* ph = ((struct page_header*) address - 1);
+
+    ahi_pci_freedma_mem( ph->address, ph->size );
+  }
 }
 
 unsigned long
@@ -82,10 +79,7 @@ __get_free_page( unsigned int gfp_mask )
 void
 free_page( unsigned long addr )
 {
-//  printf( "Freeing page at %08x\n", addr );
-#ifndef __AMIGAOS4__
-  FreeMem( (void*) addr, PAGE_SIZE );
-#endif
+  FreePages( (APTR) addr );
 }
 
 void*
@@ -93,14 +87,9 @@ pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle )
 {
   void* res;
 
-//  res = pci_alloc_dmamem( pci_dev, size );
   res = (void*) AllocPages( size, MEMF_PUBLIC | MEMF_CLEAR );
 
-#ifdef __AMIGAOS4__
-  *dma_handle = (dma_addr_t) res;
-#else
-  *dma_handle = (dma_addr_t) pci_logic_to_physic_addr( res, pci_dev );
-#endif
+  *dma_handle = (dma_addr_t) ahi_pci_logic_to_physic_addr( res, pci_dev );
   
   return res;
 }
@@ -108,15 +97,5 @@ pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle )
 void
 pci_free_consistent( void* pci_dev, size_t size, void* addr, dma_addr_t dma_handle )
 {
-//  printf( "Freeing pages (%d bytes) at %08x\n", size, addr );
-
-#ifdef __AMIGAOS4__
-  void *pageaddr = addr - 8;
-  
-  //DebugPrintF("FreeAbs %lx size = %ld\n", pageaddr, size);
-  //FreeVec( pageaddr, size + PAGE_SIZE); tbd
-#else
-  FreeMem( addr, size );
-//  pci_free_dmamem( pci_dev, addr, size );
-#endif
+  FreePages( addr );
 }

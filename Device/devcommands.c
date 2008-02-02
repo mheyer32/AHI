@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -32,11 +30,11 @@
 #include <clib/alib_protos.h>
 #include <proto/exec.h>
 #include <proto/dos.h>
-#ifndef __AMIGAOS4__
 #define __NOLIBBASE__
+#define __NOGLOBALIFACE__
 #include <proto/ahi.h>
 #undef  __NOLIBBASE__
-#endif
+#undef  __NOGLOBALIFACE__
 #include <proto/ahi_sub.h>
 
 #include <math.h>
@@ -48,6 +46,10 @@
 #include "device.h"
 #include "devsupp.h"
 
+
+#ifdef __AMIGAOS4__
+#define IAHIsub ((struct AHIPrivAudioCtrl *) iounit->AudioCtrl)->ahiac_IAHIsub
+#endif
 
 static void TermIO(struct AHIRequest *, struct AHIBase *);
 static void Devicequery(struct AHIRequest *, struct AHIBase *);
@@ -159,11 +161,45 @@ _DevAbortIO( struct AHIRequest* ioreq,
         || FindNode((struct List *) &iounit->WaitingList, (struct Node *) ioreq))
         {
           struct AHIRequest *nextreq;
+          struct AHIRequest *io;
 
           while(ioreq)
           {
             Remove((struct Node *) ioreq);
 
+	    // Now check if any other request ahir_Link to us. If so,
+	    // we need to clear that field, since this request is no
+	    // longer valid.
+
+	    
+	    for (io = (struct AHIRequest*) iounit->PlayingList.mlh_Head;
+		 io->ahir_Std.io_Message.mn_Node.ln_Succ != NULL;
+		 io = (struct AHIRequest*) io->ahir_Std.io_Message.mn_Node.ln_Succ) {
+	      if (io->ahir_Link == ioreq) {
+		io->ahir_Link = NULL;
+		goto cleared;
+	      }
+	    }
+
+	    for (io = (struct AHIRequest*) iounit->SilentList.mlh_Head;
+		 io->ahir_Std.io_Message.mn_Node.ln_Succ != NULL;
+		 io = (struct AHIRequest*) io->ahir_Std.io_Message.mn_Node.ln_Succ) {
+	      if (io->ahir_Link == ioreq) {
+		io->ahir_Link = NULL;
+		goto cleared;
+	      }
+	    }
+
+	    for (io = (struct AHIRequest*) iounit->WaitingList.mlh_Head;
+		 io->ahir_Std.io_Message.mn_Node.ln_Succ != NULL;
+		 io = (struct AHIRequest*) io->ahir_Std.io_Message.mn_Node.ln_Succ) {
+	      if (io->ahir_Link == ioreq) {
+		io->ahir_Link = NULL;
+		goto cleared;
+	      }
+	    }
+cleared:
+	    
             if(ioreq->ahir_Extras && (GetExtras(ioreq)->Channel != NOCHANNEL))
             {
               struct Library *AHIsubBase = NULL;
@@ -180,18 +216,18 @@ _DevAbortIO( struct AHIRequest* ioreq,
               }
 
               iounit->Voices[GetExtras(ioreq)->Channel].PlayingRequest = NULL;
-              iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
               iounit->Voices[GetExtras(ioreq)->Channel].NextRequest = NULL;
+              iounit->Voices[GetExtras(ioreq)->Channel].QueuedRequest = NULL;
   
               if(iounit->AudioCtrl)
               {
-                iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = MUTE;
+                iounit->Voices[GetExtras(ioreq)->Channel].QueuedOffset = MUTE;
                 AHI_SetSound(GetExtras(ioreq)->Channel,AHI_NOSOUND,0,0,
                     iounit->AudioCtrl,AHISF_IMM);
               }
               else
               {
-                iounit->Voices[GetExtras(ioreq)->Channel].NextOffset = FREE;
+                iounit->Voices[GetExtras(ioreq)->Channel].QueuedOffset = FREE;
               }
 
               if( AHIsubBase != NULL )
@@ -695,6 +731,7 @@ ResetCmd ( struct AHIRequest *ioreq,
 *   EXAMPLE
 *
 *   NOTES
+*       It's only possible to read signed mono or stereo samples.
 *
 *   BUGS
 *
@@ -729,10 +766,8 @@ ReadCmd ( struct AHIRequest *ioreq,
       error = AHIE_HALFDUPLEX;   // FIXIT!
     }
     else
-    {
-      error = AHI_ControlAudio(iounit->AudioCtrl,
-         AHIC_Record,TRUE,
-         TAG_DONE);
+    { static const Tag tags[] = { AHIC_Record,TRUE,TAG_DONE };
+      error = AHI_ControlAudioA(iounit->AudioCtrl, (struct TagItem *)tags);
     }
 
     if( ! error)
@@ -852,10 +887,8 @@ WriteCmd ( struct AHIRequest *ioreq,
       error = AHIE_HALFDUPLEX;   // FIXIT!
     }
     else
-    {
-      error = AHI_ControlAudio(iounit->AudioCtrl,
-         AHIC_Play,TRUE,
-         TAG_DONE);
+    { static const Tag tags[] = { AHIC_Play,TRUE,TAG_DONE };
+      error = AHI_ControlAudioA(iounit->AudioCtrl, (struct TagItem *)tags);
     }
 
     if( ! error)
@@ -875,7 +908,7 @@ WriteCmd ( struct AHIRequest *ioreq,
     // Initialize the structure
     GetExtras(ioreq)->Channel   = NOCHANNEL;
     GetExtras(ioreq)->Sound     = AHI_NOSOUND;
-    GetExtras(ioreq)->VolumeDiv = 1;
+    GetExtras(ioreq)->VolumeScale = 0x10000;
   }
 
   if(iounit->IsPlaying && !error)
@@ -968,7 +1001,7 @@ StartCmd ( struct AHIRequest *ioreq,
         // audio disabled state (we could miss an interrupt!)
         // and disable audio interrupts.
 
-        old_pri = SetTaskPri( FindTask( NULL ), 128 );
+        old_pri = SetTaskPri( FindTask( NULL ), 127 );
         AHIsub_Disable((struct AHIAudioCtrlDrv *) audioctrl);
 //Disable();
 
@@ -1026,10 +1059,8 @@ FeedReaders ( struct AHIDevUnit *iounit,
   if( ! iounit->ReadList.mlh_Head->mln_Succ )
   {
     if(--iounit->RecordOffDelay == 0)
-    {
-      AHI_ControlAudio(iounit->AudioCtrl,
-          AHIC_Record,FALSE,
-          TAG_DONE);
+    { static const Tag tags[] = { AHIC_Record,FALSE,TAG_DONE };
+      AHI_ControlAudioA(iounit->AudioCtrl, (struct TagItem *)tags);
       iounit->IsRecording = FALSE;
     }
   }
@@ -1241,20 +1272,20 @@ NewWriter ( struct AHIRequest *ioreq,
           }
           else
           {
-            if( iounit->Voices[channel].Flags & VF_STARTED )
+            if(iounit->Voices[channel].PlayingRequest == otherioreq)
             {
-              // There is a sound already playing. Attach this sound
-              // after the current.
+              // The linked sound is already playing. Attach this
+              // sound to it.
 
-              iounit->Voices[channel].QueuedRequest = ioreq;
-              iounit->Voices[channel].NextOffset    = PLAY;
-              iounit->Voices[channel].NextRequest   = NULL;
+	      GetExtras(ioreq)->Channel = channel;
+              iounit->Voices[channel].NextRequest = ioreq;
+	      QueueRequest(NULL, &iounit->Voices[channel]);
 
               AHI_Play(iounit->AudioCtrl,
                   AHIP_BeginChannel,  channel,
                   AHIP_LoopFreq,      ioreq->ahir_Frequency,
-                  AHIP_LoopVol,       ( ioreq->ahir_Volume /
-					GetExtras(ioreq)->VolumeDiv ),
+                  AHIP_LoopVol,       (ULONG) (((long long) ioreq->ahir_Volume *
+					GetExtras(ioreq)->VolumeScale ) >> 16),
                   AHIP_LoopPan,       ioreq->ahir_Position,
                   AHIP_LoopSound,     GetExtras(ioreq)->Sound,
                   AHIP_LoopOffset,    ioreq->ahir_Std.io_Actual,
@@ -1263,20 +1294,13 @@ NewWriter ( struct AHIRequest *ioreq,
                   AHIP_EndChannel,    0,
                   TAG_DONE);
             }
-            else
+            else if (iounit->Voices[channel].NextRequest == otherioreq)
             {
-              // The current sound has not yet been started, and the loop
-              // part is not set either. Let the SoundFunc() handle the
+              // The linked sound has not yet been started, but is set
+              // as the loop sound. Let the SoundFunc() handle the
               // attaching.
 
-              iounit->Voices[channel].NextSound     = GetExtras( ioreq )->Sound;
-              iounit->Voices[channel].NextVolume    = ioreq->ahir_Volume;
-              iounit->Voices[channel].NextPan       = ioreq->ahir_Position;
-              iounit->Voices[channel].NextFrequency = ioreq->ahir_Frequency;
-              iounit->Voices[channel].NextOffset    = ioreq->ahir_Std.io_Actual;
-              iounit->Voices[channel].NextLength    = ioreq->ahir_Std.io_Length -
-                                                      ioreq->ahir_Std.io_Actual;
-              iounit->Voices[channel].NextRequest   = ioreq;
+	      QueueRequest(ioreq, &iounit->Voices[channel]);
             }
 
             AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
@@ -1334,7 +1358,7 @@ AddWriter ( struct AHIRequest *ioreq,
 
   for(channel = 0; channel < iounit->Channels; channel++)
   {
-    if(iounit->Voices[channel].NextOffset == (ULONG) FREE)
+    if(iounit->Voices[channel].QueuedOffset == (ULONG) FREE)
     {
       Enqueue((struct List *) &iounit->PlayingList,(struct Node *) ioreq);
       UpdateMasterVolume( iounit, AHIBase );
@@ -1402,36 +1426,18 @@ PlayRequest ( int channel,
 
   GetExtras(ioreq)->Channel = channel;
 
-  if(ioreq->ahir_Link)
-  {
-    struct Voice        *v = &iounit->Voices[channel];
-    struct AHIRequest   *r = ioreq->ahir_Link;
-
-    v->NextSound     = GetExtras(r)->Sound;
-    v->NextVolume    = r->ahir_Volume;
-    v->NextPan       = r->ahir_Position;
-    v->NextFrequency = r->ahir_Frequency;
-    v->NextOffset    = r->ahir_Std.io_Actual;
-    v->NextLength    = r->ahir_Std.io_Length
-                     - r->ahir_Std.io_Actual;
-    v->NextRequest   = r;
-  }
-  else
-  {
-    iounit->Voices[channel].NextOffset  = PLAY;
-    iounit->Voices[channel].NextRequest = NULL;
-  }
+  QueueRequest(ioreq->ahir_Link, &iounit->Voices[channel]);
 
   AHIsub_Disable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
   iounit->Voices[channel].PlayingRequest = NULL;
-  iounit->Voices[channel].QueuedRequest = ioreq;
-  iounit->Voices[channel].Flags &= ~VF_STARTED;
+  iounit->Voices[channel].NextRequest = ioreq;
 
   AHI_Play(iounit->AudioCtrl,
       AHIP_BeginChannel,  channel,
       AHIP_Freq,          ioreq->ahir_Frequency,
-      AHIP_Vol,           ioreq->ahir_Volume / GetExtras(ioreq)->VolumeDiv,
+      AHIP_Vol,           (ULONG) (((long long) ioreq->ahir_Volume *
+				    GetExtras(ioreq)->VolumeScale) >> 16),
       AHIP_Pan,           ioreq->ahir_Position,
       AHIP_Sound,         GetExtras(ioreq)->Sound,
       AHIP_Offset,        ioreq->ahir_Std.io_Actual,
@@ -1440,22 +1446,37 @@ PlayRequest ( int channel,
       TAG_DONE);
 
   AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
+}
 
-#if 0
-  // This is a workaround for a race condition.
-  // The problem can occur if a delayed request follows immediately after
-  // this one, before the sample interrupt routine has been called, and
-  // overwrites QueuedRequest. The result is that this sound is never
-  // marked as finished, and the application will wait forever on the
-  // IO Request. Quite ugly, no?
 
-  Wait(1L << iounit->SampleSignal);
+/******************************************************************************
+** QueueRequest ***************************************************************
+******************************************************************************/
 
-  // Set signal again...
-  Signal((struct Task *) iounit->Master, (1L << iounit->SampleSignal));
-  
-//  while(((volatile UBYTE) (iounit->Voices[channel].Flags) & VF_STARTED) == 0);
-#endif
+// Queues a request to be played after the request that is currently
+// set as look sound. This must be callable from in interrupt, since
+// it's also used from the SoundFunc.
+
+void
+QueueRequest ( struct AHIRequest *ioreq,
+	       struct Voice* v )
+{
+  if(ioreq)
+  {
+    v->QueuedSound     = GetExtras(ioreq)->Sound;
+    v->QueuedVolume    = ioreq->ahir_Volume;
+    v->QueuedPan       = ioreq->ahir_Position;
+    v->QueuedFrequency = ioreq->ahir_Frequency;
+    v->QueuedOffset    = ioreq->ahir_Std.io_Actual;
+    v->QueuedLength    = ioreq->ahir_Std.io_Length
+                     - ioreq->ahir_Std.io_Actual;
+    v->QueuedRequest   = ioreq;
+  }
+  else
+  {
+    v->QueuedOffset  = PLAY;
+    v->QueuedRequest = NULL;
+  }
 }
 
 
@@ -1532,7 +1553,12 @@ RemPlayers ( struct List *list,
 	// GetExtras(ioreq->ahir_Link) returns NULL here. How did that
 	// happen??
 	
-        GetExtras(ioreq->ahir_Link)->Channel = GetExtras(ioreq)->Channel;
+	// FIXED: 2005-09-26: The app AbortIO()'ed a request that was
+	// attached to another request using ahir_Link. When we then
+	// arrived here, ioreq->ahir_Link would point to a terminated
+	// request and possibly even deallocated memory. Now AbortIO()
+	// clears ahir_Link.
+
         Enqueue(list, (struct Node *) ioreq->ahir_Link);
         // We have to go through the whole procedure again, in case
         // the child is finished, too.
@@ -1607,7 +1633,7 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
   {
     ULONG id     = ioreq1->ahir_Private[1];
     int   c      = 0;
-    LONG  maxdiv = 1;
+    LONG  minscale = 0x10000;
 
 /*     KPrintF( "Checking id %08lx on request %08lx... ", id, ioreq1 ); */
     
@@ -1619,21 +1645,33 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
       {
 	++c;
 
-	if( GetExtras(ioreq2) && GetExtras(ioreq2)->VolumeDiv > maxdiv )
+	if( GetExtras(ioreq2) && GetExtras(ioreq2)->VolumeScale < minscale )
 	{
-	  maxdiv = GetExtras(ioreq2)->VolumeDiv;
+	  minscale = GetExtras(ioreq2)->VolumeScale;
 	}
       }
     }
-
-    if( maxdiv < c )
+    
+    if( minscale > 0x10000 / c )
     {
-      maxdiv = c;
+      minscale = 0x10000 / c;
     }
 
-    if( GetExtras(ioreq1)->VolumeDiv < maxdiv )
+    switch( AHIBase->ahib_ScaleMode )
     {
-      GetExtras(ioreq1)->VolumeDiv = maxdiv;
+      case AHI_SCALE_DYNAMIC_SAFE:
+	if( GetExtras(ioreq1)->VolumeScale > minscale )
+	{
+	  GetExtras(ioreq1)->VolumeScale = minscale;
+	}
+	break;
+
+      case AHI_SCALE_FIXED_SAFE:
+      case AHI_SCALE_FIXED_0_DB:
+      case AHI_SCALE_FIXED_3_DB:
+      case AHI_SCALE_FIXED_6_DB:
+	GetExtras(ioreq1)->VolumeScale = 0x10000;
+	break;
     }
 
 /*     KPrintF( "%ld requests, maxdiv = %ld -> Vol %05lx => %05lx\n", */
@@ -1652,7 +1690,8 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
     if( GetExtras(ioreq1)->Channel != NOCHANNEL )
     {
       AHI_SetVol( GetExtras(ioreq1)->Channel,
-		  ioreq1->ahir_Volume / GetExtras(ioreq1)->VolumeDiv,
+		  (ULONG) (((long long) ioreq1->ahir_Volume *
+			    GetExtras(ioreq1)->VolumeScale) >> 16),
 		  ioreq1->ahir_Position,
 		  iounit->AudioCtrl,
 		  AHISF_IMM );
@@ -1662,37 +1701,52 @@ static void UpdateMasterVolume( struct AHIDevUnit *iounit,
   AHIsub_Enable((struct AHIAudioCtrlDrv *) iounit->AudioCtrl);
 
   // And now the real master volume ...
-  
-  // Always "reserve" one channel for each opener (yes, even if
-  // they're not actually writing anything)
 
-  if( iounit->Unit.unit_OpenCnt != iounit->ChannelsInUse )
+  if( iounit->Unit.unit_OpenCnt == 0 )
   {
-    iounit->ChannelsInUse = iounit->Unit.unit_OpenCnt;
+    struct AHIEffMasterVolume vol = {
+      AHIET_MASTERVOLUME | AHIET_CANCEL,
+      0x10000
+    };
+      
+    AHI_SetEffect( &vol, iounit->AudioCtrl );
+  }
+  else
+  {
+    struct AHIEffMasterVolume vol = {
+      AHIET_MASTERVOLUME,
+      0x10000
+    };
     
-    if( iounit->Unit.unit_OpenCnt == 0 )
+    switch( AHIBase->ahib_ScaleMode )
     {
-      struct AHIEffMasterVolume vol = {
-	AHIET_MASTERVOLUME | AHIET_CANCEL,
-	0x10000
-      };
+      case AHI_SCALE_FIXED_SAFE:
+	vol.ahiemv_Volume = 0x10000;
+	break;
+      
+      case AHI_SCALE_DYNAMIC_SAFE:
+	vol.ahiemv_Volume = iounit->Channels * 0x10000 / iounit->Unit.unit_OpenCnt;
+	break;
 
-      AHI_SetEffect( &vol, iounit->AudioCtrl );
+      case AHI_SCALE_FIXED_0_DB:
+	vol.ahiemv_Volume = iounit->Channels * 0x10000;
+	break;
+      
+      case AHI_SCALE_FIXED_3_DB:
+	vol.ahiemv_Volume = iounit->Channels * 0xB505;
+	break;
+	
+      case AHI_SCALE_FIXED_6_DB:
+	vol.ahiemv_Volume = iounit->Channels * 0x8000;
+	break;
     }
-    else
+      
+    if( iounit->PseudoStereo )
     {
-      struct AHIEffMasterVolume vol = {
-	AHIET_MASTERVOLUME,
-	iounit->Channels * 0x10000 / iounit->Unit.unit_OpenCnt
-      };
-
-      if( iounit->PseudoStereo )
-      {
-	vol.ahiemv_Volume = vol.ahiemv_Volume / 2;
-      }
-
-      AHI_SetEffect( &vol, iounit->AudioCtrl );
+      vol.ahiemv_Volume = vol.ahiemv_Volume / 2;
     }
+
+    AHI_SetEffect( &vol, iounit->AudioCtrl );
   }
   
   AHIReleaseSemaphore(&iounit->Lock);

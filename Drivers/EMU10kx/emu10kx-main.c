@@ -1,6 +1,6 @@
 /*
      emu10kx.audio - AHI driver for SoundBlaster Live! series
-     Copyright (C) 2002-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2002-2005 Martin Blom <martin@blom.org>
 
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -31,19 +31,12 @@ driver! Anything that is based on this driver has to be GPL:ed.
 
 #include <config.h>
 
-#ifdef __AMIGAOS4__
-#include <proto/expansion.h>
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
-#include <clib/alib_protos.h>
-#endif
-
 #include <devices/ahi.h>
 #include <exec/memory.h>
 #include <libraries/ahi_sub.h>
 
 #include <proto/ahi_sub.h>
+#include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/utility.h>
 
@@ -52,11 +45,50 @@ driver! Anything that is based on this driver has to be GPL:ed.
 #include "library.h"
 #include "8010.h"
 #include "emu10kx-misc.h"
+#include "pci_wrapper.h"
 
 
 /******************************************************************************
 ** Globals ********************************************************************
 ******************************************************************************/
+
+#define SIZES 34
+
+static const ULONG RecordBufferSizes[ SIZES ] =
+{
+  0 / 4,
+  384 / 4,
+  448 / 4,
+  512 / 4,
+  640 / 4,
+  768 / 4,
+  896 / 4,
+  1024 / 4,
+  1280 / 4,
+  1536 / 4,
+  1792 / 4,
+  2048 / 4,
+  2560 / 4,
+  3072 / 4,
+  3584 / 4,
+  4096 / 4,
+  5120 / 4,
+  6144 / 4,
+  7168 / 4,
+  8192 / 4,
+  10240 / 4,
+  12288 / 4,
+  14366 / 4,
+  16384 / 4,
+  20480 / 4,
+  24576 / 4,
+  28672 / 4,
+  32768 / 4,
+  40960 / 4,
+  49152 / 4,
+  57344 / 4,
+  65536 / 4,
+};
 
 #define FREQUENCIES 8
 
@@ -120,6 +152,8 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
 
+  char env_var[] = "AHIemu10kxRecordBufferSize.00";
+  char env_val[16];
   int   card_num;
   ULONG ret;
   int   i;
@@ -151,19 +185,46 @@ _AHIsub_AllocAudio( struct TagItem*         taglist,
     {
       return AHISF_ERROR;
     }
-    
-    /* Since the EMU10kx chips can play a voice at any sample rate, we
-       do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
 
-       Had this not been the case, AudioCtrl->ahiac_MixFreq should be
-       set to the frequency we will use.
+    // Check what recording latency the user wants (using ugly
+    // environment variables)
 
-       However, recording can only be performed at the fixed sampling
-       rates.
-    */
+    dd->record_adcbs_bufsize = 0;
+  
+    Sprintf(env_var, "AHIemu10kxRecordBufferSize.%ld", card_num + 1);
+
+    if (GetVar(env_var, env_val, sizeof(env_val), 0) != -1) {
+      StrToLong(env_val, &dd->record_adcbs_bufsize);
+    }
+
+    if (dd->record_adcbs_bufsize == 0) {
+      Sprintf(env_var, "AHIemu10kxRecordBufferSize");
+
+      if( GetVar(env_var, env_val, sizeof(env_val), 0) != -1) {
+	StrToLong(env_val, &dd->record_adcbs_bufsize);
+      }
+    }
+
+    if (dd->record_adcbs_bufsize == 0 ||
+	dd->record_adcbs_bufsize > ADCBS_BUFSIZE_65536) {
+      dd->record_adcbs_bufsize = ADCBS_BUFSIZE_16384;
+    }
+
+    dd->record_buffer_samples = RecordBufferSizes[dd->record_adcbs_bufsize];
   }
 
-  ret = AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_MIXING | AHISF_TIMING;
+  /* Since the EMU10kx chips can play a voice at any sample rate, we
+     do not have to examine/modify AudioCtrl->ahiac_MixFreq here.
+
+     Had this not been the case, AudioCtrl->ahiac_MixFreq should be
+     set to the frequency we will use.
+
+     However, recording can only be performed at the fixed sampling
+     rates.
+  */
+
+  ret = AHISF_KNOWHIFI | AHISF_KNOWSTEREO | AHISF_KNOWMULTICHANNEL | \
+    AHISF_MIXING | AHISF_TIMING;
 
   for( i = 0; i < FREQUENCIES; ++i )
   {
@@ -254,6 +315,8 @@ _AHIsub_Start( ULONG                   flags,
 
   if( flags & AHISF_PLAY )
   {
+    int num_voices;
+    int i;
     ULONG dma_buffer_size;
     ULONG dma_sample_frame_size;
 
@@ -275,11 +338,11 @@ _AHIsub_Start( ULONG                   flags,
       return AHIE_NOMEM;
     }
 
-    /* Allocate a voice buffer large enough for 16-bit double-buffered
-       playback (mono or stereo) */
+    /* Allocate 1 or 4 voice buffers large enough for 16-bit double-buffered
+       playback (mono, stereo or 8 channels) */
 
-
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
+    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO ||
+	AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL)
     {
       dma_sample_frame_size = 4;
       dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
@@ -290,117 +353,164 @@ _AHIsub_Start( ULONG                   flags,
       dma_buffer_size = AudioCtrl->ahiac_MaxBuffSamples * dma_sample_frame_size;
     }
 
-    if( emu10k1_voice_alloc_buffer( &dd->card,
-				    &dd->voice.mem,
-				    ( dma_buffer_size * 2 + PAGE_SIZE - 1 )
-				    / PAGE_SIZE ) < 0 )
+    if( AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL )
     {
-      Req( "Unable to allocate voice buffer." );
-      return AHIE_NOMEM;
-    }
+      num_voices = 4;
 
-    memset( dd->voice.mem.addr, 0, dma_buffer_size * 2 );
-
-    dd->voice_buffer_allocated = TRUE;
-
-
-    dd->voice.usage = VOICE_USAGE_PLAYBACK;
-
-    if( AudioCtrl->ahiac_Flags & AHIACF_STEREO )
-    {
-      dd->voice.flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
+      // Disable front-to-center/LFE routing
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_CENTER, 0, VOL_5BIT);
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_LFE,    0, VOL_5BIT);
     }
     else
     {
-      dd->voice.flags = VOICE_FLAGS_16BIT;
+      num_voices = 1;
+
+      // Enable front-to-center/LFE routing
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_CENTER, 100, VOL_5BIT);
+      emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_LFE,    100, VOL_5BIT);
     }
 
-    if( emu10k1_voice_alloc( &dd->card, &dd->voice ) < 0 )
+    for( i = 0; i < num_voices; ++i )
     {
-      Req( "Unable to allocate voice." );
-      return AHIE_UNKNOWN;
-    }
-
-    dd->voice_allocated = TRUE;
-
-    dd->voice.initial_pitch = (u16) ( srToPitch( AudioCtrl->ahiac_MixFreq ) >> 8 );
-    dd->voice.pitch_target  = SamplerateToLinearPitch( AudioCtrl->ahiac_MixFreq );
-
-    DPD(2, "Initial pitch --> %#x\n", dd->voice.initial_pitch);
-
-    /* start, startloop and endloop is unit sample frames, not bytes */
-
-    dd->voice.start     = ( ( dd->voice.mem.emupageindex << 12 )
-			    / dma_sample_frame_size );
-    dd->voice.endloop   = dd->voice.start + AudioCtrl->ahiac_MaxBuffSamples * 2;
-    dd->voice.startloop = dd->voice.start;
-
-
-    /* Make interrupt routine start at the correct location */
-
-    dd->current_position = dd->current_length;
-    dd->current_buffer   = ( dd->voice.mem.addr +
-			     dd->current_position * dma_sample_frame_size );
-
-    dd->voice.params[0].volume_target = 0xffff;
-    dd->voice.params[0].initial_fc = 0xff;
-    dd->voice.params[0].initial_attn = 0x00;
-    dd->voice.params[0].byampl_env_sustain = 0x7f;
-    dd->voice.params[0].byampl_env_decay = 0x7f;
-    
-    if( dd->voice.flags & VOICE_FLAGS_STEREO )
-    {
-      if( dd->card.is_audigy )
+      if( emu10k1_voice_alloc_buffer( &dd->card,
+				      &dd->voices[i].mem,
+				      ( dma_buffer_size * 2 + PAGE_SIZE - 1 )
+				      / PAGE_SIZE ) < 0 )
       {
-	dd->voice.params[0].send_dcba = 0x00ff00ff;
-	dd->voice.params[0].send_hgfe = 0x00007f7f;
-	dd->voice.params[1].send_dcba = 0xff00ff00;
-	dd->voice.params[1].send_hgfe = 0x00007f7f;
+	Req( "Unable to allocate voice buffer." );
+	return AHIE_NOMEM;
+      }
 
-	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x03020100;
-	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0x07060504;
+      memset( dd->voices[i].mem.addr, 0, dma_buffer_size * 2 );
+
+      dd->voices[i].usage = VOICE_USAGE_PLAYBACK;
+
+      if( AudioCtrl->ahiac_Flags & AHIACF_STEREO ||
+	  AudioCtrl->ahiac_Flags & AHIACF_MULTICHANNEL )
+      {
+	dd->voices[i].flags = VOICE_FLAGS_STEREO | VOICE_FLAGS_16BIT;
       }
       else
       {
-	dd->voice.params[0].send_dcba = 0x000000ff;
-	dd->voice.params[0].send_hgfe = 0;
-	dd->voice.params[1].send_dcba = 0x0000ff00;
-	dd->voice.params[1].send_hgfe = 0;
-
-	dd->voice.params[0].send_routing  = dd->voice.params[1].send_routing  = 0x3210;
-	dd->voice.params[0].send_routing2 = dd->voice.params[1].send_routing2 = 0;
+	dd->voices[i].flags = VOICE_FLAGS_16BIT;
       }
-
-      dd->voice.params[1].volume_target = 0xffff;
-      dd->voice.params[1].initial_fc = 0xff;
-      dd->voice.params[1].initial_attn = 0x00;
-      dd->voice.params[1].byampl_env_sustain = 0x7f;
-      dd->voice.params[1].byampl_env_decay = 0x7f;
     }
-    else
+
+    dd->voice_buffers_allocated = num_voices;
+
+    for( i = 0; i < num_voices; ++i )
     {
-      if( dd->card.is_audigy )
+      if( emu10k1_voice_alloc( &dd->card, &dd->voices[i] ) < 0 )
       {
-	dd->voice.params[0].send_dcba = 0xffffffff;
-	dd->voice.params[0].send_hgfe = 0x0000ffff;
- 
-	dd->voice.params[0].send_routing  = 0x03020100;
-	dd->voice.params[0].send_routing2 = 0x07060504;
-     }
+	Req( "Unable to allocate voice." );
+	return AHIE_UNKNOWN;
+      }
+    }
+
+    dd->voices_allocated = num_voices;
+
+    for( i = 0; i < num_voices; ++i )
+    {
+      dd->voices[i].initial_pitch = (u16) ( srToPitch( AudioCtrl->ahiac_MixFreq ) >> 8 );
+      dd->voices[i].pitch_target  = SamplerateToLinearPitch( AudioCtrl->ahiac_MixFreq );
+
+      DPD(2, "Initial pitch --> %#x\n", dd->voice.initial_pitch);
+
+      /* start, startloop and endloop is unit sample frames, not bytes */
+
+      dd->voices[i].start     = ( ( dd->voices[i].mem.emupageindex << 12 )
+				  / dma_sample_frame_size );
+      dd->voices[i].endloop   = dd->voices[i].start + AudioCtrl->ahiac_MaxBuffSamples * 2;
+      dd->voices[i].startloop = dd->voices[i].start;
+
+      /* Make interrupt routine start at the correct location */
+
+      dd->current_position = dd->current_length;
+      dd->current_buffers[i] = ( dd->voices[i].mem.addr +
+				 dd->current_position * dma_sample_frame_size );
+
+      dd->voices[i].params[0].volume_target = 0xffff;
+      dd->voices[i].params[0].initial_fc = 0xff;
+      dd->voices[i].params[0].initial_attn = 0x00;
+      dd->voices[i].params[0].byampl_env_sustain = 0x7f;
+      dd->voices[i].params[0].byampl_env_decay = 0x7f;
+
+      if( dd->voices[i].flags & VOICE_FLAGS_STEREO )
+      {
+	if( dd->card.is_audigy )
+	{
+	  static int routes[] = {
+	    0x03020100, // Send FL/FR to ??/??, AHI_FRONT_L/MULTI_FRONT_R
+	    0x03020504, // Send RL/RR to ??/??, AHI_REAR_L/AHI_REAR_R
+	    0x03020706, // Send SL/SR to ??/??, AHI_SURROUND_L/AHI_SURROUND_R
+	    0x03020908, // Send C/LFE to ??/??, AHI_CENTER,AHI_LFE
+	  };
+
+	  dd->voices[i].params[0].send_dcba = 0x000000ff;
+	  dd->voices[i].params[0].send_hgfe = 0x00000000;
+	  dd->voices[i].params[1].send_dcba = 0x0000ff00;
+	  dd->voices[i].params[1].send_hgfe = 0x00000000;
+
+	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = routes[i];
+	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0x03020302;
+
+/* 	  dd->voices[i].params[0].send_dcba = 0x00ff00ff; */
+/* 	  dd->voices[i].params[0].send_hgfe = 0x00007f7f; */
+/* 	  dd->voices[i].params[1].send_dcba = 0xff00ff00; */
+/* 	  dd->voices[i].params[1].send_hgfe = 0x00007f7f; */
+
+/* 	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = 0x03020100; */
+/* 	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0x07060504; */
+	}
+	else
+	{
+	  static int routes[] = {
+	    0x3210, // Send FL/FR to ??/??, AHI_FRONT_L/MULTI_FRONT_R
+	    0x3254, // Send RL/RR to ??/??, AHI_REAR_L/AHI_REAR_R
+	    0x3276, // Send SL/SR to ??/??, AHI_SURROUND_L/AHI_SURROUND_R
+	    0x3298, // Send C/LFE to ??/??, AHI_CENTER,AHI_LFE
+	  };
+
+	  dd->voices[i].params[0].send_dcba = 0x000000ff;
+	  dd->voices[i].params[0].send_hgfe = 0;
+	  dd->voices[i].params[1].send_dcba = 0x0000ff00;
+	  dd->voices[i].params[1].send_hgfe = 0;
+
+	  dd->voices[i].params[0].send_routing  = dd->voices[i].params[1].send_routing  = routes[i];
+	  dd->voices[i].params[0].send_routing2 = dd->voices[i].params[1].send_routing2 = 0;
+	}
+
+	dd->voices[i].params[1].volume_target = 0xffff;
+	dd->voices[i].params[1].initial_fc = 0xff;
+	dd->voices[i].params[1].initial_attn = 0x00;
+	dd->voices[i].params[1].byampl_env_sustain = 0x7f;
+	dd->voices[i].params[1].byampl_env_decay = 0x7f;
+      }
       else
       {
-	dd->voice.params[0].send_dcba = 0x000ffff;
-	dd->voice.params[0].send_hgfe = 0;
+	if( dd->card.is_audigy )
+	{
+	  dd->voices[i].params[0].send_dcba = 0xffffffff;
+	  dd->voices[i].params[0].send_hgfe = 0x0000ffff;
 
-	dd->voice.params[0].send_routing  = 0x3210;
-	dd->voice.params[0].send_routing2 = 0;
+	  dd->voices[i].params[0].send_routing  = 0x03020100;
+	  dd->voices[i].params[0].send_routing2 = 0x07060504;
+	}
+	else
+	{
+	  dd->voices[i].params[0].send_dcba = 0x000ffff;
+	  dd->voices[i].params[0].send_hgfe = 0;
+
+	  dd->voices[i].params[0].send_routing  = 0x3210;
+	  dd->voices[i].params[0].send_routing2 = 0;
+	}
       }
+
+      DPD(2, "voice: startloop=%x, endloop=%x\n",
+	  dd->voice.startloop, dd->voice.endloop);
+
+      emu10k1_voice_playback_setup( &dd->voices[i] );
     }
-
-    DPD(2, "voice: startloop=%x, endloop=%x\n",
-	dd->voice.startloop, dd->voice.endloop);
-
-    emu10k1_voice_playback_setup( &dd->voice );
 
     dd->playback_interrupt_enabled = TRUE;
 
@@ -409,9 +519,9 @@ _AHIsub_Start( ULONG                   flags,
     emu10k1_timer_set( &dd->card, 48000 / TIMER_INTERRUPT_FREQUENCY );
     emu10k1_irq_enable( &dd->card, INTE_INTERVALTIMERENB );
 
-    emu10k1_voices_start( &dd->voice, 1, 0 );
+    emu10k1_voices_start( dd->voices, num_voices, 0 );
 
-    dd->voice_started = TRUE;
+    dd->voices_started = num_voices;
 
     dd->is_playing = TRUE;
   }
@@ -459,25 +569,33 @@ _AHIsub_Start( ULONG                   flags,
 	return AHIE_UNKNOWN;
     }
 
-    adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;
+    if( dd->card.is_audigy )
+      adcctl |= A_ADCCR_LCHANENABLE | A_ADCCR_RCHANENABLE;
+    else
+      adcctl |= ADCCR_LCHANENABLE | ADCCR_RCHANENABLE;
 
     /* Allocate a new recording buffer (page aligned!) */
     dd->record_buffer = pci_alloc_consistent( dd->card.pci_dev,
-					      RECORD_BUFFER_SAMPLES * 4,
+					      dd->record_buffer_samples * 4,
 					      &dd->record_dma_handle );
 
     if( dd->record_buffer == NULL )
     {
       Req( "Unable to allocate %ld bytes for the recording buffer.",
-	   RECORD_BUFFER_SAMPLES * 4 );
+	   dd->record_buffer_samples * 4 );
       return AHIE_NOMEM;
     }
 
     SaveMixerState( dd );
     UpdateMonitorMixer( dd );
 
+    #ifdef __AMIGAOS4__
+    // invalidate the whole record_buffer just to be on the safe side
+    CacheClearE( dd->record_buffer, dd->record_buffer_samples * 4, CACRF_InvalidateD );
+    #endif
+
     sblive_writeptr( &dd->card, ADCBA, 0, dd->record_dma_handle );
-    sblive_writeptr( &dd->card, ADCBS, 0, RECORD_BUFFER_SIZE_VALUE );
+    sblive_writeptr( &dd->card, ADCBS, 0, dd->record_adcbs_bufsize );
     sblive_writeptr( &dd->card, ADCCR, 0, adcctl );
 
     dd->record_interrupt_enabled = TRUE;
@@ -532,35 +650,41 @@ _AHIsub_Stop( ULONG                   flags,
 
   if( flags & AHISF_PLAY )
   {
+    int i;
     dd->is_playing= FALSE;
 
-    if( dd->voice_started )
+    if( dd->voices_started != 0 )
     {
       emu10k1_irq_disable( &dd->card, INTE_INTERVALTIMERENB );
 
 //      sblive_writeptr( &dd->card, CLIEL, dd->voice.num, 0 );
-      emu10k1_voices_stop( &dd->voice, 1 );
-      dd->voice_started = FALSE;
+      emu10k1_voices_stop( dd->voices, dd->voices_started );
+      dd->voices_started = 0;
     }
 
-    if( dd->voice_allocated )
+    for( i = 0; i < dd->voices_allocated; ++i )
     {
-      emu10k1_voice_free( &dd->voice );
-      dd->voice_allocated = FALSE;
+      emu10k1_voice_free( &dd->voices[i] );
     }
 
-    if( dd->voice_buffer_allocated )
+    dd->voices_allocated = 0;
+
+    for( i = 0; i < dd->voice_buffers_allocated; ++i )
     {
-      emu10k1_voice_free_buffer( &dd->card, &dd->voice.mem );
-      dd->voice_buffer_allocated = FALSE;
+      emu10k1_voice_free_buffer( &dd->card, &dd->voices[i].mem );
     }
 
-    memset( &dd->voice, 0, sizeof( dd->voice ) );
+    dd->voice_buffers_allocated = 0;
 
-    dd->current_length   = 0;
-    dd->current_size     = 0;
-    dd->current_buffer   = NULL;
-    dd->current_position = 0;
+    memset( &dd->voices, 0, sizeof( dd->voices ) );
+
+    dd->current_length     = 0;
+    dd->current_size       = 0;
+    dd->current_buffers[0] = NULL;
+    dd->current_buffers[1] = NULL;
+    dd->current_buffers[2] = NULL;
+    dd->current_buffers[3] = NULL;
+    dd->current_position   = 0;
 
     FreeVec( dd->mix_buffer );
     dd->mix_buffer = NULL;
@@ -582,7 +706,7 @@ _AHIsub_Stop( ULONG                   flags,
     if( dd->record_buffer != NULL )
     {
       pci_free_consistent( dd->card.pci_dev,
-			   RECORD_BUFFER_SAMPLES * 4,
+			   dd->record_buffer_samples * 4,
 			   dd->record_buffer,
 			   dd->record_dma_handle );
     }
@@ -608,6 +732,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
 		 struct DriverBase*      AHIsubBase )
 {
   struct EMU10kxBase* EMU10kxBase = (struct EMU10kxBase*) AHIsubBase;
+  struct EMU10kxData* dd = (struct EMU10kxData*) AudioCtrl->ahiac_DriverData;
   int i;
 
   switch( attribute )
@@ -673,7 +798,7 @@ _AHIsub_GetAttr( ULONG                   attribute,
       return TRUE;
 
     case AHIDB_MaxRecordSamples:
-      return RECORD_BUFFER_SAMPLES;
+      return dd->record_buffer_samples / 2;
 
     case AHIDB_MinMonitorVolume:
       return 0x00000;
@@ -775,13 +900,13 @@ _AHIsub_HardwareControl( ULONG                   attribute,
 
       if( dd->output == 0 )
       {
-	emu10k1_set_volume_gpr( &dd->card, 0x19, 0, VOL_5BIT);
-	emu10k1_set_volume_gpr( &dd->card, 0x1a, 0, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_L, 0, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_R, 0, VOL_5BIT);
       }
       else
       {
-	emu10k1_set_volume_gpr( &dd->card, 0x19, 80, VOL_5BIT);
-	emu10k1_set_volume_gpr( &dd->card, 0x1a, 80, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_L, 100, VOL_5BIT);
+	emu10k1_set_volume_gpr( &dd->card, VOL_FRONT_REAR_R, 100, VOL_5BIT);
       }
       return TRUE;
 

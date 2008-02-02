@@ -1,8 +1,6 @@
-/* $Id$ */
-
 /*
      AHI - Hardware independent audio subsystem
-     Copyright (C) 1996-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 1996-2005 Martin Blom <martin@blom.org>
      
      This library is free software; you can redistribute it and/or
      modify it under the terms of the GNU Library General Public
@@ -90,28 +88,22 @@ struct Extras
 {
         UWORD   Channel;
         UWORD   Sound;
-        LONG    VolumeDiv;
+        Fixed   VolumeScale;
 };
 
-/* Voice->Flags definitions */
-
-/* Set by the interrupt when a new sound has been started */
-#define VB_STARTED              0
-#define VF_STARTED              (1<<0)
 
 struct Voice
 {
-        UWORD                    NextSound;
-        UBYTE                    Flags;
-        UBYTE                    Pad;
-        Fixed                    NextVolume;
-        Fixed                    NextPan;
-        ULONG                    NextFrequency;
-        ULONG                    NextOffset;
-        ULONG                    NextLength;
-        struct AHIRequest       *NextRequest;
-        
+        UWORD                    QueuedSound;
+        UWORD                    Pad;
+        Fixed                    QueuedVolume;
+        Fixed                    QueuedPan;
+        ULONG                    QueuedFrequency;
+        ULONG                    QueuedOffset;
+        ULONG                    QueuedLength;
         struct AHIRequest       *QueuedRequest;
+        
+        struct AHIRequest       *NextRequest;
         struct AHIRequest       *PlayingRequest;
 };
 
@@ -133,6 +125,7 @@ struct AHIDevUnit
         BYTE                     RecordSignal;
         BYTE                     SampleSignal;
         struct Process          *Process;
+        BYTE                     SyncSignal;
         struct Process          *Master;
         struct Hook              PlayerHook;
         struct Hook              RecordHook;
@@ -170,7 +163,7 @@ struct AHIDevUnit
         ULONG                    AudioMode;
         ULONG                    Frequency;
         UWORD                    Channels;
-        UWORD                    ChannelsInUse;
+        UWORD                    Pad;
         Fixed                    MonitorVolume;
         Fixed                    InputGain;
         Fixed                    OutputVolume;

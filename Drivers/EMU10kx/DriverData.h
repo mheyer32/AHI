@@ -1,6 +1,6 @@
 /*
      emu10kx.audio - AHI driver for SoundBlaster Live! series
-     Copyright (C) 2002-2003 Martin Blom <martin@blom.org>
+     Copyright (C) 2002-2005 Martin Blom <martin@blom.org>
      
      This program is free software; you can redistribute it and/or
      modify it under the terms of the GNU General Public License
@@ -32,7 +32,7 @@
 /** Make the common library code initialize a global SysBase for us.
     It's required for hwaccess.c */
 
-#define DRIVER_NEED_GLOBAL_EXECBASE
+#define DRIVER_NEEDS_GLOBAL_EXECBASE
 #include "DriverBase.h"
 
 struct EMU10kxData;
@@ -68,9 +68,11 @@ struct EMU10kxBase
 
 #define DRIVERBASE_SIZEOF (sizeof (struct EMU10kxBase))
 
-#define RECORD_BUFFER_SAMPLES     4096
-#define RECORD_BUFFER_SIZE_VALUE  ADCBS_BUFSIZE_16384
+#ifndef __AMIGAOS4__
 #define TIMER_INTERRUPT_FREQUENCY 1000
+#else
+#define TIMER_INTERRUPT_FREQUENCY 80
+#endif
 
 
 struct EMU10kxData
@@ -86,6 +88,11 @@ struct EMU10kxData
 
     /** TRUE if the EMU10kx chip has been initialized */
     BOOL                emu10k1_initialized;
+
+#ifdef __AMIGAOS4__
+    /** A reset handler interrupt structure for OS4 */
+    struct Interrupt    reset_interrupt;
+#endif
 
     /*** The driverbase ******************************************************/
 
@@ -137,11 +144,11 @@ struct EMU10kxData
     /*** EMU10kx structures **************************************************/
     
     struct emu10k1_card card;
-    struct emu_voice    voice;
+    struct emu_voice    voices[4];
 
-    BOOL                voice_buffer_allocated;
-    BOOL                voice_allocated;
-    BOOL                voice_started;
+    UWORD               voice_buffers_allocated;
+    UWORD               voices_allocated;
+    UWORD               voices_started;
     UWORD               pad;
 
     
@@ -157,13 +164,19 @@ struct EMU10kxData
     ULONG               current_size;
 
     /** Where (inside the cyclic buffer) we're currently writing */
-    APTR                current_buffer;
+    APTR                current_buffers[4];
 
     /** The offset (inside the cyclic buffer) we're currently writing */
     ULONG               current_position;
 
 
     /*** Recording interrupt variables ***************************************/
+
+    /** The ADCBS_BUFSIZE_* value (see 8010.h) */
+    ULONG               record_adcbs_bufsize;
+
+    /** The ADCBS_BUFSIZE_* value (see 8010.h) */
+    ULONG               record_buffer_samples;
 
     /** The recording buffer (simple double buffering is used */
     APTR                record_buffer;
