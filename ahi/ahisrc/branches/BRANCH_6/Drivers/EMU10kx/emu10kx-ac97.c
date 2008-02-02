@@ -133,7 +133,7 @@ AC97SetFunc( struct Hook*           hook,
       msg->Register < emu10kx_dsp_last) {
     ULONG reg = dsp_register[msg->Register - emu10kx_dsp_first];
     
-    emu10k1_set_volume_gpr( &dd->card, reg, 100, VOL_5BIT);
+    emu10k1_set_volume_gpr( &dd->card, reg, msg->Value, VOL_5BIT);
   }
   else {
     emu10k1_writeac97( &dd->card, msg->Register, msg->Value );
