@@ -1,4 +1,13 @@
-2007-11-10  Martin Blom  <martin@blom.org>
+2008-02-02  Martin Blom  <martin@blom.org>
+
+	* Released emu10kx.audio 6.10.
+
+	* emu10kx.audio: Setting a digital volume register using the
+	emu10kx.ac97 semaphore always set the register to 100 (full
+	volume), no matter what msg->Value was supplied. Now
+	fixed. [Michal "Kiero" Wozniak]
+
+42007-11-10  Martin Blom  <martin@blom.org>
 
 	* Released paula.audio 4.33.
 
