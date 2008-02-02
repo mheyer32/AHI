@@ -1,0 +1,11 @@
+Short:    	Retargetable audio, Developer's Archive
+Author:   	Martin Blom <martin@blom.org>
+Uploader: 	Martin Blom <martin@blom.org>
+Type:     	hard/drivr
+Version:	AHIVERSION
+Architecture:	AHIARCH
+
+This archive contains the developer documentation and
+example source code for AHI, both for programmer who wish
+to use AHI in their own applications and those who want
+to write hardware drivers.
