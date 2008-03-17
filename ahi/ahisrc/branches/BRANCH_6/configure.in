@@ -200,6 +200,7 @@ AC_OUTPUT(Makefile
 	  Examples/Makefile
 	  Examples/Device/PlayTest/Makefile
 	  Examples/Extras/CloneAudioModes/Makefile
+	  Examples/Low-level/MaxPlaySamples/Makefile
 	  Examples/Low-level/PlaySineEverywhere/Makefile
 	  Examples/Low-level/Test-7.1/Makefile
 	  Examples/Low-level/ScanAudioModes/Makefile

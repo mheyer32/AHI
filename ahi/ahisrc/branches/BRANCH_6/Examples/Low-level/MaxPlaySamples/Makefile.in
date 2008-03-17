@@ -1,5 +1,5 @@
 #
-#  Makefile.in for 7.1 test
+#  Makefile.in for MaxPlaySamples test
 #
 
 
@@ -33,8 +33,8 @@ VPATH		= @srcdir@
 # Files
 ########################################
 
-OBJECTS		= Test-7.1.o
-EXECUTABLE	= Test-7.1
+OBJECTS		= MaxPlaySamples.o
+EXECUTABLE	= MaxPlaySamples
 
 
 #
