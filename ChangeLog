@@ -1,3 +1,7 @@
+2008-03-17  Martin Blom  <martin@blom.org>
+
+	* Added the MaxPlaySamples example.
+
 2008-02-02  Martin Blom  <martin@blom.org>
 
 	* Released emu10kx.audio 6.10.
