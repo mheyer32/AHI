@@ -23,8 +23,9 @@ DriverInit( struct DriverBase* AHIsubBase )
 
   FilesaveBase->dosbase = OpenLibrary( DOSNAME, 37 );
   FilesaveBase->gfxbase = OpenLibrary( GRAPHICSNAME, 37 );
-  FilesaveBase->aslbase = OpenLibrary( AslName, 37);
-  FilesaveBase->dtsbase = OpenLibrary( "datatypes.library" ,39 );
+  FilesaveBase->aslbase = NULL;
+
+  InitSemaphore(&FilesaveBase->aslsema);
 
   if( DOSBase == NULL )
   {
@@ -38,20 +39,6 @@ DriverInit( struct DriverBase* AHIsubBase )
     return FALSE;
   }
 
-// Don't fail if these ones don't open!
-
-  if( AslBase == NULL )
-  {
-    Req( "Unable to open '" AslName "' version 37.\n" );
-  }
-
-#if 0
-  if( DataTypesBase == NULL )
-  {
-    Req( "Unable to open 'datatypes.library' version 39.\n" );
-  }
-#endif
-
 #ifdef __AMIGAOS4__
   if ((IDOS = (struct DOSIFace *) GetInterface((struct Library *) DOSBase, "main", 1, NULL)) == NULL)
   {
@@ -59,21 +46,7 @@ DriverInit( struct DriverBase* AHIsubBase )
     return FALSE;
   }
 
-  if (AslBase != NULL) {
-    if ((IAsl = (struct AslIFace *) GetInterface((struct Library *) AslBase, "main", 1, NULL)) == NULL)
-    {
-      Req("Couldn't open IAsl interface!\n");
-      return FALSE;
-    }
-  }
-
-  if (DataTypesBase != NULL) {
-    if ((IDataTypes = (struct DataTypesIFace *) GetInterface((struct Library *) DataTypesBase, "main", 1, NULL)) == NULL)
-    {
-      Req("Couldn't open IDataTypes interface!\n");
-      return FALSE;
-    }
-  }
+  IAsl = NULL;
 #endif
 
   return TRUE;
@@ -92,11 +65,9 @@ DriverCleanup( struct DriverBase* AHIsubBase )
 #ifdef __AMIGAOS4__
   DropInterface( (struct Interface *) IDOS);
   DropInterface( (struct Interface *) IAsl);
-  DropInterface( (struct Interface *) IDataTypes);
 #endif
 
   CloseLibrary( FilesaveBase->dosbase );
   CloseLibrary( FilesaveBase->gfxbase );
   CloseLibrary( FilesaveBase->aslbase );
-  CloseLibrary( FilesaveBase->dtsbase );
 }
