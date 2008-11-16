@@ -73,6 +73,25 @@ ULONG _AHIsub_AllocAudio(
   struct FilesaveBase* FilesaveBase = (struct FilesaveBase*) AHIsubBase;
   char *ext = "";
 
+  ObtainSemaphore(&FilesaveBase->aslsema);
+  if(AslBase == NULL)
+  {
+    AslBase = OpenLibrary( AslName, 37);
+
+#ifdef __AMIGAOS4__
+    if (AslBase != NULL) {
+      if ((IAsl = (struct AslIFace *) GetInterface((struct Library *) AslBase, 
+						   "main", 1, NULL)) == NULL)
+      {
+	Req("Couldn't open IAsl interface!\n");
+	CloseLibrary(AslBase);
+	AslBase = NULL;
+      }
+    }
+#endif
+  }
+  ReleaseSemaphore(&FilesaveBase->aslsema);
+
   if(AslBase == NULL)
   {
     return AHISF_ERROR;

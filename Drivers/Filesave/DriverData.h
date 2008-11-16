@@ -2,6 +2,7 @@
 #define AHI_Drivers_Filesave_DriverData_h
 
 #include <exec/libraries.h>
+#include <exec/semaphores.h>
 #include <dos/dos.h>
 #include <graphics/gfxbase.h>
 
@@ -17,26 +18,24 @@ struct FilesaveBase
     struct DriverBase driverbase;
     struct Library*   aslbase;
     struct Library*   dosbase;
-    struct Library*   dtsbase;
     struct Library*   gfxbase;
 #ifdef __AMIGAOS4__
     struct AslIFace*       iasl;
     struct DOSIFace*       idos;
-    struct DataTypesIFace* idatatypes;
 #endif
+
+    struct SignalSemaphore aslsema;
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct FilesaveBase))
 
 #define AslBase           (FilesaveBase->aslbase)
 #define DOSBase           (*(struct DosLibrary**) &FilesaveBase->dosbase)
-#define DataTypesBase     (FilesaveBase->dtsbase)
 #define GfxBase           (*(struct GfxBase**) &FilesaveBase->gfxbase)
 
 #ifdef __AMIGAOS4__
 #define IDOS              (FilesaveBase->idos)
 #define IAsl              (FilesaveBase->iasl)
-#define IDataTypes        (FilesaveBase->idatatypes)
 #endif
 
 

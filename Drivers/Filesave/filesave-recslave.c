@@ -70,11 +70,30 @@ static void RecSlave( struct ExecBase* SysBase )
     RECBUFFERSIZE
   };
 
+  struct Library* DataTypesBase;
+#ifdef __AMIGAOS4__
+  struct DataTypesIFace* IDataTypes;
+#endif
+
   /* Note that in OS4, we cannot call FindTask(NULL) here, since IExec
    * is inside AHIsubBase! */
   AudioCtrl    = (struct AHIAudioCtrlDrv*) SysBase->ThisTask->tc_UserData;
   AHIsubBase   = (struct DriverBase*) dd->fs_AHIsubBase;
   FilesaveBase = (struct FilesaveBase*) AHIsubBase;
+
+  // Optionally try to open the DataTypes library
+  DataTypesBase = OpenLibrary( "datatypes.library", 39 );
+
+#ifdef __AMIGAOS4__
+  if (DataTypesBase != NULL) {
+    if ((IDataTypes = (struct DataTypesIFace *) GetInterface((struct Library *) DataTypesBase, 
+							     "main", 1, NULL)) == NULL)
+    {
+      Req("Couldn't open IDataTypes interface!\n");
+      return FALSE;
+    }
+  }
+#endif
 
   RecordMessage.ahirm_Buffer = dd->fs_RecBuffer;
 
@@ -169,6 +188,11 @@ quit:
   {
     if(o)
       DisposeDTObject (o);
+
+#ifdef __AMIGAOS4__
+    DropInterface( (struct Interface *) IDataTypes);
+#endif
+    CloseLibrary(DataTypesBase);
   }
   else // datatypes.library not open.
   {

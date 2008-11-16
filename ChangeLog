@@ -1,3 +1,12 @@
+2008-03-18  Martin Blom  <martin@blom.org>
+
+	* Released filesave.audio 6.4.
+
+	* filesave.audio: Deferred opening of asl.library until
+	AllocAudio() time. The record subtask now opens and closes
+	datatypes.library itself. Both are workarounds for a possible
+	deadlock situation. [Philippe 'Elwood' FERRUCCI]
+
 2008-03-17  Martin Blom  <martin@blom.org>
 
 	* Added the MaxPlaySamples example.
