@@ -90,7 +90,7 @@ int main(int argc, char **argv) {
     BPTR olddir;
     struct DiskObject *dobj;
     STRPTR* toolarray;
-    UBYTE *s;
+    STRPTR s;
 
     SaveIcons  = TRUE;
 
@@ -118,7 +118,7 @@ int main(int argc, char **argv) {
         s = (char *) FindToolType(toolarray,"PUBSCREEN");
 
         if( s != NULL ) {
-          strncpy(pubscreen, s, sizeof pubscreen);
+          strlcpy(pubscreen, s, sizeof(pubscreen));
           args.pubscreen = pubscreen;
         }
 
@@ -509,17 +509,17 @@ char *getFreq(void) {
       TAG_DONE);
   }
 
-  sprintf(freqBuffer, msgFreqFmt, freq);
+  snprintf(freqBuffer, sizeof(freqBuffer), (char *) msgFreqFmt, freq);
   return freqBuffer;
 }
 
 
 char *getChannels(void) {
   if(state.ChannelsDisabled) {
-    sprintf(chanBuffer, (char *) msgOptNoChannels);
+    snprintf(chanBuffer, sizeof(chanBuffer), (char *) msgOptNoChannels);
   }
   else {
-    sprintf(chanBuffer, msgChanFmt, state.ChannelsSelected);
+    snprintf(chanBuffer, sizeof(chanBuffer), (char *) msgChanFmt, state.ChannelsSelected);
   }
   return chanBuffer;
 }
@@ -529,7 +529,7 @@ char *getOutVol(void) {
 
   if(state.OutVolMute) {
     if(selected == 0) {
-      sprintf(outvolBuffer, (char *) msgOptMuted);
+      snprintf(outvolBuffer, sizeof(outvolBuffer), (char *) msgOptMuted);
       return outvolBuffer;
     }
     else {
@@ -537,7 +537,7 @@ char *getOutVol(void) {
     }
   }
 
-  sprintf(outvolBuffer, msgVolFmt, state.OutVolOffset + (selected * DBSTEP));
+  snprintf(outvolBuffer, sizeof(outvolBuffer), (char *) msgVolFmt, state.OutVolOffset + (selected * DBSTEP));
   return outvolBuffer;
 }
 
@@ -546,7 +546,7 @@ char *getMonVol(void) {
 
   if(state.MonVolMute) {
     if(selected == 0) {
-      sprintf(monvolBuffer, (char *) msgOptMuted);
+      snprintf(monvolBuffer, sizeof(monvolBuffer), (char *) msgOptMuted);
       return monvolBuffer;
     }
     else {
@@ -554,14 +554,14 @@ char *getMonVol(void) {
     }
   }
 
-  sprintf(monvolBuffer, msgVolFmt, state.MonVolOffset + (selected * DBSTEP));
+  snprintf(monvolBuffer, sizeof(monvolBuffer), (char *) msgVolFmt, state.MonVolOffset + (selected * DBSTEP));
   return monvolBuffer;
 }
 
 char *getGain(void) {
   int selected = state.GainSelected;
 
-  sprintf(gainBuffer, msgVolFmt, state.GainOffset + (selected * DBSTEP));
+  snprintf(gainBuffer, sizeof(gainBuffer), (char *) msgVolFmt, state.GainOffset + (selected * DBSTEP));
   return gainBuffer;
 }
 
