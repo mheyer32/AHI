@@ -43,8 +43,7 @@ struct List *ChooserLabelsA(STRPTR *array) {
         TAG_END);
       if (node == NULL) {
         FreeChooserLabels(list);
-        list = NULL;
-        break;
+        return NULL;
       }
       AddTail(list, node);
     }
@@ -75,8 +74,7 @@ struct List *BrowserNodesA(STRPTR *array) {
         TAG_END);
       if (node == NULL) {
         FreeBrowserNodes(list);
-        list = NULL;
-        break;
+        return NULL;
       }
       AddTail(list, node);
     }
@@ -103,8 +101,7 @@ struct List *ClickTabsA(STRPTR *array) {
         TAG_END);
       if (node == NULL) {
         FreeClickTabs(list);
-        list = NULL;
-        break;
+        return NULL;
       }
       AddTail(list, node);
     }
