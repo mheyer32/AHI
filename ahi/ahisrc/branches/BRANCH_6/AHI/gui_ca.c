@@ -561,6 +561,55 @@ static struct Hook GadgetHook =
   NULL
 };
 
+static void
+SliderHookFunc( struct Hook *hook,
+		Object *obj,
+		struct TagItem *tags) {
+
+  if(obj == Window_Objs[ ACTID_FREQ] ) {
+    UpdateSliderLevel(ACTID_FREQ, SHOWID_FREQ,
+        &state.FreqSelected, getFreq);
+  }
+
+  else if(obj == Window_Objs[ ACTID_CHANNELS] ) {
+    UpdateSliderLevel(ACTID_CHANNELS, SHOWID_CHANNELS,
+        &state.ChannelsSelected, getChannels);
+  }
+
+  else if(obj == Window_Objs[ ACTID_OUTVOL] ) {
+    UpdateSliderLevel(ACTID_OUTVOL, SHOWID_OUTVOL,
+        &state.OutVolSelected, getOutVol);
+  }
+
+  else if(obj == Window_Objs[ ACTID_MONVOL] ) {
+    UpdateSliderLevel(ACTID_MONVOL, SHOWID_MONVOL,
+        &state.MonVolSelected, getMonVol);
+  }
+
+  else if(obj == Window_Objs[ ACTID_GAIN] ) {
+    UpdateSliderLevel(ACTID_GAIN, SHOWID_GAIN,
+        &state.GainSelected, getGain);
+  }
+
+  else if(obj == Window_Objs[ ACTID_INPUT] ) {
+    UpdateSliderLevel(ACTID_INPUT, SHOWID_INPUT,
+        &state.InputSelected, getInput);
+  }
+
+  else if(obj == Window_Objs[ ACTID_OUTPUT] ) {
+    UpdateSliderLevel(ACTID_OUTPUT, SHOWID_OUTPUT,
+        &state.OutputSelected, getOutput);
+  }
+}
+
+static struct Hook SliderHook = 
+{
+  { NULL, NULL },
+  HookEntry,
+  (HOOKFUNC) SliderHookFunc,
+  NULL
+};
+
 static void IDCMPhookFunc(struct Hook *hook,
 			  Object *obj,
 			  struct IntuiMessage *msg)
@@ -702,8 +751,8 @@ static void IDCMPhookFunc(struct Hook *hook,
 static struct Hook IDCMPhook =
 {
   { NULL, NULL },
+  HookEntry,
   ( HOOKFUNC ) IDCMPhookFunc,
-  NULL,
   NULL
 };
 
@@ -859,7 +908,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.Frequencies,
               SLIDER_Level,         state.FreqSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptFrequency,
@@ -881,7 +931,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.Channels,
               SLIDER_Level,         state.ChannelsSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptChannels,
@@ -903,7 +954,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.OutVols,
               SLIDER_Level,         state.OutVolSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptVolume,
@@ -925,7 +977,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.MonVols,
               SLIDER_Level,         state.MonVolSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptMonitor,
@@ -947,7 +1000,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.Gains,
               SLIDER_Level,         state.GainSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptGain,
@@ -969,7 +1023,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.Inputs,
               SLIDER_Level,         state.InputSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptInput,
@@ -991,7 +1046,8 @@ BOOL BuildGUI(char *screenname) {
               SLIDER_Max,           state.Outputs,
               SLIDER_Level,         state.OutputSelected,
               SLIDER_Orientation,   SORIENT_HORIZ,
-              GA_UserData,            &GadgetHook,
+              GA_UserData,          &GadgetHook,
+              SLIDER_DispHook,      &SliderHook,
             SliderEnd,
             CHILD_Label, LabelObject,
               LABEL_Text,             (char *) msgOptOutput,
