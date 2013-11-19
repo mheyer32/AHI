@@ -254,7 +254,7 @@ static void UpdateStrings(void) {
 
 static void UpdateSliderLevel(int src, int dst, LONG *index, char * (*func)(void)) {
   if(GetAttr( SLIDER_Level, Window_Objs[src], (ULONG *) index)) {
-    Printf("%ld\n", *index);
+    //Printf("%ld\n", *index);
     MySetGadgetAttrs(Window_Objs[dst],
         GA_Text, (*(func))(), 
         TAG_DONE );
@@ -403,12 +403,12 @@ static char drivertext[128];
 static void GUINewMode(void) {
   int Max, Sel;
 
-  sprintf(modetext,"0x%08lx", getAudioMode());
+  snprintf(modetext, sizeof(modetext), "0x%08lx", getAudioMode());
   infoargs[0] = modetext;
   infoargs[1] = getRecord();
   infoargs[2] = getAuthor();
   infoargs[3] = getCopyright();
-  sprintf(drivertext, "Devs:AHI/%s.audio", getDriver());
+  snprintf(drivertext, sizeof(drivertext), "Devs:AHI/%s.audio", getDriver());
   infoargs[4] = drivertext;
   infoargs[5] = getVersion();
 
