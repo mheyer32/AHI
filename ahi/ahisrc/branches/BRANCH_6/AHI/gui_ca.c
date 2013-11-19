@@ -30,7 +30,6 @@
 #include <reaction/reaction_macros.h>
 
 #include <clib/alib_protos.h>
-#include <clib/reaction_lib_protos.h>
 #include <proto/dos.h>
 #include <proto/exec.h>
 #include <proto/gadtools.h>
@@ -40,11 +39,15 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#ifdef __AMIGAOS4__
+#include <stdarg.h>
+#endif
 
 #include "ahi.h"
 #include "ahiprefs_Cat.h"
 #include "support.h"
 #include "gui.h"
+#include "ca_support.h"
 
 #ifdef __AMIGAOS4__
 ULONG
@@ -169,10 +172,19 @@ static void MySetGadgetAttrsA(Object *gadget, struct TagItem *tags) {
   }
 }
 
+#ifdef __AMIGAOS4__
+static void VARARGS68K MySetGadgetAttrs(Object *gadget, ...) {
+  va_list tags;
+  va_startlinear(tags, gadget);
+  MySetGadgetAttrsA(gadget, va_getlinearva(tags, struct TagItem *));
+  va_end(tags);
+}
+#else
 static void MySetGadgetAttrs(Object *gadget, ULONG tag1, ...) {
 
   MySetGadgetAttrsA(gadget, (struct TagItem *) &tag1);
 }
+#endif
 
 /***** Local function to update the strings above ****************************/
 
@@ -713,25 +725,37 @@ static struct Hook IDCMPhook =
 **** Call to open a requester *************************************************
 ******************************************************************************/
 
-static ULONG Req( UBYTE *gadgets, UBYTE *body, ... ) {
-  struct EasyStruct req = {
-    sizeof (struct EasyStruct), 0, NULL, NULL, NULL
-#ifdef __AMIGAOS4__
-    , NULL, NULL
-#endif
-  };
+static ULONG ReqA( STRPTR gadgets, STRPTR body, APTR args ) {
+  struct EasyStruct req;
   ULONG rc;
 
+  memset(&req, 0, sizeof(req));
+  req.es_StructSize   = sizeof(req);
   req.es_Title        = (char *) msgTextProgramName;
-  req.es_TextFormat   = body; 
+  req.es_TextFormat   = body;
   req.es_GadgetFormat = gadgets;
 
   SetAttrs( WO_Window, WA_BusyPointer, TRUE, TAG_DONE);
- 	rc = EasyRequestArgs( Window, &req, NULL, ( ULONG * )( &body + 1 ) );
+  rc = EasyRequestArgs( Window, &req, NULL, args );
   SetAttrs( WO_Window, WA_BusyPointer, FALSE, TAG_DONE);
 
   return rc;
 }
+
+#ifdef __AMIGAOS4__
+static ULONG VARARGS68K Req( STRPTR gadgets, STRPTR body, ...) {
+  ULONG rc;
+  va_list args;
+  va_startlinear(args, body);
+  rc = ReqA( gadgets, body, va_getlinearva(args, APTR) );
+  va_end(args);
+  return rc;
+}
+#else
+static ULONG Req( STRPTR gadgets, STRPTR body, ... ) {
+  return ReqA( gadgets, body, ( ULONG * )( &body + 1 ) );
+}
+#endif
 
 
 /******************************************************************************
