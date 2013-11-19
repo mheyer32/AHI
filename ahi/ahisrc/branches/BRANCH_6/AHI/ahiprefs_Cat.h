@@ -1,6 +1,6 @@
 /****************************************************************
-   This file was created automatically by `FlexCat 2.6.6'
-   from "../../ahisrc/AHI/ahiprefs.cd".
+   This file was created automatically by `FlexCat 2.12'
+   from "./ahiprefs.cd".
 
    Do NOT edit by hand!
 ****************************************************************/
@@ -27,7 +27,7 @@ extern void InitahiprefsCatalog(STRPTR);
 
 
 struct FC_String {
-    const UBYTE *msg;
+    const TEXT *msg;
     LONG id;
 };
 
