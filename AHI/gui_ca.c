@@ -156,11 +156,6 @@ static struct NewMenu NewMenus[] = {
   EndMenu
 };
 
-struct TagItem MapTab2Page[] = {
-  { CLICKTAB_Current, PAGE_Current },
-  { TAG_DONE, 0 }
-};
-
 
 /***** Local function to set gadget attributes *******************************/
 
@@ -1129,11 +1124,8 @@ BOOL BuildGUI(char *screenname) {
         LAYOUT_AddChild, ar[ACTID_TABS] = ClickTabObject,
           CLICKTAB_Labels,      pagelist,
           CLICKTAB_Current,     0L,
-          ICA_TARGET,           ar[ACTID_PAGE],
-          ICA_MAP,              MapTab2Page,
+          CLICKTAB_PageGroup,   ar[ACTID_PAGE],
         ClickTabEnd,
-
-        LAYOUT_AddChild, ar[ACTID_PAGE],
       LayoutEnd,
 
 /* BUTTONS */
