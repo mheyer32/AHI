@@ -94,10 +94,12 @@ struct List *ClickTabsA(STRPTR *array) {
   list = AllocList();
   if (list != NULL) {
     STRPTR label;
+    ULONG id = 0;
     struct Node *node;
     while ((label = *array++)) {
       node = AllocClickTabNode(
         TNA_Text, label,
+        TNA_Number, id++,
         TAG_END);
       if (node == NULL) {
         FreeClickTabs(list);
