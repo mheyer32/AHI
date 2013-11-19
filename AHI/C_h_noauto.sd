@@ -29,7 +29,7 @@ extern void Init%bCatalog(STRPTR);
 
 
 struct FC_String {
-    const UBYTE *msg;
+    const TEXT *msg;
     LONG id;
 };
 
