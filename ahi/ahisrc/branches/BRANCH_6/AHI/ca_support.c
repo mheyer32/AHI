@@ -31,92 +31,92 @@ static void FreeList(struct List *list) {
 #endif
 
 struct List *ChooserLabelsA(STRPTR *array) {
-	struct List *list;
-	list = AllocList();
-	if (list != NULL) {
-		STRPTR label;
-		struct Node *node;
-		while ((label = *array++)) {
-			node = AllocChooserNode(
-				CNA_CopyText, TRUE,
-				CNA_Text, label,
-				TAG_END);
-			if (node == NULL) {
-				FreeChooserLabels(list);
-				list = NULL;
-				break;
-			}
-			AddTail(list, node);
-		}
-	}
-	return list;
+  struct List *list;
+  list = AllocList();
+  if (list != NULL) {
+    STRPTR label;
+    struct Node *node;
+    while ((label = *array++)) {
+      node = AllocChooserNode(
+        CNA_CopyText, TRUE,
+        CNA_Text, label,
+        TAG_END);
+      if (node == NULL) {
+        FreeChooserLabels(list);
+        list = NULL;
+        break;
+      }
+      AddTail(list, node);
+    }
+  }
+  return list;
 }
 
 void FreeChooserLabels(struct List *list) {
-	if (list != NULL) {
-		struct Node *node;
-		while ((node = RemHead(list))) {
-			FreeChooserNode(node);
-		}
-		FreeList(list);
-	}
+  if (list != NULL) {
+    struct Node *node;
+    while ((node = RemHead(list))) {
+      FreeChooserNode(node);
+    }
+    FreeList(list);
+  }
 }
 
 struct List *BrowserNodesA(STRPTR *array) {
-	struct List *list;
-	list = AllocList();
-	if (list != NULL) {
-		STRPTR label;
-		struct Node *node;
-		while ((label = *array++)) {
-			node = AllocListBrowserNode(1,
-				LBNCA_CopyText, TRUE,
-				LBNCA_Text, label,
-				TAG_END);
-			if (node == NULL) {
-				FreeBrowserNodes(list);
-				list = NULL;
-				break;
-			}
-			AddTail(list, node);
-		}
-	}
-	return list;
+  struct List *list;
+  list = AllocList();
+  if (list != NULL) {
+    STRPTR label;
+    struct Node *node;
+    while ((label = *array++)) {
+      node = AllocListBrowserNode(1,
+        LBNCA_CopyText, TRUE,
+        LBNCA_Text, label,
+        TAG_END);
+      if (node == NULL) {
+        FreeBrowserNodes(list);
+        list = NULL;
+        break;
+      }
+      AddTail(list, node);
+    }
+  }
+  return list;
 }
 
 void FreeBrowserNodes(struct List *list) {
-	if (list != NULL) {
-		FreeListBrowserList(list);
-		FreeList(list);
-	}
+  if (list != NULL) {
+    FreeListBrowserList(list);
+    FreeList(list);
+  }
 }
 
 struct List *ClickTabsA(STRPTR *array) {
-	struct List *list;
-	list = AllocList();
-	if (list != NULL) {
-		STRPTR label;
-		struct Node *node;
-		while ((label = *array++)) {
-			node = AllocClickTabNode(
-				TNA_Text, label,
-				TAG_END);
-			if (node == NULL) {
-				FreeClickTabs(list);
-				list = NULL;
-				break;
-			}
-			AddTail(list, node);
-		}
-	}
-	return list;
+  struct List *list;
+  list = AllocList();
+  if (list != NULL) {
+    STRPTR label;
+    struct Node *node;
+    while ((label = *array++)) {
+      node = AllocClickTabNode(
+        TNA_Text, label,
+        TAG_END);
+      if (node == NULL) {
+        FreeClickTabs(list);
+        list = NULL;
+        break;
+      }
+      AddTail(list, node);
+    }
+  }
+  return list;
 }
 
 void FreeClickTabs(struct List *list) {
-	if (list != NULL) {
-		FreeClickTabList(list);
-		FreeList(list);
-	}
+  if (list != NULL) {
+    FreeClickTabList(list);
+    FreeList(list);
+  }
 }
 
 #ifndef __AMIGAOS4__
