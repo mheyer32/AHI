@@ -574,10 +574,6 @@ static void IDCMPhookFunc(struct Hook *hook,
       **      SHIFT + TAB     - Prev page
       */
       ULONG          pos = 0;
-      struct TagItem tags[] = {
-        {CLICKTAB_Current, 0}, 
-        {TAG_DONE, 0}
-      };
 
       GetAttr( CLICKTAB_Current,  Window_Objs[ACTID_TABS], &pos );
 
@@ -588,12 +584,8 @@ static void IDCMPhookFunc(struct Hook *hook,
 
       pos %= 2;
 
-      tags[0].ti_Data = pos;
-
       MySetGadgetAttrs(Window_Objs[ACTID_TABS],
           CLICKTAB_Current, pos, TAG_DONE );
-      MySetGadgetAttrs(Window_Objs[ACTID_PAGE],
-          PAGE_Current, pos, TAG_DONE );
 
       RethinkLayout((struct Gadget *) Window_Objs[LAYOUT_PAGE], Window, NULL, TRUE);
 
