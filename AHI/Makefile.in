@@ -46,7 +46,7 @@ VPATH		= @srcdir@
 
 OBJECTS		= ahi.o support.o ahiprefs_Cat.o
 OBJECTS_BGUI	= gui_bgui.o
-OBJECTS_CA	= gui_ca.o
+OBJECTS_CA	= gui_ca.o ca_support.o
 OBJECTS_MUI	= gui_mui.o
 
 EXECUTABLES	= AHI_MUI # AHI_BGUI AHI_CA
