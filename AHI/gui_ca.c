@@ -91,7 +91,8 @@ enum actionIDs {
 
   ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CLIPMV,
   ACTID_CPULIMIT, SHOWID_CPULIMIT,
-  
+  ACTID_ACTIME, SHOWID_ACTIME,
+  ACTID_SCALEMODE,
 
   ACTID_COUNT
 };
@@ -121,6 +122,7 @@ static struct List       *debuglist                = NULL;
 static struct List       *echolist                 = NULL;
 static struct List       *surroundlist             = NULL;
 static struct List       *clipMVlist               = NULL;
+static struct List       *scalelist                = NULL;
 
 static char *infotext     = NULL;    // Copy of msgProperties
 static char *infotexts[7] = {NULL};  // Entries + NULL
@@ -371,6 +373,10 @@ static void GUINewSettings(void) {
       CHOOSER_Active, globalprefs.ahigp_ClipMasterVolume, TAG_DONE);
   MySetGadgetAttrs(Window_Objs[ACTID_CPULIMIT],
       INTEGER_Number, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16, TAG_DONE);
+  MySetGadgetAttrs(Window_Objs[ACTID_ACTIME],
+      INTEGER_Number, (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16, TAG_DONE);
+  MySetGadgetAttrs(Window_Objs[ACTID_SCALEMODE],
+      CHOOSER_Active, globalprefs.ahigp_ScaleMode, TAG_DONE);
 
   GUINewUnit();
 }
@@ -843,6 +849,12 @@ BOOL BuildGUI(char *screenname) {
   clipMVlist    = ChooserLabels( (char *) msgMVNoClip,
                                  (char *) msgMVClip,
                                  NULL);
+  scalelist     = ChooserLabels( (char *) msgSMFixedSafe,
+                                 (char *) msgSMDynSafe,
+                                 (char *) msgSM0dB,
+                                 (char *) msgSM3dB,
+                                 (char *) msgSM6dB,
+                                 NULL);
 
 
   screen = LockPubScreen(screenname);
@@ -1134,7 +1146,27 @@ BOOL BuildGUI(char *screenname) {
         IntegerEnd,
         CHILD_Label, LabelObject,
           LABEL_Text,           msgGlobOptCPULimit,
-         LabelEnd,
+        LabelEnd,
+
+        LAYOUT_AddChild, ar[ACTID_ACTIME] = IntegerObject,
+          INTEGER_MaxChars,     3,
+          INTEGER_MinVisible,   3,
+          INTEGER_Minimum,      0,
+          INTEGER_Maximum,      100,
+          INTEGER_Number,       (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
+          INTEGER_Arrows,       TRUE,
+        IntegerEnd,
+        CHILD_Label, LabelObject,
+          LABEL_Text,           msgGlobOptACTime,
+        LabelEnd,
+
+        LAYOUT_AddChild, ar[ACTID_SCALEMODE] = ChooserObject,
+          CHOOSER_Labels,       scalelist,
+          CHOOSER_Active,       globalprefs.ahigp_ScaleMode,
+        ChooserEnd,
+        CHILD_Label, LabelObject,
+          LABEL_Text,           msgOptScalemode,
+        LabelEnd,
 
       LayoutEnd,
       CHILD_WeightedHeight, 0,
@@ -1326,9 +1358,10 @@ void CloseGUI(void) {
   if(echolist)     FreeChooserLabels(echolist);
   if(surroundlist) FreeChooserLabels(surroundlist);
   if(clipMVlist)   FreeChooserLabels(clipMVlist);
+  if(scalelist)    FreeChooserLabels(scalelist);
 
   unitlist = modelist = infolist =
-  pagelist = debuglist = echolist = surroundlist = clipMVlist = NULL;
+  pagelist = debuglist = echolist = surroundlist = clipMVlist = scalelist = NULL;
 
   if(Menu) FreeMenus(Menu);
 
@@ -1541,22 +1574,28 @@ void EventLoop(void) {
               case ACTID_ECHO:
               case ACTID_CPULIMIT:
               case ACTID_CLIPMV:
+              case ACTID_ACTIME:
+              case ACTID_SCALEMODE:
               {
                 ULONG debug = AHI_DEBUG_NONE, surround = FALSE, echo = 0, cpu = 90;
-                ULONG clip = FALSE;
+                ULONG clip = FALSE, actime = 0, scalemode = AHI_SCALE_FIXED_0_DB;
     
-                GetAttr( CHOOSER_Active, Window_Objs[ACTID_DEBUG],    &debug);
-                GetAttr( CHOOSER_Active, Window_Objs[ACTID_SURROUND], &surround);
-                GetAttr( CHOOSER_Active, Window_Objs[ACTID_ECHO],     &echo);
-                GetAttr( CHOOSER_Active, Window_Objs[ACTID_CLIPMV],   &clip);
-                GetAttr( INTEGER_Number, Window_Objs[ACTID_CPULIMIT], &cpu);
+                GetAttr( CHOOSER_Active, Window_Objs[ACTID_DEBUG],     &debug);
+                GetAttr( CHOOSER_Active, Window_Objs[ACTID_SURROUND],  &surround);
+                GetAttr( CHOOSER_Active, Window_Objs[ACTID_ECHO],      &echo);
+                GetAttr( CHOOSER_Active, Window_Objs[ACTID_CLIPMV],    &clip);
+                GetAttr( INTEGER_Number, Window_Objs[ACTID_CPULIMIT],  &cpu);
+                GetAttr( INTEGER_Number, Window_Objs[ACTID_ACTIME],    &actime);
+                GetAttr( CHOOSER_Active, Window_Objs[ACTID_SCALEMODE], &scalemode);
     
-                globalprefs.ahigp_DebugLevel      = debug;
-                globalprefs.ahigp_DisableSurround = surround;
-                globalprefs.ahigp_DisableEcho     = (echo == 2);
-                globalprefs.ahigp_FastEcho        = (echo == 1);
-                globalprefs.ahigp_MaxCPU = (cpu << 16) / 100;
-                globalprefs.ahigp_ClipMasterVolume= clip;
+                globalprefs.ahigp_DebugLevel       = debug;
+                globalprefs.ahigp_DisableSurround  = surround;
+                globalprefs.ahigp_DisableEcho      = (echo == 2);
+                globalprefs.ahigp_FastEcho         = (echo == 1);
+                globalprefs.ahigp_MaxCPU           = (cpu << 16) / 100;
+                globalprefs.ahigp_ClipMasterVolume = clip;
+                globalprefs.ahigp_AntiClickTime    = ((actime << 16) + 500) / 1000;
+                globalprefs.ahigp_ScaleMode        = scalemode;
     
                 break;
               }
