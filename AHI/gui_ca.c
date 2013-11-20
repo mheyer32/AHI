@@ -85,6 +85,8 @@ enum actionIDs {
   SHOWID_FREQ, SHOWID_CHANNELS, SHOWID_OUTVOL, SHOWID_MONVOL, SHOWID_GAIN,
   SHOWID_INPUT, SHOWID_OUTPUT,
 
+  ACTID_PLAY,
+
   ACTID_DEBUG, ACTID_SURROUND, ACTID_ECHO, ACTID_CLIPMV,
   ACTID_CPULIMIT, SHOWID_CPULIMIT,
   
@@ -895,13 +897,13 @@ BOOL BuildGUI(char *screenname) {
         CHILD_MaxHeight, screen->RastPort.Font->tf_YSize * 6 + 6, // UHH!!
       LayoutEnd,
 
-      LAYOUT_AddChild, HLayoutObject,
-        (OptionFrame ? LAYOUT_SpaceOuter   : TAG_IGNORE), TRUE,
-        (OptionFrame ? LAYOUT_RightSpacing : TAG_IGNORE), 0,
-        (OptionFrame ? LAYOUT_BevelStyle   : TAG_IGNORE), BVS_GROUP,
-        (OptionFrame ? LAYOUT_Label        : TAG_IGNORE), msgOptions,
+      LAYOUT_AddChild, VLayoutObject,
 
         LAYOUT_AddChild, VLayoutObject,
+          (OptionFrame ? LAYOUT_SpaceOuter   : TAG_IGNORE), TRUE,
+          (OptionFrame ? LAYOUT_RightSpacing : TAG_IGNORE), 0,
+          (OptionFrame ? LAYOUT_BevelStyle   : TAG_IGNORE), BVS_GROUP,
+          (OptionFrame ? LAYOUT_Label        : TAG_IGNORE), msgOptions,
 
           LAYOUT_AddChild, l1 = HLayoutObject,
             LAYOUT_AddChild, ar[ACTID_FREQ] = SliderObject,
@@ -1065,6 +1067,10 @@ BOOL BuildGUI(char *screenname) {
           LayoutEnd,
 
         LayoutEnd,
+
+        LAYOUT_AddChild, ar[ACTID_PLAY] = ButtonObject,
+          GA_Text,                  msgButtonPlay,
+        ButtonEnd,
 
       LayoutEnd,
       CHILD_WeightedHeight, 0,
@@ -1377,13 +1383,12 @@ void EventLoop(void) {
 
             switch( rc & WMHI_GADGETMASK) {
 
-#if 0
               case ACTID_OPEN:
               {
-                if(DoMethod( openreq, FRM_DOREQUEST ) == FRQ_OK) {
+                if(DoMethod( openreq, GFILE_REQUEST, Window ) != 0) {
                   char *file = NULL;
     
-                  GetAttr( FRQ_Path, openreq, (ULONG *) &file);
+                  GetAttr( GETFILE_FullFile, openreq, (ULONG *) &file);
                   NewSettings(file);
                   GUINewSettings();
                 }
@@ -1393,10 +1398,10 @@ void EventLoop(void) {
               case ACTID_SAVEAS:
               {
                 FillUnit();
-                if(DoMethod( savereq, FRM_DOREQUEST ) == FRQ_OK) {
+                if(DoMethod( savereq, GFILE_REQUEST, Window ) != 0) {
                   char *file = NULL;
     
-                  GetAttr( FRQ_Path, savereq, (ULONG *) &file);
+                  GetAttr( GETFILE_FullFile, savereq, (ULONG *) &file);
                   SaveSettings(file, UnitList);
                   if(SaveIcons) {
                     WriteIcon(file);
@@ -1406,7 +1411,6 @@ void EventLoop(void) {
               
               }
               
-#endif
               case ACTID_ABOUT:
                 Req( (char *) msgButtonOK,
                     (char *) msgTextCopyright,
@@ -1504,6 +1508,18 @@ void EventLoop(void) {
                 FillUnit();
                 NewMode(code);
                 GUINewMode();
+                break;
+              }
+
+              case ACTID_PLAY: {
+                ULONG unit_id;
+                struct UnitNode *unit;
+
+                FillUnit();
+                GetAttr( CHOOSER_Selected, Window_Objs[ACTID_UNIT], &unit_id );
+                unit = (struct UnitNode *) GetNode( unit_id, UnitList );
+
+                PlaySound( &unit->prefs );
                 break;
               }
 
