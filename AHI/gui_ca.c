@@ -290,62 +290,6 @@ static struct MenuItem *FindMenuItem(ULONG id) {
 }
 
 
-/***** Local functions to handle the multicolumn list ************************/
-
-static void FreeBrowserNodes2(struct List *list) {
-  struct Node *node, *nextnode;
-
-  if(list == NULL) return;
-
-  node = list->lh_Head;
-
-  while( ( nextnode = node->ln_Succ ) != NULL ) {
-    FreeListBrowserNode(node);
-    node = nextnode;
-  }
-
-  FreeVec(list);
-}
-
-
-static struct List *BrowserNodes2(char **labels1, char **labels2) {
-  struct List *list;
-
-  list = AllocVec(sizeof(struct List), MEMF_PUBLIC|MEMF_CLEAR);
-
-  if(list != NULL) {
-    struct Node *node;
-
-    NewList(list);
-
-    while (*labels1 && *labels2)
-    {
-      node = AllocListBrowserNode(2,
-              LBNA_Column, 0,
-                LBNCA_Text, *labels1,
-              LBNA_Column, 1,
-                LBNCA_Text, *labels2,
-              TAG_DONE );
-      if (node != NULL )
-      {
-        AddTail(list, node);
-      }
-      else {
-        FreeBrowserNodes2(list);
-        list = NULL;
-        break;
-      }
-
-      labels1++;
-      labels2++;
-    }
-
-  }
-
-  return list;
-}
-
-
 /***** Local function to update the unit gadget (and everything below) *******/
 
 static void GUINewSettings(void) {
@@ -1208,7 +1152,7 @@ BOOL BuildGUI(char *screenname) {
     WA_SizeGadget,          TRUE,
     WA_SizeBBottom,         TRUE,
     WA_NewLookMenus,        TRUE,
-    WA_InnerWidth,          600,
+    WA_InnerWidth,          500,
     WA_InnerHeight,         400,
 
     WINDOW_MenuStrip,       Menu,

@@ -11,6 +11,8 @@ struct List *ClickTabsA(STRPTR *);
 void FreeClickTabs(struct List *);
 struct List *BrowserNodesA(STRPTR *);
 void FreeBrowserNodes(struct List *);
+struct List *BrowserNodes2(STRPTR *, STRPTR *);
+void FreeBrowserNodes2(struct List *);
 
 #ifdef __AMIGAOS4__
 #define ChooserLabels(...) ({ \

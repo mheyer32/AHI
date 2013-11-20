@@ -39,7 +39,7 @@ struct List *ChooserLabelsA(STRPTR *array) {
     while ((label = *array++)) {
       node = AllocChooserNode(
         CNA_CopyText, TRUE,
-        CNA_Text, label,
+        CNA_Text,     label,
         TAG_END);
       if (node == NULL) {
         FreeChooserLabels(list);
@@ -61,6 +61,35 @@ void FreeChooserLabels(struct List *list) {
   }
 }
 
+struct List *ClickTabsA(STRPTR *array) {
+  struct List *list;
+  list = AllocList();
+  if (list != NULL) {
+    STRPTR label;
+    ULONG id = 0;
+    struct Node *node;
+    while ((label = *array++)) {
+      node = AllocClickTabNode(
+        TNA_Text,   label,
+        TNA_Number, id++,
+        TAG_END);
+      if (node == NULL) {
+        FreeClickTabs(list);
+        return NULL;
+      }
+      AddTail(list, node);
+    }
+  }
+  return list;
+}
+
+void FreeClickTabs(struct List *list) {
+  if (list != NULL) {
+    FreeClickTabList(list);
+    FreeList(list);
+  }
+}
+
 struct List *BrowserNodesA(STRPTR *array) {
   struct List *list;
   list = AllocList();
@@ -70,7 +99,7 @@ struct List *BrowserNodesA(STRPTR *array) {
     while ((label = *array++)) {
       node = AllocListBrowserNode(1,
         LBNCA_CopyText, TRUE,
-        LBNCA_Text, label,
+        LBNCA_Text,     label,
         TAG_END);
       if (node == NULL) {
         FreeBrowserNodes(list);
@@ -89,20 +118,22 @@ void FreeBrowserNodes(struct List *list) {
   }
 }
 
-struct List *ClickTabsA(STRPTR *array) {
+struct List *BrowserNodes2(STRPTR *array1, STRPTR *array2) {
   struct List *list;
   list = AllocList();
   if (list != NULL) {
-    STRPTR label;
-    ULONG id = 0;
+    STRPTR label1, label2;
     struct Node *node;
-    while ((label = *array++)) {
-      node = AllocClickTabNode(
-        TNA_Text, label,
-        TNA_Number, id++,
+    while ((label1 = *array1++) && (label2 = *array2++)) {
+      node = AllocListBrowserNode(2,
+        LBNCA_CopyText, TRUE,
+        LBNCA_Text,     label1,
+        LBNA_Column,    1,
+        LBNCA_CopyText, TRUE,
+        LBNCA_Text,     label2,
         TAG_END);
       if (node == NULL) {
-        FreeClickTabs(list);
+        FreeBrowserNodes2(list);
         return NULL;
       }
       AddTail(list, node);
@@ -111,11 +142,8 @@ struct List *ClickTabsA(STRPTR *array) {
   return list;
 }
 
-void FreeClickTabs(struct List *list) {
-  if (list != NULL) {
-    FreeClickTabList(list);
-    FreeList(list);
-  }
+void FreeBrowserNodes2(struct List *list) {
+  FreeBrowserNodes(list);
 }
 
 #ifndef __AMIGAOS4__
