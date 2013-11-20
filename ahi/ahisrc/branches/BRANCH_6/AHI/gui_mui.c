@@ -1008,7 +1008,7 @@ void EventLoop(void)
         globalprefs.ahigp_MaxCPU           = ((cpu << 16) + 50) / 100;
         globalprefs.ahigp_ClipMasterVolume = clip;
         globalprefs.ahigp_AntiClickTime    = ((actime << 16) + 500) / 1000;
-	globalprefs.ahigp_ScaleMode        = scalemode;
+        globalprefs.ahigp_ScaleMode        = scalemode;
 
         break;
       }
