@@ -28,6 +28,7 @@
 #include <libraries/gadtools.h>
 #include <reaction/reaction.h>
 #include <reaction/reaction_macros.h>
+#include <workbench/workbench.h>
 
 #include <clib/alib_protos.h>
 #include <proto/dos.h>
@@ -35,6 +36,7 @@
 #include <proto/gadtools.h>
 #include <proto/intuition.h>
 #include <proto/slider.h>
+#include <proto/icon.h>
 
 #include <math.h>
 #include <stdio.h>
@@ -98,26 +100,27 @@ enum actionIDs {
 /* Version of ClassAct gadgets to use */
 long __classactversion = 41;
 
-static struct MsgPort *AppPort                  = NULL;
-static struct Window  *Window                   = NULL;
-static struct Menu    *Menu                     = NULL;
-static void           *vi                       = NULL;
-static Object         *WO_Window                = NULL;
-static Object         *Window_Objs[ACTID_COUNT] = {NULL};
-static Object         *openreq                  = NULL;
-static Object         *savereq                  = NULL;
+static struct MsgPort    *AppPort                  = NULL;
+static struct DiskObject *AppIcon                  = NULL;
+static struct Window     *Window                   = NULL;
+static struct Menu       *Menu                     = NULL;
+static void              *vi                       = NULL;
+static Object            *WO_Window                = NULL;
+static Object            *Window_Objs[ACTID_COUNT] = {NULL};
+static Object            *openreq                  = NULL;
+static Object            *savereq                  = NULL;
 
 /* Dynamic */
-static struct List    *unitlist                 = NULL;
-static struct List    *modelist                 = NULL;
-static struct List    *infolist                 = NULL;
+static struct List       *unitlist                 = NULL;
+static struct List       *modelist                 = NULL;
+static struct List       *infolist                 = NULL;
 
 /* Static */
-static struct List    *pagelist                 = NULL;
-static struct List    *debuglist                = NULL;
-static struct List    *echolist                 = NULL;
-static struct List    *surroundlist             = NULL;
-static struct List    *clipMVlist               = NULL;
+static struct List       *pagelist                 = NULL;
+static struct List       *debuglist                = NULL;
+static struct List       *echolist                 = NULL;
+static struct List       *surroundlist             = NULL;
+static struct List       *clipMVlist               = NULL;
 
 static char *infotext     = NULL;    // Copy of msgProperties
 static char *infotexts[7] = {NULL};  // Entries + NULL
@@ -1151,11 +1154,17 @@ BOOL BuildGUI(char *screenname) {
   }
 
   AppPort = CreateMsgPort();
-  if (AppPort == NULL) {
+
+  AppIcon = GetDiskObjectNew("PROGDIR:AHI");
+
+  if (AppPort == NULL || AppIcon == NULL) {
     Printf((char *) msgTextNoWindow);
     Printf("\n");
     return FALSE;
   }
+
+  AppIcon->do_CurrentX = NO_ICON_POSITION;
+  AppIcon->do_CurrentY = NO_ICON_POSITION;
 
   WO_Window = WindowObject,
     WA_PubScreen,           screen,
@@ -1177,6 +1186,8 @@ BOOL BuildGUI(char *screenname) {
     WINDOW_IDCMPHookBits,   IDCMP_RAWKEY,
     WINDOW_AppPort,         AppPort,
     WINDOW_IconifyGadget,   TRUE,
+    WINDOW_Icon,            AppIcon,
+    WINDOW_IconNoDispose,   TRUE,
 
     WINDOW_Layout, VLayoutObject,
       LAYOUT_SpaceOuter,    TRUE,
@@ -1298,8 +1309,10 @@ void CloseGUI(void) {
   WO_Window = NULL;
   Window    = NULL;
 
+  if(AppIcon) FreeDiskObject(AppIcon);
   if(AppPort) DeleteMsgPort(AppPort);
 
+  AppIcon   = NULL;
   AppPort   = NULL;
 
   /* Dynamic */
