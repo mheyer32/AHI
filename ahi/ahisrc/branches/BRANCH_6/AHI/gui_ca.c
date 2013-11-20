@@ -96,25 +96,26 @@ enum actionIDs {
 /* Version of ClassAct gadgets to use */
 long __classactversion = 41;
 
-static struct Window *Window                   = NULL;
-static struct Menu   *Menu                     = NULL;
-static void          *vi                       = NULL;
-static Object        *WO_Window                = NULL;
-static Object        *Window_Objs[ACTID_COUNT] = {NULL};
-static Object        *openreq                  = NULL;
-static Object        *savereq                  = NULL;
+static struct MsgPort *AppPort                  = NULL;
+static struct Window  *Window                   = NULL;
+static struct Menu    *Menu                     = NULL;
+static void           *vi                       = NULL;
+static Object         *WO_Window                = NULL;
+static Object         *Window_Objs[ACTID_COUNT] = {NULL};
+static Object         *openreq                  = NULL;
+static Object         *savereq                  = NULL;
 
 /* Dynamic */
-static struct List   *unitlist                 = NULL;
-static struct List   *modelist                 = NULL;
-static struct List   *infolist                 = NULL;
+static struct List    *unitlist                 = NULL;
+static struct List    *modelist                 = NULL;
+static struct List    *infolist                 = NULL;
 
 /* Static */
-static struct List   *pagelist                 = NULL;
-static struct List   *debuglist                = NULL;
-static struct List   *echolist                 = NULL;
-static struct List   *surroundlist             = NULL;
-static struct List   *clipMVlist               = NULL;
+static struct List    *pagelist                 = NULL;
+static struct List    *debuglist                = NULL;
+static struct List    *echolist                 = NULL;
+static struct List    *surroundlist             = NULL;
+static struct List    *clipMVlist               = NULL;
 
 static char *infotext     = NULL;    // Copy of msgProperties
 static char *infotexts[7] = {NULL};  // Entries + NULL
@@ -857,7 +858,7 @@ BOOL BuildGUI(char *screenname) {
     return FALSE;
   }
 
-  indicatorwidth = max(indicatorwidth, 16 * screen->RastPort.Font->tf_XSize);
+  indicatorwidth = max(indicatorwidth, 10 * screen->RastPort.Font->tf_XSize);
   if(screen->Height > 240) {
     OptionFrame = TRUE;
   }
@@ -1143,6 +1144,13 @@ BOOL BuildGUI(char *screenname) {
     SetAttrs( l7, LAYOUT_AlignLabels, l1, TAG_DONE);
   }
 
+  AppPort = CreateMsgPort();
+  if (AppPort == NULL) {
+    Printf((char *) msgTextNoWindow);
+    Printf("\n");
+    return FALSE;
+  }
+
   WO_Window = WindowObject,
     WA_PubScreen,           screen,
     WA_Title,               msgTextProgramName,
@@ -1153,7 +1161,7 @@ BOOL BuildGUI(char *screenname) {
     WA_SizeGadget,          TRUE,
     WA_SizeBBottom,         TRUE,
     WA_NewLookMenus,        TRUE,
-    WA_InnerWidth,          800,
+    WA_InnerWidth,          600,
     WA_InnerHeight,         400,
 
     WINDOW_MenuStrip,       Menu,
@@ -1161,6 +1169,8 @@ BOOL BuildGUI(char *screenname) {
     WINDOW_GadgetUserData,  WGUD_HOOK,
     WINDOW_IDCMPHook,       &IDCMPhook,
     WINDOW_IDCMPHookBits,   IDCMP_RAWKEY,
+    WINDOW_AppPort,         AppPort,
+    WINDOW_IconifyGadget,   TRUE,
 
     WINDOW_Layout, VLayoutObject,
       LAYOUT_SpaceOuter,    TRUE,
@@ -1282,6 +1292,10 @@ void CloseGUI(void) {
   WO_Window = NULL;
   Window    = NULL;
 
+  if(AppPort) DeleteMsgPort(AppPort);
+
+  AppPort   = NULL;
+
   /* Dynamic */
   if(unitlist)     FreeChooserLabels(unitlist);
   if(modelist)     FreeBrowserNodes(modelist);
@@ -1335,6 +1349,15 @@ void EventLoop(void) {
 
           case WMHI_CLOSEWINDOW:
             running=FALSE;
+            break;
+
+          case WMHI_ICONIFY:
+            RA_Iconify(WO_Window);
+            Window = NULL;
+            break;
+
+          case WMHI_UNICONIFY:
+            Window = RA_OpenWindow(WO_Window);
             break;
 
           case WMHI_GADGETUP:
