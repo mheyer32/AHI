@@ -20,6 +20,7 @@
 
 #define NO_INLINE_STDARG
 #define ALL_REACTION_CLASSES
+#define OMIT_HELP_MENU
 
 #include <config.h>
 
@@ -74,7 +75,9 @@ enum actionIDs {
   ACTID_OPEN, ACTID_SAVEAS, ACTID_ABOUT, ACTID_QUIT,
   ACTID_DEFAULT, ACTID_LASTSAVED, ACTID_RESTORE,
   ACTID_ICONS,
+#ifndef OMIT_HELP_MENU
   ACTID_HELP, ACTID_GUIDE, ACTID_HELPINDEX,
+#endif
   ACTID_SAVE, ACTID_USE,
 
   ACTID_TABS, ACTID_PAGE,
@@ -156,11 +159,13 @@ static struct NewMenu NewMenus[] = {
     Item( NULL /* Restore */,             NULL, ACTID_RESTORE   ),
   Title( NULL /* Settings */ ),
     ItCk( NULL /* Create Icons? */,       NULL, ACTID_ICONS, CHECKIT|MENUTOGGLE ),
+#ifndef OMIT_HELP_MENU
   Title( NULL /* Help */ ),
     ItCk( NULL /* Help... */,             NULL, ACTID_HELP, COMMSEQ),
     ItemBar,
     Item( NULL /* AHI User's guide... */, NULL, ACTID_GUIDE),
     Item( NULL /* Concept Index... */,    NULL, ACTID_HELPINDEX ),
+#endif
   EndMenu
 };
 
@@ -205,10 +210,12 @@ static void UpdateStrings(void) {
     &msgItemRestore,
     &msgMenuSettings,
     &msgItemCreateIcons,
+#ifndef OMIT_HELP_MENU
     &msgMenuHelp,
     &msgItemHelp,
     &msgItemUsersGuide,
     &msgItemConceptIndex
+#endif
   };
 
   struct NewMenu   *menuptr;
@@ -1457,8 +1464,9 @@ void EventLoop(void) {
                 break;
               }
 
-#if 0
-    
+#ifndef OMIT_HELP_MENU
+#error "Code for opening ahi.guide using amigaguide.library needs to be written."
+/*
               case ACTID_HELP: {
                 APTR lock = BGUI_LockWindow(Window);
                 if(!BGUI_Help( Window, HELPFILE, "AHI", NULL)) {
@@ -1485,6 +1493,7 @@ void EventLoop(void) {
                 BGUI_UnlockWindow(lock);
                 break;
               }
+*/
 #endif
     
               case ACTID_UNIT: {
