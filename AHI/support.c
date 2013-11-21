@@ -305,12 +305,12 @@ static BOOL AddUnit(struct List *list, int unit) {
 
 static void FillUnitName(struct UnitNode *u) {
   if(u->prefs.ahiup_Unit != AHI_NO_UNIT) {
-    sprintf((char *) &u->name, msgUnitDevice, u->prefs.ahiup_Unit);
+    snprintf(u->name, sizeof(u->name), msgUnitDevice, u->prefs.ahiup_Unit);
   }
   else {
-    sprintf((char *) &u->name, msgUnitMusic);
+    snprintf(u->name, sizeof(u->name), msgUnitMusic);
   }
-  u->node.ln_Name = (char *) &u->name;
+  u->node.ln_Name = u->name;
 }
 
 /******************************************************************************
