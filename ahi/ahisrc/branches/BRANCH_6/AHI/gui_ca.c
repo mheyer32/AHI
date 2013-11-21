@@ -322,10 +322,17 @@ static void GUINewSettings(void) {
                   (globalprefs.ahigp_FastEcho    ? 1 : 0),     TAG_DONE);
   MySetGadgetAttrs(Window_Objs[ACTID_CLIPMV],
       CHOOSER_Active, globalprefs.ahigp_ClipMasterVolume, TAG_DONE);
+#ifndef __AMIGAOS4__
   MySetGadgetAttrs(Window_Objs[ACTID_CPULIMIT],
       INTEGER_Number, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16, TAG_DONE);
   MySetGadgetAttrs(Window_Objs[ACTID_ACTIME],
       INTEGER_Number, (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16, TAG_DONE);
+#else
+  MySetGadgetAttrs(Window_Objs[ACTID_CPULIMIT],
+      SLIDER_Level, (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16, TAG_DONE);
+  MySetGadgetAttrs(Window_Objs[ACTID_ACTIME],
+      SLIDER_Level, (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16, TAG_DONE);
+#endif
   MySetGadgetAttrs(Window_Objs[ACTID_SCALEMODE],
       CHOOSER_Active, globalprefs.ahigp_ScaleMode, TAG_DONE);
 
@@ -863,6 +870,8 @@ BOOL BuildGUI(char *screenname) {
         CHILD_MaxHeight, screen->RastPort.Font->tf_YSize * 6 + 6, // UHH!!
       LayoutEnd,
 
+      LAYOUT_WeightBar, TRUE,
+
       LAYOUT_AddChild, VLayoutObject,
 
         LAYOUT_AddChild, VLayoutObject,
@@ -1087,6 +1096,7 @@ BOOL BuildGUI(char *screenname) {
           LABEL_Text,           msgGlobOptMasterVol,
         LabelEnd,
 
+#ifndef __AMIGAOS4__
         LAYOUT_AddChild, ar[ACTID_CPULIMIT] = IntegerObject,
           INTEGER_MaxChars,     3,
           INTEGER_MinVisible,   3,
@@ -1095,10 +1105,24 @@ BOOL BuildGUI(char *screenname) {
           INTEGER_Number,       (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16,
           INTEGER_Arrows,       TRUE,
         IntegerEnd,
+#else
+        LAYOUT_AddChild, ar[ACTID_CPULIMIT] = SliderObject,
+          SLIDER_Orientation,   SLIDER_HORIZONTAL,
+          SLIDER_Min,           0,
+          SLIDER_Max,           100,
+          SLIDER_Level,         (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16,
+          SLIDER_LevelFormat,   "%ld%%",
+          SLIDER_LevelPlace,    PLACETEXT_IN,
+          SLIDER_LevelJustify,  SLJ_CENTER,
+          SLIDER_LevelMaxLen,   4,
+          SLIDER_LevelDomain,   "100%",
+        SliderEnd,
+#endif
         CHILD_Label, LabelObject,
           LABEL_Text,           msgGlobOptCPULimit,
         LabelEnd,
 
+#ifndef __AMIGAOS4__
         LAYOUT_AddChild, ar[ACTID_ACTIME] = IntegerObject,
           INTEGER_MaxChars,     3,
           INTEGER_MinVisible,   3,
@@ -1107,6 +1131,19 @@ BOOL BuildGUI(char *screenname) {
           INTEGER_Number,       (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
           INTEGER_Arrows,       TRUE,
         IntegerEnd,
+#else
+        LAYOUT_AddChild, ar[ACTID_ACTIME] = SliderObject,
+          SLIDER_Orientation,   SLIDER_HORIZONTAL,
+          SLIDER_Min,           0,
+          SLIDER_Max,           100,
+          SLIDER_Level,         (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
+          SLIDER_LevelFormat,   "%ld%%",
+          SLIDER_LevelPlace,    PLACETEXT_IN,
+          SLIDER_LevelJustify,  SLJ_CENTER,
+          SLIDER_LevelMaxLen,   4,
+          SLIDER_LevelDomain,   "100%",
+        SliderEnd,
+#endif
         CHILD_Label, LabelObject,
           LABEL_Text,           msgGlobOptACTime,
         LabelEnd,
@@ -1537,8 +1574,13 @@ void EventLoop(void) {
                 GetAttr( CHOOSER_Active, Window_Objs[ACTID_SURROUND],  &surround);
                 GetAttr( CHOOSER_Active, Window_Objs[ACTID_ECHO],      &echo);
                 GetAttr( CHOOSER_Active, Window_Objs[ACTID_CLIPMV],    &clip);
+#ifndef __AMIGAOS4__
                 GetAttr( INTEGER_Number, Window_Objs[ACTID_CPULIMIT],  &cpu);
                 GetAttr( INTEGER_Number, Window_Objs[ACTID_ACTIME],    &actime);
+#else
+                GetAttr( SLIDER_Level,   Window_Objs[ACTID_CPULIMIT],  &cpu);
+                GetAttr( SLIDER_Level,   Window_Objs[ACTID_ACTIME],    &actime);
+#endif
                 GetAttr( CHOOSER_Active, Window_Objs[ACTID_SCALEMODE], &scalemode);
     
                 globalprefs.ahigp_DebugLevel       = debug;
