@@ -774,8 +774,8 @@ BOOL BuildGUI(char *screenname) {
 	Object **ar = Window_Objs;
   struct Screen *screen;
   BOOL OptionFrame = FALSE;
-  LONG indicatorwidth = 100;
   Object *l1, *l2, *l3, *l4, *l5, *l6, *l7;
+  const char *domainstring = "XXXXXXXX";
 
   UpdateStrings();
 
@@ -833,7 +833,6 @@ BOOL BuildGUI(char *screenname) {
     return FALSE;
   }
 
-  indicatorwidth = max(indicatorwidth, 10 * screen->RastPort.Font->tf_XSize);
   if(screen->Height > 240) {
     OptionFrame = TRUE;
   }
@@ -898,9 +897,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
           LAYOUT_AddChild, l2 = HLayoutObject,
@@ -921,9 +920,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
           LAYOUT_AddChild, l3 = HLayoutObject,
@@ -944,9 +943,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
           LAYOUT_AddChild, l4 = HLayoutObject,
@@ -967,9 +966,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
           LAYOUT_AddChild, l5 = HLayoutObject,
@@ -990,9 +989,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
           LAYOUT_AddChild, l6 = HLayoutObject,
@@ -1013,9 +1012,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
           LAYOUT_AddChild, l7 = HLayoutObject,
@@ -1036,9 +1035,9 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
+              BUTTON_DomainString,  domainstring,
             ButtonEnd,
-            CHILD_MinWidth,         indicatorwidth,
-            CHILD_MaxWidth,         indicatorwidth,
+            CHILD_WeightedWidth,    0,
           LayoutEnd,
 
         LayoutEnd,
