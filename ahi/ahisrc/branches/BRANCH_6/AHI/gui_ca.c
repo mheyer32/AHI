@@ -271,7 +271,6 @@ static void UpdateStrings(void) {
 
 static void UpdateSliderLevel(int src, int dst, LONG *index, char * (*func)(void)) {
   if(GetAttr( SLIDER_Level, Window_Objs[src], (ULONG *) index)) {
-    //Printf("%ld\n", *index);
     MySetGadgetAttrs(Window_Objs[dst],
         GA_Text, (*(func))(), 
         TAG_DONE );
@@ -1115,7 +1114,7 @@ BOOL BuildGUI(char *screenname) {
           SLIDER_Min,           0,
           SLIDER_Max,           100,
           SLIDER_Level,         (globalprefs.ahigp_MaxCPU * 100 + 32768) >> 16,
-          SLIDER_LevelFormat,   "%ld%%",
+          SLIDER_LevelFormat,   msgPercentFmt,
           SLIDER_LevelPlace,    PLACETEXT_IN,
           SLIDER_LevelJustify,  SLJ_CENTER,
           SLIDER_LevelMaxLen,   4,
@@ -1142,7 +1141,7 @@ BOOL BuildGUI(char *screenname) {
           SLIDER_Min,           0,
           SLIDER_Max,           100,
           SLIDER_Level,         (globalprefs.ahigp_AntiClickTime * 1000 + 32768) >> 16,
-          SLIDER_LevelFormat,   "%ld%%",
+          SLIDER_LevelFormat,   msgACTimeFmt,
           SLIDER_LevelPlace,    PLACETEXT_IN,
           SLIDER_LevelJustify,  SLJ_CENTER,
           SLIDER_LevelMaxLen,   4,
