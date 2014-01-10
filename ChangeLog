@@ -1,3 +1,10 @@
+2013-01-10  Fredrik Wikstrom  <fredrik@a500.org>
+
+	* AHI Preferences: Added conditional disabling of some of the
+	Advanced tab GUI controls in gui_ca.c same as in gui_mui.c.
+
+	* Bumped revision of AHI Preferences to 6.4.
+
 2013-11-22  Fredrik Wikstrom  <fredrik@a500.org>
 
 	* AHI Preferences: Fixed up gui_ca.c for AmigaOS 4.1.

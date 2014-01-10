@@ -52,6 +52,8 @@
 #include "gui.h"
 #include "ca_support.h"
 
+extern struct Library *AHIBase;
+
 #ifdef __AMIGAOS4__
 ULONG
 HookEntry(struct Hook *hookPtr, Object *obj, APTR message) {
@@ -1071,6 +1073,7 @@ BOOL BuildGUI(char *screenname) {
         LabelEnd,
 
         LAYOUT_AddChild, ar[ACTID_ECHO] = PopUpObject,
+          GA_Disabled,          AHIBase->lib_Version >= 5,
           CHOOSER_Labels,       echolist,
           CHOOSER_Active,       (globalprefs.ahigp_DisableEcho ? 2 : 0) |
                                 (globalprefs.ahigp_FastEcho    ? 1 : 0),
@@ -1080,6 +1083,7 @@ BOOL BuildGUI(char *screenname) {
         LabelEnd,
 
         LAYOUT_AddChild, ar[ACTID_SURROUND] = PopUpObject,
+          GA_Disabled,          AHIBase->lib_Version >= 5,
           CHOOSER_Labels,       surroundlist,
           CHOOSER_Active,       globalprefs.ahigp_DisableSurround,
         ChooserEnd,
@@ -1088,6 +1092,7 @@ BOOL BuildGUI(char *screenname) {
         LabelEnd,
 
         LAYOUT_AddChild, ar[ACTID_CLIPMV] = PopUpObject,
+          GA_Disabled,          AHIBase->lib_Version >= 5,
           CHOOSER_Labels,       clipMVlist,
           CHOOSER_Active,       globalprefs.ahigp_ClipMasterVolume,
         ChooserEnd,
@@ -1132,6 +1137,7 @@ BOOL BuildGUI(char *screenname) {
         IntegerEnd,
 #else
         LAYOUT_AddChild, ar[ACTID_ACTIME] = SliderObject,
+          GA_Disabled,          AHIBase->lib_Version <= 4,
           SLIDER_Orientation,   SLIDER_HORIZONTAL,
           SLIDER_Min,           0,
           SLIDER_Max,           100,
@@ -1148,6 +1154,7 @@ BOOL BuildGUI(char *screenname) {
         LabelEnd,
 
         LAYOUT_AddChild, ar[ACTID_SCALEMODE] = ChooserObject,
+          GA_Disabled,          AHIBase->lib_Version <= 4,
           CHOOSER_Labels,       scalelist,
           CHOOSER_Active,       globalprefs.ahigp_ScaleMode,
         ChooserEnd,
