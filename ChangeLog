@@ -3,6 +3,9 @@
 	* AHI Preferences: Added conditional disabling of some of the
 	Advanced tab GUI controls in gui_ca.c same as in gui_mui.c.
 
+	* AHI Preferences: Fixed gui_ca.c to use the localised format
+	strings for CPU usage limit and Anti-click time controls.
+
 	* Bumped revision of AHI Preferences to 6.4.
 
 2013-11-22  Fredrik Wikstrom  <fredrik@a500.org>
