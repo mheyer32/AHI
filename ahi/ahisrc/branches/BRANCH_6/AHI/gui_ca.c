@@ -1144,8 +1144,8 @@ BOOL BuildGUI(char *screenname) {
           SLIDER_LevelFormat,   msgACTimeFmt,
           SLIDER_LevelPlace,    PLACETEXT_IN,
           SLIDER_LevelJustify,  SLJ_CENTER,
-          SLIDER_LevelMaxLen,   4,
-          SLIDER_LevelDomain,   "100%",
+          SLIDER_LevelMaxLen,   6,
+          SLIDER_LevelDomain,   "100 ms",
         SliderEnd,
 #endif
         CHILD_Label, LabelObject,
