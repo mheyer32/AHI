@@ -1,4 +1,4 @@
-2013-01-10  Fredrik Wikstrom  <fredrik@a500.org>
+2014-01-10  Fredrik Wikstrom  <fredrik@a500.org>
 
 	* AHI Preferences: Added conditional disabling of some of the
 	Advanced tab GUI controls in gui_ca.c same as in gui_mui.c.
