@@ -175,10 +175,17 @@ static struct NewMenu NewMenus[] = {
 /***** Local function to set gadget attributes *******************************/
 
 static void MySetGadgetAttrsA(Object *gadget, struct TagItem *tags) {
+  if((gadget == Window_Objs[ACTID_TABS]) ||
+     (gadget == Window_Objs[ACTID_SAVE]) ||
+     (gadget == Window_Objs[ACTID_USE]) ||
+     (gadget == Window_Objs[ACTID_QUIT])) {
+    RefreshSetGadgetAttrsA((struct Gadget *) gadget, Window, NULL, tags);
+  } else
 
   if(SetPageGadgetAttrsA((struct Gadget *) gadget, Window_Objs[ACTID_PAGE],
                          Window, NULL, tags)) {
-    RefreshGList((struct Gadget *) gadget, Window, NULL, 1);
+    RefreshPageGadget((struct Gadget *) gadget, Window_Objs[ACTID_PAGE],
+                      Window, NULL);
   }
 }
 
