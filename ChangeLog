@@ -1,3 +1,15 @@
+2014-01-18  Fredrik Wikstrom  <fredrik@a500.org>
+
+	* AHI Preferences: Fixed MySetGadgetAttrsA() function in
+	  gui_ca.c.
+
+	* AHI Preferences: The SLIDER_LevelMaxLen and
+	  SLIDER_LevelDomain tags are now set according to the
+	  localised format strings instead of assuming same
+	  requirements as for English.
+
+	* Bumped revision of AHI Preferences to 6.5.
+
 2014-01-10  Fredrik Wikstrom  <fredrik@a500.org>
 
 	* AHI Preferences: Added conditional disabling of some of the
