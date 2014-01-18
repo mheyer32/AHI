@@ -783,7 +783,13 @@ BOOL BuildGUI(char *screenname) {
   struct Screen *screen;
   BOOL OptionFrame = FALSE;
   Object *l1, *l2, *l3, *l4, *l5, *l6, *l7;
-  const char *domainstring = "XXXXXXXX";
+  static char options_domain[10];
+  static char cpulimit_domain[10];
+  static char actime_domain[10];
+
+  snprintf(options_domain, sizeof(options_domain), "XXXXXXXX");
+  snprintf(cpulimit_domain, sizeof(cpulimit_domain), msgPercentFmt, 100);
+  snprintf(actime_domain, sizeof(actime_domain), msgACTimeFmt, 100);
 
   UpdateStrings();
 
@@ -905,7 +911,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -928,7 +934,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -951,7 +957,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -974,7 +980,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -997,7 +1003,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -1020,7 +1026,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -1043,7 +1049,7 @@ BOOL BuildGUI(char *screenname) {
               BUTTON_BevelStyle,    BVS_NONE,
               BUTTON_Transparent,   TRUE,
               BUTTON_Justification, BCJ_LEFT,
-              BUTTON_DomainString,  domainstring,
+              BUTTON_DomainString,  options_domain,
             ButtonEnd,
             CHILD_WeightedWidth,    0,
           LayoutEnd,
@@ -1124,8 +1130,8 @@ BOOL BuildGUI(char *screenname) {
           SLIDER_LevelFormat,   msgPercentFmt,
           SLIDER_LevelPlace,    PLACETEXT_IN,
           SLIDER_LevelJustify,  SLJ_CENTER,
-          SLIDER_LevelMaxLen,   4,
-          SLIDER_LevelDomain,   "100%",
+          SLIDER_LevelMaxLen,   strlen(cpulimit_domain),
+          SLIDER_LevelDomain,   cpulimit_domain,
         SliderEnd,
 #endif
         CHILD_Label, LabelObject,
@@ -1151,8 +1157,8 @@ BOOL BuildGUI(char *screenname) {
           SLIDER_LevelFormat,   msgACTimeFmt,
           SLIDER_LevelPlace,    PLACETEXT_IN,
           SLIDER_LevelJustify,  SLJ_CENTER,
-          SLIDER_LevelMaxLen,   6,
-          SLIDER_LevelDomain,   "100 ms",
+          SLIDER_LevelMaxLen,   strlen(actime_domain),
+          SLIDER_LevelDomain,   actime_domain,
         SliderEnd,
 #endif
         CHILD_Label, LabelObject,
