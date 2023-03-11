@@ -92,8 +92,8 @@ esac
 
 top_builddir=$(pwd)
 
-: ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused ${cflags} ${optflags}"}
-: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc ${os_includedir}"}
+: ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused  -Wno-pointer-sign ${cflags} ${optflags}"}
+: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc -I${srcdir}/external/OpenPCI"}
 : ${LDFLAGS="${linkerflags}"}
 : ${ASFLAGS="${asflags}"}
 : ${ARFLAGS="-ru"}
@@ -127,7 +127,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_CHECK_PROGS( ROBODOC, RoboDoc robodoc )
-AC_CHECK_PROGS( FLEXCAT, FlexCat flexcat )
+AC_PATH_PROGS( FLEXCAT, FlexCat flexcat,,[${ac_abs_confdir}/_download/FlexCat/Linux-i386] )
 AC_CHECK_PROGS( SFDC, SFDC sfdc )
 AC_CHECK_PROGS( LHA, lha )
 
