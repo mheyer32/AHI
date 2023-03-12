@@ -26,12 +26,12 @@
 # define _AHIST(name,value)		st ## name = value
 # define _AHIE(prefix,name,value)	e ## name = value
 #else
-# define _AHIA(prefix,name,value)	_AHIA2(prefix,name ## ,value)
-# define _AHIM(prefix,name,value)	_AHIM2(prefix,name ## ,value)
-# define _AHIV(prefix,name,value)	_AHIV2(prefix,name ## ,value)
-# define _AHIB(prefix,name,value)	_AHIB2(prefix,name ## ,value)
-# define _AHIP(prefix,name)		_AHIP2(prefix,name ## )
-# define _AHIE(prefix,name,value)	_AHIE2(prefix,name ## ,value)
+# define _AHIA(prefix,name,value)	_AHIA2(prefix,name,value)
+# define _AHIM(prefix,name,value)	_AHIM2(prefix,name,value)
+# define _AHIV(prefix,name,value)	_AHIV2(prefix,name,value)
+# define _AHIB(prefix,name,value)	_AHIB2(prefix,name,value)
+# define _AHIP(prefix,name)			_AHIP2(prefix,name)
+# define _AHIE(prefix,name,value)	_AHIE2(prefix,name,value)
 # define _AHIA2(prefix,name,value)	AHIA ## prefix ## _ ## name = value
 # define _AHIM2(prefix,name,value)	AHIM ## prefix ## _ ## name = value
 # define _AHIV2(prefix,name,value)	AHIV ## prefix ## _ ## name = value
