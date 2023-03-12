@@ -22,7 +22,7 @@ struct DriverBase
 #endif
 
 #define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)
-#define UtilityBase   ((struct UtilityBase*)   AHIsubBase->utilitybase)
+#define UtilityBase   ((struct Library*)       AHIsubBase->utilitybase)
 
 
 struct DriverData

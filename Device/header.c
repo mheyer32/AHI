@@ -131,7 +131,7 @@ struct Library            *IFFParseBase   = NULL;
 struct IntuitionBase      *IntuitionBase  = NULL;
 struct LocaleBase         *LocaleBase     = NULL;
 struct Device             *TimerBase      = NULL;
-struct UtilityBase        *UtilityBase    = NULL;
+struct Library            *UtilityBase    = NULL;
 
 #if defined( __AMIGAOS4__ )
 struct ExecIFace          *IExec          = NULL;
@@ -591,7 +591,7 @@ OpenLibs ( void )
 
   /* Utility Library */
 
-  UtilityBase = (struct UtilityBase *) OpenLibrary( "utility.library", 37 );
+  UtilityBase = (struct Library *) OpenLibrary( "utility.library", 37 );
 
   if( UtilityBase == NULL)
   {
