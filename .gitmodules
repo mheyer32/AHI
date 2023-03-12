@@ -1,3 +1,6 @@
 [submodule "external/OpenPCI"]
 	path = external/OpenPCI
 	url = git@github.com:mheyer32/OpenPCI.git
+[submodule "external/mkguide"]
+	path = external/mkguide
+	url = git@github.com:mheyer32/mkguide.git
