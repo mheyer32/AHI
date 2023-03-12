@@ -130,6 +130,7 @@ AC_CHECK_PROGS( ROBODOC, RoboDoc robodoc )
 AC_PATH_PROGS( FLEXCAT, FlexCat flexcat,,[${ac_abs_confdir}/_download/FlexCat/Linux-i386] )
 AC_CHECK_PROGS( SFDC, SFDC sfdc )
 AC_CHECK_PROGS( LHA, lha )
+AC_PATH_PROGS( MAKEINFO, mkguide,,[${ac_abs_confdir}/external/mkguide/src])
 
 if test -z "$SFDC"; then
  AC_MSG_ERROR( sfdc missing. )
