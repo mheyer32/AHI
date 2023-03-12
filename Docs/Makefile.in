@@ -107,12 +107,11 @@ ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
 
 
 # AmigaGuide® files
-
 ahidev.guide:	ahidev.texinfo ahidev.ver
-	makeinfo --amiga --output ahidev.guide $<
+	${MAKEINFO}  --amiga --output ahidev.guide $<
 
 ahiusr.guide:	ahiusr.texinfo ahiusr.ver
-	makeinfo --amiga --output ahiusr.guide $<
+	${MAKEINFO} --amiga --output ahiusr.guide $<
 
 
 # DVI files
@@ -145,10 +144,10 @@ ahiusr.html:	ahiusr.texinfo ahiusr.ver
 # Macro-expanded files
 
 ahidev.texinfo-exp:	ahidev.texinfo ahidev.ver
-	makeinfo -E $@ --output /dev/null $<
+	${MAKEINFO} -E $@ --output /dev/null $<
 
 ahiusr.texinfo-exp:	ahiusr.texinfo ahiusr.ver
-	makeinfo -E $@ --output /dev/null $<
+	${MAKEINFO} -E $@ --output /dev/null $<
 
 
 # Auto-generated version files
