@@ -32,7 +32,7 @@ struct DriverBase
 #endif
 
 #define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)
-#define UtilityBase   ((struct UtilityBase*)   AHIsubBase->utilitybase)
+#define UtilityBase   ((struct Library*)       AHIsubBase->utilitybase)
 
 #ifdef __AMIGAOS4__
 # ifndef DRIVER_NEEDS_GLOBAL_EXECBASE
