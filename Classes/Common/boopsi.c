@@ -62,7 +62,7 @@ const UWORD ClassRevision   = REVISION;
 struct DosLibrary*    DOSBase;
 struct ExecBase*      SysBase;
 struct IntuitionBase* IntuitionBase;
-struct UtilityBase*   UtilityBase;
+struct Library*       UtilityBase;
 
 
 #if defined (__MORPHOS__)
@@ -182,7 +182,7 @@ _ClassInit(struct ClassLibrary*  library,
 
   IntuitionBase = (struct IntuitionBase*) OpenLibrary(INTUITIONNAME, 37);
   DOSBase       = (struct DosLibrary*)    OpenLibrary(DOSNAME, 37);
-  UtilityBase   = (struct UtilityBase*)   OpenLibrary(UTILITYNAME, 37);
+  UtilityBase   = (struct Library*)       OpenLibrary(UTILITYNAME, 37);
 
   if (IntuitionBase == NULL) {
     Alert(AN_Unknown|AG_OpenLib|AO_Intuition);
