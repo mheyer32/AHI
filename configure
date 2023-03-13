@@ -2440,7 +2440,7 @@ esac
 top_builddir=$(pwd)
 
 : ${CFLAGS="-g -W -Wall -Wstrict-prototypes -Wno-unused  -Wno-pointer-sign ${optflags}"}
-: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc -I${srcdir}/external/OpenPCI"}
+: ${CPPFLAGS="-DCPU=\"\\\"${CPU}\\\"\" -I. -I${srcdir} -I${top_builddir} -I${top_builddir}/Include/gcc"}
 : ${LDFLAGS="${linkerflags}"}
 : ${ASFLAGS="${asflags}"}
 : ${ARFLAGS="-ru"}
