@@ -3,6 +3,7 @@
 
 #include <devices/ahi.h>
 #include <exec/libraries.h>
+#include <dos/dosextens.h>
 
 #include "DriverBase.h"
 
