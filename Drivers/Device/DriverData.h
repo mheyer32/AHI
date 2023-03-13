@@ -14,7 +14,7 @@ struct DeviceBase
 };
 
 #define DRIVERBASE_SIZEOF (sizeof (struct DeviceBase))
-#define DOSBase  ((struct DosLibrary*) DeviceBase->dosbase)
+#define DOSBase  (*(struct DosLibrary**)&DeviceBase->dosbase)
 
 struct DeviceData
 {
