@@ -18,11 +18,11 @@ struct DriverBase
 };
 
 #ifndef DRIVER_NEED_GLOBAL_EXECBASE
-#define SysBase       ((struct ExecBase*)      AHIsubBase->execbase)
+#define SysBase       (*(struct ExecBase**)      &AHIsubBase->execbase)
 #endif
 
-#define IntuitionBase ((struct IntuitionBase*) AHIsubBase->intuitionbase)
-#define UtilityBase   ((struct Library*)       AHIsubBase->utilitybase)
+#define IntuitionBase (*(struct IntuitionBase**) &AHIsubBase->intuitionbase)
+#define UtilityBase   (*(struct Library**)       &AHIsubBase->utilitybase)
 
 
 struct DriverData
