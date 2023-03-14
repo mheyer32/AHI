@@ -20,6 +20,7 @@ host_alias	= @host_alias@
 INSTALL		= @INSTALL@
 INSTALL_DATA	= @INSTALL_DATA@
 LHA		= @LHA@
+ZIP		= @ZIP@
 
 CPPFLAGS	= @CPPFLAGS@
 CFLAGS		= @CFLAGS@
@@ -32,9 +33,9 @@ VPATH		= @srcdir@
 VERSION		= $(shell cat ${top_srcdir}/version.ver)
 REVISION	= $(shell cat $(top_srcdir)/version.rev)
 
-USRARCHIVE	= $(host_alias)-ahiusr-$(VERSION).$(REVISION).lha
+USRARCHIVE	= $(host_alias)-ahiusr-$(VERSION).$(REVISION).zip
 USRREADME	= $(host_alias)-ahiusr-$(VERSION).$(REVISION).readme
-DEVARCHIVE	= $(host_alias)-ahidev-$(VERSION).$(REVISION).lha
+DEVARCHIVE	= $(host_alias)-ahidev-$(VERSION).$(REVISION).zip
 DEVREADME	= $(host_alias)-ahidev-$(VERSION).$(REVISION).readme
 
 #
@@ -92,14 +93,14 @@ bindist:
 	-$(RM) $(USRARCHIVE) $(DEVARCHIVE)
 
 	pwd=`pwd` bn=`basename $(DISTDIR)` && \
-	  ( cd $(DISTDIR)/.. && $(LHA) $${pwd}/$(DEVARCHIVE) \
+	  ( cd $(DISTDIR)/.. && $(ZIP) $${pwd}/$(DEVARCHIVE) \
 	  $${bn}/ahidev* $${bn}/ChangeLog $${bn}/COPYING* $${bn}/Developer )
-	cp $(DISTDIR)/ahidev.readme $(DEVREADME)
+	cp $(DISTDIR)/ahidev.readme $(DEVREADME) || true;
 
 	pwd=`pwd` bn=`basename $(DISTDIR)` && \
-	  ( cd $(DISTDIR)/.. && $(LHA) $${pwd}/$(USRARCHIVE) \
+	  ( cd $(DISTDIR)/.. && $(ZIP) $${pwd}/$(USRARCHIVE) \
 	  $${bn}/ahiusr* $${bn}/ChangeLog $${bn}/COPYING* $${bn}/User )
-	cp $(DISTDIR)/ahiusr.readme $(USRREADME)
+	cp $(DISTDIR)/ahiusr.readme $(USRREADME) || true;
 
 	$(RM) -r $(DISTDIR)
 
