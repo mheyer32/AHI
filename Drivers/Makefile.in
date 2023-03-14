@@ -9,7 +9,7 @@
 @SET_MAKE@
 
 top_srcdir	= @top_srcdir@
-srcdir		= @srcdir@
+srcdir		= @abs_srcdir@
 DISTDIR		= @DISTDIR@
 
 DEVDIR		= ${DISTDIR}/Developer
