@@ -103,6 +103,7 @@ AC_CHECK_PROGS( ROBODOC, RoboDoc robodoc )
 AC_PATH_PROGS( FLEXCAT, FlexCat flexcat,,[${ac_abs_confdir}/_download/FlexCat/Linux-i386] )
 AC_CHECK_PROGS( SFDC, SFDC sfdc )
 AC_CHECK_PROGS( LHA, lha )
+AC_CHECK_PROGS( ZIP, zip )
 AC_PATH_PROGS( MAKEINFO, mkguide,,[${ac_abs_confdir}/external/mkguide/src])
 
 if test -z "$SFDC"; then
@@ -115,8 +116,14 @@ else
  if test -n "`$LHA 2>&1 | grep 'o.*compression method'`"; then
   LHA="$LHA -ao5"
  else
-  LHA="$LHA -a -r"
+  LHA="$LHA -a -r -sd"
  fi
+fi
+
+if test -z "$ZIP"; then
+ AC_MSG_WARN( zip missing. )
+else
+ ZIP="$ZIP -9 -r"
 fi
 
 if test -z "$ROBODOC"; then
