@@ -28,14 +28,16 @@ ROBODOC		= @ROBODOC@
 
 VPATH		= @srcdir@
 
+MAKEINFO	= @MAKEINFO@
 
 #
 # Files
 ########################################
-
+#ahidev.dvi ahidev.ps
 TARGET_DEVDOCS	= ahidev.guide ahidev.html \
 		  ahi.doc ahi.guide ahi.html \
 		  ahi_sub.doc ahi_sub.guide ahi_sub.html
+#ahiusr.dvi ahiusr.ps
 TARGET_USRDOCS	= ahiusr.guide  ahiusr.html
 
 TARGETS		= ahidev.readme ahiusr.readme \

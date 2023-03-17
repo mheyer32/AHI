@@ -44,8 +44,7 @@ DEVREADME	= $(host_alias)-ahidev-$(VERSION).$(REVISION).readme
 
 .PHONY:		all clean distclean maintainer-clean bindist revup
 
-#Docs
-SUBDIRS		= AHI AddAudioModes Classes Device  Drivers Examples Include
+SUBDIRS		= AHI AddAudioModes Classes Device  Drivers Examples Include Docs
 
 ifneq (@CFLAG_RESIDENT@,)
 SUBDIRS 	+= AHI-Handler

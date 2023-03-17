@@ -99,7 +99,7 @@ AC_PROG_INSTALL
 #AC_PROG_CC
 AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
-AC_CHECK_PROGS( ROBODOC, RoboDoc robodoc )
+AC_PATH_PROGS( ROBODOC, RoboDoc robodoc,,[${ac_abs_confdir}/external/robodoc/Source] )
 AC_PATH_PROGS( FLEXCAT, FlexCat flexcat,,[${ac_abs_confdir}/_download/FlexCat/Linux-i386] )
 AC_CHECK_PROGS( SFDC, SFDC sfdc )
 AC_CHECK_PROGS( LHA, lha )
@@ -128,6 +128,8 @@ fi
 
 if test -z "$ROBODOC"; then
  AC_MSG_WARN( robodoc missing. )
+else
+ ROBODOC="$ROBODOC"
 fi
 
 # Checks for libraries.
