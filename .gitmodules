@@ -4,3 +4,6 @@
 [submodule "external/mkguide"]
 	path = external/mkguide
 	url = git@github.com:mheyer32/mkguide.git
+[submodule "external/robodoc"]
+	path = external/robodoc
+	url = git@github.com:mheyer32/robodoc.git
