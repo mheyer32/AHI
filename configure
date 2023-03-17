@@ -3160,20 +3160,22 @@ do
 set dummy $ac_prog; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
-if ${ac_cv_prog_ROBODOC+:} false; then :
+if ${ac_cv_path_ROBODOC+:} false; then :
   $as_echo_n "(cached) " >&6
 else
-  if test -n "$ROBODOC"; then
-  ac_cv_prog_ROBODOC="$ROBODOC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
+  case $ROBODOC in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_ROBODOC="$ROBODOC" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in ${ac_abs_confdir}/external/robodoc/Source
 do
   IFS=$as_save_IFS
   test -z "$as_dir" && as_dir=.
     for ac_exec_ext in '' $ac_executable_extensions; do
   if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
-    ac_cv_prog_ROBODOC="$ac_prog"
+    ac_cv_path_ROBODOC="$as_dir/$ac_word$ac_exec_ext"
     $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
     break 2
   fi
@@ -3181,9 +3183,10 @@ done
   done
 IFS=$as_save_IFS
 
+  ;;
+esac
 fi
-fi
-ROBODOC=$ac_cv_prog_ROBODOC
+ROBODOC=$ac_cv_path_ROBODOC
 if test -n "$ROBODOC"; then
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ROBODOC" >&5
 $as_echo "$ROBODOC" >&6; }
@@ -3438,6 +3441,8 @@ fi
 if test -z "$ROBODOC"; then
  { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: robodoc missing. " >&5
 $as_echo "$as_me: WARNING: robodoc missing. " >&2;}
+else
+ ROBODOC="$ROBODOC"
 fi
 
 
