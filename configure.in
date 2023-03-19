@@ -100,7 +100,7 @@ AC_PROG_INSTALL
 AC_PROG_RANLIB
 AC_CHECK_PROG( RM, rm, rm )
 AC_PATH_PROGS( ROBODOC, RoboDoc robodoc,,[${ac_abs_confdir}/external/robodoc/Source] )
-AC_PATH_PROGS( FLEXCAT, FlexCat flexcat,,[${ac_abs_confdir}/_download/FlexCat/Linux-i386] )
+AC_PATH_PROGS( FLEXCAT, FlexCat flexcat,,[${ac_abs_confdir}/external/flexcat/src/bin_unix] )
 AC_CHECK_PROGS( SFDC, SFDC sfdc )
 AC_CHECK_PROGS( LHA, lha )
 AC_CHECK_PROGS( ZIP, zip )
