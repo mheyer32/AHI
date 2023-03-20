@@ -28,7 +28,7 @@ RANLIB          = @RANLIB@
 STRIP		= @STRIP@ @STRIPFLAGS@
 OBJCOPY		= @OBJCOPY@
 
-CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${top_srcdir}/external/OpenPCI -I${common_srcdir} -I${srcdir} \
+CPPFLAGS	= @CPPFLAGS@ -I${top_srcdir} -I${common_srcdir} -I${srcdir} \
 		  -DDRIVER="\"${DRIVER}\""
 CFLAGS		= @CFLAGS@
 ASFLAGS		= @ASFLAGS@
