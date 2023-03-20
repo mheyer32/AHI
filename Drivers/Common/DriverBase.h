@@ -12,7 +12,7 @@ struct DriverBase
     UWORD           pad;
     BPTR            seglist;
 #ifndef DRIVER_NEEDS_GLOBAL_EXECBASE
-    struct Library* execbase;
+    struct ExecBase* execbase;
 #endif
     struct Library* intuitionbase;
     struct Library* utilitybase;
@@ -31,7 +31,7 @@ struct DriverBase
 # define SysBase      (*((struct ExecBase**)   &AHIsubBase->execbase))
 #endif
 
-#define IntuitionBase (*(struct IntuitionBase**) &AHIsubBase->intuitionbase)
+#define IntuitionBase (*(struct Library**)       &AHIsubBase->intuitionbase)
 #define UtilityBase   (*(struct Library**)       &AHIsubBase->utilitybase)
 
 #ifdef __AMIGAOS4__

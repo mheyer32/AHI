@@ -31,7 +31,7 @@
 # define FUNCARRAY_32BIT_NATIVE 0xfffefffe
 #endif
 
-#if !defined( __AROS__ ) && !defined( __amithlon__ )
+#if !defined( __AROS__ ) && !defined( __amithlon__ ) && !defined(__amigaos3__)
 extern void _etext;
 #else
 # define _etext RomTag+1 // Fake it

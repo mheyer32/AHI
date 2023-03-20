@@ -4,12 +4,12 @@
 #include <exec/types.h>
 #include <proto/exec.h>
 
-#include "DriverData.h"
-
 extern const char  LibName[];
 extern const char  LibIDString[];
 extern const UWORD LibVersion;
 extern const UWORD LibRevision;
+
+struct DriverBase;
 
 void
 ReqA( const char*        text,
@@ -43,6 +43,8 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 #if defined(__MORPHOS__)
 
+#error MORPHOS
+
 # include <emul/emulregs.h>
 # define INTGW(q,t,n,f)							\
 	q t n ## _code(void) { APTR d = (APTR) REG_A1; return f(d); }	\
@@ -52,6 +54,8 @@ MyKPrintFArgs( UBYTE*           fmt,
 # define INTERRUPT_NODE_TYPE NT_INTERRUPT
 
 #elif defined(__amithlon__)
+
+#error AMITHLON
 
 # define INTGW(q,t,n,f)							\
 	__asm("	.text");						\
@@ -74,6 +78,8 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 #elif defined(__AROS__)
 
+#error AROS
+
 # include <aros/asmcall.h>
 # define INTGW(q,t,n,f)							\
 	q AROS_UFH3(t, n,						\
@@ -87,6 +93,8 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 #elif defined(__AMIGAOS4__)
 
+#error AMIAGOS4
+
 # define INTGW(q,t,n,f) \
     __asm(#n "=" #f ); \
     q t n(APTR);
@@ -96,6 +104,29 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 #elif defined(__amiga__) && defined(__mc68000__)
 
+static inline short SWAPWORD(short val)
+{
+    __asm __volatile("ror.w	#8,%0"
+
+                     : "=d"(val)
+                     : "0"(val));
+
+    return val;
+}
+
+static inline long SWAPLONG(long val)
+{
+    __asm __volatile(
+        "ror.w	#8,%0 \n\t"
+        "swap	%0 \n\t"
+        "ror.w	#8,%0"
+
+        : "=d"(val)
+        : "0"(val));
+
+    return val;
+}
+
 # define INTGW(q,t,n,f)                                                 \
        q t n(APTR d __asm("a1")) { return f(d); }
 # define PROCGW(q,t,n,f)						\
@@ -104,6 +135,7 @@ MyKPrintFArgs( UBYTE*           fmt,
 # define INTERRUPT_NODE_TYPE NT_INTERRUPT
 
 #else
+#error XXXX
 # error Unknown OS/CPU
 #endif
 

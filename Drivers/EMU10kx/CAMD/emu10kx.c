@@ -41,13 +41,13 @@ struct PortInfo
 /*** Module entry (exactly 4 bytes!!) *****************************************/
 
 __asm("
-  moveq #-1,d0
+  moveq #-1,d0 \n\t
   rts
 ");
 
 /*** Identification data must follow directly *********************************/
 
-static const struct MidiDeviceData MidiDeviceData =
+static struct MidiDeviceData MidiDeviceData =
 {
   MDD_Magic,
   "emu10kx",
@@ -65,7 +65,7 @@ static const struct MidiDeviceData MidiDeviceData =
 
 /*** Global data **************************************************************/
 
-static struct ExecBase*    SysBase         = NULL;
+struct ExecBase*    SysBase         = NULL;
 static struct Library*     EMU10kxBase     = NULL;
 static struct EMU10kxCamd* EMU10kxCamd     = NULL;
 static struct PortInfo*    PortInfos       = NULL;
@@ -108,12 +108,12 @@ TransmitFunc( struct Hook*    hook         __asm( "a0" ),
   ULONG            res;
 
   __asm volatile (
-    "movel %1,a2
-     movel %2,a0
-     jsr   (a0)
-     swapw d0
-     movew d1,d0
-     swapw d0"
+    "movel %1,a2 \n\t"
+    "movel %2,a0 \n\t"
+    "jsr   (a0) \n\t"
+    "swapw d0 \n\t"
+    "movew d1,d0 \n\t"
+    "swapw d0"
     : "=r"(res)
     : "m" (pi->UserData), "m" (pi->TransmitFunc)
     : "a0", "a2" );
@@ -130,10 +130,10 @@ ReceiveFunc( struct Hook*           hook        __asm( "a0" ),
   struct PortInfo* pi = (struct PortInfo*) hook->h_Data;
 
   __asm volatile (
-    "movel %0,d0
-     movel %1,a2
-     movel %2,a0
-     jsr   (a0)"
+    "movel %0,d0 \n\t"
+    "movel %1,a2 \n\t"
+    "movel %2,a0  \n\t"
+    "jsr   (a0)"
     : 
     : "m" (msg->InputByte), "m" (pi->UserData), "m" (pi->ReceiveFunc)
     : "d0", "a0", "a2" );

@@ -41,8 +41,6 @@
 
 #include <stdarg.h>
 
-#include "library.h"
-
 #include "linuxsupport.h"
 #include "hwaccess.h"
 #include "8010.h"
