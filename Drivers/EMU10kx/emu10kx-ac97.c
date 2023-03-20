@@ -25,6 +25,7 @@
 #include "library.h"
 #include "8010.h"
 #include "hwaccess.h"
+#include "DriverData.h"
 
 /******************************************************************************
 ** Read from AC97 register ****************************************************

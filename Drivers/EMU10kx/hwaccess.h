@@ -35,6 +35,7 @@
 #ifdef AHI
 #include "linuxsupport.h"
 #include "efxmgr.h"
+#include "library.h"
 #else
 #include <linux/fs.h>
 #include <linux/sound.h>

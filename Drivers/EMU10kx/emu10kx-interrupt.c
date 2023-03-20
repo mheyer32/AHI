@@ -33,6 +33,7 @@
 
 #include "library.h"
 #include "8010.h"
+#include "DriverData.h"
 
 #define min(a,b) ((a)<(b)?(a):(b))
 

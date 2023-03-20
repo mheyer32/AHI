@@ -13,7 +13,7 @@ DriverInit( struct DriverBase* AHIsubBase )
 {
   struct DeviceBase* DeviceBase = (struct DeviceBase*) AHIsubBase;
 
-  DOSBase = (struct DosLibrary*)OpenLibrary( DOSNAME, 37 );
+  DOSBase = OpenLibrary( DOSNAME, 37 );
 
   if( DOSBase == NULL )
   {
