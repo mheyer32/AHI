@@ -516,10 +516,10 @@ BOOL BuildGUI(char *screenname)
 
   UpdateStrings();
 
-  MUIMasterBase = (void *)OpenLibrary("muimaster.library", MUIMASTER_VLATEST);
+  MUIMasterBase = (void *)OpenLibrary("muimaster.library", MUIMASTER_VMIN);
   if(MUIMasterBase == NULL)
   {
-    Printf((char *) msgTextNoOpen, (ULONG) "muimaster.library", MUIMASTER_VLATEST);
+    Printf((char *) msgTextNoOpen, (ULONG) "muimaster.library", MUIMASTER_VMIN);
     Printf("\n");
     return FALSE;
   }
