@@ -117,8 +117,10 @@ int main(int argc, char **argv) {
 
         s = (char *) FindToolType(toolarray,"PUBSCREEN");
 
-        if( s != NULL ) {
-          strlcpy(pubscreen, s, sizeof(pubscreen));
+        if (s != NULL) {
+          //        strlcpy(pubscreen, s, sizeof(pubscreen));
+          strcpy(pubscreen, s);
+          pubscreen[sizeof(pubscreen) - 1] = 0;
           args.pubscreen = pubscreen;
         }
 
@@ -641,7 +643,3 @@ char *getVersion(void) {
 char *getAnnotation(void) {
   return annotationBuffer;
 }
-
-#if defined(__mc68000__) && defined(__libnix__)
-void __main(void) {}
-#endif

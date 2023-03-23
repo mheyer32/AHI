@@ -79,7 +79,7 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 	u32 busaddx;
 	int i;
 
-	DPD(2, "requested pages is: %d\n", pages);
+	DPD(2, "requested pages is: %ld\n", pages);
 
 	if ((mem->emupageindex = emu10k1_addxmgr_alloc(pages * PAGE_SIZE, card)) < 0)
 	{
@@ -119,7 +119,7 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 #endif
 //	                KPrintF("Got bus addr %08lx for address %08lx\n", busaddx, mem->addr + pagecount * PAGE_SIZE);
 
-			DPD(3, "Bus Addx: %#x\n", busaddx);
+			DPD(3, "bus address: %lx\n", busaddx);
 
 			pageindex = mem->emupageindex + pagecount * PAGE_SIZE / EMUPAGESIZE + i;
 
