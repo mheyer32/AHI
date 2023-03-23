@@ -51,7 +51,7 @@ AllocPages( size_t size, ULONG req )
     address = (void *) a; // tbd: we just lost a couple of bytes
   }
 #else
-  // FIXME: This should be non-cachable, DMA-able memory
+// FIXME: This should be non-cachable, DMA-able memory
   address = AllocMem( size + PAGE_SIZE - 1, req & ~MEMF_CLEAR );
 
   if( address != NULL )
@@ -63,6 +63,8 @@ AllocPages( size_t size, ULONG req )
 				 & ~(PAGE_SIZE-1) ) );
     Permit();
   }
+
+//  address =  pci_allocdma_mem( size, MEM_PCI);
 #endif
 
   if( address != NULL && ( req & MEMF_CLEAR ) )
@@ -84,7 +86,8 @@ free_page( unsigned long addr )
 {
 //  printf( "Freeing page at %08x\n", addr );
 #ifndef __AMIGAOS4__
-  FreeMem( (void*) addr, PAGE_SIZE );
+       FreeMem( (void*) addr, PAGE_SIZE );
+//    pci_freedma_mem((void*) addr, PAGE_SIZE );
 #endif
 }
 
@@ -93,8 +96,8 @@ pci_alloc_consistent( void* pci_dev, size_t size, dma_addr_t* dma_handle )
 {
   void* res;
 
-//  res = pci_alloc_dmamem( pci_dev, size );
-  res = (void*) AllocPages( size, MEMF_PUBLIC | MEMF_CLEAR );
+    res = pci_allocdma_mem( size, MEM_PCI );
+//  res = (void*) AllocPages( size, MEMF_PUBLIC | MEMF_CLEAR );
 
 #ifdef __AMIGAOS4__
   *dma_handle = (dma_addr_t) res;
@@ -116,7 +119,7 @@ pci_free_consistent( void* pci_dev, size_t size, void* addr, dma_addr_t dma_hand
   //DebugPrintF("FreeAbs %lx size = %ld\n", pageaddr, size);
   //FreeVec( pageaddr, size + PAGE_SIZE); tbd
 #else
-  FreeMem( addr, size );
-//  pci_free_dmamem( pci_dev, addr, size );
+//  FreeMem( addr, size );
+  pci_freedma_mem(addr, size );
 #endif
 }

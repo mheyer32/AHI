@@ -106,6 +106,11 @@ MyKPrintFArgs( UBYTE*           fmt,
 
 #elif defined(__amiga__) && defined(__mc68000__)
 
+// When reading through its interfaces, OpenPCI converts BE to LE and vice versa
+// So it looks as if PCI operated on BE
+//#define	SWAPLONG(y) y
+//#define	SWAPWORD(y) y
+
 static inline short SWAPWORD(short val)
 {
     __asm __volatile("ror.w	#8,%0"

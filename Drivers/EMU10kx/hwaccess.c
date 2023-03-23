@@ -35,10 +35,6 @@
 
 #ifdef __AMIGAOS4__
 #include <proto/expansion.h>
-
-#else
-#include <libraries/openpci.h>
-#include <proto/openpci.h>
 #endif
 
 #include <proto/exec.h>
@@ -69,65 +65,6 @@
 #define A_IPR_MIDIRECVBUFEMPTY  A_IPR_MIDIRECVBUFEMPTY1
 #define A_INTE_MIDITXENABLE     A_INTE_MIDITXENABLE1
 #define A_INTE_MIDIRXENABLE     A_INTE_MIDIRXENABLE1
-#endif
-
-
-
-#ifndef __AMIGAOS4__
-inline unsigned short my_inb(unsigned long port)
-{
-  unsigned char res = pci_inb( port );
-
-  //  KPrintF( "my_inb(%08lx) ->%02lx\n", port, res );
-
-  return res;
-}
-
-inline unsigned short my_inw(unsigned long port)
-{
-  unsigned short res = SWAPWORD( pci_inw( port ) );
-
-  //  KPrintF( "my_inw(%08lx) ->%04lx\n", port, res );
-
-  return res;
-}
-
-inline unsigned int my_inl(unsigned long port)
-{
-  unsigned int res = SWAPLONG( pci_inl( port ) );
-
-  //  KPrintF( "my_inl(%08lx) ->%08lx\n", port, res );
-
-  return res;
-}
-
-inline void my_outb(unsigned char value, unsigned long port)
-{
-  //  KPrintF( "my_outb(%08lx,%02lx)\n", port, value );
-
-  pci_outb( value, port );
-}
-
-inline void my_outw(unsigned short value, unsigned long port)
-{
-  //  KPrintF( "my_outw(%08lx,%04lx)\n", port, value );
-
-  pci_outw( SWAPWORD( value ), port );
-}
-
-inline void my_outl(unsigned int value, unsigned long port)
-{
-  //  KPrintF( "my_outl(%08lx,%08lx)\n", port, value );
-
-  pci_outl( SWAPLONG( value ), port );
-}
-
-#define inb  my_inb
-#define inw  my_inw
-#define inl  my_inl
-#define outb my_outb
-#define outw my_outw
-#define outl my_outl
 #endif
 
 #else // AHI

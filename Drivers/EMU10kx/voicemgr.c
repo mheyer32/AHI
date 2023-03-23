@@ -87,7 +87,7 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 	u32 busaddx;
 	int i;
 
-	DPD(2, "requested pages is: %d\n", pages);
+	DPD(2, "requested pages is: %ld\n", pages);
 
 	if ((mem->emupageindex = emu10k1_addxmgr_alloc(pages * PAGE_SIZE, card)) < 0)
 	{
@@ -96,12 +96,11 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 	}
 
 #ifdef AHI
-	if ((mem->addr = pci_alloc_consistent(card->pci_dev, pages * PAGE_SIZE, &mem->dma_handle))
-	    == NULL) {
-	  mem->pages = 0;
-	  DPF(1, "couldn't allocate dma memory\n");
-	  return -1;
-	}
+    if ((mem->addr = pci_alloc_consistent(card->pci_dev, pages * PAGE_SIZE, &mem->dma_handle)) == NULL) {
+        mem->pages = 0;
+        DPF(1, "couldn't allocate dma memory\n");
+        return -1;
+    }
 //	KPrintF("Got addr %08lx, dma handler %08lx\n", mem->addr, mem->dma_handle);
 #endif
 	
@@ -124,9 +123,11 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 			busaddx = (u32) ( mem->addr + pagecount * PAGE_SIZE) + i * EMUPAGESIZE;
 #else
 
-			busaddx = (u32) pci_logic_to_physic_addr(
-			  mem->addr + pagecount * PAGE_SIZE, card->pci_dev )
-			  + i * EMUPAGESIZE;
+//			busaddx = (u32) pci_logic_to_physic_addr(
+//			  mem->addr + pagecount * PAGE_SIZE, card->pci_dev )
+//			  + i * EMUPAGESIZE;
+
+            busaddx = (u32) mem->dma_handle + pagecount * PAGE_SIZE + i * EMUPAGESIZE;
 #endif
 
 #else
@@ -134,13 +135,15 @@ int emu10k1_voice_alloc_buffer(struct emu10k1_card *card, struct voice_mem *mem,
 #endif
 //	                KPrintF("Got bus addr %08lx for address %08lx\n", busaddx, mem->addr + pagecount * PAGE_SIZE);
 
-			DPD(3, "Bus Addx: %#x\n", busaddx);
+			DPD(3, "bus address: %lx\n", busaddx);
 
 			pageindex = mem->emupageindex + pagecount * PAGE_SIZE / EMUPAGESIZE + i;
 
 			((u32 *) card->virtualpagetable.addr)[pageindex] = cpu_to_le32((busaddx * 2) | pageindex);
 		}
 	}
+
+    CacheClearU(); //Flush page table writes. FIXME: be more judicious here
 
 	mem->pages = pagecount;
 

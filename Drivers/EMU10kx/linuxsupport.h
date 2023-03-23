@@ -116,6 +116,9 @@ static __inline__ void set_bit(int nr, volatile void * addr)
   (((volatile unsigned int *) addr)[nr >> 5]) |= (1UL << (nr & 31));
 }
 
+
+//#define cpu_to_le32(x) (x)
+
 static __inline__ u32 cpu_to_le32( u32 x )
 {
   u32 res = ((((x) & 0xff000000) >> 24) | (((x) & 0x00ff0000) >>  8) | \
@@ -123,5 +126,6 @@ static __inline__ u32 cpu_to_le32( u32 x )
 
   return res;
 }
+
 
 #endif /* AHI_Drivers_EMU10kx_linuxsupport_h */

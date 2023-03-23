@@ -1130,6 +1130,8 @@ static int __devinit hw_init(struct emu10k1_card *card)
 		goto err1;
 	}
 
+    memset(card->silentpage.addr, 0, card->silentpage.size);
+
 	for (pagecount = 0; pagecount < MAXPAGES; pagecount++)
 		((u32 *) card->virtualpagetable.addr)[pagecount] = cpu_to_le32(((u32) card->silentpage.dma_handle * 2) | 
 pagecount);

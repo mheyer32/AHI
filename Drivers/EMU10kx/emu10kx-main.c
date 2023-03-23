@@ -62,7 +62,7 @@ driver! Anything that is based on this driver has to be GPL:ed.
 
 static const ULONG Frequencies[ FREQUENCIES ] =
 {
-  8000,     // µ- and A-Law
+  8000,     // ?- and A-Law
   11025,    // CD/4
   16000,    // DAT/3
   22050,    // CD/2
@@ -264,7 +264,7 @@ _AHIsub_Start( ULONG                   flags,
     /* Allocate a new mixing buffer. Note: The buffer must be cleared, since
        it might not be filled by the mixer software interrupt because of
        pretimer/posttimer! */
-
+    // This is a software mixing buffer, thus place in fastmem
     dd->mix_buffer = AllocVec( AudioCtrl->ahiac_BuffSize,
 			       MEMF_ANY | MEMF_PUBLIC | MEMF_CLEAR );
 
