@@ -10,3 +10,6 @@
 [submodule "external/flexcat"]
 	path = external/flexcat
 	url = git@github.com:adtools/flexcat.git
+[submodule "external/Prometheus"]
+	path = external/Prometheus
+	url = git@github.com:mheyer32/Prometheus.git
