@@ -75,8 +75,8 @@ struct memhandle
 #define DEBUG_LEVEL 4
 
 #ifdef EMU10K1_DEBUG
-# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ , y );} while(0)
-# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ );} while(0)
+# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) KPrintF( KERN_NOTICE "emu10k1: %s: %ld: " x, __func__, __LINE__, y);} while(0)
+# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) KPrintF( KERN_NOTICE "emu10k1: %s: %ld: " x ,__func__, __LINE__ );} while(0)
 #else
 # define DPD(level,x,y...) do { } while (0) /* not debugging: nothing */
 # define DPF(level,x) do { } while (0)
@@ -174,7 +174,7 @@ struct emu10k1_card
 #else
 	struct pci_dev		*pci_dev;
 #endif
-	unsigned long           iobase;
+	unsigned long       iobase;
 	unsigned long		length;
 	unsigned short		model;
 	unsigned int irq; 
@@ -286,7 +286,7 @@ static inline unsigned short my_inb(unsigned long port)
 {
     unsigned char res = pci_inb( port );
 
-    //  KPrintF( "my_inb(%08lx) ->%02lx\n", port, res );
+//     KPrintF( "my_inb(%08lx) ->%02lx\n", port, res );
 
     return res;
 }
@@ -295,7 +295,7 @@ static inline unsigned short my_inw(unsigned long port)
 {
     unsigned short res = SWAPWORD( pci_inw( port ) );
 
-    //  KPrintF( "my_inw(%08lx) ->%04lx\n", port, res );
+//    KPrintF( "my_inw(%08lx) ->%04lx\n", port, res );
 
     return res;
 }
@@ -304,28 +304,28 @@ static inline unsigned int my_inl(unsigned long port)
 {
     unsigned int res = SWAPLONG( pci_inl( port ) );
 
-    //  KPrintF( "my_inl(%08lx) ->%08lx\n", port, res );
+//    KPrintF( "my_inl(%08lx) ->%08lx\n", port, res );
 
     return res;
 }
 
 static inline void my_outb(unsigned char value, unsigned long port)
 {
-    //  KPrintF( "my_outb(%08lx,%02lx)\n", port, value );
+//    KPrintF( "my_outb(%08lx,%02lx)\n", port, value );
 
     pci_outb( value, port );
 }
 
 static inline void my_outw(unsigned short value, unsigned long port)
 {
-    //  KPrintF( "my_outw(%08lx,%04lx)\n", port, value );
+//    KPrintF( "my_outw(%08lx,%04lx)\n", port, value );
 
     pci_outw( SWAPWORD( value ), port );
 }
 
 static inline void my_outl(unsigned int value, unsigned long port)
 {
-    //  KPrintF( "my_outl(%08lx,%08lx)\n", port, value );
+//    KPrintF( "my_outl(%08lx,%08lx)\n", port, value );
 
     pci_outl( SWAPLONG( value ), port );
 }
