@@ -73,8 +73,8 @@ struct memhandle
 #define DEBUG_LEVEL 2
 
 #ifdef EMU10K1_DEBUG
-# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ , y );} while(0)
-# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) printk( KERN_NOTICE "emu10k1: %s: %d: " x , __FILE__ , __LINE__ );} while(0)
+# define DPD(level,x,y...) do {if(level <= DEBUG_LEVEL) KPrintF( KERN_NOTICE "emu10k1: %s: %ld: " x, __func__, __LINE__, y);} while(0)
+# define DPF(level,x)   do {if(level <= DEBUG_LEVEL) KPrintF( KERN_NOTICE "emu10k1: %s: %ld: " x ,__func__, __LINE__ );} while(0)
 #else
 # define DPD(level,x,y...) do { } while (0) /* not debugging: nothing */
 # define DPF(level,x) do { } while (0)
@@ -172,7 +172,7 @@ struct emu10k1_card
 #else
 	struct pci_dev		*pci_dev;
 #endif
-	unsigned long           iobase;
+	unsigned long       iobase;
 	unsigned long		length;
 	unsigned short		model;
 	unsigned int irq; 
