@@ -313,39 +313,49 @@ void emu10k1_timer_set(struct emu10k1_card * card, u16 data)
 	spin_unlock_irqrestore(&card->lock, flags);
 }
 
+static inline u32 sblive_readptr_nolock(struct emu10k1_card * card, u32 reg, u32 channel);
+
+/************************************************************************
+ * write/read Emu10k1 pointer-offset register set, accessed through      *
+ *  the PTR and DATA registers                                           *
+ *************************************************************************/
+#define A_PTR_ADDRESS_MASK 0x0fff0000
+static inline void sblive_writeptr_nolock(struct emu10k1_card *card, u32 reg, u32 channel, u32 data)
+{
+    u32 regptr;
+
+    regptr = ((reg << 16) & A_PTR_ADDRESS_MASK) | (channel & PTR_CHANNELNUM_MASK);
+
+    if (reg & 0xff000000) {
+        u32 mask;
+        u8 size, offset;
+
+        size = (reg >> 24) & 0x3f;
+        offset = (reg >> 16) & 0x1f;
+        mask = ((1 << size) - 1) << offset;
+        data = (data << offset) & mask;
+
+		outl(regptr, card->iobase + PTR);
+		data |= inl(card->iobase + DATA) & ~mask;
+		outl(data, card->iobase + DATA);
+	} else {
+		outl(regptr, card->iobase + PTR);
+		outl(data, card->iobase + DATA);
+    }
+}
 
 /************************************************************************
 * write/read Emu10k1 pointer-offset register set, accessed through      *
 *  the PTR and DATA registers                                           *
 *************************************************************************/
-#define A_PTR_ADDRESS_MASK 0x0fff0000
+
 void sblive_writeptr(struct emu10k1_card *card, u32 reg, u32 channel, u32 data)
 {
-	u32 regptr;
-	unsigned long flags;
+    unsigned long flags;
 
-	regptr = ((reg << 16) & A_PTR_ADDRESS_MASK) | (channel & PTR_CHANNELNUM_MASK);
-
-	if (reg & 0xff000000) {
-		u32 mask;
-		u8 size, offset;
-
-		size = (reg >> 24) & 0x3f;
-		offset = (reg >> 16) & 0x1f;
-		mask = ((1 << size) - 1) << offset;
-		data = (data << offset) & mask;
-
-		spin_lock_irqsave(&card->lock, flags);
-		outl(regptr, card->iobase + PTR);
-		data |= inl(card->iobase + DATA) & ~mask;
-		outl(data, card->iobase + DATA);
-		spin_unlock_irqrestore(&card->lock, flags);
-	} else {
-		spin_lock_irqsave(&card->lock, flags);
-		outl(regptr, card->iobase + PTR);
-		outl(data, card->iobase + DATA);
-		spin_unlock_irqrestore(&card->lock, flags);
-	}
+    spin_lock_irqsave(&card->lock, flags);
+    sblive_writeptr_nolock(card, reg, channel, data);
+	spin_unlock_irqrestore(&card->lock, flags);
 }
 
 /* ... :  data, reg, ... , TAGLIST_END */
@@ -361,18 +371,7 @@ void sblive_writeptr_tag(struct emu10k1_card *card, u32 channel, ...)
 	spin_lock_irqsave(&card->lock, flags);
 	while ((reg = va_arg(args, u32)) != TAGLIST_END) {
 		u32 data = va_arg(args, u32);
-		u32 regptr = (((reg << 16) & A_PTR_ADDRESS_MASK)
-			      | (channel & PTR_CHANNELNUM_MASK));
-		outl(regptr, card->iobase + PTR);
-		if (reg & 0xff000000) {
-			int size = (reg >> 24) & 0x3f;
-                        int offset = (reg >> 16) & 0x1f;
-			u32 mask = ((1 << size) - 1) << offset;
-			data = (data << offset) & mask;
-
-			data |= inl(card->iobase + DATA) & ~mask;
-		}
-		outl(data, card->iobase + DATA);
+        sblive_writeptr_nolock(card, reg, channel, data);
 	}
 	spin_unlock_irqrestore(&card->lock, flags);
 
@@ -381,35 +380,46 @@ void sblive_writeptr_tag(struct emu10k1_card *card, u32 channel, ...)
 	return;
 }
 
-u32 sblive_readptr(struct emu10k1_card * card, u32 reg, u32 channel)
+static inline u32 sblive_readptr_nolock(struct emu10k1_card * card, u32 reg, u32 channel)
 {
-	u32 regptr, val;
-	unsigned long flags;
+    u32 regptr, val;
+    unsigned long flags;
 
-	regptr = ((reg << 16) & A_PTR_ADDRESS_MASK) | (channel & PTR_CHANNELNUM_MASK);
+    regptr = ((reg << 16) & A_PTR_ADDRESS_MASK) | (channel & PTR_CHANNELNUM_MASK);
 
-	if (reg & 0xff000000) {
-		u32 mask;
-		u8 size, offset;
+    if (reg & 0xff000000) {
+        u32 mask;
+        u8 size, offset;
 
-		size = (reg >> 24) & 0x3f;
-		offset = (reg >> 16) & 0x1f;
-		mask = ((1 << size) - 1) << offset;
+        size = (reg >> 24) & 0x3f;
+        offset = (reg >> 16) & 0x1f;
+        mask = ((1 << size) - 1) << offset;
 
-		spin_lock_irqsave(&card->lock, flags);
 		outl(regptr, card->iobase + PTR);
 		val = inl(card->iobase + DATA);
-		spin_unlock_irqrestore(&card->lock, flags);
 
 		return (val & mask) >> offset;
 	} else {
-		spin_lock_irqsave(&card->lock, flags);
 		outl(regptr, card->iobase + PTR);
 		val = inl(card->iobase + DATA);
-		spin_unlock_irqrestore(&card->lock, flags);
 
 		return val;
 	}
+}
+
+
+u32 sblive_readptr(struct emu10k1_card * card, u32 reg, u32 channel)
+{
+    u32 val;
+    unsigned long flags;
+
+    spin_lock_irqsave(&card->lock, flags);
+
+    val = sblive_readptr_nolock(card, reg, channel);
+
+	spin_unlock_irqrestore(&card->lock, flags);
+
+    return val;
 }
 
 void emu10k1_irq_enable(struct emu10k1_card *card, u32 irq_mask)
