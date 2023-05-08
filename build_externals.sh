@@ -19,9 +19,7 @@ make -C ./external/OpenPCI -f makefile_m68k
 
 #Prometheus.card
 make -C ./external/Prometheus/PrometheusCard -f makefiles/gcc/makefile
-cp ./external/Prometheus/PrometheusCard/_bin/gcc/Prometheus.card /media/sf_Amiga/
 
 #Prometheus.library / exe
 make -C ./external/Prometheus/PromLib -f makefiles/gcc/makefile
-cp ./external/Prometheus/PromLib/_bin/gcc/prometheus.library /media/sf_Amiga/
-cp ./external/Prometheus/PromLib/_bin/gcc/prometheus.exe /media/sf_Amiga/
+
