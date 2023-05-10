@@ -1,3 +1,4 @@
+@documentencoding ISO-8859-1
 \input tmp-iso.sty
 \input texinfo             @c -*-texinfo-*-
 @c %***start of header

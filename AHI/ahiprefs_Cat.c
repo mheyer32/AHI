@@ -1,6 +1,6 @@
 /****************************************************************
-   This file was created automatically by `FlexCat 2.12'
-   from "./ahiprefs.cd".
+   This file was created automatically by `FlexCat 2.18'
+   from "../../AHI/ahiprefs.cd".
 
    Do NOT edit by hand!
 ****************************************************************/

@@ -28,6 +28,7 @@ ROBODOC		= @ROBODOC@
 VPATH		= @srcdir@
 
 MAKEINFO	= @MAKEINFO@
+MAKEGUIDE	= @MAKEGUIDE@
 
 #
 # Files
@@ -111,10 +112,10 @@ ahiusr.readme:	readme.usr readme.changes readme.main $(top_srcdir)/version.rev
 
 # AmigaGuide® files
 ahidev.guide:	ahidev.texinfo ahidev.ver
-	- ${MAKEINFO}  --amiga --output ahidev.guide $<
+	- ${MAKEGUIDE}  --amiga --output ahidev.guide $<
 
 ahiusr.guide:	ahiusr.texinfo ahiusr.ver
-	- ${MAKEINFO} --amiga --output ahiusr.guide $<
+	- ${MAKEGUIDE} --amiga --output ahiusr.guide $<
 
 
 # DVI files
