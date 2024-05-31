@@ -27,6 +27,7 @@
 #include "emu10kx-camd.h"
 #include "camdstubs.h"
 #include "version.h"
+#include <SDI_compiler.h>
 
 struct PortInfo
 {
@@ -47,11 +48,14 @@ __asm("
 
 /*** Identification data must follow directly *********************************/
 
-static struct MidiDeviceData MidiDeviceData =
+FAR const char midiDriverName[];
+FAR const char midiDriverDescription[];
+
+__attribute__((section(".text"))) static struct MidiDeviceData MidiDeviceData =
 {
   MDD_Magic,
-  "emu10kx",
-  "emu10kx CAMD MIDI driver " VERS,
+  midiDriverName,
+  midiDriverDescription,
   VERSION, REVISION,
   gwInit,
   gwExpunge,
@@ -70,8 +74,9 @@ static struct Library*     EMU10kxBase     = NULL;
 static struct EMU10kxCamd* EMU10kxCamd     = NULL;
 static struct PortInfo*    PortInfos       = NULL;
 static ULONG               CAMDv40         = FALSE;
-const char                 VersionString[] = "$VER: emu10kx " VERS "\r\n";
-
+FAR const char VersionString[] = "$VER: emu10kx " VERS "\r\n";
+FAR const char midiDriverName[] = "emu10kx";
+FAR const char midiDriverDescription[] = "emu10kx CAMD MIDI driver " VERS;
 
 /*** Debug code ***************************************************************/
 
