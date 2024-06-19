@@ -7,7 +7,7 @@ set -x
 make -C ./external/mkguide/src all
 
 # flexcat
-make -C ./external/flexcat bootstrap OS=unix
+#make -C ./external/flexcat bootstrap OS=unix
 PATH=${PATH}:$(pwd)/external/flexcat/src/bin_unix
 make -C ./external/flexcat OS=unix bin_unix/flexcat
 

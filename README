@@ -124,3 +124,7 @@ PhxAss		dev/asm/PhxAss.lha
 RoboDoc		dev/misc/robodoc.lha
 SFDC		dev/gcc/sfdc.lha
 UnixDirs3	util/boot/UnixDirs3.lha	(when using separate build directories)
+
+Linux:
+
+sudo apt-get install gcc-multilib texlive texi2html
