@@ -159,15 +159,15 @@ DriverInit( struct DriverBase* ahisubbase )
   
 #else
   
-  EMU10kxBase->camd.OpenPortFunc.h_Entry    = HookEntry;
-  EMU10kxBase->camd.OpenPortFunc.h_SubEntry = OpenCAMDPort;
+  EMU10kxBase->camd.OpenPortFunc.h_Entry    = (HOOKFUNC) HookEntry;
+  EMU10kxBase->camd.OpenPortFunc.h_SubEntry = (HOOKFUNC) OpenCAMDPort;
   EMU10kxBase->camd.OpenPortFunc.h_Data     = NULL;
 
-  EMU10kxBase->camd.ClosePortFunc.h_Entry    = HookEntry;
+  EMU10kxBase->camd.ClosePortFunc.h_Entry    = (HOOKFUNC) HookEntry;
   EMU10kxBase->camd.ClosePortFunc.h_SubEntry = (HOOKFUNC) CloseCAMDPort;
   EMU10kxBase->camd.ClosePortFunc.h_Data     = NULL;
 
-  EMU10kxBase->camd.ActivateXmitFunc.h_Entry    = HookEntry;
+  EMU10kxBase->camd.ActivateXmitFunc.h_Entry    = (HOOKFUNC) HookEntry;
   EMU10kxBase->camd.ActivateXmitFunc.h_SubEntry = (HOOKFUNC) ActivateCAMDXmit;
   EMU10kxBase->camd.ActivateXmitFunc.h_Data     = NULL;
 #endif
@@ -195,11 +195,11 @@ DriverInit( struct DriverBase* ahisubbase )
 
 #else
 
-  EMU10kxBase->ac97.GetFunc.h_Entry    = HookEntry;
-  EMU10kxBase->ac97.GetFunc.h_SubEntry = AC97GetFunc;
+  EMU10kxBase->ac97.GetFunc.h_Entry    = (HOOKFUNC) HookEntry;
+  EMU10kxBase->ac97.GetFunc.h_SubEntry = (HOOKFUNC) AC97GetFunc;
   EMU10kxBase->ac97.GetFunc.h_Data     = NULL;
 
-  EMU10kxBase->ac97.SetFunc.h_Entry    = HookEntry;
+  EMU10kxBase->ac97.SetFunc.h_Entry    = (HOOKFUNC) HookEntry;
   EMU10kxBase->ac97.SetFunc.h_SubEntry = (HOOKFUNC) AC97SetFunc;
   EMU10kxBase->ac97.SetFunc.h_Data     = NULL;
 #endif

@@ -3,6 +3,7 @@
 
 #include <utility/hooks.h>
 #include <exec/interrupts.h>
+#include <exec/memory.h>
 
 #include <libraries/openpci.h>
 #include <proto/openpci.h>
@@ -136,7 +137,13 @@ APTR ahi_pci_allocdma_mem(ULONG size, ULONG flags)
   APTR mem = pci_allocdma_mem(size, MEM_NONCACHEABLE);
 
   if(mem && (flags & MEMF_CLEAR))
-    memset(mem, 0, size);
+  {
+    UBYTE *p = mem;
+    ULONG n = size;
+
+    while(n--)
+      *p++ = 0;
+  }
 
   return mem;
 }

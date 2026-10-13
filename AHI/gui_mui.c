@@ -466,7 +466,7 @@ SliderHookFunc( struct Hook *hook,
 static struct Hook hookSlider =
 {
   { NULL, NULL },
-  HookEntry,
+  (HOOKFUNC) HookEntry,
   (HOOKFUNC) SliderHookFunc,
   NULL
 };

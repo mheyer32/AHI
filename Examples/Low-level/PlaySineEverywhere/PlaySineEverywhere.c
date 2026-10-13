@@ -129,7 +129,7 @@ PlaySineEverywhere( void ) {
       char                 name[ 64 ];
       struct Hook          sound_hook = {
 	{ NULL, NULL },
-	HookEntry,
+	(HOOKFUNC) HookEntry,
 	(HOOKFUNC) SoundFunc,
 	FindTask( NULL )
       };

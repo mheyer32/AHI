@@ -41,10 +41,10 @@ struct PortInfo
 
 /*** Module entry (exactly 4 bytes!!) *****************************************/
 
-__asm("
-  moveq #-1,d0 \n\t
-  rts
-");
+__asm(
+  "moveq #-1,d0\n\t"
+  "rts"
+);
 
 /*** Identification data must follow directly *********************************/
 
@@ -54,13 +54,13 @@ FAR const char midiDriverDescription[];
 __attribute__((section(".text"))) static struct MidiDeviceData MidiDeviceData =
 {
   MDD_Magic,
-  midiDriverName,
-  midiDriverDescription,
+  (char *) midiDriverName,
+  (char *) midiDriverDescription,
   VERSION, REVISION,
-  gwInit,
-  gwExpunge,
-  gwOpenPort,
-  gwClosePort,
+  (BOOL (*)(void)) gwInit,
+  (void (*)(void)) gwExpunge,
+  (struct MidiPortData *(*)()) gwOpenPort,
+  (void (*)()) gwClosePort,
   4,        // For some braindamaged reason, camd.library V40 reads
 	    // this value BEFORE calling Init(). :-(
   1         // Use new-style if using camd.library V40
@@ -177,7 +177,7 @@ _ActivateXmit( APTR  userdata,
 
 struct MidiPortData MidiPortData =
 {
-  gwActivateXmit
+  (void (*)(void)) gwActivateXmit
 };
 
 

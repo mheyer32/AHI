@@ -534,7 +534,7 @@ GadgetHookFunc( struct Hook *hook,
 static struct Hook GadgetHook = 
 {
   { NULL, NULL },
-  HookEntry,
+  (HOOKFUNC) HookEntry,
   (HOOKFUNC) GadgetHookFunc,
   NULL
 };
@@ -583,7 +583,7 @@ SliderHookFunc( struct Hook *hook,
 static struct Hook SliderHook = 
 {
   { NULL, NULL },
-  HookEntry,
+  (HOOKFUNC) HookEntry,
   (HOOKFUNC) SliderHookFunc,
   NULL
 };
@@ -729,7 +729,7 @@ static void IDCMPhookFunc(struct Hook *hook,
 static struct Hook IDCMPhook =
 {
   { NULL, NULL },
-  HookEntry,
+  (HOOKFUNC) HookEntry,
   ( HOOKFUNC ) IDCMPhookFunc,
   NULL
 };
